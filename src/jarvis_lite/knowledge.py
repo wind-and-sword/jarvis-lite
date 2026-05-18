@@ -32,6 +32,8 @@ def search_data(paths: ProjectPaths, query: str, limit: int = 3) -> list[DataMat
             text = raw_line.strip()
             if not text:
                 continue
+            if text.startswith("#"):
+                continue
             score = _score(text, terms)
             if score > 0:
                 matches.append(
@@ -49,12 +51,14 @@ def search_data(paths: ProjectPaths, query: str, limit: int = 3) -> list[DataMat
 def answer_from_data(paths: ProjectPaths, question: str) -> str:
     """基于 data 目录命中的片段生成规则式回答；无命中时返回空字符串。"""
 
-    matches = search_data(paths, question, limit=1)
+    matches = _filter_weak_matches(search_data(paths, question))
     if not matches:
         return ""
 
-    match = matches[0]
-    return f"根据 data/{match.relative_path}:{match.line_number}，{match.text}"
+    lines = []
+    for match in matches:
+        lines.append(f"根据 data/{match.relative_path}:{match.line_number}，{match.text}")
+    return "\n".join(lines)
 
 
 def _iter_text_files(data_dir: Path) -> list[Path]:
@@ -84,3 +88,12 @@ def _query_terms(query: str) -> set[str]:
 def _score(text: str, terms: set[str]) -> int:
     normalized = text.lower()
     return sum(1 for term in terms if term in normalized)
+
+
+def _filter_weak_matches(matches: list[DataMatch]) -> list[DataMatch]:
+    if not matches:
+        return []
+
+    best_score = matches[0].score
+    minimum_score = max(1, best_score - 1)
+    return [match for match in matches if match.score >= minimum_score]

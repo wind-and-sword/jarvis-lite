@@ -197,7 +197,7 @@ python -m unittest discover -s tests -v
 当前已具备：
 
 - 读取 `memory/profile.md` 长期记忆。
-- 读取 `data/` 目录中的 `.txt` 和 `.md` 文本资料，并通过 `/ask` 或普通问题返回带来源的基础回答。
+- 读取 `data/` 目录中的 `.txt` 和 `.md` 文本资料，并通过 `/ask` 或普通问题返回最多 3 条带来源的基础回答。
 - 通过 `/memory`、`/list`、`/read`、`/ask`、`/note`、`/summary` 调用第一阶段基础能力。
 - 将工具调用记录到 `logs/jarvis.log`。
 - 使用标准库 `unittest` 执行本地自动化测试。

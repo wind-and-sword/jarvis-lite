@@ -66,6 +66,21 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("没有在 data 目录找到", response)
 
+    def test_ask_command_returns_multiple_data_sources(self):
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "memory.md").write_text(
+            "Jarvis Lite 使用 memory/profile.md 保存长期记忆。\n",
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/ask Jarvis Lite 使用什么？")
+
+        self.assertIn("data/memory.md:1", response)
+        self.assertIn("data/runtime.md:1", response)
+
 
 if __name__ == "__main__":
     unittest.main()
