@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.knowledge import answer_from_data, search_data
+from jarvis_lite.knowledge import answer_from_data, build_knowledge_index, describe_knowledge_base, search_data
 
 
 class KnowledgeTests(unittest.TestCase):
@@ -95,6 +95,28 @@ class KnowledgeTests(unittest.TestCase):
         answer = answer_from_data(self.paths, "今天晚饭吃什么？")
 
         self.assertEqual(answer, "")
+
+    def test_build_knowledge_index_counts_supported_documents_and_searchable_lines(self):
+        project_dir = self.paths.data_dir / "projects"
+        project_dir.mkdir()
+        (self.paths.data_dir / "intro.md").write_text(
+            "# 标题\n\nJarvis Lite 是个人助手。\n\n第二行资料。\n",
+            encoding="utf-8",
+        )
+        (project_dir / "jarvis.txt").write_text("阶段 2 关注个人知识库。\n", encoding="utf-8")
+        (self.paths.data_dir / "image.png").write_text("不可检索", encoding="utf-8")
+
+        index = build_knowledge_index(self.paths)
+
+        self.assertEqual(index.document_count, 2)
+        self.assertEqual(index.searchable_line_count, 3)
+        self.assertEqual([document.relative_path for document in index.documents], ["intro.md", "projects/jarvis.txt"])
+
+    def test_describe_knowledge_base_reports_empty_state(self):
+        description = describe_knowledge_base(self.paths)
+
+        self.assertIn("个人知识库状态", description)
+        self.assertIn("还没有可检索资料", description)
 
 
 if __name__ == "__main__":

@@ -18,6 +18,25 @@ class DataMatch:
     score: int
 
 
+@dataclass(frozen=True)
+class KnowledgeDocument:
+    relative_path: str
+    searchable_line_count: int
+
+
+@dataclass(frozen=True)
+class KnowledgeIndex:
+    documents: tuple[KnowledgeDocument, ...]
+
+    @property
+    def document_count(self) -> int:
+        return len(self.documents)
+
+    @property
+    def searchable_line_count(self) -> int:
+        return sum(document.searchable_line_count for document in self.documents)
+
+
 def search_data(paths: ProjectPaths, query: str, limit: int = 3) -> list[DataMatch]:
     """在 data 目录中查找和问题相关的文本行。"""
 
@@ -61,6 +80,43 @@ def answer_from_data(paths: ProjectPaths, question: str) -> str:
     return "\n".join(lines)
 
 
+def build_knowledge_index(paths: ProjectPaths) -> KnowledgeIndex:
+    """构建本地个人知识库索引，用于查看 data 目录当前可检索状态。"""
+
+    documents = []
+    for file_path in _iter_text_files(paths.data_dir):
+        relative_path = file_path.relative_to(paths.data_dir).as_posix()
+        documents.append(
+            KnowledgeDocument(
+                relative_path=relative_path,
+                searchable_line_count=len(_searchable_lines(file_path)),
+            )
+        )
+    return KnowledgeIndex(tuple(documents))
+
+
+def describe_knowledge_base(paths: ProjectPaths) -> str:
+    """输出给用户阅读的个人知识库状态摘要。"""
+
+    index = build_knowledge_index(paths)
+    lines = [
+        "个人知识库状态：",
+        "- 根目录：data",
+        f"- 支持格式：{'、'.join(sorted(SUPPORTED_TEXT_SUFFIXES))}",
+        f"- 资料文件：{index.document_count} 个",
+        f"- 可检索文本行：{index.searchable_line_count} 行",
+    ]
+
+    if not index.documents:
+        lines.append("- 资料列表：还没有可检索资料。")
+        return "\n".join(lines)
+
+    lines.append("- 资料列表：")
+    for document in index.documents:
+        lines.append(f"  - data/{document.relative_path}（{document.searchable_line_count} 行）")
+    return "\n".join(lines)
+
+
 def _iter_text_files(data_dir: Path) -> list[Path]:
     files: list[Path] = []
     for file_path in data_dir.rglob("*"):
@@ -72,6 +128,18 @@ def _iter_text_files(data_dir: Path) -> list[Path]:
             continue
         files.append(file_path)
     return sorted(files, key=lambda item: item.relative_to(data_dir).as_posix().lower())
+
+
+def _searchable_lines(file_path: Path) -> list[str]:
+    lines = []
+    for raw_line in file_path.read_text(encoding="utf-8").splitlines():
+        text = raw_line.strip()
+        if not text:
+            continue
+        if text.startswith("#"):
+            continue
+        lines.append(text)
+    return lines
 
 
 def _query_terms(query: str) -> set[str]:

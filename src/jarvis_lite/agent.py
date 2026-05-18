@@ -4,7 +4,7 @@ import shlex
 from pathlib import Path
 
 from .config import ProjectPaths, build_project_paths
-from .knowledge import answer_from_data
+from .knowledge import answer_from_data, describe_knowledge_base
 from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
 from .tools import ToolRegistry
 
@@ -29,6 +29,9 @@ class JarvisAgent:
             return "\n".join(sorted(self.tools.allowed_tool_names))
         if prompt in {"/status", "status"}:
             return self._status()
+        if prompt in {"/kb", "kb", "/knowledge", "knowledge"}:
+            self.tools.run("record_log", message="查看个人知识库状态")
+            return describe_knowledge_base(self.paths)
 
         if is_identity_question(prompt):
             identity = find_identity(read_profile(self.paths))
@@ -106,6 +109,7 @@ class JarvisAgent:
                 "Jarvis Lite 可用命令：",
                 "/memory：查看长期记忆",
                 "/status：查看阶段 1 当前状态",
+                "/kb：查看个人知识库状态",
                 "/list [目录]：列出 data 目录内容",
                 "/read 文件名：读取 data 目录中的文本文件",
                 "/ask 问题：基于 data 目录中的文本资料回答",

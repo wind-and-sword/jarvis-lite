@@ -37,6 +37,14 @@ class AgentTests(unittest.TestCase):
         self.assertIn("工具日志", response)
         self.assertIn("memory/profile.md", response)
 
+    def test_knowledge_status_command_reports_data_index(self):
+        response = self.agent.handle("/kb")
+
+        self.assertIn("个人知识库状态", response)
+        self.assertIn("资料文件：1 个", response)
+        self.assertIn("可检索文本行：1 行", response)
+        self.assertIn("data/note.txt", response)
+
     def test_list_command_uses_data_tool(self):
         response = self.agent.handle("/list")
 
