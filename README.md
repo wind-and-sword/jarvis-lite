@@ -168,3 +168,26 @@ jarvis-lite
 6. 写最小测试，确认记忆和工具调用可用。
 
 第一阶段目标不是炫技，而是让这个助手第一次真正“动起来”。
+
+## 9. 当前骨架运行方式
+
+> 日期：2026-05-18
+> 执行者：Codex
+
+当前项目已经初始化 Python 命令行助手骨架，核心代码位于 `src/jarvis_lite/`，命令行入口为 `src/app.py`。
+
+常用命令：
+
+```powershell
+python src/app.py
+python src/app.py --once "/memory"
+python src/app.py --once "/list"
+python -m unittest discover -s tests -v
+```
+
+当前已具备：
+
+- 读取 `memory/profile.md` 长期记忆。
+- 通过 `/memory`、`/list`、`/read`、`/note`、`/summary` 调用第一阶段基础能力。
+- 将工具调用记录到 `logs/jarvis.log`。
+- 使用标准库 `unittest` 执行本地自动化测试。
