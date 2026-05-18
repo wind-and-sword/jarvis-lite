@@ -81,6 +81,33 @@ class AgentTests(unittest.TestCase):
         self.assertIn("data/memory.md:1", response)
         self.assertIn("data/runtime.md:1", response)
 
+    def test_remember_command_appends_long_term_memory(self):
+        response = self.agent.handle("/remember 用户姓名：张三")
+
+        self.assertIn("已记住", response)
+        self.assertIn("用户姓名：张三", (self.paths.memory_dir / "profile.md").read_text(encoding="utf-8"))
+
+    def test_plain_identity_statement_is_saved_to_memory(self):
+        response = self.agent.handle("我叫张三")
+
+        self.assertIn("已记住", response)
+        self.assertIn("用户姓名：张三", (self.paths.memory_dir / "profile.md").read_text(encoding="utf-8"))
+
+    def test_plain_role_statement_is_saved_to_memory(self):
+        response = self.agent.handle("我是Jarvis Lite项目创建者")
+
+        self.assertIn("已记住", response)
+        self.assertIn("用户身份：Jarvis Lite项目创建者", (self.paths.memory_dir / "profile.md").read_text(encoding="utf-8"))
+
+    def test_identity_question_uses_long_term_memory(self):
+        self.agent.handle("我叫张三")
+        self.agent.handle("我是Jarvis Lite项目创建者")
+
+        response = self.agent.handle("你知道我是谁吗")
+
+        self.assertIn("你是张三", response)
+        self.assertIn("Jarvis Lite项目创建者", response)
+
 
 if __name__ == "__main__":
     unittest.main()

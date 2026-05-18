@@ -4,7 +4,7 @@ import shlex
 
 from .config import ProjectPaths, build_project_paths
 from .knowledge import answer_from_data
-from .memory import read_profile, summarize_profile
+from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
 from .tools import ToolRegistry
 
 
@@ -27,8 +27,18 @@ class JarvisAgent:
         if prompt in {"/tools", "tools"}:
             return "\n".join(sorted(self.tools.allowed_tool_names))
 
+        if is_identity_question(prompt):
+            identity = find_identity(read_profile(self.paths))
+            if identity:
+                return identity
+            return "我还不知道你是谁。你可以说“我叫张三”或使用 /remember 用户姓名：张三。"
+
         if prompt.startswith("/"):
             return self._handle_command(prompt)
+
+        fact = parse_identity_fact(prompt)
+        if fact:
+            return self._remember(fact)
 
         data_answer = answer_from_data(self.paths, prompt)
         if data_answer:
@@ -70,6 +80,11 @@ class JarvisAgent:
             result = self.tools.run("write_summary", filename=args[0], content=" ".join(args[1:]))
             return result.message
 
+        if command == "/remember":
+            if not args:
+                return "用法：/remember 记忆内容"
+            return self._remember(" ".join(args))
+
         if command == "/ask":
             if not args:
                 return "用法：/ask 问题"
@@ -90,6 +105,7 @@ class JarvisAgent:
                 "/list [目录]：列出 data 目录内容",
                 "/read 文件名：读取 data 目录中的文本文件",
                 "/ask 问题：基于 data 目录中的文本资料回答",
+                "/remember 记忆内容：写入长期记忆",
                 "/note 标题 内容：写入 memory/notes/ 下的笔记",
                 "/summary 文件名 内容：写入 word/ 下的总结",
                 "/tools：查看第一阶段工具白名单",
@@ -102,3 +118,8 @@ class JarvisAgent:
 
     def _sentence(self, text: str) -> str:
         return text if text.endswith(("。", "！", "？", ".", "!", "?")) else f"{text}。"
+
+    def _remember(self, fact: str) -> str:
+        remembered = append_memory(self.paths, fact)
+        self.tools.run("record_log", message=f"写入长期记忆：{remembered}")
+        return f"已记住：{remembered}"

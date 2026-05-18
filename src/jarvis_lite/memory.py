@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import re
+
 from .config import ProjectPaths
 
 
 DEFAULT_PROFILE_MESSAGE = "还没有长期记忆。可以先在 memory/profile.md 里记录用户偏好和项目目标。"
+PROFILE_HEADER = "# 长期记忆\n\n> 日期：2026-05-18\n> 执行者：Codex\n"
 
 
 def read_profile(paths: ProjectPaths) -> str:
@@ -31,3 +34,79 @@ def summarize_profile(content: str) -> str:
         return line
 
     return DEFAULT_PROFILE_MESSAGE
+
+
+def append_memory(paths: ProjectPaths, fact: str) -> str:
+    """向长期记忆追加一条事实，重复事实不重复写入。"""
+
+    normalized = fact.strip().lstrip("-").strip()
+    if not normalized:
+        raise ValueError("记忆内容不能为空。")
+
+    existing = "" if not paths.profile_path.exists() else paths.profile_path.read_text(encoding="utf-8")
+    bullet = f"- {normalized}"
+    if bullet in existing:
+        return normalized
+
+    if not existing.strip():
+        content = f"{PROFILE_HEADER}\n{bullet}\n"
+    else:
+        content = existing.rstrip() + f"\n{bullet}\n"
+
+    paths.profile_path.write_text(content, encoding="utf-8")
+    return normalized
+
+
+def find_identity(content: str) -> str:
+    """从长期记忆中提取用户身份回答。"""
+
+    name = _find_memory_value(content, "用户姓名")
+    role = _find_memory_value(content, "用户身份")
+
+    if name and role:
+        return f"你是{name}，{role}。"
+    if name:
+        return f"你是{name}。"
+    if role:
+        return f"你是{role}。"
+    return ""
+
+
+def parse_identity_fact(text: str) -> str:
+    """从简单中文自我介绍中解析可写入的身份事实。"""
+
+    prompt = text.strip().strip("。！？!?.")
+
+    name_match = re.fullmatch(r"我叫\s*(.+)", prompt)
+    if name_match:
+        name = name_match.group(1).strip()
+        if name:
+            return f"用户姓名：{name}"
+
+    role_match = re.fullmatch(r"我是\s*(.+)", prompt)
+    if role_match:
+        role = role_match.group(1).strip()
+        if role:
+            return f"用户身份：{role}"
+
+    remember_match = re.fullmatch(r"记住\s*(.+)", prompt)
+    if remember_match:
+        fact = remember_match.group(1).strip()
+        if fact:
+            return fact
+
+    return ""
+
+
+def is_identity_question(text: str) -> bool:
+    prompt = text.strip().strip("。！？!?.")
+    return prompt in {"我是谁", "你知道我是谁吗", "你知道我是谁", "知道我是谁吗"}
+
+
+def _find_memory_value(content: str, key: str) -> str:
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        prefix = f"- {key}："
+        if line.startswith(prefix):
+            return line.removeprefix(prefix).strip()
+    return ""

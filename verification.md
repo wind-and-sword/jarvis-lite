@@ -19,17 +19,24 @@ hello
 /save-summary cli-smoke
 /exit
 '@ | .\.venv\Scripts\python.exe -X utf8 src/app.py
+@'
+我叫测试用户
+我是Jarvis Lite测试者
+你知道我是谁吗
+/exit
+'@ | .\.venv\Scripts\python.exe -X utf8 src/app.py
 ```
 
 ## 验证结论
 
-- 单元测试：34 个测试通过。
+- 单元测试：41 个测试通过。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
 - 工具日志：`/list` 会写入 `logs/jarvis.log`。
 - Python 版本：项目虚拟环境使用 Python 3.13.2。
 - 资料问答：`/ask` 和普通问题可以基于 `data/` 文本返回最多 3 条带来源的回答，并过滤弱相关片段。
 - 会话功能：交互式 CLI 可以查看 `/history`，并用 `/save-summary 文件名` 写入 `word/` 会话总结。
+- 长期记忆写入：`/remember`、`我叫...`、`我是...` 可以写入 `memory/profile.md`，并支持回答“我是谁”。
 
 ## 未覆盖事项
 
