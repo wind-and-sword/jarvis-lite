@@ -190,13 +190,15 @@ python --version
 python src/app.py
 python src/app.py --once "/memory"
 python src/app.py --once "/list"
+python src/app.py --once "/ask Jarvis Lite 使用什么 Python 版本？"
 python -m unittest discover -s tests -v
 ```
 
 当前已具备：
 
 - 读取 `memory/profile.md` 长期记忆。
-- 通过 `/memory`、`/list`、`/read`、`/note`、`/summary` 调用第一阶段基础能力。
+- 读取 `data/` 目录中的 `.txt` 和 `.md` 文本资料，并通过 `/ask` 或普通问题返回带来源的基础回答。
+- 通过 `/memory`、`/list`、`/read`、`/ask`、`/note`、`/summary` 调用第一阶段基础能力。
 - 将工具调用记录到 `logs/jarvis.log`。
 - 使用标准库 `unittest` 执行本地自动化测试。
 - 通过 `.python-version` 和 `pyproject.toml` 固定项目使用 Python 3.13 系列。

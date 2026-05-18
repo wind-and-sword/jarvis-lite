@@ -11,15 +11,18 @@
 .\.venv\Scripts\python.exe src/app.py --once "/memory"
 .\.venv\Scripts\python.exe src/app.py --once "/list"
 .\.venv\Scripts\python.exe src/app.py --once "你好"
+.\.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 使用什么 Python 版本？"
+.\.venv\Scripts\python.exe src/app.py --once "Jarvis Lite 当前可以读取什么？"
 ```
 
 ## 验证结论
 
-- 单元测试：19 个测试通过。
+- 单元测试：25 个测试通过。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
 - 工具日志：`/list` 会写入 `logs/jarvis.log`。
 - Python 版本：项目虚拟环境使用 Python 3.13.2。
+- 资料问答：`/ask` 和普通问题可以基于 `data/` 文本返回带来源的回答。
 
 ## 未覆盖事项
 

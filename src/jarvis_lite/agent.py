@@ -3,6 +3,7 @@ from __future__ import annotations
 import shlex
 
 from .config import ProjectPaths, build_project_paths
+from .knowledge import answer_from_data
 from .memory import read_profile, summarize_profile
 from .tools import ToolRegistry
 
@@ -28,6 +29,11 @@ class JarvisAgent:
 
         if prompt.startswith("/"):
             return self._handle_command(prompt)
+
+        data_answer = answer_from_data(self.paths, prompt)
+        if data_answer:
+            self.tools.run("record_log", message=f"基于 data 目录回答普通问题：{prompt}")
+            return data_answer
 
         profile = read_profile(self.paths)
         summary = summarize_profile(profile)
@@ -64,6 +70,16 @@ class JarvisAgent:
             result = self.tools.run("write_summary", filename=args[0], content=" ".join(args[1:]))
             return result.message
 
+        if command == "/ask":
+            if not args:
+                return "用法：/ask 问题"
+            question = " ".join(args)
+            answer = answer_from_data(self.paths, question)
+            if not answer:
+                return f"没有在 data 目录找到和“{question}”相关的资料。"
+            self.tools.run("record_log", message=f"基于 data 目录回答显式问题：{question}")
+            return answer
+
         return f"未知命令：{command}。输入 /help 查看可用命令。"
 
     def _help(self) -> str:
@@ -73,6 +89,7 @@ class JarvisAgent:
                 "/memory：查看长期记忆",
                 "/list [目录]：列出 data 目录内容",
                 "/read 文件名：读取 data 目录中的文本文件",
+                "/ask 问题：基于 data 目录中的文本资料回答",
                 "/note 标题 内容：写入 memory/notes/ 下的笔记",
                 "/summary 文件名 内容：写入 word/ 下的总结",
                 "/tools：查看第一阶段工具白名单",

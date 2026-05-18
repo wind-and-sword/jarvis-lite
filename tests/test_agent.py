@@ -50,6 +50,22 @@ class AgentTests(unittest.TestCase):
 
         self.assertNotIn("。。", response)
 
+    def test_plain_question_uses_matching_data_document(self):
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 推荐使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("Jarvis Lite 推荐使用什么 Python 版本？")
+
+        self.assertIn("根据 data/runtime.md:1", response)
+        self.assertIn("Python 3.13", response)
+
+    def test_ask_command_reports_no_match(self):
+        response = self.agent.handle("/ask 今天晚饭吃什么？")
+
+        self.assertIn("没有在 data 目录找到", response)
+
 
 if __name__ == "__main__":
     unittest.main()
