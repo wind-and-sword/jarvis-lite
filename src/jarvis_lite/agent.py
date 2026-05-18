@@ -93,6 +93,9 @@ class JarvisAgent:
                 "/note 标题 内容：写入 memory/notes/ 下的笔记",
                 "/summary 文件名 内容：写入 word/ 下的总结",
                 "/tools：查看第一阶段工具白名单",
+                "/history：查看当前命令行会话历史",
+                "/save-summary 文件名：保存当前命令行会话总结到 word/",
+                "/clear：清空当前命令行会话历史",
                 "/exit：退出命令行助手",
             ]
         )
