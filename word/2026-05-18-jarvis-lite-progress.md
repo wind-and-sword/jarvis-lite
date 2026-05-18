@@ -26,13 +26,15 @@
 - 创建 `data/`、`logs/`、`tests/`、`word/` 目录。
 - 实现基础 Agent 调度、长期记忆读取、本地工具白名单和日志记录。
 - 写入 `pyproject.toml`，保留后续安装为命令行脚本的入口。
+- 创建 `.python-version`，并将 `pyproject.toml` 的 Python 版本范围固定为 `>=3.13,<3.14`。
 - 使用标准库 `unittest` 编写本地测试。
 
 ## 验证结果
 
-- `python -m unittest discover -s tests -v`：16 个测试通过。
-- `python src/app.py --once "/memory"`：可以读取长期记忆。
-- `python src/app.py --once "/list"`：可以调用 data 目录列表工具，并记录到 `logs/jarvis.log`。
+- `.venv\Scripts\python.exe --version`：当前项目虚拟环境使用 Python 3.13.2。
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：19 个测试通过。
+- `.venv\Scripts\python.exe src/app.py --once "/memory"`：可以读取长期记忆。
+- `.venv\Scripts\python.exe src/app.py --once "/list"`：可以调用 data 目录列表工具，并记录到 `logs/jarvis.log`。
 
 ## 下一步
 

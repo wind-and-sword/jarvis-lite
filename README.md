@@ -176,7 +176,15 @@ jarvis-lite
 
 当前项目已经初始化 Python 命令行助手骨架，核心代码位于 `src/jarvis_lite/`，命令行入口为 `src/app.py`。
 
-常用命令：
+推荐使用 Python 3.13 系列创建本地虚拟环境：
+
+```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\activate
+python --version
+```
+
+激活虚拟环境后，常用命令：
 
 ```powershell
 python src/app.py
@@ -191,3 +199,4 @@ python -m unittest discover -s tests -v
 - 通过 `/memory`、`/list`、`/read`、`/note`、`/summary` 调用第一阶段基础能力。
 - 将工具调用记录到 `logs/jarvis.log`。
 - 使用标准库 `unittest` 执行本地自动化测试。
+- 通过 `.python-version` 和 `pyproject.toml` 固定项目使用 Python 3.13 系列。

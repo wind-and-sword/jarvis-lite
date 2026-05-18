@@ -6,18 +6,20 @@
 ## 验证命令
 
 ```powershell
-python -m unittest discover -s tests -v
-python src/app.py --once "/memory"
-python src/app.py --once "/list"
-python src/app.py --once "你好"
+.\.venv\Scripts\python.exe --version
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe src/app.py --once "/memory"
+.\.venv\Scripts\python.exe src/app.py --once "/list"
+.\.venv\Scripts\python.exe src/app.py --once "你好"
 ```
 
 ## 验证结论
 
-- 单元测试：16 个测试通过。
+- 单元测试：19 个测试通过。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
 - 工具日志：`/list` 会写入 `logs/jarvis.log`。
+- Python 版本：项目虚拟环境使用 Python 3.13.2。
 
 ## 未覆盖事项
 
