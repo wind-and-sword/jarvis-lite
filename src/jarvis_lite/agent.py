@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shlex
+from pathlib import Path
 
 from .config import ProjectPaths, build_project_paths
 from .knowledge import answer_from_data
@@ -26,6 +27,8 @@ class JarvisAgent:
             return read_profile(self.paths)
         if prompt in {"/tools", "tools"}:
             return "\n".join(sorted(self.tools.allowed_tool_names))
+        if prompt in {"/status", "status"}:
+            return self._status()
 
         if is_identity_question(prompt):
             identity = find_identity(read_profile(self.paths))
@@ -102,6 +105,7 @@ class JarvisAgent:
             [
                 "Jarvis Lite 可用命令：",
                 "/memory：查看长期记忆",
+                "/status：查看阶段 1 当前状态",
                 "/list [目录]：列出 data 目录内容",
                 "/read 文件名：读取 data 目录中的文本文件",
                 "/ask 问题：基于 data 目录中的文本资料回答",
@@ -123,3 +127,19 @@ class JarvisAgent:
         remembered = append_memory(self.paths, fact)
         self.tools.run("record_log", message=f"写入长期记忆：{remembered}")
         return f"已记住：{remembered}"
+
+    def _project_path(self, path: Path) -> str:
+        return path.relative_to(self.paths.root).as_posix()
+
+    def _status(self) -> str:
+        return "\n".join(
+            [
+                "阶段 1 状态：命令行助手基础闭环已具备。",
+                f"- 长期记忆：{self._project_path(self.paths.profile_path)}",
+                f"- data 文本问答：{self._project_path(self.paths.data_dir)}",
+                f"- 工具日志：{self._project_path(self.paths.log_path)}",
+                "- 会话能力：/history、/save-summary、/clear",
+                "- 记忆写入：/remember、我叫...、我是...",
+                "- 本地验证：python -m unittest discover -s tests -v",
+            ]
+        )

@@ -9,6 +9,7 @@
 .\.venv\Scripts\python.exe --version
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 .\.venv\Scripts\python.exe src/app.py --once "/memory"
+.\.venv\Scripts\python.exe src/app.py --once "/status"
 .\.venv\Scripts\python.exe src/app.py --once "/list"
 .\.venv\Scripts\python.exe src/app.py --once "你好"
 .\.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 使用什么 Python 版本？"
@@ -29,9 +30,10 @@ hello
 
 ## 验证结论
 
-- 单元测试：43 个测试通过。
+- 单元测试：44 个测试通过。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
+- 阶段状态：`/status` 可输出阶段 1 能力闭环和关键文件位置。
 - 工具日志：`/list` 会写入 `logs/jarvis.log`。
 - Python 版本：项目虚拟环境使用 Python 3.13.2。
 - 资料问答：`/ask` 和普通问题可以基于 `data/` 文本返回最多 3 条带来源的回答，并过滤弱相关片段。

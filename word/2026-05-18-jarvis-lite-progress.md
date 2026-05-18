@@ -17,7 +17,7 @@
 
 ## 当前状态
 
-已完成第一步骨架初始化。
+阶段 1 基础闭环已完成：命令行入口、长期记忆、身份问答、data 文本问答、会话总结、工具日志和本地测试均已具备。
 
 ## 已完成
 
@@ -38,11 +38,13 @@
 - 新增基础身份识别：`我叫...` 会写入 `用户姓名`，`我是...` 会写入 `用户身份`，之后可以回答“你知道我是谁吗”。
 - 调整 README 职责：README 只保留项目入口、快速启动和当前状态，整体方案迁移到 `word/jarvis-lite-overall-plan.md`。
 - 增强长期记忆更新：同 key 记忆会替换旧值，例如再次说“我叫...”会更新 `用户姓名`，不会保留旧姓名。
+- 新增 `/status` 命令，用于查看阶段 1 当前能力、长期记忆位置、data 目录和工具日志位置。
 
 ## 验证结果
 
 - `.venv\Scripts\python.exe --version`：当前项目虚拟环境使用 Python 3.13.2。
-- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：43 个测试通过。
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：44 个测试通过。
+- `.venv\Scripts\python.exe src/app.py --once "/status"`：可以输出阶段 1 状态、长期记忆、data 文本问答和工具日志位置。
 - `.venv\Scripts\python.exe src/app.py --once "/memory"`：可以读取长期记忆。
 - `.venv\Scripts\python.exe src/app.py --once "/list"`：可以调用 data 目录列表工具，并记录到 `logs/jarvis.log`。
 - `.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 使用什么 Python 版本？"`：可以基于 `data/jarvis-lite.md` 返回带来源的回答。
@@ -54,4 +56,4 @@
 
 ## 下一步
 
-继续完善长期记忆体验，例如记忆分类、记忆查看筛选和可编辑的记忆管理命令。
+进入阶段 2 前，优先整理个人知识库入口：支持更多资料导入、资料索引和更可靠的问答匹配。

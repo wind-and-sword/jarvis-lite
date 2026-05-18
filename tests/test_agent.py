@@ -28,6 +28,15 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("用户偏好：中文简洁回答", response)
 
+    def test_status_command_reports_phase_one_capabilities(self):
+        response = self.agent.handle("/status")
+
+        self.assertIn("阶段 1 状态", response)
+        self.assertIn("长期记忆", response)
+        self.assertIn("data 文本问答", response)
+        self.assertIn("工具日志", response)
+        self.assertIn("memory/profile.md", response)
+
     def test_list_command_uses_data_tool(self):
         response = self.agent.handle("/list")
 
