@@ -108,6 +108,17 @@ class AgentTests(unittest.TestCase):
         self.assertIn("你是张三", response)
         self.assertIn("Jarvis Lite项目创建者", response)
 
+    def test_identity_update_replaces_old_name(self):
+        self.agent.handle("我叫张三")
+        self.agent.handle("我叫李四")
+
+        response = self.agent.handle("我是谁")
+        content = (self.paths.memory_dir / "profile.md").read_text(encoding="utf-8")
+
+        self.assertIn("你是李四", response)
+        self.assertNotIn("用户姓名：张三", content)
+        self.assertEqual(content.count("用户姓名："), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

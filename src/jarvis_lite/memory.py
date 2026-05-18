@@ -51,7 +51,7 @@ def append_memory(paths: ProjectPaths, fact: str) -> str:
     if not existing.strip():
         content = f"{PROFILE_HEADER}\n{bullet}\n"
     else:
-        content = existing.rstrip() + f"\n{bullet}\n"
+        content = _replace_or_append_bullet(existing, normalized)
 
     paths.profile_path.write_text(content, encoding="utf-8")
     return normalized
@@ -110,3 +110,34 @@ def _find_memory_value(content: str, key: str) -> str:
         if line.startswith(prefix):
             return line.removeprefix(prefix).strip()
     return ""
+
+
+def _replace_or_append_bullet(existing: str, normalized: str) -> str:
+    key = _memory_key(normalized)
+    if not key:
+        return existing.rstrip() + f"\n- {normalized}\n"
+
+    replaced = False
+    lines = []
+    prefix = f"- {key}："
+    for raw_line in existing.rstrip().splitlines():
+        if raw_line.strip().startswith(prefix):
+            if not replaced:
+                lines.append(f"- {normalized}")
+                replaced = True
+            continue
+        lines.append(raw_line)
+
+    if not replaced:
+        lines.append(f"- {normalized}")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _memory_key(normalized: str) -> str:
+    if "：" not in normalized:
+        return ""
+    key, value = normalized.split("：", 1)
+    if not key.strip() or not value.strip():
+        return ""
+    return key.strip()

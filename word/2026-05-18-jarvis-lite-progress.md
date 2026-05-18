@@ -36,11 +36,13 @@
 - 新增 `/history`、`/save-summary 文件名`、`/clear`，支持查看会话、保存会话总结和清空当前会话。
 - 新增长期记忆写入能力：`/remember 记忆内容` 可以追加到 `memory/profile.md`。
 - 新增基础身份识别：`我叫...` 会写入 `用户姓名`，`我是...` 会写入 `用户身份`，之后可以回答“你知道我是谁吗”。
+- 调整 README 职责：README 只保留项目入口、快速启动和当前状态，整体方案迁移到 `word/jarvis-lite-overall-plan.md`。
+- 增强长期记忆更新：同 key 记忆会替换旧值，例如再次说“我叫...”会更新 `用户姓名`，不会保留旧姓名。
 
 ## 验证结果
 
 - `.venv\Scripts\python.exe --version`：当前项目虚拟环境使用 Python 3.13.2。
-- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：41 个测试通过。
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：43 个测试通过。
 - `.venv\Scripts\python.exe src/app.py --once "/memory"`：可以读取长期记忆。
 - `.venv\Scripts\python.exe src/app.py --once "/list"`：可以调用 data 目录列表工具，并记录到 `logs/jarvis.log`。
 - `.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 使用什么 Python 版本？"`：可以基于 `data/jarvis-lite.md` 返回带来源的回答。
@@ -48,7 +50,8 @@
 - `.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 当前可以什么？"`：可以返回多个强相关资料片段。
 - 交互式 CLI 冒烟验证通过：`/history` 能查看当前会话，`/save-summary cli-smoke` 能写入会话总结；临时冒烟文件已删除，不作为正式文档保留。
 - 身份记忆 CLI 冒烟验证通过：`我叫测试用户`、`我是Jarvis Lite测试者` 能写入长期记忆，随后“你知道我是谁吗”能回答身份；测试后已恢复原始 `memory/profile.md`。
+- 记忆更新测试通过：先写入 `用户姓名：张三`，再写入 `用户姓名：李四`，最终只保留 `李四`。
 
 ## 下一步
 
-继续完善长期记忆体验，例如支持更自然的记忆更新、记忆分类和可编辑的记忆查看。
+继续完善长期记忆体验，例如记忆分类、记忆查看筛选和可编辑的记忆管理命令。

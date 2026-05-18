@@ -62,6 +62,18 @@ class MemoryTests(unittest.TestCase):
             content = read_profile(paths)
             self.assertEqual(content.count("用户姓名：张三"), 1)
 
+    def test_append_memory_updates_existing_keyed_fact(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir))
+
+            append_memory(paths, "用户姓名：张三")
+            append_memory(paths, "用户姓名：李四")
+
+            content = read_profile(paths)
+            self.assertNotIn("用户姓名：张三", content)
+            self.assertIn("用户姓名：李四", content)
+            self.assertEqual(content.count("用户姓名："), 1)
+
     def test_find_identity_extracts_name_and_role(self):
         content = "# 长期记忆\n\n- 用户姓名：张三\n- 用户身份：Jarvis Lite 项目创建者\n"
 
