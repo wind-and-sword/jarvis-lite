@@ -4,3 +4,4 @@ __pycache__/
 .pytest_cache/
 .codex/
 logs/*.log
+/日志.txt
