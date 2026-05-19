@@ -121,7 +121,7 @@ class JarvisAgent:
                     self._strip_quotes(args[0]),
                     self._strip_quotes(args[1]) if len(args) > 1 else None,
                 )
-            except (FileExistsError, FileNotFoundError, UnicodeDecodeError, ValueError) as exc:
+            except (FileExistsError, FileNotFoundError, RuntimeError, UnicodeDecodeError, ValueError) as exc:
                 return f"导入失败：{exc}"
             imported_paths = "、".join(f"data/{document.relative_path}" for document in summary.documents)
             self.tools.run("record_log", message=f"导入知识库资料：{imported_paths}")
@@ -143,7 +143,7 @@ class JarvisAgent:
                 "/memory：查看长期记忆",
                 "/status：查看阶段 1 当前状态",
                 "/kb：查看个人知识库状态",
-                "/import 源文件或目录路径 [目标文件名]：导入 Markdown 或 txt 到 data/",
+                "/import 源文件或目录路径 [目标文件名]：导入 Markdown、txt、PDF 或 JSON 聊天记录到 data/",
                 "/tag 文件名 标签...：给 data 资料设置标签",
                 "/list [目录]：列出 data 目录内容",
                 "/read 文件名：读取 data 目录中的文本文件",

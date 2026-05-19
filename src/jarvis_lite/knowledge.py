@@ -9,6 +9,7 @@ from .config import ProjectPaths
 
 
 SUPPORTED_TEXT_SUFFIXES = {".md", ".txt"}
+SUPPORTED_IMPORT_SUFFIXES = SUPPORTED_TEXT_SUFFIXES | {".json", ".pdf"}
 TAG_METADATA_FILENAME = ".knowledge-tags.json"
 
 
@@ -127,7 +128,7 @@ def describe_knowledge_base(paths: ProjectPaths) -> str:
     lines = [
         "个人知识库状态：",
         "- 根目录：data",
-        f"- 支持格式：{'、'.join(sorted(SUPPORTED_TEXT_SUFFIXES))}",
+        f"- 支持导入格式：{'、'.join(sorted(SUPPORTED_IMPORT_SUFFIXES))}",
         f"- 资料文件：{index.document_count} 个",
         f"- 可检索文本行：{index.searchable_line_count} 行",
     ]
@@ -150,23 +151,25 @@ def describe_knowledge_base(paths: ProjectPaths) -> str:
 
 
 def import_knowledge_file(paths: ProjectPaths, source_path: str | Path, target_name: str | None = None) -> KnowledgeDocument:
-    """把外部 Markdown 或 txt 文件导入 data 目录，供知识库检索。"""
+    """把外部资料导入 data 目录，供知识库检索。"""
 
     source = Path(source_path).expanduser().resolve()
     if not source.is_file():
         raise FileNotFoundError(f"源文件不存在：{source_path}")
-    if source.suffix.lower() not in SUPPORTED_TEXT_SUFFIXES:
-        raise ValueError(f"仅支持导入这些格式：{', '.join(sorted(SUPPORTED_TEXT_SUFFIXES))}")
+    if source.suffix.lower() not in SUPPORTED_IMPORT_SUFFIXES:
+        raise ValueError(f"仅支持导入这些格式：{', '.join(sorted(SUPPORTED_IMPORT_SUFFIXES))}")
 
-    name = _target_filename(source, target_name)
+    name = _target_filename(source, target_name, _target_suffix_for_source(source))
     if Path(name).suffix.lower() not in SUPPORTED_TEXT_SUFFIXES:
         raise ValueError(f"目标文件必须是这些格式：{', '.join(sorted(SUPPORTED_TEXT_SUFFIXES))}")
+    if source.suffix.lower() in {".json", ".pdf"} and Path(name).suffix.lower() != ".md":
+        raise ValueError("PDF 和聊天记录导入目标文件必须是 Markdown。")
 
     target = paths.data_dir / name
     if target.exists():
         raise FileExistsError(f"目标文件已存在：data/{name}")
 
-    content = source.read_text(encoding="utf-8")
+    content = _read_import_content(source)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(content, encoding="utf-8")
     return KnowledgeDocument(
@@ -190,7 +193,7 @@ def import_knowledge_path(paths: ProjectPaths, source_path: str | Path, target_n
     skipped_count = 0
     for file_path in _iter_import_source_files(source):
         relative_path = file_path.relative_to(source).as_posix()
-        if _has_hidden_part(file_path, source) or file_path.suffix.lower() not in SUPPORTED_TEXT_SUFFIXES:
+        if _has_hidden_part(file_path, source) or file_path.suffix.lower() not in SUPPORTED_IMPORT_SUFFIXES:
             skipped_count += 1
             continue
         imported.append(import_knowledge_file(paths, file_path, relative_path))
@@ -240,17 +243,21 @@ def _iter_import_source_files(source_dir: Path) -> list[Path]:
     return sorted(files, key=lambda item: item.relative_to(source_dir).as_posix().lower())
 
 
-def _target_filename(source: Path, target_name: str | None) -> str:
+def _target_filename(source: Path, target_name: str | None, default_suffix: str | None = None) -> str:
+    suffix = default_suffix or source.suffix.lower()
     if target_name is None:
-        return source.name
+        return source.with_suffix(suffix).name
 
     name = target_name.strip().replace("\\", "/").lstrip("/")
     if not name:
         raise ValueError("目标文件名不能为空。")
     if ".." in Path(name).parts:
         raise ValueError("目标文件名不能包含上级目录。")
-    if not Path(name).suffix:
-        return f"{name}{source.suffix.lower()}"
+    path_name = Path(name)
+    if path_name.suffix.lower() == source.suffix.lower() and suffix != source.suffix.lower():
+        return path_name.with_suffix(suffix).as_posix()
+    if not path_name.suffix:
+        return f"{name}{suffix}"
     return name
 
 
@@ -285,6 +292,102 @@ def _searchable_lines(file_path: Path) -> list[str]:
             continue
         lines.append(text)
     return lines
+
+
+def _target_suffix_for_source(source: Path) -> str:
+    if source.suffix.lower() in {".json", ".pdf"}:
+        return ".md"
+    return source.suffix.lower()
+
+
+def _read_import_content(source: Path) -> str:
+    suffix = source.suffix.lower()
+    if suffix == ".pdf":
+        return _pdf_to_markdown(source)
+    if suffix == ".json":
+        return _chat_json_to_markdown(source)
+    return source.read_text(encoding="utf-8")
+
+
+def _pdf_to_markdown(source: Path) -> str:
+    try:
+        from pypdf import PdfReader
+    except ImportError as exc:
+        raise RuntimeError("导入 PDF 需要安装 pypdf。") from exc
+
+    reader = PdfReader(str(source))
+    lines = [f"# {source.stem}", "", f"> 来源：{source.name}", ""]
+    for page_number, page in enumerate(reader.pages, start=1):
+        text = (page.extract_text() or "").strip()
+        if not text:
+            continue
+        lines.append(f"## 第 {page_number} 页")
+        lines.append("")
+        lines.extend(_clean_multiline_text(text))
+        lines.append("")
+
+    if len(lines) <= 4:
+        raise ValueError("PDF 中没有可导入的文本内容。")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _chat_json_to_markdown(source: Path) -> str:
+    raw = json.loads(source.read_text(encoding="utf-8"))
+    messages = _extract_chat_messages(raw)
+    if not messages:
+        raise ValueError("聊天记录 JSON 中没有可导入的消息。")
+
+    lines = [f"# {source.stem}", "", f"> 来源：{source.name}", "", "## 对话记录"]
+    for index, message in enumerate(messages, start=1):
+        speaker = _message_speaker(message)
+        content = _message_content(message)
+        if not content:
+            continue
+        lines.append("")
+        lines.append(f"### 第 {index} 条")
+        lines.append("")
+        lines.append(f"{speaker}：{content}")
+
+    if len(lines) <= 5:
+        raise ValueError("聊天记录 JSON 中没有可导入的消息。")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _extract_chat_messages(raw: object) -> list[dict[str, object]]:
+    if isinstance(raw, list):
+        return [item for item in raw if isinstance(item, dict)]
+    if isinstance(raw, dict):
+        messages = raw.get("messages") or raw.get("conversation") or raw.get("items")
+        if isinstance(messages, list):
+            return [item for item in messages if isinstance(item, dict)]
+    return []
+
+
+def _message_speaker(message: dict[str, object]) -> str:
+    raw = message.get("role") or message.get("speaker") or message.get("from") or message.get("name") or "未知"
+    speaker = str(raw).strip()
+    mapping = {
+        "assistant": "助手",
+        "ai": "助手",
+        "bot": "助手",
+        "user": "用户",
+        "human": "用户",
+        "system": "系统",
+    }
+    return mapping.get(speaker.lower(), speaker)
+
+
+def _message_content(message: dict[str, object]) -> str:
+    raw = message.get("content") or message.get("text") or message.get("message")
+    if raw is None:
+        return ""
+    if isinstance(raw, list):
+        return " ".join(str(item).strip() for item in raw if str(item).strip())
+    return str(raw).strip()
+
+
+def _clean_multiline_text(text: str) -> list[str]:
+    return [line.strip() for line in text.splitlines() if line.strip()]
 
 
 def _tag_metadata_path(paths: ProjectPaths) -> Path:

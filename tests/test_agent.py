@@ -1,4 +1,5 @@
 import sys
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -90,6 +91,19 @@ class AgentTests(unittest.TestCase):
         self.assertIn("成功 1 个", response)
         self.assertIn("跳过 1 个", response)
         self.assertIn("批量导入资料", self.agent.handle("/ask Jarvis Lite 可以批量导入什么？"))
+
+    def test_import_command_can_import_chat_json(self):
+        source = Path(self.temp_dir.name) / "chat.json"
+        source.write_text(
+            json.dumps([{"role": "assistant", "content": "Jarvis Lite 可以导入聊天记录。"}], ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle(f"/import {source}")
+
+        self.assertIn("已导入知识库", response)
+        self.assertIn("data/chat.md", response)
+        self.assertIn("聊天记录", self.agent.handle("/ask 聊天记录"))
 
     def test_list_command_uses_data_tool(self):
         response = self.agent.handle("/list")

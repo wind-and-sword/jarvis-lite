@@ -1,4 +1,5 @@
 import sys
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -214,6 +215,57 @@ class KnowledgeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             import_knowledge_file(self.paths, source)
 
+    def test_import_knowledge_file_converts_pdf_to_markdown_document(self):
+        source = Path(self.temp_dir.name) / "manual.pdf"
+        source.write_bytes(_simple_pdf_bytes("Jarvis Lite PDF knowledge"))
+
+        result = import_knowledge_file(self.paths, source)
+
+        target = self.paths.data_dir / "manual.md"
+        self.assertEqual(result.relative_path, "manual.md")
+        self.assertTrue(target.is_file())
+        self.assertIn("Jarvis Lite PDF knowledge", target.read_text(encoding="utf-8"))
+
+    def test_import_knowledge_file_converts_chat_json_to_markdown_document(self):
+        source = Path(self.temp_dir.name) / "chat.json"
+        source.write_text(
+            json.dumps(
+                {
+                    "messages": [
+                        {"role": "user", "content": "Jarvis Lite 能导入聊天记录吗？"},
+                        {"role": "assistant", "content": "Jarvis Lite 可以导入 JSON 聊天记录。"},
+                    ]
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        result = import_knowledge_file(self.paths, source)
+
+        target = self.paths.data_dir / "chat.md"
+        self.assertEqual(result.relative_path, "chat.md")
+        self.assertIn("用户：Jarvis Lite 能导入聊天记录吗？", target.read_text(encoding="utf-8"))
+        self.assertIn("助手：Jarvis Lite 可以导入 JSON 聊天记录。", target.read_text(encoding="utf-8"))
+
+    def test_import_knowledge_path_imports_pdf_and_json_from_directory(self):
+        source_dir = Path(self.temp_dir.name) / "mixed"
+        source_dir.mkdir()
+        (source_dir / "manual.pdf").write_bytes(_simple_pdf_bytes("Jarvis Lite PDF batch import"))
+        (source_dir / "chat.json").write_text(
+            json.dumps([{"speaker": "用户", "text": "批量导入聊天记录"}], ensure_ascii=False),
+            encoding="utf-8",
+        )
+        (source_dir / "skip.png").write_text("跳过", encoding="utf-8")
+
+        summary = import_knowledge_path(self.paths, source_dir)
+
+        self.assertEqual(summary.imported_count, 2)
+        self.assertEqual(summary.skipped_count, 1)
+        self.assertEqual([document.relative_path for document in summary.documents], ["chat.md", "manual.md"])
+        self.assertTrue((self.paths.data_dir / "manual.md").is_file())
+        self.assertTrue((self.paths.data_dir / "chat.md").is_file())
+
     def test_import_knowledge_file_rejects_existing_target(self):
         source = Path(self.temp_dir.name) / "outside.md"
         source.write_text("新资料\n", encoding="utf-8")
@@ -250,6 +302,34 @@ class KnowledgeTests(unittest.TestCase):
         self.assertEqual(summary.imported_count, 0)
         self.assertEqual(summary.skipped_count, 1)
         self.assertFalse((self.paths.data_dir / "secret.md").exists())
+
+def _simple_pdf_bytes(text: str) -> bytes:
+    stream = f"BT\n/F1 18 Tf\n72 720 Td\n({text}) Tj\nET\n".encode("ascii")
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        b"<< /Length " + str(len(stream)).encode("ascii") + b" >>\nstream\n" + stream + b"endstream",
+    ]
+    pdf = b"%PDF-1.4\n"
+    offsets = []
+    for index, item in enumerate(objects, start=1):
+        offsets.append(len(pdf))
+        pdf += f"{index} 0 obj\n".encode("ascii") + item + b"\nendobj\n"
+    xref_offset = len(pdf)
+    pdf += f"xref\n0 {len(objects) + 1}\n".encode("ascii")
+    pdf += b"0000000000 65535 f \n"
+    for offset in offsets:
+        pdf += f"{offset:010d} 00000 n \n".encode("ascii")
+    pdf += (
+        b"trailer\n"
+        + f"<< /Root 1 0 R /Size {len(objects) + 1} >>\n".encode("ascii")
+        + b"startxref\n"
+        + str(xref_offset).encode("ascii")
+        + b"\n%%EOF\n"
+    )
+    return pdf
 
 
 if __name__ == "__main__":

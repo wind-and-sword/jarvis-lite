@@ -13,7 +13,7 @@
 
 ## 当前目标
 
-继续阶段 2 个人知识库能力，优先完成 Markdown/txt 资料导入、基础问答质量优化和简单标签分类，让外部文本资料能进入 `data/`，随后被 `/kb` 统计并被 `/ask` 检索回答。
+继续阶段 2 个人知识库能力，优先完成 Markdown/txt/PDF/JSON 资料导入、基础问答质量优化和简单标签分类，让外部资料能进入 `data/`，随后被 `/kb` 统计并被 `/ask` 检索回答。
 
 ## 已完成
 
@@ -32,19 +32,23 @@
 - 新增 `/tag 文件名 标签...` 命令，可为 `data/` 中的 Markdown 或 txt 资料设置简单标签。
 - 标签元数据保存到 `data/.knowledge-tags.json`，不引入数据库或第三方依赖。
 - `/kb` 会展示标签列表和单个资料的标签，`/ask` 可以通过标签命中对应资料内容。
+- 新增 PDF 导入：使用 `pypdf` 抽取文本并转换成同名 Markdown，例如 `manual.pdf` 导入为 `data/manual.md`。
+- 新增 JSON 聊天记录导入：支持列表格式或包含 `messages` 的对象格式，读取 `role`/`speaker`/`from` 和 `content`/`text`/`message` 字段并转换成 Markdown。
+- 目录批量导入现在会扫描 `.md`、`.txt`、`.pdf`、`.json`，其中 PDF 和 JSON 会转换成 Markdown 后进入知识库。
 
 ## 验证结果
 
-- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：64 个测试通过。
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：68 个测试通过。
 - `.venv\Scripts\python.exe src/app.py --once "/import .codex/import-smoke.md import-smoke.md"`：可以导入 Markdown 测试资料。
 - `.venv\Scripts\python.exe src/app.py --once "/import .codex/import-smoke-dir"`：可以批量导入目录中的 Markdown 和 txt 资料。
 - `.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 可以导入什么？"`：可以基于导入资料返回来源回答。
 - `.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 使用什么 Python 版本？"`：可以返回带命中数量摘要、编号和来源的回答。
 - 临时目录 Agent 冒烟验证：`/tag note.txt 项目 Python` 可更新标签，`/kb` 可显示标签，`/ask Python` 可通过标签命中资料。
+- 临时目录 Agent 冒烟验证：`/import chat.json` 和 `/import manual.pdf` 可生成 Markdown 资料，随后 `/ask 聊天记录` 和 `/ask PDF import smoke` 可命中导入内容。
 
 ## 下一步
 
 继续增强知识库导入体验：
 
-1. 评估 PDF 摘要和聊天记录导入。
-2. 再评估云数据库是否用于跨设备同步或结构化检索。
+1. 再评估云数据库是否用于跨设备同步或结构化检索。
+2. 后续如需要真正“摘要”，再接入大模型或本地摘要流程；当前 PDF 导入是文本抽取转换。
