@@ -1,11 +1,15 @@
+import io
+import os
 import sys
 import tomllib
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
+os.environ.setdefault("QT_QPA_PLATFORM", "minimal")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from jarvis_lite.desktop.app import build_window_title
+from jarvis_lite.desktop.app import build_window_title, main
 
 
 class DesktopAppTests(unittest.TestCase):
@@ -17,6 +21,16 @@ class DesktopAppTests(unittest.TestCase):
 
         self.assertEqual(pyproject["project"]["scripts"]["jarvis-lite-desktop"], "jarvis_lite.desktop.app:main")
         self.assertIn("PySide6>=6,<7", pyproject["project"]["dependencies"])
+
+    def test_smoke_mode_creates_desktop_pet_window(self):
+        output = io.StringIO()
+
+        with redirect_stdout(output):
+            exit_code = main(["--smoke"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("Jarvis Lite 桌面助手", output.getvalue())
+        self.assertIn("desktopPetWindow", output.getvalue())
 
 
 if __name__ == "__main__":

@@ -23,16 +23,21 @@
 - 新增 `tests/test_desktop_bridge.py`，覆盖会话调用、错误状态和快捷命令。
 - 新增 PySide6 依赖和 `jarvis-lite-desktop` 桌面入口脚本。
 - 新增 `src/jarvis_lite/desktop/app.py`，提供最小助手面板、文本输入、快捷命令按钮和 `--smoke` 验证模式。
+- 新增 `src/jarvis_lite/desktop/widgets.py`，拆分 `AssistantPanel` 和 `DesktopPetWindow`。
+- `DesktopPetWindow` 已具备无边框、置顶、小尺寸常驻窗口和点击展开/收起面板能力。
+- `AssistantPanel` 已能通过 `DesktopBridge` 发送文本，并展示会话输出和状态。
+- 小助手会跟随面板执行结果显示 `待命`、`思考`、`工作`、`完成`、`错误` 等状态。
 
 ## 验证结果
 
 - `.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge -v`：3 个桌面 bridge 测试通过。
-- `.venv\Scripts\python.exe -m unittest tests.test_desktop_app -v`：2 个桌面入口测试通过。
-- `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：可以加载 PySide6 并输出桌面应用标题。
-- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：89 个测试通过。
+- `.venv\Scripts\python.exe -m unittest tests.test_desktop_app -v`：3 个桌面入口测试通过。
+- `.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets -v`：4 个桌面 widget 测试通过。
+- `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：可以创建桌面小助手窗口并输出 `desktopPetWindow`。
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：94 个测试通过。
 
 ## 下一步
 
-1. 拆分助手面板 widget，便于后续截图和 UI 测试。
-2. 实现桌面角落常驻的小助手窗口、拖动和点击展开面板。
-3. 增加角色图片资产和状态切换显示。
+1. 增加角色图片资产和状态切换显示。
+2. 增加窗口位置保存和开机后恢复位置。
+3. 增加更接近虚拟宠物的待机/工作动效。

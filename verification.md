@@ -10,6 +10,7 @@
 .\.venv\Scripts\python.exe -m pip show pypdf
 .\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge -v
 .\.venv\Scripts\python.exe -m unittest tests.test_desktop_app -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets -v
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 .\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
 .\.venv\Scripts\python.exe src/app.py --once "/memory"
@@ -134,10 +135,11 @@ hello
 
 ## 验证结论
 
-- 单元测试：89 个测试通过。
+- 单元测试：94 个测试通过。
 - 桌面桥接层：`tests.test_desktop_bridge` 3 个测试通过，覆盖会话调用、错误状态和快捷命令。
-- 桌面入口：`tests.test_desktop_app` 2 个测试通过，覆盖桌面标题、脚本入口和 PySide6 依赖声明。
-- 桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 可加载 PySide6 并输出 `Jarvis Lite 桌面助手`。
+- 桌面入口：`tests.test_desktop_app` 3 个测试通过，覆盖桌面标题、脚本入口、PySide6 依赖声明和 smoke 创建桌面小助手窗口。
+- 桌面窗口：`tests.test_desktop_widgets` 4 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心和小助手状态同步。
+- 桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 可创建桌面小助手窗口并输出 `desktopPetWindow`。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
 - 阶段状态：`/status` 可输出阶段 1 能力闭环和关键文件位置。
