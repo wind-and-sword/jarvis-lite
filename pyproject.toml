@@ -4,11 +4,13 @@ version = "0.1.0"
 description = "Personal local AI assistant prototype."
 requires-python = ">=3.13,<3.14"
 dependencies = [
+    "PySide6>=6,<7",
     "pypdf>=6,<7",
 ]
 
 [project.scripts]
 jarvis-lite = "jarvis_lite.app:main"
+jarvis-lite-desktop = "jarvis_lite.desktop.app:main"
 
 [build-system]
 requires = ["setuptools>=68"]

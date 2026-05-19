@@ -21,14 +21,18 @@
 - 新增 `DesktopBridge`，封装 `ConversationSession.handle()`，返回 `DesktopResponse`。
 - 新增 `quick_commands()`，为未来助手面板提供快捷命令按钮数据。
 - 新增 `tests/test_desktop_bridge.py`，覆盖会话调用、错误状态和快捷命令。
+- 新增 PySide6 依赖和 `jarvis-lite-desktop` 桌面入口脚本。
+- 新增 `src/jarvis_lite/desktop/app.py`，提供最小助手面板、文本输入、快捷命令按钮和 `--smoke` 验证模式。
 
 ## 验证结果
 
 - `.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge -v`：3 个桌面 bridge 测试通过。
-- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：87 个测试通过。
+- `.venv\Scripts\python.exe -m unittest tests.test_desktop_app -v`：2 个桌面入口测试通过。
+- `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：可以加载 PySide6 并输出桌面应用标题。
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：89 个测试通过。
 
 ## 下一步
 
-1. 引入 PySide6，创建最小桌面应用入口。
-2. 实现可显示的助手面板，先接入文本输入和输出。
-3. 再实现桌面角落常驻的小助手窗口、拖动和点击展开面板。
+1. 拆分助手面板 widget，便于后续截图和 UI 测试。
+2. 实现桌面角落常驻的小助手窗口、拖动和点击展开面板。
+3. 增加角色图片资产和状态切换显示。

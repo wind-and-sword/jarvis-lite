@@ -9,7 +9,9 @@
 .\.venv\Scripts\python.exe --version
 .\.venv\Scripts\python.exe -m pip show pypdf
 .\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_app -v
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
 .\.venv\Scripts\python.exe src/app.py --once "/memory"
 .\.venv\Scripts\python.exe src/app.py --once "/status"
 .\.venv\Scripts\python.exe src/app.py --once "/kb"
@@ -132,8 +134,10 @@ hello
 
 ## 验证结论
 
-- 单元测试：87 个测试通过。
+- 单元测试：89 个测试通过。
 - 桌面桥接层：`tests.test_desktop_bridge` 3 个测试通过，覆盖会话调用、错误状态和快捷命令。
+- 桌面入口：`tests.test_desktop_app` 2 个测试通过，覆盖桌面标题、脚本入口和 PySide6 依赖声明。
+- 桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 可加载 PySide6 并输出 `Jarvis Lite 桌面助手`。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
 - 阶段状态：`/status` 可输出阶段 1 能力闭环和关键文件位置。
