@@ -4,7 +4,7 @@ import shlex
 from pathlib import Path
 
 from .config import ProjectPaths, build_project_paths
-from .knowledge import answer_from_data, describe_knowledge_base, import_knowledge_file
+from .knowledge import answer_from_data, describe_knowledge_base, import_knowledge_path
 from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
 from .tools import ToolRegistry
 
@@ -103,17 +103,25 @@ class JarvisAgent:
 
         if command == "/import":
             if not args:
-                return "用法：/import 源文件路径 [目标文件名]"
+                return "用法：/import 源文件或目录路径 [目标文件名]"
             try:
-                imported = import_knowledge_file(
+                summary = import_knowledge_path(
                     self.paths,
                     self._strip_quotes(args[0]),
                     self._strip_quotes(args[1]) if len(args) > 1 else None,
                 )
             except (FileExistsError, FileNotFoundError, UnicodeDecodeError, ValueError) as exc:
                 return f"导入失败：{exc}"
-            self.tools.run("record_log", message=f"导入知识库资料：data/{imported.relative_path}")
-            return f"已导入知识库：data/{imported.relative_path}（{imported.searchable_line_count} 行）"
+            imported_paths = "、".join(f"data/{document.relative_path}" for document in summary.documents)
+            self.tools.run("record_log", message=f"导入知识库资料：{imported_paths}")
+            if summary.scanned_count == 1 and summary.documents:
+                document = summary.documents[0]
+                return f"已导入知识库：data/{document.relative_path}（{document.searchable_line_count} 行）"
+            return (
+                f"已导入知识库：{summary.scanned_count} 个文件，"
+                f"成功 {summary.imported_count} 个，跳过 {summary.skipped_count} 个，"
+                f"可检索文本行 {summary.searchable_line_count} 行。"
+            )
 
         return f"未知命令：{command}。输入 /help 查看可用命令。"
 
@@ -124,7 +132,7 @@ class JarvisAgent:
                 "/memory：查看长期记忆",
                 "/status：查看阶段 1 当前状态",
                 "/kb：查看个人知识库状态",
-                "/import 源文件路径 [目标文件名]：导入 Markdown 或 txt 到 data/",
+                "/import 源文件或目录路径 [目标文件名]：导入 Markdown 或 txt 到 data/",
                 "/list [目录]：列出 data 目录内容",
                 "/read 文件名：读取 data 目录中的文本文件",
                 "/ask 问题：基于 data 目录中的文本资料回答",

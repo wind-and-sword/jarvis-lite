@@ -12,6 +12,7 @@
 .\.venv\Scripts\python.exe src/app.py --once "/status"
 .\.venv\Scripts\python.exe src/app.py --once "/kb"
 .\.venv\Scripts\python.exe src/app.py --once "/import .codex/import-smoke.md import-smoke.md"
+.\.venv\Scripts\python.exe src/app.py --once "/import .codex/import-smoke-dir"
 .\.venv\Scripts\python.exe src/app.py --once "/list"
 .\.venv\Scripts\python.exe src/app.py --once "你好"
 .\.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 使用什么 Python 版本？"
@@ -32,12 +33,12 @@ hello
 
 ## 验证结论
 
-- 单元测试：53 个测试通过。
+- 单元测试：56 个测试通过。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
 - 阶段状态：`/status` 可输出阶段 1 能力闭环和关键文件位置。
 - 知识库状态：`/kb` 可输出 `data/` 中可检索资料数量、行数和资料列表。
-- 资料导入：`/import 源文件路径 [目标文件名]` 可把 Markdown 或 txt 导入 `data/`，导入后可被 `/kb` 和 `/ask` 使用。
+- 资料导入：`/import 源文件或目录路径 [目标文件名]` 可把 Markdown、txt 或目录批量导入 `data/`，导入后可被 `/kb` 和 `/ask` 使用。
 - 工具日志：`/list` 会写入 `logs/jarvis.log`。
 - Python 版本：项目虚拟环境使用 Python 3.13.2。
 - 资料问答：`/ask` 和普通问题可以基于 `data/` 文本返回最多 3 条带来源的回答，并过滤弱相关片段。

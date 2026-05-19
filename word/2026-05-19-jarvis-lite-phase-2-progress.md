@@ -24,18 +24,22 @@
 - 导入时拒绝覆盖 `data/` 中已存在的目标文件。
 - 导入成功后记录到 `logs/jarvis.log`。
 - 导入后的资料可立即被 `/kb` 统计，并可通过 `/ask` 命中。
+- `/import` 现在也支持目录路径，会递归导入目录中的 `.md` 和 `.txt` 文件。
+- 目录导入会保留相对目录结构，例如 `projects/notes.txt` 会写入 `data/projects/notes.txt`。
+- 目录导入会跳过隐藏目录和不支持格式，并输出扫描、成功、跳过和可检索行数摘要。
 
 ## 验证结果
 
-- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：53 个测试通过。
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：56 个测试通过。
 - `.venv\Scripts\python.exe src/app.py --once "/import .codex/import-smoke.md import-smoke.md"`：可以导入 Markdown 测试资料。
+- `.venv\Scripts\python.exe src/app.py --once "/import .codex/import-smoke-dir"`：可以批量导入目录中的 Markdown 和 txt 资料。
 - `.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 可以导入什么？"`：可以基于导入资料返回来源回答。
 
 ## 下一步
 
 继续增强知识库导入体验：
 
-1. 支持导入目录中的多个 `.md` 和 `.txt` 文件。
-2. 支持导入后输出更清晰的变更摘要。
-3. 增强 `/ask` 的排序和摘要质量。
-4. 再评估 PDF 摘要和聊天记录导入。
+1. 增强 `/ask` 的排序和摘要质量。
+2. 支持对导入资料做简单标签或分类。
+3. 评估 PDF 摘要和聊天记录导入。
+4. 再评估云数据库是否用于跨设备同步或结构化检索。

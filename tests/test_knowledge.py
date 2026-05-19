@@ -11,6 +11,7 @@ from jarvis_lite.knowledge import (
     build_knowledge_index,
     describe_knowledge_base,
     import_knowledge_file,
+    import_knowledge_path,
     search_data,
 )
 
@@ -158,6 +159,35 @@ class KnowledgeTests(unittest.TestCase):
 
         with self.assertRaises(FileExistsError):
             import_knowledge_file(self.paths, source)
+
+    def test_import_knowledge_path_imports_supported_files_from_directory(self):
+        source_dir = Path(self.temp_dir.name) / "knowledge"
+        nested_dir = source_dir / "projects"
+        nested_dir.mkdir(parents=True)
+        (source_dir / "intro.md").write_text("# 资料\n\nJarvis Lite 可以批量导入 Markdown。\n", encoding="utf-8")
+        (nested_dir / "notes.txt").write_text("阶段 2 支持目录导入。\n", encoding="utf-8")
+        (source_dir / "image.png").write_text("跳过", encoding="utf-8")
+
+        summary = import_knowledge_path(self.paths, source_dir)
+
+        self.assertEqual(summary.imported_count, 2)
+        self.assertEqual(summary.skipped_count, 1)
+        self.assertEqual(summary.searchable_line_count, 2)
+        self.assertEqual([document.relative_path for document in summary.documents], ["intro.md", "projects/notes.txt"])
+        self.assertTrue((self.paths.data_dir / "intro.md").is_file())
+        self.assertTrue((self.paths.data_dir / "projects" / "notes.txt").is_file())
+
+    def test_import_knowledge_path_skips_hidden_directory_files(self):
+        source_dir = Path(self.temp_dir.name) / "knowledge"
+        hidden_dir = source_dir / ".hidden"
+        hidden_dir.mkdir(parents=True)
+        (hidden_dir / "secret.md").write_text("不应导入\n", encoding="utf-8")
+
+        summary = import_knowledge_path(self.paths, source_dir)
+
+        self.assertEqual(summary.imported_count, 0)
+        self.assertEqual(summary.skipped_count, 1)
+        self.assertFalse((self.paths.data_dir / "secret.md").exists())
 
 
 if __name__ == "__main__":

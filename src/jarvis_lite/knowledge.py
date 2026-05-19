@@ -37,6 +37,24 @@ class KnowledgeIndex:
         return sum(document.searchable_line_count for document in self.documents)
 
 
+@dataclass(frozen=True)
+class KnowledgeImportSummary:
+    documents: tuple[KnowledgeDocument, ...]
+    skipped_count: int = 0
+
+    @property
+    def imported_count(self) -> int:
+        return len(self.documents)
+
+    @property
+    def searchable_line_count(self) -> int:
+        return sum(document.searchable_line_count for document in self.documents)
+
+    @property
+    def scanned_count(self) -> int:
+        return self.imported_count + self.skipped_count
+
+
 def search_data(paths: ProjectPaths, query: str, limit: int = 3) -> list[DataMatch]:
     """在 data 目录中查找和问题相关的文本行。"""
 
@@ -135,11 +153,35 @@ def import_knowledge_file(paths: ProjectPaths, source_path: str | Path, target_n
         raise FileExistsError(f"目标文件已存在：data/{name}")
 
     content = source.read_text(encoding="utf-8")
+    target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(content, encoding="utf-8")
     return KnowledgeDocument(
         relative_path=target.relative_to(paths.data_dir).as_posix(),
         searchable_line_count=len(_searchable_lines(target)),
     )
+
+
+def import_knowledge_path(paths: ProjectPaths, source_path: str | Path, target_name: str | None = None) -> KnowledgeImportSummary:
+    """导入单个资料文件，或递归导入目录中的 Markdown/txt 资料。"""
+
+    source = Path(source_path).expanduser().resolve()
+    if source.is_file():
+        return KnowledgeImportSummary((import_knowledge_file(paths, source, target_name),))
+    if not source.is_dir():
+        raise FileNotFoundError(f"源路径不存在：{source_path}")
+    if target_name:
+        raise ValueError("导入目录时不能指定目标文件名。")
+
+    imported: list[KnowledgeDocument] = []
+    skipped_count = 0
+    for file_path in _iter_import_source_files(source):
+        relative_path = file_path.relative_to(source).as_posix()
+        if _has_hidden_part(file_path, source) or file_path.suffix.lower() not in SUPPORTED_TEXT_SUFFIXES:
+            skipped_count += 1
+            continue
+        imported.append(import_knowledge_file(paths, file_path, relative_path))
+
+    return KnowledgeImportSummary(tuple(imported), skipped_count)
 
 
 def _iter_text_files(data_dir: Path) -> list[Path]:
@@ -155,16 +197,31 @@ def _iter_text_files(data_dir: Path) -> list[Path]:
     return sorted(files, key=lambda item: item.relative_to(data_dir).as_posix().lower())
 
 
+def _iter_import_source_files(source_dir: Path) -> list[Path]:
+    files: list[Path] = []
+    for file_path in source_dir.rglob("*"):
+        if not file_path.is_file():
+            continue
+        files.append(file_path)
+    return sorted(files, key=lambda item: item.relative_to(source_dir).as_posix().lower())
+
+
 def _target_filename(source: Path, target_name: str | None) -> str:
     if target_name is None:
         return source.name
 
-    name = Path(target_name.strip()).name
+    name = target_name.strip().replace("\\", "/").lstrip("/")
     if not name:
         raise ValueError("目标文件名不能为空。")
+    if ".." in Path(name).parts:
+        raise ValueError("目标文件名不能包含上级目录。")
     if not Path(name).suffix:
         return f"{name}{source.suffix.lower()}"
     return name
+
+
+def _has_hidden_part(file_path: Path, base_dir: Path) -> bool:
+    return any(part.startswith(".") for part in file_path.relative_to(base_dir).parts)
 
 
 def _searchable_lines(file_path: Path) -> list[str]:

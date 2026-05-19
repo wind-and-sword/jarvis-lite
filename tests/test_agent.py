@@ -60,6 +60,19 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("用法：/import", response)
 
+    def test_import_command_can_import_directory(self):
+        source_dir = Path(self.temp_dir.name) / "batch"
+        source_dir.mkdir()
+        (source_dir / "alpha.md").write_text("Jarvis Lite 可以批量导入资料。\n", encoding="utf-8")
+        (source_dir / "skip.png").write_text("跳过", encoding="utf-8")
+
+        response = self.agent.handle(f"/import {source_dir}")
+
+        self.assertIn("已导入知识库：2 个文件", response)
+        self.assertIn("成功 1 个", response)
+        self.assertIn("跳过 1 个", response)
+        self.assertIn("批量导入资料", self.agent.handle("/ask Jarvis Lite 可以批量导入什么？"))
+
     def test_list_command_uses_data_tool(self):
         response = self.agent.handle("/list")
 
