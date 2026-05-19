@@ -7,6 +7,7 @@ from .config import ProjectPaths, build_project_paths
 from .knowledge import answer_from_data, describe_knowledge_base, import_knowledge_path, set_document_tags
 from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
 from .tools import ToolRegistry
+from .voice import describe_voice, speak_text
 
 
 class JarvisAgent:
@@ -32,6 +33,9 @@ class JarvisAgent:
         if prompt in {"/kb", "kb", "/knowledge", "knowledge"}:
             self.tools.run("record_log", message="查看个人知识库状态")
             return describe_knowledge_base(self.paths)
+        if prompt in {"/voice-status", "voice-status"}:
+            self.tools.run("record_log", message="查看语音入口状态")
+            return describe_voice(self.paths)
 
         if is_identity_question(prompt):
             identity = find_identity(read_profile(self.paths))
@@ -112,6 +116,28 @@ class JarvisAgent:
             self.tools.run("record_log", message=f"更新知识库标签：data/{document.relative_path} -> {tags}")
             return f"已更新标签：data/{document.relative_path}（{tags}）"
 
+        if command == "/speak":
+            if not args:
+                return "用法：/speak 文本"
+            try:
+                result = speak_text(self.paths, " ".join(args))
+            except (RuntimeError, ValueError) as exc:
+                return f"语音播报失败：{exc}"
+            self.tools.run("record_log", message=f"语音播报：{' '.join(args)}")
+            return result.message
+
+        if command == "/voice":
+            if not args:
+                return "用法：/voice 已识别的语音文本"
+            spoken_text = " ".join(args)
+            answer = self.handle(spoken_text)
+            try:
+                speak_text(self.paths, answer)
+            except (RuntimeError, ValueError) as exc:
+                return f"识别文本：{spoken_text}\n助手：{answer}\n语音播报失败：{exc}"
+            self.tools.run("record_log", message=f"处理语音文本：{spoken_text}")
+            return f"识别文本：{spoken_text}\n助手：{answer}"
+
         if command == "/import":
             if not args:
                 return "用法：/import 源文件或目录路径 [目标文件名]"
@@ -143,6 +169,9 @@ class JarvisAgent:
                 "/memory：查看长期记忆",
                 "/status：查看阶段 1 当前状态",
                 "/kb：查看个人知识库状态",
+                "/voice-status：查看阶段 3 语音入口状态",
+                "/speak 文本：播报一段文本",
+                "/voice 已识别的语音文本：按语音入口处理文本并播报回答",
                 "/import 源文件或目录路径 [目标文件名]：导入 Markdown、txt、PDF 或 JSON 聊天记录到 data/",
                 "/tag 文件名 标签...：给 data 资料设置标签",
                 "/list [目录]：列出 data 目录内容",

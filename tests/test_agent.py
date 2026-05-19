@@ -1,8 +1,10 @@
 import sys
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -45,6 +47,34 @@ class AgentTests(unittest.TestCase):
         self.assertIn("资料文件：1 个", response)
         self.assertIn("可检索文本行：1 行", response)
         self.assertIn("data/note.txt", response)
+
+    def test_voice_status_command_reports_voice_entry(self):
+        with patch.dict(os.environ, {"JARVIS_LITE_VOICE_ENGINE": "transcript"}):
+            response = self.agent.handle("/voice-status")
+
+        self.assertIn("语音入口状态", response)
+        self.assertIn("当前引擎：transcript", response)
+
+    def test_speak_command_records_transcript(self):
+        with patch.dict(os.environ, {"JARVIS_LITE_VOICE_ENGINE": "transcript"}):
+            response = self.agent.handle("/speak 你好 Jarvis")
+
+        self.assertIn("已记录语音播报文本", response)
+        self.assertIn("你好 Jarvis", (self.paths.logs_dir / "voice-output.txt").read_text(encoding="utf-8"))
+
+    def test_voice_command_handles_recognized_text_and_speaks_response(self):
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 推荐使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+
+        with patch.dict(os.environ, {"JARVIS_LITE_VOICE_ENGINE": "transcript"}):
+            response = self.agent.handle("/voice Jarvis Lite 推荐使用什么 Python 版本？")
+
+        transcript = (self.paths.logs_dir / "voice-output.txt").read_text(encoding="utf-8")
+        self.assertIn("识别文本：Jarvis Lite 推荐使用什么 Python 版本？", response)
+        self.assertIn("Python 3.13", response)
+        self.assertIn("Python 3.13", transcript)
 
     def test_tag_command_updates_document_tags(self):
         response = self.agent.handle("/tag note.txt 项目 Python")

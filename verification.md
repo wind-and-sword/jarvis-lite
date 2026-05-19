@@ -19,6 +19,23 @@
 .\.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 使用什么 Python 版本？"
 .\.venv\Scripts\python.exe src/app.py --once "Jarvis Lite 当前可以读取什么？"
 @'
+import os
+import tempfile
+from pathlib import Path
+from jarvis_lite.agent import JarvisAgent
+from jarvis_lite.config import build_project_paths
+
+with tempfile.TemporaryDirectory() as temp_dir:
+    os.environ["JARVIS_LITE_VOICE_ENGINE"] = "transcript"
+    paths = build_project_paths(Path(temp_dir))
+    (paths.memory_dir / "profile.md").write_text("# 长期记忆\n\n- 用户偏好：中文回答\n", encoding="utf-8")
+    (paths.data_dir / "runtime.md").write_text("Jarvis Lite 推荐使用 Python 3.13 系列运行。", encoding="utf-8")
+    agent = JarvisAgent(paths)
+    print(agent.handle("/voice-status"))
+    print(agent.handle("/speak 你好 Jarvis"))
+    print(agent.handle("/voice Jarvis Lite 推荐使用什么 Python 版本？"))
+'@ | .\.venv\Scripts\python.exe -X utf8 -
+@'
 import tempfile
 from pathlib import Path
 from jarvis_lite.agent import JarvisAgent
@@ -91,7 +108,7 @@ hello
 
 ## 验证结论
 
-- 单元测试：68 个测试通过。
+- 单元测试：74 个测试通过。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
 - 阶段状态：`/status` 可输出阶段 1 能力闭环和关键文件位置。
@@ -101,6 +118,9 @@ hello
 - 聊天记录导入：JSON 列表或 `messages` 对象可以转换为 Markdown 对话记录。
 - 资料标签：`/tag 文件名 标签...` 可给 `data/` 中的 Markdown 或 txt 资料设置标签，标签写入 `data/.knowledge-tags.json`。
 - 标签展示与检索：`/kb` 会展示标签列表和资料标签，`/ask` 可以通过标签命中对应资料。
+- 语音状态：`/voice-status` 可输出当前语音引擎、播报记录路径和麦克风识别状态。
+- 语音播报：`/speak 文本` 可通过语音引擎播报；自动化验证使用 transcript 引擎写入 `logs/voice-output.txt`。
+- 语音入口：`/voice 已识别的语音文本` 可复用现有 Agent 回答流程，并播报回答。
 - 工具日志：`/list` 会写入 `logs/jarvis.log`。
 - Python 版本：项目虚拟环境使用 Python 3.13.2。
 - 资料问答：`/ask` 和普通问题可以基于 `data/` 文本返回最多 3 条带命中数量摘要、编号和来源的回答，并过滤弱相关片段。
@@ -112,4 +132,4 @@ hello
 ## 未覆盖事项
 
 - 未接入大模型 API。
-- 未实现语音入口、桌面 UI 或外部系统控制。
+- 未实现麦克风实时语音识别、桌面 UI 或外部系统控制。
