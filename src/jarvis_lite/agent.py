@@ -4,7 +4,7 @@ import shlex
 from pathlib import Path
 
 from .config import ProjectPaths, build_project_paths
-from .knowledge import answer_from_data, describe_knowledge_base
+from .knowledge import answer_from_data, describe_knowledge_base, import_knowledge_file
 from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
 from .tools import ToolRegistry
 
@@ -101,6 +101,20 @@ class JarvisAgent:
             self.tools.run("record_log", message=f"基于 data 目录回答显式问题：{question}")
             return answer
 
+        if command == "/import":
+            if not args:
+                return "用法：/import 源文件路径 [目标文件名]"
+            try:
+                imported = import_knowledge_file(
+                    self.paths,
+                    self._strip_quotes(args[0]),
+                    self._strip_quotes(args[1]) if len(args) > 1 else None,
+                )
+            except (FileExistsError, FileNotFoundError, UnicodeDecodeError, ValueError) as exc:
+                return f"导入失败：{exc}"
+            self.tools.run("record_log", message=f"导入知识库资料：data/{imported.relative_path}")
+            return f"已导入知识库：data/{imported.relative_path}（{imported.searchable_line_count} 行）"
+
         return f"未知命令：{command}。输入 /help 查看可用命令。"
 
     def _help(self) -> str:
@@ -110,6 +124,7 @@ class JarvisAgent:
                 "/memory：查看长期记忆",
                 "/status：查看阶段 1 当前状态",
                 "/kb：查看个人知识库状态",
+                "/import 源文件路径 [目标文件名]：导入 Markdown 或 txt 到 data/",
                 "/list [目录]：列出 data 目录内容",
                 "/read 文件名：读取 data 目录中的文本文件",
                 "/ask 问题：基于 data 目录中的文本资料回答",
@@ -134,6 +149,9 @@ class JarvisAgent:
 
     def _project_path(self, path: Path) -> str:
         return path.relative_to(self.paths.root).as_posix()
+
+    def _strip_quotes(self, value: str) -> str:
+        return value.strip().strip('"').strip("'")
 
     def _status(self) -> str:
         return "\n".join(

@@ -6,7 +6,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.knowledge import answer_from_data, build_knowledge_index, describe_knowledge_base, search_data
+from jarvis_lite.knowledge import (
+    answer_from_data,
+    build_knowledge_index,
+    describe_knowledge_base,
+    import_knowledge_file,
+    search_data,
+)
 
 
 class KnowledgeTests(unittest.TestCase):
@@ -117,6 +123,41 @@ class KnowledgeTests(unittest.TestCase):
 
         self.assertIn("个人知识库状态", description)
         self.assertIn("还没有可检索资料", description)
+
+    def test_import_knowledge_file_copies_supported_text_into_data(self):
+        source = Path(self.temp_dir.name) / "outside.md"
+        source.write_text("# 外部资料\n\nJarvis Lite 可以导入 Markdown。\n", encoding="utf-8")
+
+        result = import_knowledge_file(self.paths, source)
+
+        self.assertEqual(result.relative_path, "outside.md")
+        self.assertEqual(result.searchable_line_count, 1)
+        self.assertIn("导入 Markdown", (self.paths.data_dir / "outside.md").read_text(encoding="utf-8"))
+        self.assertIn("outside.md", [document.relative_path for document in build_knowledge_index(self.paths).documents])
+
+    def test_import_knowledge_file_can_use_target_name(self):
+        source = Path(self.temp_dir.name) / "outside.txt"
+        source.write_text("阶段 2 支持导入 txt。\n", encoding="utf-8")
+
+        result = import_knowledge_file(self.paths, source, "notes.md")
+
+        self.assertEqual(result.relative_path, "notes.md")
+        self.assertTrue((self.paths.data_dir / "notes.md").is_file())
+
+    def test_import_knowledge_file_rejects_unsupported_suffix(self):
+        source = Path(self.temp_dir.name) / "image.png"
+        source.write_text("不可导入", encoding="utf-8")
+
+        with self.assertRaises(ValueError):
+            import_knowledge_file(self.paths, source)
+
+    def test_import_knowledge_file_rejects_existing_target(self):
+        source = Path(self.temp_dir.name) / "outside.md"
+        source.write_text("新资料\n", encoding="utf-8")
+        (self.paths.data_dir / "outside.md").write_text("旧资料\n", encoding="utf-8")
+
+        with self.assertRaises(FileExistsError):
+            import_knowledge_file(self.paths, source)
 
 
 if __name__ == "__main__":

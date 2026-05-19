@@ -45,6 +45,21 @@ class AgentTests(unittest.TestCase):
         self.assertIn("可检索文本行：1 行", response)
         self.assertIn("data/note.txt", response)
 
+    def test_import_command_adds_text_file_to_knowledge_base(self):
+        source = Path(self.temp_dir.name) / "outside.md"
+        source.write_text("Jarvis Lite 可以导入外部资料。\n", encoding="utf-8")
+
+        response = self.agent.handle(f"/import {source}")
+
+        self.assertIn("已导入知识库", response)
+        self.assertIn("data/outside.md", response)
+        self.assertIn("外部资料", self.agent.handle("/ask Jarvis Lite 可以导入什么？"))
+
+    def test_import_command_reports_missing_argument(self):
+        response = self.agent.handle("/import")
+
+        self.assertIn("用法：/import", response)
+
     def test_list_command_uses_data_tool(self):
         response = self.agent.handle("/list")
 

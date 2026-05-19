@@ -117,6 +117,31 @@ def describe_knowledge_base(paths: ProjectPaths) -> str:
     return "\n".join(lines)
 
 
+def import_knowledge_file(paths: ProjectPaths, source_path: str | Path, target_name: str | None = None) -> KnowledgeDocument:
+    """把外部 Markdown 或 txt 文件导入 data 目录，供知识库检索。"""
+
+    source = Path(source_path).expanduser().resolve()
+    if not source.is_file():
+        raise FileNotFoundError(f"源文件不存在：{source_path}")
+    if source.suffix.lower() not in SUPPORTED_TEXT_SUFFIXES:
+        raise ValueError(f"仅支持导入这些格式：{', '.join(sorted(SUPPORTED_TEXT_SUFFIXES))}")
+
+    name = _target_filename(source, target_name)
+    if Path(name).suffix.lower() not in SUPPORTED_TEXT_SUFFIXES:
+        raise ValueError(f"目标文件必须是这些格式：{', '.join(sorted(SUPPORTED_TEXT_SUFFIXES))}")
+
+    target = paths.data_dir / name
+    if target.exists():
+        raise FileExistsError(f"目标文件已存在：data/{name}")
+
+    content = source.read_text(encoding="utf-8")
+    target.write_text(content, encoding="utf-8")
+    return KnowledgeDocument(
+        relative_path=target.relative_to(paths.data_dir).as_posix(),
+        searchable_line_count=len(_searchable_lines(target)),
+    )
+
+
 def _iter_text_files(data_dir: Path) -> list[Path]:
     files: list[Path] = []
     for file_path in data_dir.rglob("*"):
@@ -128,6 +153,18 @@ def _iter_text_files(data_dir: Path) -> list[Path]:
             continue
         files.append(file_path)
     return sorted(files, key=lambda item: item.relative_to(data_dir).as_posix().lower())
+
+
+def _target_filename(source: Path, target_name: str | None) -> str:
+    if target_name is None:
+        return source.name
+
+    name = Path(target_name.strip()).name
+    if not name:
+        raise ValueError("目标文件名不能为空。")
+    if not Path(name).suffix:
+        return f"{name}{source.suffix.lower()}"
+    return name
 
 
 def _searchable_lines(file_path: Path) -> list[str]:
