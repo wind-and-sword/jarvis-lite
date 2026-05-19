@@ -45,8 +45,9 @@ def create_desktop_app(bridge: DesktopBridge | None = None) -> tuple[Any, Any]:
 
     app = QApplication.instance() or QApplication(sys.argv[:1])
     app.setFont(QFont("Microsoft YaHei UI", 10))
-    panel = AssistantPanel(bridge or DesktopBridge())
-    pet_window = DesktopPetWindow(panel)
+    desktop_bridge = bridge or DesktopBridge()
+    panel = AssistantPanel(desktop_bridge)
+    pet_window = DesktopPetWindow(panel, desktop_bridge.paths)
     return app, pet_window
 
 

@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
+from dataclasses import dataclass
 
-from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QMouseEvent
+from PySide6.QtCore import QPoint, Qt, QTimer
+from PySide6.QtGui import QCloseEvent, QMouseEvent, QPixmap
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -16,8 +17,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..config import ProjectPaths
 from .app_style import PANEL_STYLE, PET_STYLE
+from .assets import desktop_asset_path
 from .bridge import DesktopBridge, quick_commands
+from .settings import load_desktop_settings, save_desktop_position
 from .state import DesktopState
 
 
@@ -27,6 +31,22 @@ STATE_CAPTIONS = {
     DesktopState.WORKING: "工作",
     DesktopState.SUCCESS: "完成",
     DesktopState.ERROR: "错误",
+}
+
+
+@dataclass(frozen=True)
+class StateAnimationProfile:
+    name: str
+    interval_ms: int
+    frame_sizes: tuple[int, ...]
+
+
+STATE_ANIMATION_PROFILES = {
+    DesktopState.IDLE: StateAnimationProfile("idle-breathing", 1200, (86, 88, 90, 88)),
+    DesktopState.THINKING: StateAnimationProfile("thinking-pulse", 360, (86, 91, 88, 92)),
+    DesktopState.WORKING: StateAnimationProfile("working-pulse", 280, (88, 94, 90, 94)),
+    DesktopState.SUCCESS: StateAnimationProfile("success-bounce", 620, (88, 96, 90, 88)),
+    DesktopState.ERROR: StateAnimationProfile("error-shake", 420, (88, 84, 92, 86)),
 }
 
 
@@ -112,11 +132,18 @@ class AssistantPanel(QWidget):
 class DesktopPetWindow(QWidget):
     """桌面角落常驻的小助手窗口。"""
 
-    def __init__(self, panel: AssistantPanel):
+    def __init__(self, panel: AssistantPanel, paths: ProjectPaths):
         super().__init__()
         self.panel = panel
+        self.paths = paths
         self.panel.set_state_listener(self.set_state)
         self._drag_start: QPoint | None = None
+        self._current_asset_path = desktop_asset_path(DesktopState.IDLE)
+        self._asset_pixmap = QPixmap()
+        self._animation_frame = 0
+        self._current_animation_profile = STATE_ANIMATION_PROFILES[DesktopState.IDLE]
+        self._animation_timer = QTimer(self)
+        self._animation_timer.timeout.connect(self.advance_animation_frame)
         self.setObjectName("desktopPetWindow")
         self.setWindowTitle("Jarvis Lite")
         self.setFixedSize(148, 148)
@@ -127,15 +154,15 @@ class DesktopPetWindow(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
-        avatar = QFrame()
-        avatar.setObjectName("petAvatar")
-        avatar.setFixedSize(112, 112)
-        avatar_label = QLabel("J")
-        avatar_label.setObjectName("petAvatarLabel")
-        avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._avatar = QFrame()
+        self._avatar.setObjectName("petAvatar")
+        self._avatar.setFixedSize(112, 112)
+        self._avatar_label = QLabel()
+        self._avatar_label.setObjectName("petAvatarLabel")
+        self._avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         avatar_layout = QVBoxLayout()
-        avatar_layout.addWidget(avatar_label)
-        avatar.setLayout(avatar_layout)
+        avatar_layout.addWidget(self._avatar_label)
+        self._avatar.setLayout(avatar_layout)
 
         self._caption = QLabel(STATE_CAPTIONS[DesktopState.IDLE])
         self._caption.setObjectName("petCaption")
@@ -143,16 +170,40 @@ class DesktopPetWindow(QWidget):
 
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(avatar, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._avatar, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self._caption)
         self.setLayout(layout)
         self.setStyleSheet(PET_STYLE)
+        self.set_state(DesktopState.IDLE)
+        settings = load_desktop_settings(self.paths)
+        self.move(settings.position_x, settings.position_y)
 
     def set_state(self, state: DesktopState) -> None:
         self._caption.setText(STATE_CAPTIONS[state])
+        self._set_asset(state)
 
     def caption_text(self) -> str:
         return self._caption.text()
+
+    def current_asset_name(self) -> str:
+        return self._current_asset_path.name
+
+    def current_animation_name(self) -> str:
+        return self._current_animation_profile.name
+
+    def animation_interval_ms(self) -> int:
+        return self._current_animation_profile.interval_ms
+
+    def animation_frame(self) -> int:
+        return self._animation_frame
+
+    def advance_animation_frame(self) -> None:
+        frame_count = len(self._current_animation_profile.frame_sizes)
+        self._animation_frame = (self._animation_frame + 1) % frame_count
+        self._render_asset()
+
+    def persist_position(self) -> None:
+        save_desktop_position(self.paths, self.x(), self.y())
 
     def toggle_panel(self) -> None:
         if self.panel.isVisible():
@@ -176,8 +227,41 @@ class DesktopPetWindow(QWidget):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_start = None
+            self.persist_position()
             self.toggle_panel()
         super().mouseReleaseEvent(event)
 
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self._animation_timer.stop()
+        self.persist_position()
+        super().closeEvent(event)
+
     def _position_panel(self) -> None:
         self.panel.move(self.x() - self.panel.width() - 12, self.y())
+
+    def _set_asset(self, state: DesktopState) -> None:
+        self._current_asset_path = desktop_asset_path(state)
+        self._asset_pixmap = QPixmap(str(self._current_asset_path))
+        self._set_animation_profile(state)
+
+    def _set_animation_profile(self, state: DesktopState) -> None:
+        self._current_animation_profile = STATE_ANIMATION_PROFILES[state]
+        self._animation_frame = 0
+        self._animation_timer.start(self._current_animation_profile.interval_ms)
+        self._render_asset()
+
+    def _render_asset(self) -> None:
+        if not self._asset_pixmap.isNull():
+            size = self._current_animation_profile.frame_sizes[self._animation_frame]
+            self._avatar_label.setPixmap(
+                self._asset_pixmap.scaled(
+                    size,
+                    size,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+            self._avatar_label.setText("")
+            return
+        self._avatar_label.clear()
+        self._avatar_label.setText("J")

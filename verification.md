@@ -10,6 +10,8 @@
 .\.venv\Scripts\python.exe -m pip show pypdf
 .\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge -v
 .\.venv\Scripts\python.exe -m unittest tests.test_desktop_app -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_assets -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_settings -v
 .\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets -v
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 .\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
@@ -135,10 +137,12 @@ hello
 
 ## 验证结论
 
-- 单元测试：94 个测试通过。
+- 单元测试：103 个测试通过。
 - 桌面桥接层：`tests.test_desktop_bridge` 3 个测试通过，覆盖会话调用、错误状态和快捷命令。
 - 桌面入口：`tests.test_desktop_app` 3 个测试通过，覆盖桌面标题、脚本入口、PySide6 依赖声明和 smoke 创建桌面小助手窗口。
-- 桌面窗口：`tests.test_desktop_widgets` 4 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心和小助手状态同步。
+- 桌面素材：`tests.test_desktop_assets` 2 个测试通过，覆盖 5 个桌面状态 SVG 素材均在项目内。
+- 桌面设置：`tests.test_desktop_settings` 3 个测试通过，覆盖运行态设置目录、窗口位置保存读取和损坏设置回退默认值。
+- 桌面窗口：`tests.test_desktop_widgets` 8 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心、小助手状态同步、状态图片切换、窗口位置保存和状态动效。
 - 桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 可创建桌面小助手窗口并输出 `desktopPetWindow`。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
@@ -169,4 +173,4 @@ hello
 
 - 未接入大模型 API。
 - 摄像头、麦克风等硬件入口按用户要求暂缓。
-- 未实现桌面 UI、真实应用启动或外部系统控制。
+- 未制作桌面安装包、系统托盘和开机自启动。
