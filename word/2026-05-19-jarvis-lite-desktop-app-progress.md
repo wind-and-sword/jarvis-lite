@@ -36,6 +36,8 @@
 - 新增系统托盘控制器，托盘菜单包含“显示助手”“隐藏助手”“退出”。
 - 正常启动桌面助手后，关闭小助手窗口会隐藏到托盘，不会直接退出进程。
 - 托盘“退出”会允许小助手真正关闭，并结束桌面应用。
+- 托盘菜单新增常用命令入口：状态、知识库、常用目录和生成日报。
+- 点击托盘常用命令会自动显示小助手和面板，并把命令结果写入面板对话区。
 - 助手面板新增设置区域，支持切换小助手置顶、调节透明度和调节小助手尺寸。
 - 设置变更会立即应用到桌面小助手，并写入项目外运行态文件；下次启动会自动恢复。
 
@@ -45,13 +47,13 @@
 - `.venv\Scripts\python.exe -m unittest tests.test_desktop_app -v`：3 个桌面入口测试通过。
 - `.venv\Scripts\python.exe -m unittest tests.test_desktop_assets -v`：2 个桌面素材测试通过。
 - `.venv\Scripts\python.exe -m unittest tests.test_desktop_settings -v`：6 个桌面设置测试通过。
-- `.venv\Scripts\python.exe -m unittest tests.test_desktop_tray -v`：3 个桌面托盘测试通过。
+- `.venv\Scripts\python.exe -m unittest tests.test_desktop_tray -v`：5 个桌面托盘测试通过。
 - `.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets -v`：12 个桌面 widget 测试通过。
 - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：可以创建桌面小助手窗口并输出 `desktopPetWindow`。
-- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：113 个测试通过。
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：115 个测试通过。
 
 ## 下一步
 
-1. 继续做托盘菜单里的常用命令入口，例如状态、知识库和日报。
-2. 继续做更完整的设置项，例如开机自启动预留、面板尺寸和主题。
+1. 继续做更完整的设置项，例如开机自启动预留、面板尺寸和主题。
+2. 继续增强桌面助手的可视化反馈，例如托盘命令执行后的短提示或最近结果入口。
 3. 后续再评估安装包、开机自启动和更丰富的角色素材；摄像头、麦克风和真实语音识别继续暂缓。

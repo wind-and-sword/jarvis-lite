@@ -42,6 +42,22 @@ class DesktopTrayTests(unittest.TestCase):
         self.assertFalse(self.app.quitOnLastWindowClosed())
         self.assertTrue(self.pet.is_close_to_tray_enabled())
 
+    def test_tray_controller_exposes_quick_command_actions(self):
+        controller = DesktopTrayController(self.app, self.pet)
+
+        self.assertEqual(controller.quick_command_texts(), ("状态", "知识库", "常用目录", "生成日报"))
+
+    def test_tray_quick_command_shows_panel_and_submits_prompt(self):
+        controller = DesktopTrayController(self.app, self.pet)
+
+        controller.quick_command_action("知识库").trigger()
+        QApplication.processEvents()
+
+        self.assertTrue(self.pet.isVisible())
+        self.assertTrue(self.panel.isVisible())
+        self.assertIn("用户：/kb", self.panel.transcript_text())
+        self.assertIn("Jarvis：", self.panel.transcript_text())
+
     def test_pet_close_hides_to_tray_when_tray_controller_is_enabled(self):
         DesktopTrayController(self.app, self.pet)
         self.pet.show()

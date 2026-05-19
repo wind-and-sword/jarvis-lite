@@ -7,8 +7,12 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from .assets import desktop_asset_path
+from .bridge import quick_commands
 from .state import DesktopState
 from .widgets import DesktopPetWindow
+
+
+TRAY_QUICK_COMMAND_PROMPTS = ("/status", "/kb", "/dirs", "/daily-report")
 
 
 class DesktopTrayController:
@@ -27,6 +31,7 @@ class DesktopTrayController:
         self.show_action = QAction("显示助手", self.menu)
         self.hide_action = QAction("隐藏助手", self.menu)
         self.quit_action = QAction("退出", self.menu)
+        self._quick_command_actions: dict[str, QAction] = {}
 
         self.show_action.triggered.connect(self.show_assistant)
         self.hide_action.triggered.connect(self.hide_assistant)
@@ -34,6 +39,8 @@ class DesktopTrayController:
 
         self.menu.addAction(self.show_action)
         self.menu.addAction(self.hide_action)
+        self.menu.addSeparator()
+        self._add_quick_command_actions()
         self.menu.addSeparator()
         self.menu.addAction(self.quit_action)
 
@@ -48,6 +55,12 @@ class DesktopTrayController:
 
     def action_texts(self) -> tuple[str, ...]:
         return (self.show_action.text(), self.hide_action.text(), self.quit_action.text())
+
+    def quick_command_texts(self) -> tuple[str, ...]:
+        return tuple(self._quick_command_actions)
+
+    def quick_command_action(self, label: str) -> QAction:
+        return self._quick_command_actions[label]
 
     def show_assistant(self, checked: bool = False) -> None:
         self.pet_window.show()
@@ -77,3 +90,19 @@ class DesktopTrayController:
             self.hide_assistant()
             return
         self.show_assistant()
+
+    def _add_quick_command_actions(self) -> None:
+        for command in quick_commands():
+            if command.prompt not in TRAY_QUICK_COMMAND_PROMPTS:
+                continue
+            action = QAction(command.label, self.menu)
+            action.triggered.connect(lambda checked=False, prompt=command.prompt: self._run_quick_command(prompt))
+            self._quick_command_actions[command.label] = action
+            self.menu.addAction(action)
+
+    def _run_quick_command(self, prompt: str) -> None:
+        self.show_assistant()
+        self.panel.show()
+        if os.environ.get("QT_QPA_PLATFORM") not in {"minimal", "offscreen"}:
+            self.panel.raise_()
+        self.panel.submit_text(prompt)
