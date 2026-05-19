@@ -77,8 +77,39 @@ class KnowledgeTests(unittest.TestCase):
 
         answer = answer_from_data(self.paths, "Jarvis Lite 可以读取什么资料？")
 
-        self.assertIn("根据 data/jarvis.txt:1", answer)
+        self.assertIn("找到 1 条相关资料", answer)
+        self.assertIn("1. 根据 data/jarvis.txt:1", answer)
         self.assertIn("读取 data 目录里的文本资料", answer)
+
+    def test_search_data_prioritizes_specific_version_term_over_generic_terms(self):
+        (self.paths.data_dir / "alpha.md").write_text(
+            "Jarvis Lite 使用 Python 工具，版本信息另见配置。\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "zeta.md").write_text(
+            "Python 3.13 是 Jarvis Lite 当前运行版本。\n",
+            encoding="utf-8",
+        )
+
+        results = search_data(self.paths, "Jarvis Lite 使用 Python 3.13")
+
+        self.assertEqual(results[0].relative_path, "zeta.md")
+
+    def test_answer_from_data_numbers_multiple_sources_after_summary(self):
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "memory.txt").write_text(
+            "Jarvis Lite 使用 memory/profile.md 保存长期记忆。\n",
+            encoding="utf-8",
+        )
+
+        answer = answer_from_data(self.paths, "Jarvis Lite 使用什么？")
+
+        self.assertIn("找到 2 条相关资料", answer)
+        self.assertIn("1. 根据 data/memory.txt:1", answer)
+        self.assertIn("2. 根据 data/runtime.md:1", answer)
 
     def test_answer_from_data_can_include_multiple_sources(self):
         (self.paths.data_dir / "runtime.md").write_text(

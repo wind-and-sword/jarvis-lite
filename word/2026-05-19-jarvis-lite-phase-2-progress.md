@@ -27,19 +27,21 @@
 - `/import` 现在也支持目录路径，会递归导入目录中的 `.md` 和 `.txt` 文件。
 - 目录导入会保留相对目录结构，例如 `projects/notes.txt` 会写入 `data/projects/notes.txt`。
 - 目录导入会跳过隐藏目录和不支持格式，并输出扫描、成功、跳过和可检索行数摘要。
+- `/ask` 排序增加具体词权重：包含数字或版本号的查询词命中优先级更高，减少泛化资料靠文件名排序抢在具体资料前面的情况。
+- `/ask` 和普通问题的资料回答增加命中数量摘要和编号，继续保留 `data/文件:行号` 来源格式。
 
 ## 验证结果
 
-- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：56 个测试通过。
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：58 个测试通过。
 - `.venv\Scripts\python.exe src/app.py --once "/import .codex/import-smoke.md import-smoke.md"`：可以导入 Markdown 测试资料。
 - `.venv\Scripts\python.exe src/app.py --once "/import .codex/import-smoke-dir"`：可以批量导入目录中的 Markdown 和 txt 资料。
 - `.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 可以导入什么？"`：可以基于导入资料返回来源回答。
+- `.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 使用什么 Python 版本？"`：可以返回带命中数量摘要、编号和来源的回答。
 
 ## 下一步
 
 继续增强知识库导入体验：
 
-1. 增强 `/ask` 的排序和摘要质量。
-2. 支持对导入资料做简单标签或分类。
-3. 评估 PDF 摘要和聊天记录导入。
-4. 再评估云数据库是否用于跨设备同步或结构化检索。
+1. 支持对导入资料做简单标签或分类。
+2. 评估 PDF 摘要和聊天记录导入。
+3. 再评估云数据库是否用于跨设备同步或结构化检索。

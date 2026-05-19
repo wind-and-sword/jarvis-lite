@@ -92,9 +92,9 @@ def answer_from_data(paths: ProjectPaths, question: str) -> str:
     if not matches:
         return ""
 
-    lines = []
-    for match in matches:
-        lines.append(f"根据 data/{match.relative_path}:{match.line_number}，{match.text}")
+    lines = [f"我在 data 目录找到 {len(matches)} 条相关资料："]
+    for index, match in enumerate(matches, start=1):
+        lines.append(f"{index}. 根据 data/{match.relative_path}:{match.line_number}，{match.text}")
     return "\n".join(lines)
 
 
@@ -249,7 +249,13 @@ def _query_terms(query: str) -> set[str]:
 
 def _score(text: str, terms: set[str]) -> int:
     normalized = text.lower()
-    return sum(1 for term in terms if term in normalized)
+    return sum(_term_weight(term) for term in terms if term in normalized)
+
+
+def _term_weight(term: str) -> int:
+    if any(char.isdigit() for char in term):
+        return 3
+    return 1
 
 
 def _filter_weak_matches(matches: list[DataMatch]) -> list[DataMatch]:
