@@ -55,6 +55,29 @@ class AgentTests(unittest.TestCase):
         self.assertIn("语音入口状态", response)
         self.assertIn("当前引擎：transcript", response)
 
+    def test_automation_status_command_reports_workspace_automation(self):
+        response = self.agent.handle("/automation-status")
+
+        self.assertIn("阶段 4 自动化状态", response)
+        self.assertIn("常用目录", response)
+
+    def test_dir_add_and_dirs_commands_manage_common_directories(self):
+        target = Path(self.temp_dir.name) / "projects"
+        target.mkdir()
+
+        add_response = self.agent.handle(f"/dir-add 项目 {target}")
+        list_response = self.agent.handle("/dirs")
+
+        self.assertIn("已登记常用目录：项目", add_response)
+        self.assertIn("项目", list_response)
+        self.assertIn(str(target.resolve()), list_response)
+
+    def test_daily_report_command_writes_report_to_word_dir(self):
+        response = self.agent.handle("/daily-report today.md")
+
+        self.assertIn("已生成日报：word/today.md", response)
+        self.assertTrue((self.paths.word_dir / "today.md").is_file())
+
     def test_speak_command_records_transcript(self):
         with patch.dict(os.environ, {"JARVIS_LITE_VOICE_ENGINE": "transcript"}):
             response = self.agent.handle("/speak 你好 Jarvis")

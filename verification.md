@@ -42,6 +42,23 @@ from jarvis_lite.agent import JarvisAgent
 from jarvis_lite.config import build_project_paths
 
 with tempfile.TemporaryDirectory() as temp_dir:
+    root = Path(temp_dir)
+    paths = build_project_paths(root)
+    project_dir = root / "project"
+    project_dir.mkdir()
+    agent = JarvisAgent(paths)
+    print(agent.handle("/automation-status"))
+    print(agent.handle(f"/dir-add 项目 {project_dir}"))
+    print(agent.handle("/dirs"))
+    print(agent.handle("/daily-report today.md"))
+'@ | .\.venv\Scripts\python.exe -X utf8 -
+@'
+import tempfile
+from pathlib import Path
+from jarvis_lite.agent import JarvisAgent
+from jarvis_lite.config import build_project_paths
+
+with tempfile.TemporaryDirectory() as temp_dir:
     paths = build_project_paths(Path(temp_dir))
     (paths.data_dir / "note.txt").write_text("Jarvis Lite 支持本地知识库标签。", encoding="utf-8")
     agent = JarvisAgent(paths)
@@ -108,7 +125,7 @@ hello
 
 ## 验证结论
 
-- 单元测试：74 个测试通过。
+- 单元测试：80 个测试通过。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
 - 阶段状态：`/status` 可输出阶段 1 能力闭环和关键文件位置。
@@ -121,6 +138,9 @@ hello
 - 语音状态：`/voice-status` 可输出当前语音引擎、播报记录路径和麦克风识别状态。
 - 语音播报：`/speak 文本` 可通过语音引擎播报；自动化验证使用 transcript 引擎写入 `logs/voice-output.txt`。
 - 语音入口：`/voice 已识别的语音文本` 可复用现有 Agent 回答流程，并播报回答。
+- 工作台自动化状态：`/automation-status` 可输出阶段 4 当前能力。
+- 常用目录：`/dir-add 别名 目录路径` 可登记常用目录，`/dirs` 可查看登记结果。
+- 日报生成：`/daily-report [文件名]` 可在 `word/` 生成 Markdown 日报。
 - 工具日志：`/list` 会写入 `logs/jarvis.log`。
 - Python 版本：项目虚拟环境使用 Python 3.13.2。
 - 资料问答：`/ask` 和普通问题可以基于 `data/` 文本返回最多 3 条带命中数量摘要、编号和来源的回答，并过滤弱相关片段。
@@ -132,4 +152,5 @@ hello
 ## 未覆盖事项
 
 - 未接入大模型 API。
-- 未实现麦克风实时语音识别、桌面 UI 或外部系统控制。
+- 摄像头、麦克风等硬件入口按用户要求暂缓。
+- 未实现桌面 UI、真实应用启动或外部系统控制。

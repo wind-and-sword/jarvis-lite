@@ -3,6 +3,7 @@ from __future__ import annotations
 import shlex
 from pathlib import Path
 
+from .automation import add_common_directory, describe_automation, list_common_directories, write_daily_report
 from .config import ProjectPaths, build_project_paths
 from .knowledge import answer_from_data, describe_knowledge_base, import_knowledge_path, set_document_tags
 from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
@@ -36,6 +37,12 @@ class JarvisAgent:
         if prompt in {"/voice-status", "voice-status"}:
             self.tools.run("record_log", message="查看语音入口状态")
             return describe_voice(self.paths)
+        if prompt in {"/automation-status", "automation-status"}:
+            self.tools.run("record_log", message="查看阶段 4 自动化状态")
+            return describe_automation(self.paths)
+        if prompt in {"/dirs", "dirs"}:
+            self.tools.run("record_log", message="查看常用目录")
+            return self._directories()
 
         if is_identity_question(prompt):
             identity = find_identity(read_profile(self.paths))
@@ -138,6 +145,24 @@ class JarvisAgent:
             self.tools.run("record_log", message=f"处理语音文本：{spoken_text}")
             return f"识别文本：{spoken_text}\n助手：{answer}"
 
+        if command == "/dir-add":
+            if len(args) < 2:
+                return "用法：/dir-add 别名 目录路径"
+            try:
+                directory = add_common_directory(self.paths, args[0], self._strip_quotes(args[1]))
+            except (FileNotFoundError, ValueError) as exc:
+                return f"常用目录登记失败：{exc}"
+            self.tools.run("record_log", message=f"登记常用目录：{directory.alias} -> {directory.path}")
+            return f"已登记常用目录：{directory.alias} -> {directory.path}"
+
+        if command == "/daily-report":
+            try:
+                report = write_daily_report(self.paths, self._strip_quotes(args[0]) if args else None)
+            except ValueError as exc:
+                return f"日报生成失败：{exc}"
+            self.tools.run("record_log", message=f"生成日报：{report.relative_path}")
+            return f"已生成日报：{report.relative_path}"
+
         if command == "/import":
             if not args:
                 return "用法：/import 源文件或目录路径 [目标文件名]"
@@ -172,6 +197,10 @@ class JarvisAgent:
                 "/voice-status：查看阶段 3 语音入口状态",
                 "/speak 文本：播报一段文本",
                 "/voice 已识别的语音文本：按语音入口处理文本并播报回答",
+                "/automation-status：查看阶段 4 自动化状态",
+                "/dir-add 别名 目录路径：登记常用目录",
+                "/dirs：查看常用目录",
+                "/daily-report [文件名]：生成工作日报到 word/",
                 "/import 源文件或目录路径 [目标文件名]：导入 Markdown、txt、PDF 或 JSON 聊天记录到 data/",
                 "/tag 文件名 标签...：给 data 资料设置标签",
                 "/list [目录]：列出 data 目录内容",
@@ -195,6 +224,15 @@ class JarvisAgent:
         remembered = append_memory(self.paths, fact)
         self.tools.run("record_log", message=f"写入长期记忆：{remembered}")
         return f"已记住：{remembered}"
+
+    def _directories(self) -> str:
+        directories = list_common_directories(self.paths)
+        if not directories:
+            return "常用目录：还没有登记。"
+        lines = ["常用目录："]
+        for directory in directories:
+            lines.append(f"- {directory.alias}：{directory.path}")
+        return "\n".join(lines)
 
     def _project_path(self, path: Path) -> str:
         return path.relative_to(self.paths.root).as_posix()
