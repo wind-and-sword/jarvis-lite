@@ -10,6 +10,7 @@ from jarvis_lite.automation import (
     add_common_directory,
     describe_automation,
     list_common_directories,
+    preview_file_organization,
     write_daily_report,
 )
 from jarvis_lite.config import build_project_paths
@@ -56,6 +57,27 @@ class AutomationTests(unittest.TestCase):
         self.assertIn("用户偏好：中文回答", content)
         self.assertIn("知识库资料：1 个", content)
         self.assertIn("测试日志", content)
+
+    def test_preview_file_organization_groups_files_by_extension(self):
+        target = Path(self.temp_dir.name) / "desktop"
+        target.mkdir()
+        (target / "notes.md").write_text("笔记", encoding="utf-8")
+        (target / "todo.TXT").write_text("待办", encoding="utf-8")
+        (target / "README").write_text("无后缀", encoding="utf-8")
+        (target / "nested").mkdir()
+
+        preview = preview_file_organization(target)
+
+        self.assertEqual(preview.directory, target.resolve())
+        self.assertEqual(preview.file_count, 3)
+        self.assertEqual(preview.skipped_directory_count, 1)
+        groups = {group.extension_label: group for group in preview.groups}
+        self.assertEqual(groups[".md"].target_folder, "md")
+        self.assertEqual(groups[".txt"].target_folder, "txt")
+        self.assertEqual(groups["无后缀"].target_folder, "no-extension")
+        self.assertEqual(groups[".md"].files, ("notes.md",))
+        self.assertEqual(groups[".txt"].files, ("todo.TXT",))
+        self.assertEqual(groups["无后缀"].files, ("README",))
 
 
 if __name__ == "__main__":

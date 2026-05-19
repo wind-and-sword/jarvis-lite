@@ -25,6 +25,24 @@ class DailyReport:
     relative_path: str
 
 
+@dataclass(frozen=True)
+class FileOrganizationGroup:
+    extension_label: str
+    target_folder: str
+    files: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class FileOrganizationPreview:
+    directory: Path
+    groups: tuple[FileOrganizationGroup, ...]
+    skipped_directory_count: int
+
+    @property
+    def file_count(self) -> int:
+        return sum(len(group.files) for group in self.groups)
+
+
 def describe_automation(paths: ProjectPaths) -> str:
     """输出阶段 4 工作台自动化状态。"""
 
@@ -33,7 +51,7 @@ def describe_automation(paths: ProjectPaths) -> str:
         "阶段 4 自动化状态：",
         f"- 常用目录：{len(directories)} 个",
         "- 日报目录：word",
-        "- 当前能力：/dir-add、/dirs、/daily-report",
+        "- 当前能力：/dir-add、/dirs、/daily-report、/organize-preview",
         "- 硬件入口：摄像头、麦克风暂缓",
     ]
     if directories:
@@ -75,6 +93,31 @@ def write_daily_report(paths: ProjectPaths, filename: str | None = None) -> Dail
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(_daily_report_content(paths), encoding="utf-8")
     return DailyReport(target, target.relative_to(paths.root).as_posix())
+
+
+def preview_file_organization(directory: str | Path) -> FileOrganizationPreview:
+    """按扩展名生成文件整理预览，不移动或删除文件。"""
+
+    target = Path(directory).expanduser().resolve()
+    if not target.is_dir():
+        raise FileNotFoundError(f"目录不存在：{directory}")
+
+    grouped_files: dict[tuple[str, str], list[str]] = {}
+    skipped_directory_count = 0
+    for item in sorted(target.iterdir(), key=lambda path: path.name.lower()):
+        if item.is_dir():
+            skipped_directory_count += 1
+            continue
+        if not item.is_file():
+            continue
+        extension_label, target_folder = _organization_bucket(item)
+        grouped_files.setdefault((extension_label, target_folder), []).append(item.name)
+
+    groups = tuple(
+        FileOrganizationGroup(extension_label=label, target_folder=folder, files=tuple(files))
+        for (label, folder), files in sorted(grouped_files.items(), key=lambda item: item[0][1])
+    )
+    return FileOrganizationPreview(target, groups, skipped_directory_count)
 
 
 def _directories_path(paths: ProjectPaths) -> Path:
@@ -165,3 +208,10 @@ def _recent_log_lines(paths: ProjectPaths, limit: int = 5) -> list[str]:
         return []
     lines = [line.strip() for line in paths.log_path.read_text(encoding="utf-8").splitlines() if line.strip()]
     return lines[-limit:]
+
+
+def _organization_bucket(path: Path) -> tuple[str, str]:
+    suffix = path.suffix.lower()
+    if not suffix:
+        return "无后缀", "no-extension"
+    return suffix, suffix.removeprefix(".")

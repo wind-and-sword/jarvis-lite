@@ -78,6 +78,22 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已生成日报：word/today.md", response)
         self.assertTrue((self.paths.word_dir / "today.md").is_file())
 
+    def test_organize_preview_command_reports_plan_for_common_directory(self):
+        target = Path(self.temp_dir.name) / "desktop"
+        target.mkdir()
+        (target / "notes.md").write_text("笔记", encoding="utf-8")
+        (target / "todo.txt").write_text("待办", encoding="utf-8")
+        self.agent.handle(f"/dir-add 桌面 {target}")
+
+        response = self.agent.handle("/organize-preview 桌面")
+
+        self.assertIn("文件整理预览：桌面", response)
+        self.assertIn("不会移动或删除文件", response)
+        self.assertIn("md/", response)
+        self.assertIn("notes.md", response)
+        self.assertIn("txt/", response)
+        self.assertIn("todo.txt", response)
+
     def test_speak_command_records_transcript(self):
         with patch.dict(os.environ, {"JARVIS_LITE_VOICE_ENGINE": "transcript"}):
             response = self.agent.handle("/speak 你好 Jarvis")

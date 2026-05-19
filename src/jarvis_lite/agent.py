@@ -3,7 +3,14 @@ from __future__ import annotations
 import shlex
 from pathlib import Path
 
-from .automation import add_common_directory, describe_automation, list_common_directories, write_daily_report
+from .automation import (
+    CommonDirectory,
+    add_common_directory,
+    describe_automation,
+    list_common_directories,
+    preview_file_organization,
+    write_daily_report,
+)
 from .config import ProjectPaths, build_project_paths
 from .knowledge import answer_from_data, describe_knowledge_base, import_knowledge_path, set_document_tags
 from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
@@ -163,6 +170,11 @@ class JarvisAgent:
             self.tools.run("record_log", message=f"生成日报：{report.relative_path}")
             return f"已生成日报：{report.relative_path}"
 
+        if command == "/organize-preview":
+            if not args:
+                return "用法：/organize-preview 常用目录别名"
+            return self._organize_preview(args[0])
+
         if command == "/import":
             if not args:
                 return "用法：/import 源文件或目录路径 [目标文件名]"
@@ -201,6 +213,7 @@ class JarvisAgent:
                 "/dir-add 别名 目录路径：登记常用目录",
                 "/dirs：查看常用目录",
                 "/daily-report [文件名]：生成工作日报到 word/",
+                "/organize-preview 常用目录别名：按扩展名生成文件整理预览",
                 "/import 源文件或目录路径 [目标文件名]：导入 Markdown、txt、PDF 或 JSON 聊天记录到 data/",
                 "/tag 文件名 标签...：给 data 资料设置标签",
                 "/list [目录]：列出 data 目录内容",
@@ -233,6 +246,41 @@ class JarvisAgent:
         for directory in directories:
             lines.append(f"- {directory.alias}：{directory.path}")
         return "\n".join(lines)
+
+    def _organize_preview(self, alias: str) -> str:
+        directory = self._find_common_directory(alias)
+        if directory is None:
+            return f"没有找到常用目录：{alias}。可用 /dirs 查看。"
+
+        try:
+            preview = preview_file_organization(directory.path)
+        except FileNotFoundError as exc:
+            return f"文件整理预览失败：{exc}"
+
+        self.tools.run("record_log", message=f"生成文件整理预览：{directory.alias} -> {directory.path}")
+        lines = [
+            f"文件整理预览：{directory.alias}",
+            f"- 目录：{preview.directory}",
+            f"- 文件数量：{preview.file_count} 个",
+            f"- 跳过子目录：{preview.skipped_directory_count} 个",
+            "- 说明：只生成预览，不会移动或删除文件。",
+        ]
+        if not preview.groups:
+            lines.append("- 没有可整理的文件。")
+            return "\n".join(lines)
+
+        lines.append("整理建议：")
+        for group in preview.groups:
+            files = "、".join(group.files)
+            lines.append(f"- {group.target_folder}/：{files}")
+        return "\n".join(lines)
+
+    def _find_common_directory(self, alias: str) -> CommonDirectory | None:
+        normalized_alias = alias.strip()
+        for directory in list_common_directories(self.paths):
+            if directory.alias == normalized_alias:
+                return directory
+        return None
 
     def _project_path(self, path: Path) -> str:
         return path.relative_to(self.paths.root).as_posix()
