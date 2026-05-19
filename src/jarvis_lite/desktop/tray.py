@@ -1,0 +1,79 @@
+from __future__ import annotations
+
+import os
+from typing import Any
+
+from PySide6.QtGui import QAction, QIcon
+from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+
+from .assets import desktop_asset_path
+from .state import DesktopState
+from .widgets import DesktopPetWindow
+
+
+class DesktopTrayController:
+    """管理桌面助手的系统托盘和应用生命周期。"""
+
+    def __init__(self, app: QApplication, pet_window: DesktopPetWindow):
+        self.app = app
+        self.pet_window = pet_window
+        self.panel = pet_window.panel
+        self._quit_requested = False
+
+        self.app.setQuitOnLastWindowClosed(False)
+        self.pet_window.set_close_to_tray_enabled(True)
+
+        self.menu = QMenu()
+        self.show_action = QAction("显示助手", self.menu)
+        self.hide_action = QAction("隐藏助手", self.menu)
+        self.quit_action = QAction("退出", self.menu)
+
+        self.show_action.triggered.connect(self.show_assistant)
+        self.hide_action.triggered.connect(self.hide_assistant)
+        self.quit_action.triggered.connect(self.quit_application)
+
+        self.menu.addAction(self.show_action)
+        self.menu.addAction(self.hide_action)
+        self.menu.addSeparator()
+        self.menu.addAction(self.quit_action)
+
+        icon = QIcon(str(desktop_asset_path(DesktopState.IDLE)))
+        self.tray_icon = QSystemTrayIcon(icon, self.app)
+        self.tray_icon.setToolTip("Jarvis Lite")
+        self.tray_icon.setContextMenu(self.menu)
+        self.tray_icon.activated.connect(self._handle_activation)
+
+    def show(self) -> None:
+        self.tray_icon.show()
+
+    def action_texts(self) -> tuple[str, ...]:
+        return (self.show_action.text(), self.hide_action.text(), self.quit_action.text())
+
+    def show_assistant(self, checked: bool = False) -> None:
+        self.pet_window.show()
+        if os.environ.get("QT_QPA_PLATFORM") not in {"minimal", "offscreen"}:
+            self.pet_window.raise_()
+            self.pet_window.activateWindow()
+
+    def hide_assistant(self, checked: bool = False) -> None:
+        self.panel.hide()
+        self.pet_window.hide()
+
+    def quit_application(self, checked: bool = False) -> None:
+        self._quit_requested = True
+        self.pet_window.allow_application_close()
+        self.panel.close()
+        self.pet_window.close()
+        self.tray_icon.hide()
+        self.app.quit()
+
+    def is_quit_requested(self) -> bool:
+        return self._quit_requested
+
+    def _handle_activation(self, reason: Any) -> None:
+        if reason != QSystemTrayIcon.ActivationReason.Trigger:
+            return
+        if self.pet_window.isVisible():
+            self.hide_assistant()
+            return
+        self.show_assistant()

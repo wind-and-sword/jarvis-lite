@@ -5,7 +5,7 @@
 
 ## 当前目标
 
-根据桌面虚拟助手应用方案，把 Jarvis Lite 从命令行助手推进为第一版桌面虚拟助手应用。当前目标是完成“桌面常驻小助手 + 点击展开助手面板 + 状态素材与动效 + 运行态位置保存”的闭环。
+根据桌面虚拟助手应用方案，把 Jarvis Lite 从命令行助手推进为第一版桌面虚拟助手应用。当前目标是完成“桌面常驻小助手 + 点击展开助手面板 + 系统托盘 + 状态素材与动效 + 运行态位置保存”的闭环。
 
 ## 当前取舍
 
@@ -32,6 +32,9 @@
 - 小助手会根据状态切换对应角色图片，并使用 Qt 定时器执行待机呼吸、思考脉冲、工作脉冲、完成弹跳和错误抖动等轻量动效。
 - 小助手拖动或关闭时会保存窗口位置，下次启动会从项目外运行态设置恢复位置。
 - 损坏的运行态设置文件会回退到默认窗口位置，避免桌面入口启动失败。
+- 新增系统托盘控制器，托盘菜单包含“显示助手”“隐藏助手”“退出”。
+- 正常启动桌面助手后，关闭小助手窗口会隐藏到托盘，不会直接退出进程。
+- 托盘“退出”会允许小助手真正关闭，并结束桌面应用。
 
 ## 验证结果
 
@@ -39,12 +42,13 @@
 - `.venv\Scripts\python.exe -m unittest tests.test_desktop_app -v`：3 个桌面入口测试通过。
 - `.venv\Scripts\python.exe -m unittest tests.test_desktop_assets -v`：2 个桌面素材测试通过。
 - `.venv\Scripts\python.exe -m unittest tests.test_desktop_settings -v`：3 个桌面设置测试通过。
+- `.venv\Scripts\python.exe -m unittest tests.test_desktop_tray -v`：3 个桌面托盘测试通过。
 - `.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets -v`：8 个桌面 widget 测试通过。
 - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：可以创建桌面小助手窗口并输出 `desktopPetWindow`。
-- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：103 个测试通过。
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：106 个测试通过。
 
 ## 下一步
 
-1. 继续做系统托盘、关闭到托盘和退出控制。
-2. 继续做桌面设置面板，例如置顶开关、透明度和角色尺寸。
+1. 继续做桌面设置面板，例如置顶开关、透明度和角色尺寸。
+2. 继续做托盘菜单里的常用命令入口，例如状态、知识库和日报。
 3. 后续再评估安装包、开机自启动和更丰富的角色素材；摄像头、麦克风和真实语音识别继续暂缓。

@@ -144,6 +144,7 @@ class DesktopPetWindow(QWidget):
         self._current_animation_profile = STATE_ANIMATION_PROFILES[DesktopState.IDLE]
         self._animation_timer = QTimer(self)
         self._animation_timer.timeout.connect(self.advance_animation_frame)
+        self._close_to_tray_enabled = False
         self.setObjectName("desktopPetWindow")
         self.setWindowTitle("Jarvis Lite")
         self.setFixedSize(148, 148)
@@ -205,6 +206,15 @@ class DesktopPetWindow(QWidget):
     def persist_position(self) -> None:
         save_desktop_position(self.paths, self.x(), self.y())
 
+    def set_close_to_tray_enabled(self, enabled: bool) -> None:
+        self._close_to_tray_enabled = enabled
+
+    def is_close_to_tray_enabled(self) -> bool:
+        return self._close_to_tray_enabled
+
+    def allow_application_close(self) -> None:
+        self._close_to_tray_enabled = False
+
     def toggle_panel(self) -> None:
         if self.panel.isVisible():
             self.panel.hide()
@@ -232,6 +242,12 @@ class DesktopPetWindow(QWidget):
         super().mouseReleaseEvent(event)
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        if self._close_to_tray_enabled:
+            self.persist_position()
+            self.panel.hide()
+            self.hide()
+            event.ignore()
+            return
         self._animation_timer.stop()
         self.persist_position()
         super().closeEvent(event)

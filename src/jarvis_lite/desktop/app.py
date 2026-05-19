@@ -6,6 +6,7 @@ import sys
 from typing import Any
 
 from .bridge import DesktopBridge
+from .tray import DesktopTrayController
 from .widgets import AssistantPanel, DesktopPetWindow
 
 
@@ -31,6 +32,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     app, window = create_desktop_app()
+    tray = DesktopTrayController(app, window)
+    tray.show()
     window.show()
     return app.exec()
 
