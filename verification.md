@@ -56,6 +56,7 @@ with tempfile.TemporaryDirectory() as temp_dir:
     print(agent.handle("/dirs"))
     print(agent.handle("/daily-report today.md"))
     print(agent.handle("/organize-preview 项目"))
+    print(agent.handle("/dir-open 项目"))
 '@ | .\.venv\Scripts\python.exe -X utf8 -
 @'
 import tempfile
@@ -130,7 +131,7 @@ hello
 
 ## 验证结论
 
-- 单元测试：82 个测试通过。
+- 单元测试：84 个测试通过。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
 - 阶段状态：`/status` 可输出阶段 1 能力闭环和关键文件位置。
@@ -147,6 +148,7 @@ hello
 - 常用目录：`/dir-add 别名 目录路径` 可登记常用目录，`/dirs` 可查看登记结果。
 - 日报生成：`/daily-report [文件名]` 可在 `word/` 生成 Markdown 日报。
 - 文件整理预览：`/organize-preview 常用目录别名` 可按扩展名输出整理计划，不移动或删除文件。
+- 目录打开记录：`/dir-open 常用目录别名` 可把打开目录请求写入 `logs/desktop-actions.txt`，当前不启动外部应用。
 - 工具日志：`/list` 会写入 `logs/jarvis.log`。
 - Python 版本：项目虚拟环境使用 Python 3.13.2。
 - 资料问答：`/ask` 和普通问题可以基于 `data/` 文本返回最多 3 条带命中数量摘要、编号和来源的回答，并过滤弱相关片段。

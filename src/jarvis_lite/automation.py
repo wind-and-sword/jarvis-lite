@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from .config import ProjectPaths
@@ -21,6 +21,12 @@ class CommonDirectory:
 
 @dataclass(frozen=True)
 class DailyReport:
+    path: Path
+    relative_path: str
+
+
+@dataclass(frozen=True)
+class DirectoryOpenRecord:
     path: Path
     relative_path: str
 
@@ -51,7 +57,7 @@ def describe_automation(paths: ProjectPaths) -> str:
         "阶段 4 自动化状态：",
         f"- 常用目录：{len(directories)} 个",
         "- 日报目录：word",
-        "- 当前能力：/dir-add、/dirs、/daily-report、/organize-preview",
+        "- 当前能力：/dir-add、/dirs、/daily-report、/organize-preview、/dir-open",
         "- 硬件入口：摄像头、麦克风暂缓",
     ]
     if directories:
@@ -93,6 +99,21 @@ def write_daily_report(paths: ProjectPaths, filename: str | None = None) -> Dail
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(_daily_report_content(paths), encoding="utf-8")
     return DailyReport(target, target.relative_to(paths.root).as_posix())
+
+
+def record_directory_open_request(paths: ProjectPaths, alias: str, directory: str | Path) -> DirectoryOpenRecord:
+    """记录打开常用目录的请求，当前不启动外部应用。"""
+
+    target = Path(directory).expanduser().resolve()
+    if not target.is_dir():
+        raise FileNotFoundError(f"目录不存在：{directory}")
+
+    transcript_path = paths.logs_dir / "desktop-actions.txt"
+    transcript_path.parent.mkdir(parents=True, exist_ok=True)
+    line = f"{datetime.now().isoformat(timespec='seconds')}\topen_directory\t{alias}\t{target}\n"
+    with transcript_path.open("a", encoding="utf-8") as file:
+        file.write(line)
+    return DirectoryOpenRecord(transcript_path, transcript_path.relative_to(paths.root).as_posix())
 
 
 def preview_file_organization(directory: str | Path) -> FileOrganizationPreview:

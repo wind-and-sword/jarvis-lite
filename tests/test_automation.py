@@ -11,6 +11,7 @@ from jarvis_lite.automation import (
     describe_automation,
     list_common_directories,
     preview_file_organization,
+    record_directory_open_request,
     write_daily_report,
 )
 from jarvis_lite.config import build_project_paths
@@ -78,6 +79,18 @@ class AutomationTests(unittest.TestCase):
         self.assertEqual(groups[".md"].files, ("notes.md",))
         self.assertEqual(groups[".txt"].files, ("todo.TXT",))
         self.assertEqual(groups["无后缀"].files, ("README",))
+
+    def test_record_directory_open_request_writes_transcript(self):
+        target = Path(self.temp_dir.name) / "project"
+        target.mkdir()
+
+        record = record_directory_open_request(self.paths, "项目", target)
+
+        content = record.path.read_text(encoding="utf-8")
+        self.assertEqual(record.relative_path, "logs/desktop-actions.txt")
+        self.assertIn("open_directory", content)
+        self.assertIn("项目", content)
+        self.assertIn(str(target.resolve()), content)
 
 
 if __name__ == "__main__":

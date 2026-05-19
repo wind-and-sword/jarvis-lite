@@ -94,6 +94,19 @@ class AgentTests(unittest.TestCase):
         self.assertIn("txt/", response)
         self.assertIn("todo.txt", response)
 
+    def test_dir_open_command_records_dry_run_request(self):
+        target = Path(self.temp_dir.name) / "project"
+        target.mkdir()
+        self.agent.handle(f"/dir-add 项目 {target}")
+
+        response = self.agent.handle("/dir-open 项目")
+
+        transcript = (self.paths.logs_dir / "desktop-actions.txt").read_text(encoding="utf-8")
+        self.assertIn("已记录打开目录请求：项目", response)
+        self.assertIn("当前不会启动外部应用", response)
+        self.assertIn("open_directory", transcript)
+        self.assertIn(str(target.resolve()), transcript)
+
     def test_speak_command_records_transcript(self):
         with patch.dict(os.environ, {"JARVIS_LITE_VOICE_ENGINE": "transcript"}):
             response = self.agent.handle("/speak 你好 Jarvis")
