@@ -13,7 +13,7 @@
 
 ## 当前目标
 
-继续阶段 2 个人知识库能力，优先完成 Markdown/txt 资料导入，让外部文本资料能进入 `data/`，随后被 `/kb` 统计并被 `/ask` 检索回答。
+继续阶段 2 个人知识库能力，优先完成 Markdown/txt 资料导入、基础问答质量优化和简单标签分类，让外部文本资料能进入 `data/`，随后被 `/kb` 统计并被 `/ask` 检索回答。
 
 ## 已完成
 
@@ -29,19 +29,22 @@
 - 目录导入会跳过隐藏目录和不支持格式，并输出扫描、成功、跳过和可检索行数摘要。
 - `/ask` 排序增加具体词权重：包含数字或版本号的查询词命中优先级更高，减少泛化资料靠文件名排序抢在具体资料前面的情况。
 - `/ask` 和普通问题的资料回答增加命中数量摘要和编号，继续保留 `data/文件:行号` 来源格式。
+- 新增 `/tag 文件名 标签...` 命令，可为 `data/` 中的 Markdown 或 txt 资料设置简单标签。
+- 标签元数据保存到 `data/.knowledge-tags.json`，不引入数据库或第三方依赖。
+- `/kb` 会展示标签列表和单个资料的标签，`/ask` 可以通过标签命中对应资料内容。
 
 ## 验证结果
 
-- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：58 个测试通过。
+- `.venv\Scripts\python.exe -m unittest discover -s tests -v`：64 个测试通过。
 - `.venv\Scripts\python.exe src/app.py --once "/import .codex/import-smoke.md import-smoke.md"`：可以导入 Markdown 测试资料。
 - `.venv\Scripts\python.exe src/app.py --once "/import .codex/import-smoke-dir"`：可以批量导入目录中的 Markdown 和 txt 资料。
 - `.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 可以导入什么？"`：可以基于导入资料返回来源回答。
 - `.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 使用什么 Python 版本？"`：可以返回带命中数量摘要、编号和来源的回答。
+- 临时目录 Agent 冒烟验证：`/tag note.txt 项目 Python` 可更新标签，`/kb` 可显示标签，`/ask Python` 可通过标签命中资料。
 
 ## 下一步
 
 继续增强知识库导入体验：
 
-1. 支持对导入资料做简单标签或分类。
-2. 评估 PDF 摘要和聊天记录导入。
-3. 再评估云数据库是否用于跨设备同步或结构化检索。
+1. 评估 PDF 摘要和聊天记录导入。
+2. 再评估云数据库是否用于跨设备同步或结构化检索。

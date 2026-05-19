@@ -4,7 +4,7 @@ import shlex
 from pathlib import Path
 
 from .config import ProjectPaths, build_project_paths
-from .knowledge import answer_from_data, describe_knowledge_base, import_knowledge_path
+from .knowledge import answer_from_data, describe_knowledge_base, import_knowledge_path, set_document_tags
 from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
 from .tools import ToolRegistry
 
@@ -101,6 +101,17 @@ class JarvisAgent:
             self.tools.run("record_log", message=f"基于 data 目录回答显式问题：{question}")
             return answer
 
+        if command == "/tag":
+            if len(args) < 2:
+                return "用法：/tag 文件名 标签..."
+            try:
+                document = set_document_tags(self.paths, self._strip_quotes(args[0]), args[1:])
+            except (FileNotFoundError, ValueError) as exc:
+                return f"标签更新失败：{exc}"
+            tags = "、".join(document.tags)
+            self.tools.run("record_log", message=f"更新知识库标签：data/{document.relative_path} -> {tags}")
+            return f"已更新标签：data/{document.relative_path}（{tags}）"
+
         if command == "/import":
             if not args:
                 return "用法：/import 源文件或目录路径 [目标文件名]"
@@ -133,6 +144,7 @@ class JarvisAgent:
                 "/status：查看阶段 1 当前状态",
                 "/kb：查看个人知识库状态",
                 "/import 源文件或目录路径 [目标文件名]：导入 Markdown 或 txt 到 data/",
+                "/tag 文件名 标签...：给 data 资料设置标签",
                 "/list [目录]：列出 data 目录内容",
                 "/read 文件名：读取 data 目录中的文本文件",
                 "/ask 问题：基于 data 目录中的文本资料回答",

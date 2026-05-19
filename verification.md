@@ -18,6 +18,20 @@
 .\.venv\Scripts\python.exe src/app.py --once "/ask Jarvis Lite 使用什么 Python 版本？"
 .\.venv\Scripts\python.exe src/app.py --once "Jarvis Lite 当前可以读取什么？"
 @'
+import tempfile
+from pathlib import Path
+from jarvis_lite.agent import JarvisAgent
+from jarvis_lite.config import build_project_paths
+
+with tempfile.TemporaryDirectory() as temp_dir:
+    paths = build_project_paths(Path(temp_dir))
+    (paths.data_dir / "note.txt").write_text("Jarvis Lite 支持本地知识库标签。", encoding="utf-8")
+    agent = JarvisAgent(paths)
+    print(agent.handle("/tag note.txt 项目 Python"))
+    print(agent.handle("/kb"))
+    print(agent.handle("/ask Python"))
+'@ | .\.venv\Scripts\python.exe -X utf8 -
+@'
 hello
 /history
 /save-summary cli-smoke
@@ -33,12 +47,14 @@ hello
 
 ## 验证结论
 
-- 单元测试：58 个测试通过。
+- 单元测试：64 个测试通过。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
 - 阶段状态：`/status` 可输出阶段 1 能力闭环和关键文件位置。
 - 知识库状态：`/kb` 可输出 `data/` 中可检索资料数量、行数和资料列表。
 - 资料导入：`/import 源文件或目录路径 [目标文件名]` 可把 Markdown、txt 或目录批量导入 `data/`，导入后可被 `/kb` 和 `/ask` 使用。
+- 资料标签：`/tag 文件名 标签...` 可给 `data/` 中的 Markdown 或 txt 资料设置标签，标签写入 `data/.knowledge-tags.json`。
+- 标签展示与检索：`/kb` 会展示标签列表和资料标签，`/ask` 可以通过标签命中对应资料。
 - 工具日志：`/list` 会写入 `logs/jarvis.log`。
 - Python 版本：项目虚拟环境使用 Python 3.13.2。
 - 资料问答：`/ask` 和普通问题可以基于 `data/` 文本返回最多 3 条带命中数量摘要、编号和来源的回答，并过滤弱相关片段。

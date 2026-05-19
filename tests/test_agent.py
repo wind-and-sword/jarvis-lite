@@ -45,6 +45,24 @@ class AgentTests(unittest.TestCase):
         self.assertIn("可检索文本行：1 行", response)
         self.assertIn("data/note.txt", response)
 
+    def test_tag_command_updates_document_tags(self):
+        response = self.agent.handle("/tag note.txt 项目 Python")
+
+        self.assertIn("已更新标签：data/note.txt（项目、Python）", response)
+        self.assertIn("标签：项目、Python", self.agent.handle("/kb"))
+
+    def test_tag_command_requires_filename_and_tags(self):
+        response = self.agent.handle("/tag note.txt")
+
+        self.assertIn("用法：/tag 文件名 标签...", response)
+
+    def test_ask_command_can_find_document_by_tag(self):
+        self.agent.handle("/tag note.txt 私人资料")
+
+        response = self.agent.handle("/ask 私人资料")
+
+        self.assertIn("data/note.txt:1", response)
+
     def test_import_command_adds_text_file_to_knowledge_base(self):
         source = Path(self.temp_dir.name) / "outside.md"
         source.write_text("Jarvis Lite 可以导入外部资料。\n", encoding="utf-8")

@@ -13,6 +13,7 @@ from jarvis_lite.knowledge import (
     import_knowledge_file,
     import_knowledge_path,
     search_data,
+    set_document_tags,
 )
 
 
@@ -149,6 +150,36 @@ class KnowledgeTests(unittest.TestCase):
         self.assertEqual(index.document_count, 2)
         self.assertEqual(index.searchable_line_count, 3)
         self.assertEqual([document.relative_path for document in index.documents], ["intro.md", "projects/jarvis.txt"])
+
+    def test_set_document_tags_persists_normalized_tags_in_index(self):
+        (self.paths.data_dir / "intro.md").write_text("Jarvis Lite 是个人助手。\n", encoding="utf-8")
+
+        document = set_document_tags(self.paths, "intro.md", ["项目", "#Python", "项目"])
+        index = build_knowledge_index(self.paths)
+
+        self.assertEqual(document.tags, ("项目", "Python"))
+        self.assertEqual(index.documents[0].tags, ("项目", "Python"))
+
+    def test_describe_knowledge_base_reports_document_tags(self):
+        (self.paths.data_dir / "intro.md").write_text("Jarvis Lite 是个人助手。\n", encoding="utf-8")
+        set_document_tags(self.paths, "intro.md", ["项目", "助手"])
+
+        description = describe_knowledge_base(self.paths)
+
+        self.assertIn("标签列表：助手、项目", description)
+        self.assertIn("data/intro.md（1 行，标签：项目、助手）", description)
+
+    def test_search_data_can_match_document_tags(self):
+        (self.paths.data_dir / "intro.md").write_text(
+            "Jarvis Lite 当前支持本地知识库。\n",
+            encoding="utf-8",
+        )
+        set_document_tags(self.paths, "intro.md", ["运行环境"])
+
+        results = search_data(self.paths, "运行环境")
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].relative_path, "intro.md")
 
     def test_describe_knowledge_base_reports_empty_state(self):
         description = describe_knowledge_base(self.paths)
