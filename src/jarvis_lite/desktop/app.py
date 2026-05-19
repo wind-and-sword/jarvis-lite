@@ -6,6 +6,7 @@ import sys
 from typing import Any
 
 from .bridge import DesktopBridge
+from .settings import load_desktop_settings
 from .tray import DesktopTrayController
 from .widgets import AssistantPanel, DesktopPetWindow
 
@@ -49,8 +50,16 @@ def create_desktop_app(bridge: DesktopBridge | None = None) -> tuple[Any, Any]:
     app = QApplication.instance() or QApplication(sys.argv[:1])
     app.setFont(QFont("Microsoft YaHei UI", 10))
     desktop_bridge = bridge or DesktopBridge()
-    panel = AssistantPanel(desktop_bridge)
+    settings = load_desktop_settings(desktop_bridge.paths)
+    panel = AssistantPanel(desktop_bridge, settings)
     pet_window = DesktopPetWindow(panel, desktop_bridge.paths)
+    panel.set_settings_listener(
+        lambda values: pet_window.apply_preferences(
+            always_on_top=values.always_on_top,
+            opacity_percent=values.opacity_percent,
+            pet_size=values.pet_size,
+        )
+    )
     return app, pet_window
 
 

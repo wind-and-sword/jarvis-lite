@@ -12,7 +12,12 @@ from PySide6.QtWidgets import QApplication
 
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.desktop.bridge import DesktopBridge
-from jarvis_lite.desktop.settings import desktop_settings_path, load_desktop_settings
+from jarvis_lite.desktop.settings import (
+    DesktopSettings,
+    desktop_settings_path,
+    load_desktop_settings,
+    save_desktop_settings,
+)
 from jarvis_lite.desktop.state import DesktopState
 from jarvis_lite.desktop.widgets import AssistantPanel, DesktopPetWindow
 
@@ -110,6 +115,65 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertEqual(settings.position_x, 240)
         self.assertEqual(settings.position_y, 180)
         self.assertEqual(desktop_settings_path(self.paths).parent, self.project_root.parent / "jarvis-lite-runtime")
+
+    def test_pet_window_restores_desktop_preferences_on_startup(self):
+        self.panel.close()
+        self.pet.close()
+        save_desktop_settings(
+            self.paths,
+            DesktopSettings(
+                position_x=120,
+                position_y=90,
+                always_on_top=False,
+                opacity_percent=74,
+                pet_size=184,
+            ),
+        )
+
+        self.panel = AssistantPanel(self.bridge)
+        self.pet = DesktopPetWindow(self.panel, self.paths)
+
+        self.assertFalse(self.pet.is_always_on_top())
+        self.assertEqual(self.pet.current_opacity_percent(), 74)
+        self.assertEqual(self.pet.current_pet_size(), 184)
+        self.assertEqual(self.pet.width(), 184)
+
+    def test_pet_window_applies_and_persists_desktop_preferences(self):
+        self.pet.apply_preferences(always_on_top=False, opacity_percent=82, pet_size=176)
+
+        settings = load_desktop_settings(self.paths)
+        self.assertFalse(self.pet.is_always_on_top())
+        self.assertEqual(self.pet.current_opacity_percent(), 82)
+        self.assertEqual(self.pet.current_pet_size(), 176)
+        self.assertEqual(settings.position_x, self.pet.x())
+        self.assertEqual(settings.position_y, self.pet.y())
+        self.assertFalse(settings.always_on_top)
+        self.assertEqual(settings.opacity_percent, 82)
+        self.assertEqual(settings.pet_size, 176)
+
+    def test_panel_exposes_desktop_settings_controls(self):
+        panel = AssistantPanel(
+            self.bridge,
+            DesktopSettings(always_on_top=False, opacity_percent=70, pet_size=180),
+        )
+        self.addCleanup(panel.close)
+
+        settings = panel.settings_values()
+
+        self.assertFalse(settings.always_on_top)
+        self.assertEqual(settings.opacity_percent, 70)
+        self.assertEqual(settings.pet_size, 180)
+
+    def test_panel_settings_change_notifies_listener(self):
+        changes = []
+        self.panel.set_settings_listener(changes.append)
+
+        self.panel.change_settings(always_on_top=False, opacity_percent=78, pet_size=172)
+
+        self.assertEqual(len(changes), 1)
+        self.assertFalse(changes[0].always_on_top)
+        self.assertEqual(changes[0].opacity_percent, 78)
+        self.assertEqual(changes[0].pet_size, 172)
 
 
 if __name__ == "__main__":

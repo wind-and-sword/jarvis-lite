@@ -7,11 +7,13 @@ from dataclasses import dataclass
 from PySide6.QtCore import QPoint, Qt, QTimer
 from PySide6.QtGui import QCloseEvent, QMouseEvent, QPixmap
 from PySide6.QtWidgets import (
+    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
+    QSlider,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -21,7 +23,7 @@ from ..config import ProjectPaths
 from .app_style import PANEL_STYLE, PET_STYLE
 from .assets import desktop_asset_path
 from .bridge import DesktopBridge, quick_commands
-from .settings import load_desktop_settings, save_desktop_position
+from .settings import DesktopSettings, load_desktop_settings, save_desktop_position, save_desktop_settings
 from .state import DesktopState
 
 
@@ -49,14 +51,25 @@ STATE_ANIMATION_PROFILES = {
     DesktopState.ERROR: StateAnimationProfile("error-shake", 420, (88, 84, 92, 86)),
 }
 
+DEFAULT_PET_SIZE = 148
+DEFAULT_AVATAR_SIZE = 112
+MIN_OPACITY_PERCENT = 50
+MAX_OPACITY_PERCENT = 100
+MIN_PET_SIZE = 120
+MAX_PET_SIZE = 220
+
 
 class AssistantPanel(QWidget):
     """桌面助手展开后的对话面板。"""
 
-    def __init__(self, bridge: DesktopBridge):
+    def __init__(self, bridge: DesktopBridge, settings: DesktopSettings | None = None):
         super().__init__()
+        initial_settings = settings or DesktopSettings()
         self.bridge = bridge
         self._state_listener: Callable[[DesktopState], None] | None = None
+        self._settings_listener: Callable[[DesktopSettings], None] | None = None
+        self._settings_position_x = initial_settings.position_x
+        self._settings_position_y = initial_settings.position_y
         self.setObjectName("assistantPanel")
         self.setWindowTitle("Jarvis Lite 助手面板")
         self.setMinimumSize(420, 620)
@@ -87,6 +100,8 @@ class AssistantPanel(QWidget):
             button.clicked.connect(lambda checked=False, prompt=command.prompt: self.submit_text(prompt))
             command_row.addWidget(button)
 
+        settings_row = self._build_settings_row(initial_settings)
+
         layout = QVBoxLayout()
         title = QLabel("Jarvis Lite")
         title.setObjectName("panelTitle")
@@ -95,6 +110,7 @@ class AssistantPanel(QWidget):
         layout.addWidget(self._output)
         layout.addLayout(input_row)
         layout.addLayout(command_row)
+        layout.addLayout(settings_row)
         self.setLayout(layout)
 
     def submit_text(self, text: str) -> None:
@@ -116,6 +132,22 @@ class AssistantPanel(QWidget):
     def set_state_listener(self, listener: Callable[[DesktopState], None]) -> None:
         self._state_listener = listener
 
+    def set_settings_listener(self, listener: Callable[[DesktopSettings], None]) -> None:
+        self._settings_listener = listener
+
+    def settings_values(self) -> DesktopSettings:
+        return DesktopSettings(
+            position_x=self._settings_position_x,
+            position_y=self._settings_position_y,
+            always_on_top=self._always_on_top_checkbox.isChecked(),
+            opacity_percent=self._opacity_slider.value(),
+            pet_size=self._pet_size_slider.value(),
+        )
+
+    def change_settings(self, *, always_on_top: bool, opacity_percent: int, pet_size: int) -> None:
+        self._set_settings_controls(always_on_top, opacity_percent, pet_size)
+        self._emit_settings_changed()
+
     def _submit_input(self) -> None:
         text = self._input.text().strip()
         if not text:
@@ -127,6 +159,43 @@ class AssistantPanel(QWidget):
         self._status_label.setText(f"状态：{state.value}")
         if self._state_listener is not None:
             self._state_listener(state)
+
+    def _build_settings_row(self, settings: DesktopSettings) -> QHBoxLayout:
+        self._always_on_top_checkbox = QCheckBox("置顶")
+        self._always_on_top_checkbox.setObjectName("alwaysOnTopToggle")
+        self._opacity_slider = QSlider(Qt.Orientation.Horizontal)
+        self._opacity_slider.setObjectName("opacitySlider")
+        self._opacity_slider.setRange(MIN_OPACITY_PERCENT, MAX_OPACITY_PERCENT)
+        self._pet_size_slider = QSlider(Qt.Orientation.Horizontal)
+        self._pet_size_slider.setObjectName("petSizeSlider")
+        self._pet_size_slider.setRange(MIN_PET_SIZE, MAX_PET_SIZE)
+        self._set_settings_controls(settings.always_on_top, settings.opacity_percent, settings.pet_size)
+        self._always_on_top_checkbox.stateChanged.connect(lambda value: self._emit_settings_changed())
+        self._opacity_slider.valueChanged.connect(lambda value: self._emit_settings_changed())
+        self._pet_size_slider.valueChanged.connect(lambda value: self._emit_settings_changed())
+
+        settings_row = QHBoxLayout()
+        settings_row.addWidget(QLabel("设置"))
+        settings_row.addWidget(self._always_on_top_checkbox)
+        settings_row.addWidget(QLabel("透明度"))
+        settings_row.addWidget(self._opacity_slider)
+        settings_row.addWidget(QLabel("尺寸"))
+        settings_row.addWidget(self._pet_size_slider)
+        return settings_row
+
+    def _set_settings_controls(self, always_on_top: bool, opacity_percent: int, pet_size: int) -> None:
+        controls = (self._always_on_top_checkbox, self._opacity_slider, self._pet_size_slider)
+        for control in controls:
+            control.blockSignals(True)
+        self._always_on_top_checkbox.setChecked(always_on_top)
+        self._opacity_slider.setValue(_clamp_int(opacity_percent, MIN_OPACITY_PERCENT, MAX_OPACITY_PERCENT))
+        self._pet_size_slider.setValue(_clamp_int(pet_size, MIN_PET_SIZE, MAX_PET_SIZE))
+        for control in controls:
+            control.blockSignals(False)
+
+    def _emit_settings_changed(self) -> None:
+        if self._settings_listener is not None:
+            self._settings_listener(self.settings_values())
 
 
 class DesktopPetWindow(QWidget):
@@ -145,9 +214,12 @@ class DesktopPetWindow(QWidget):
         self._animation_timer = QTimer(self)
         self._animation_timer.timeout.connect(self.advance_animation_frame)
         self._close_to_tray_enabled = False
+        self._always_on_top = True
+        self._opacity_percent = 100
+        self._pet_size = DEFAULT_PET_SIZE
         self.setObjectName("desktopPetWindow")
         self.setWindowTitle("Jarvis Lite")
-        self.setFixedSize(148, 148)
+        self.setFixedSize(DEFAULT_PET_SIZE, DEFAULT_PET_SIZE)
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.WindowStaysOnTopHint
@@ -157,7 +229,7 @@ class DesktopPetWindow(QWidget):
 
         self._avatar = QFrame()
         self._avatar.setObjectName("petAvatar")
-        self._avatar.setFixedSize(112, 112)
+        self._avatar.setFixedSize(DEFAULT_AVATAR_SIZE, DEFAULT_AVATAR_SIZE)
         self._avatar_label = QLabel()
         self._avatar_label.setObjectName("petAvatarLabel")
         self._avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -178,6 +250,7 @@ class DesktopPetWindow(QWidget):
         self.set_state(DesktopState.IDLE)
         settings = load_desktop_settings(self.paths)
         self.move(settings.position_x, settings.position_y)
+        self.apply_settings(settings)
 
     def set_state(self, state: DesktopState) -> None:
         self._caption.setText(STATE_CAPTIONS[state])
@@ -205,6 +278,34 @@ class DesktopPetWindow(QWidget):
 
     def persist_position(self) -> None:
         save_desktop_position(self.paths, self.x(), self.y())
+
+    def apply_settings(self, settings: DesktopSettings) -> None:
+        self._always_on_top = settings.always_on_top
+        self._opacity_percent = _clamp_int(settings.opacity_percent, MIN_OPACITY_PERCENT, MAX_OPACITY_PERCENT)
+        self._pet_size = _clamp_int(settings.pet_size, MIN_PET_SIZE, MAX_PET_SIZE)
+        self._apply_window_preferences()
+
+    def apply_preferences(self, *, always_on_top: bool, opacity_percent: int, pet_size: int) -> None:
+        settings = save_desktop_settings(
+            self.paths,
+            DesktopSettings(
+                position_x=self.x(),
+                position_y=self.y(),
+                always_on_top=always_on_top,
+                opacity_percent=opacity_percent,
+                pet_size=pet_size,
+            ),
+        )
+        self.apply_settings(settings)
+
+    def current_opacity_percent(self) -> int:
+        return self._opacity_percent
+
+    def current_pet_size(self) -> int:
+        return self._pet_size
+
+    def is_always_on_top(self) -> bool:
+        return self._always_on_top
 
     def set_close_to_tray_enabled(self, enabled: bool) -> None:
         self._close_to_tray_enabled = enabled
@@ -255,6 +356,20 @@ class DesktopPetWindow(QWidget):
     def _position_panel(self) -> None:
         self.panel.move(self.x() - self.panel.width() - 12, self.y())
 
+    def _apply_window_preferences(self) -> None:
+        was_visible = self.isVisible()
+        flags = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
+        if self._always_on_top:
+            flags |= Qt.WindowType.WindowStaysOnTopHint
+        self.setWindowFlags(flags)
+        self.setWindowOpacity(self._opacity_percent / 100)
+        self.setFixedSize(self._pet_size, self._pet_size)
+        avatar_size = round(DEFAULT_AVATAR_SIZE * self._pet_size / DEFAULT_PET_SIZE)
+        self._avatar.setFixedSize(avatar_size, avatar_size)
+        self._render_asset()
+        if was_visible:
+            self.show()
+
     def _set_asset(self, state: DesktopState) -> None:
         self._current_asset_path = desktop_asset_path(state)
         self._asset_pixmap = QPixmap(str(self._current_asset_path))
@@ -268,7 +383,8 @@ class DesktopPetWindow(QWidget):
 
     def _render_asset(self) -> None:
         if not self._asset_pixmap.isNull():
-            size = self._current_animation_profile.frame_sizes[self._animation_frame]
+            base_size = self._current_animation_profile.frame_sizes[self._animation_frame]
+            size = round(base_size * self._pet_size / DEFAULT_PET_SIZE)
             self._avatar_label.setPixmap(
                 self._asset_pixmap.scaled(
                     size,
@@ -281,3 +397,7 @@ class DesktopPetWindow(QWidget):
             return
         self._avatar_label.clear()
         self._avatar_label.setText("J")
+
+
+def _clamp_int(value: int, minimum: int, maximum: int) -> int:
+    return max(minimum, min(maximum, int(value)))
