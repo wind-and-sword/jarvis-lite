@@ -70,6 +70,13 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertIn("用户偏好：中文回答", self.panel.transcript_text())
         self.assertIn("状态：success", self.panel.status_text())
 
+    def test_panel_tracks_last_result_after_submission(self):
+        self.panel.submit_text("/memory")
+
+        self.assertIn("用户：/memory", self.panel.last_result_text())
+        self.assertIn("Jarvis：", self.panel.last_result_text())
+        self.assertIn("用户偏好：中文回答", self.panel.last_result_text())
+
     def test_pet_caption_tracks_panel_state(self):
         self.pet.toggle_panel()
         self.panel.submit_text("/not-found")

@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 from ..config import ProjectPaths
 from .app_style import PANEL_STYLE, PET_STYLE
 from .assets import desktop_asset_path
-from .bridge import DesktopBridge, quick_commands
+from .bridge import DesktopBridge, DesktopResponse, quick_commands
 from .settings import DesktopSettings, load_desktop_settings, save_desktop_position, save_desktop_settings
 from .state import DesktopState
 
@@ -70,6 +70,7 @@ class AssistantPanel(QWidget):
         self._settings_listener: Callable[[DesktopSettings], None] | None = None
         self._settings_position_x = initial_settings.position_x
         self._settings_position_y = initial_settings.position_y
+        self._last_result_text = ""
         self.setObjectName("assistantPanel")
         self.setWindowTitle("Jarvis Lite 助手面板")
         self.setMinimumSize(420, 620)
@@ -113,18 +114,25 @@ class AssistantPanel(QWidget):
         layout.addLayout(settings_row)
         self.setLayout(layout)
 
-    def submit_text(self, text: str) -> None:
+    def submit_text(self, text: str) -> DesktopResponse | None:
         prompt = text.strip()
         if not prompt:
-            return
+            return None
         self._set_state(DesktopState.WORKING if prompt.startswith("/") else DesktopState.THINKING)
         response = self.bridge.send(prompt)
-        self._output.append(f"用户：{response.user_input}")
-        self._output.append(f"Jarvis：{response.assistant_text}")
+        user_line = f"用户：{response.user_input}"
+        assistant_line = f"Jarvis：{response.assistant_text}"
+        self._output.append(user_line)
+        self._output.append(assistant_line)
+        self._last_result_text = f"{user_line}\n{assistant_line}"
         self._set_state(response.state)
+        return response
 
     def transcript_text(self) -> str:
         return self._output.toPlainText()
+
+    def last_result_text(self) -> str:
+        return self._last_result_text
 
     def status_text(self) -> str:
         return self._status_label.text()

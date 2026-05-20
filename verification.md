@@ -1,6 +1,6 @@
 # 验证记录
 
-> 日期：2026-05-19
+> 日期：2026-05-20
 > 执行者：Codex
 
 ## 验证命令
@@ -16,6 +16,7 @@
 .\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets -v
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 .\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
 .\.venv\Scripts\python.exe src/app.py --once "/memory"
 .\.venv\Scripts\python.exe src/app.py --once "/status"
 .\.venv\Scripts\python.exe src/app.py --once "/kb"
@@ -138,13 +139,13 @@ hello
 
 ## 验证结论
 
-- 单元测试：115 个测试通过。
+- 单元测试：119 个测试通过。
 - 桌面桥接层：`tests.test_desktop_bridge` 3 个测试通过，覆盖会话调用、错误状态和快捷命令。
 - 桌面入口：`tests.test_desktop_app` 3 个测试通过，覆盖桌面标题、脚本入口、PySide6 依赖声明和 smoke 创建桌面小助手窗口。
 - 桌面素材：`tests.test_desktop_assets` 2 个测试通过，覆盖 5 个桌面状态 SVG 素材均在项目内。
 - 桌面设置：`tests.test_desktop_settings` 6 个测试通过，覆盖运行态设置目录、窗口位置保存读取、偏好保存读取、保存位置时保留偏好和损坏设置回退默认值。
-- 桌面托盘：`tests.test_desktop_tray` 5 个测试通过，覆盖托盘菜单、关闭到托盘、显示助手、隐藏助手、常用命令入口和退出应用。
-- 桌面窗口：`tests.test_desktop_widgets` 12 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心、小助手状态同步、状态图片切换、窗口位置保存、状态动效、启动恢复设置、应用设置和面板设置回调。
+- 桌面托盘：`tests.test_desktop_tray` 8 个测试通过，覆盖托盘菜单、关闭到托盘、显示助手、隐藏助手、常用命令入口、最近结果入口和退出应用。
+- 桌面窗口：`tests.test_desktop_widgets` 13 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心、最近提交结果、小助手状态同步、状态图片切换、窗口位置保存、状态动效、启动恢复设置、应用设置和面板设置回调。
 - 桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 可创建桌面小助手窗口并输出 `desktopPetWindow`。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。
@@ -175,4 +176,4 @@ hello
 
 - 未接入大模型 API。
 - 摄像头、麦克风等硬件入口按用户要求暂缓。
-- 未制作桌面安装包、系统托盘和开机自启动。
+- 未制作桌面安装包和开机自启动。

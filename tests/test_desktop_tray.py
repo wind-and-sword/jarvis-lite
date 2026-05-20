@@ -47,6 +47,13 @@ class DesktopTrayTests(unittest.TestCase):
 
         self.assertEqual(controller.quick_command_texts(), ("状态", "知识库", "常用目录", "生成日报"))
 
+    def test_tray_recent_result_starts_empty(self):
+        controller = DesktopTrayController(self.app, self.pet)
+
+        self.assertEqual(controller.recent_result_text(), "")
+        self.assertEqual(controller.recent_result_action.text(), "最近结果（暂无）")
+        self.assertFalse(controller.recent_result_action.isEnabled())
+
     def test_tray_quick_command_shows_panel_and_submits_prompt(self):
         controller = DesktopTrayController(self.app, self.pet)
 
@@ -57,6 +64,35 @@ class DesktopTrayTests(unittest.TestCase):
         self.assertTrue(self.panel.isVisible())
         self.assertIn("用户：/kb", self.panel.transcript_text())
         self.assertIn("Jarvis：", self.panel.transcript_text())
+
+    def test_tray_quick_command_updates_recent_result(self):
+        controller = DesktopTrayController(self.app, self.pet)
+
+        controller.quick_command_action("知识库").trigger()
+        QApplication.processEvents()
+
+        self.assertTrue(controller.recent_result_action.isEnabled())
+        self.assertEqual(controller.recent_result_action.text(), "最近结果：知识库")
+        self.assertIn("知识库", controller.recent_result_text())
+        self.assertIn("用户：/kb", controller.recent_result_text())
+        self.assertIn("Jarvis：", controller.recent_result_text())
+        self.assertIn("最近：知识库", controller.tray_icon.toolTip())
+
+    def test_recent_result_action_shows_panel_without_resubmitting_prompt(self):
+        controller = DesktopTrayController(self.app, self.pet)
+
+        controller.quick_command_action("知识库").trigger()
+        QApplication.processEvents()
+        transcript_before = self.panel.transcript_text()
+
+        controller.hide_assistant()
+        QApplication.processEvents()
+        controller.recent_result_action.trigger()
+        QApplication.processEvents()
+
+        self.assertTrue(self.pet.isVisible())
+        self.assertTrue(self.panel.isVisible())
+        self.assertEqual(self.panel.transcript_text(), transcript_before)
 
     def test_pet_close_hides_to_tray_when_tray_controller_is_enabled(self):
         DesktopTrayController(self.app, self.pet)

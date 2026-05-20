@@ -13,6 +13,7 @@ from .widgets import DesktopPetWindow
 
 
 TRAY_QUICK_COMMAND_PROMPTS = ("/status", "/kb", "/dirs", "/daily-report")
+RECENT_RESULT_EMPTY_TEXT = "最近结果（暂无）"
 
 
 class DesktopTrayController:
@@ -23,6 +24,7 @@ class DesktopTrayController:
         self.pet_window = pet_window
         self.panel = pet_window.panel
         self._quit_requested = False
+        self._recent_result_text = ""
 
         self.app.setQuitOnLastWindowClosed(False)
         self.pet_window.set_close_to_tray_enabled(True)
@@ -30,17 +32,22 @@ class DesktopTrayController:
         self.menu = QMenu()
         self.show_action = QAction("显示助手", self.menu)
         self.hide_action = QAction("隐藏助手", self.menu)
+        self.recent_result_action = QAction(RECENT_RESULT_EMPTY_TEXT, self.menu)
         self.quit_action = QAction("退出", self.menu)
         self._quick_command_actions: dict[str, QAction] = {}
 
         self.show_action.triggered.connect(self.show_assistant)
         self.hide_action.triggered.connect(self.hide_assistant)
+        self.recent_result_action.triggered.connect(self._show_recent_result)
         self.quit_action.triggered.connect(self.quit_application)
+        self.recent_result_action.setEnabled(False)
 
         self.menu.addAction(self.show_action)
         self.menu.addAction(self.hide_action)
         self.menu.addSeparator()
         self._add_quick_command_actions()
+        self.menu.addSeparator()
+        self.menu.addAction(self.recent_result_action)
         self.menu.addSeparator()
         self.menu.addAction(self.quit_action)
 
@@ -61,6 +68,9 @@ class DesktopTrayController:
 
     def quick_command_action(self, label: str) -> QAction:
         return self._quick_command_actions[label]
+
+    def recent_result_text(self) -> str:
+        return self._recent_result_text
 
     def show_assistant(self, checked: bool = False) -> None:
         self.pet_window.show()
@@ -96,13 +106,31 @@ class DesktopTrayController:
             if command.prompt not in TRAY_QUICK_COMMAND_PROMPTS:
                 continue
             action = QAction(command.label, self.menu)
-            action.triggered.connect(lambda checked=False, prompt=command.prompt: self._run_quick_command(prompt))
+            action.triggered.connect(
+                lambda checked=False, label=command.label, prompt=command.prompt: self._run_quick_command(label, prompt)
+            )
             self._quick_command_actions[command.label] = action
             self.menu.addAction(action)
 
-    def _run_quick_command(self, prompt: str) -> None:
+    def _run_quick_command(self, label: str, prompt: str) -> None:
+        self._show_panel()
+        response = self.panel.submit_text(prompt)
+        if response is not None:
+            self._update_recent_result(label)
+
+    def _show_panel(self) -> None:
         self.show_assistant()
         self.panel.show()
         if os.environ.get("QT_QPA_PLATFORM") not in {"minimal", "offscreen"}:
             self.panel.raise_()
-        self.panel.submit_text(prompt)
+
+    def _show_recent_result(self, checked: bool = False) -> None:
+        if not self._recent_result_text:
+            return
+        self._show_panel()
+
+    def _update_recent_result(self, label: str) -> None:
+        self._recent_result_text = f"{label}\n{self.panel.last_result_text()}"
+        self.recent_result_action.setText(f"最近结果：{label}")
+        self.recent_result_action.setEnabled(True)
+        self.tray_icon.setToolTip(f"Jarvis Lite - 最近：{label}")
