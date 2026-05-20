@@ -5,6 +5,8 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from jarvis_lite import __version__
+
 from .packaging import DESKTOP_EXE_NAME, DesktopBuildPaths, default_desktop_build_paths
 
 
@@ -39,7 +41,7 @@ def windows_installer_paths(
     )
 
 
-def render_install_script(exe_name: str = f"{DESKTOP_EXE_NAME}.exe") -> str:
+def render_install_script(exe_name: str = f"{DESKTOP_EXE_NAME}.exe", version: str = __version__) -> str:
     return f"""@echo off
 setlocal
 set "INSTALL_DIR=%LOCALAPPDATA%\\Programs\\Jarvis Lite"
@@ -51,7 +53,7 @@ copy /Y "%~dp0{exe_name}" "%INSTALL_DIR%\\{exe_name}" >nul
 copy /Y "%~dp0{UNINSTALL_SCRIPT_NAME}" "%INSTALL_DIR%\\{UNINSTALL_SCRIPT_NAME}" >nul
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$w=New-Object -ComObject WScript.Shell; $s=$w.CreateShortcut('%START_MENU_DIR%\\Jarvis Lite.lnk'); $s.TargetPath='%INSTALL_DIR%\\{exe_name}'; $s.WorkingDirectory='%INSTALL_DIR%'; $s.Save(); $d=$w.CreateShortcut('%DESKTOP_DIR%\\Jarvis Lite.lnk'); $d.TargetPath='%INSTALL_DIR%\\{exe_name}'; $d.WorkingDirectory='%INSTALL_DIR%'; $d.Save(); $u=$w.CreateShortcut('%START_MENU_DIR%\\Uninstall Jarvis Lite.lnk'); $u.TargetPath='%INSTALL_DIR%\\{UNINSTALL_SCRIPT_NAME}'; $u.WorkingDirectory='%INSTALL_DIR%'; $u.Save()"
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLite" /v DisplayName /d "Jarvis Lite" /f >nul
-reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLite" /v DisplayVersion /d "0.1.0" /f >nul
+reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLite" /v DisplayVersion /d "{version}" /f >nul
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLite" /v InstallLocation /d "%INSTALL_DIR%" /f >nul
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLite" /v UninstallString /d "\\"%INSTALL_DIR%\\{UNINSTALL_SCRIPT_NAME}\\"" /f >nul
 echo Jarvis Lite installed to "%INSTALL_DIR%".

@@ -24,6 +24,11 @@ class WindowsInstallerTests(unittest.TestCase):
         self.assertIn("Uninstall Jarvis Lite.lnk", script)
         self.assertIn(r"HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\JarvisLite", script)
 
+    def test_install_script_uses_supplied_project_version(self):
+        script = render_install_script("JarvisLite.exe", version="9.8.7")
+
+        self.assertIn('DisplayVersion /d "9.8.7"', script)
+
     def test_uninstall_script_removes_shortcuts_install_dir_and_registry(self):
         script = render_uninstall_script()
 
