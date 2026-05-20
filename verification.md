@@ -139,7 +139,7 @@ hello
 
 ## 验证结论
 
-- 单元测试：129 个测试通过。
+- 单元测试：132 个测试通过。
 - 桌面桥接层：`tests.test_desktop_bridge` 3 个测试通过，覆盖会话调用、错误状态和快捷命令。
 - 桌面入口：`tests.test_desktop_app` 4 个测试通过，覆盖桌面标题、应用身份和图标、脚本入口、PySide6 依赖声明和 smoke 创建桌面小助手窗口。
 - 桌面素材：`tests.test_desktop_assets` 3 个测试通过，覆盖 5 个桌面状态 SVG 素材和应用图标均在项目内。
@@ -147,6 +147,9 @@ hello
 - 桌面托盘：`tests.test_desktop_tray` 8 个测试通过，覆盖托盘菜单、关闭到托盘、显示助手、隐藏助手、常用命令入口、最近结果入口和退出应用。
 - 桌面窗口：`tests.test_desktop_widgets` 15 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心、最近提交结果、面板尺寸恢复与保存、小助手状态同步、状态图片切换、窗口位置保存、状态动效、启动恢复设置、应用设置和面板设置回调。
 - 桌面打包准备：`tests.test_desktop_packaging` 3 个测试通过，覆盖 PyInstaller 参数、项目外输出目录和打包可选依赖。
+- Windows 安装器：`tests.test_windows_installer` 3 个测试通过，覆盖安装脚本、卸载脚本和 IExpress SED 文件。
+- Windows 打包产物：`scripts\build_windows_installer.py` 已生成 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe` 和 `E:\oyzj\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe`。
+- 打包 exe smoke：`JarvisLite.exe --smoke` 退出码为 0。
 - 桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 可创建桌面小助手窗口并输出 `desktopPetWindow`。
 - 命令行入口：可启动并执行一次性输入。
 - 记忆读取：`/memory` 可读取 `memory/profile.md`。

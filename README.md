@@ -90,9 +90,10 @@ jarvis-lite-desktop
 ```powershell
 python -m pip install -e ".[desktop-build]"
 python scripts/build_desktop_exe.py
+python scripts/build_windows_installer.py
 ```
 
-桌面 exe 打包输出默认位于项目外的 `../jarvis-lite-dist/desktop-exe/`。
+桌面 exe 打包输出默认位于项目外的 `../jarvis-lite-dist/desktop-exe/`；Windows 安装器输出到 `../jarvis-lite-dist/JarvisLiteSetup.exe`。
 
 运行本地测试：
 
@@ -148,6 +149,7 @@ python src/app.py --once "/speak 你好，我是 Jarvis Lite"
 - [word/2026-05-20-jarvis-lite-desktop-installation-plan.md](word/2026-05-20-jarvis-lite-desktop-installation-plan.md)：桌面安装包三阶段计划。
 - [word/2026-05-20-jarvis-lite-desktop-experience-closeout-design.md](word/2026-05-20-jarvis-lite-desktop-experience-closeout-design.md)：桌面体验收口设计。
 - [word/2026-05-20-jarvis-lite-desktop-package-prep-design.md](word/2026-05-20-jarvis-lite-desktop-package-prep-design.md)：桌面打包前准备设计。
+- [word/2026-05-20-jarvis-lite-desktop-windows-installer-design.md](word/2026-05-20-jarvis-lite-desktop-windows-installer-design.md)：Windows 桌面安装器设计。
 - [word/2026-05-18-jarvis-lite-progress.md](word/2026-05-18-jarvis-lite-progress.md)：阶段 1 当前进度。
 - [word/2026-05-18-jarvis-lite-phase-2-progress.md](word/2026-05-18-jarvis-lite-phase-2-progress.md)：阶段 2 当前进度。
 - [word/2026-05-19-jarvis-lite-phase-2-progress.md](word/2026-05-19-jarvis-lite-phase-2-progress.md)：阶段 2 资料导入进度。
@@ -158,3 +160,4 @@ python src/app.py --once "/speak 你好，我是 Jarvis Lite"
 - [word/2026-05-20-jarvis-lite-desktop-panel-size-progress.md](word/2026-05-20-jarvis-lite-desktop-panel-size-progress.md)：桌面面板尺寸持久化进度。
 - [word/2026-05-20-jarvis-lite-desktop-experience-closeout-progress.md](word/2026-05-20-jarvis-lite-desktop-experience-closeout-progress.md)：桌面体验收口进度。
 - [word/2026-05-20-jarvis-lite-desktop-package-prep-progress.md](word/2026-05-20-jarvis-lite-desktop-package-prep-progress.md)：桌面打包前准备进度。
+- [word/2026-05-20-jarvis-lite-desktop-windows-installer-progress.md](word/2026-05-20-jarvis-lite-desktop-windows-installer-progress.md)：Windows 桌面安装器进度。
