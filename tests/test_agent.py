@@ -61,6 +61,26 @@ class AgentTests(unittest.TestCase):
         self.assertIn("阶段 4 自动化状态", response)
         self.assertIn("常用目录", response)
 
+    def test_update_status_command_reports_available_update_from_manifest(self):
+        manifest = Path(self.temp_dir.name) / "update.json"
+        manifest.write_text(
+            json.dumps(
+                {
+                    "version": "0.2.0",
+                    "download_url": "https://example.com/JarvisLiteSetup.exe",
+                    "release_notes": "新增更新检查。",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle(f"/update-status {manifest}")
+
+        self.assertIn("发现新版本：0.2.0", response)
+        self.assertIn("当前版本：0.1.0", response)
+        self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
+
     def test_dir_add_and_dirs_commands_manage_common_directories(self):
         target = Path(self.temp_dir.name) / "projects"
         target.mkdir()

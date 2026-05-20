@@ -139,8 +139,8 @@ hello
 
 ## 验证结论
 
-- 单元测试：157 个测试通过。
-- 桌面桥接层：`tests.test_desktop_bridge` 4 个测试通过，覆盖会话调用、错误状态、完整快捷命令和无参数快捷命令筛选。
+- 单元测试：162 个测试通过。
+- 桌面桥接层：`tests.test_desktop_bridge` 4 个测试通过，覆盖会话调用、错误状态、完整快捷命令、无参数快捷命令筛选和更新快捷入口。
 - 桌面入口：`tests.test_desktop_app` 6 个测试通过，覆盖桌面标题、应用身份和图标、脚本入口、PySide6 依赖声明、设置同步、开机启动同步去重和 smoke 创建桌面小助手窗口。
 - 桌面素材：`tests.test_desktop_assets` 3 个测试通过，覆盖 5 个桌面状态 SVG 素材和应用图标均在项目内。
 - 桌面开机启动：`tests.test_desktop_autostart` 7 个测试通过，覆盖 Startup 目录、源码模式快捷方式、打包模式快捷方式、PowerShell 脚本、启用、关闭和同步。
@@ -167,6 +167,7 @@ hello
 - 语音播报：`/speak 文本` 可通过语音引擎播报；自动化验证使用 transcript 引擎写入 `logs/voice-output.txt`。
 - 语音入口：`/voice 已识别的语音文本` 可复用现有 Agent 回答流程，并播报回答。
 - 工作台自动化状态：`/automation-status` 可输出阶段 4 当前能力。
+- 更新检查：`/update-status [清单路径或URL]` 可读取本地或远程 JSON 清单，显示当前版本、新版本、下载地址和更新说明；未配置更新源时会提示 `JARVIS_LITE_UPDATE_MANIFEST_URL`。
 - 常用目录：`/dir-add 别名 目录路径` 可登记常用目录，`/dirs` 可查看登记结果。
 - 日报生成：`/daily-report [文件名]` 可在 `word/` 生成 Markdown 日报。
 - 文件整理预览：`/organize-preview 常用目录别名` 可按扩展名输出整理计划，不移动或删除文件。
@@ -292,6 +293,43 @@ Start-Process -FilePath "..\jarvis-lite-dist\desktop-exe\JarvisLite.exe" -Argume
 
 - Windows 安装器专项测试 7 个通过。
 - 全量测试 157 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 未发现空白错误，仅出现 CRLF 换行提示。
+- 安装器重新生成成功。
+- 打包 exe smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`，退出码为 0。
+
+## 2026-05-20 桌面更新检查第一版验证
+
+### RED：更新模块、命令和桌面入口缺失
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_update tests.test_agent tests.test_desktop_bridge tests.test_desktop_widgets tests.test_desktop_tray -v
+```
+
+结果：
+
+- `tests.test_update` 失败原因：`jarvis_lite.update` 模块不存在。
+- `tests.test_agent` 失败原因：`/update-status` 返回未知命令。
+- `tests.test_desktop_bridge` 失败原因：快捷命令缺少 `/update-status`。
+- `tests.test_desktop_widgets` 失败原因：面板快捷按钮缺少“检查更新”。
+
+### 验证命令
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_update tests.test_agent tests.test_desktop_bridge tests.test_desktop_widgets tests.test_desktop_tray -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+.\.venv\Scripts\python.exe scripts\build_windows_installer.py
+Start-Process -FilePath "..\jarvis-lite-dist\desktop-exe\JarvisLite.exe" -ArgumentList "--smoke" -Wait -PassThru -NoNewWindow
+```
+
+结果：
+
+- 更新模块、Agent、桌面桥接、widget 和托盘专项测试共 64 个通过。
+- 全量测试 162 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 未发现空白错误，仅出现 CRLF 换行提示。
 - 安装器重新生成成功。

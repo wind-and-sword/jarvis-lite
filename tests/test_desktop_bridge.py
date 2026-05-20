@@ -45,6 +45,7 @@ class DesktopBridgeTests(unittest.TestCase):
         self.assertIn("/kb", prompts)
         self.assertIn("/dirs", prompts)
         self.assertIn("/daily-report", prompts)
+        self.assertIn("/update-status", prompts)
         self.assertIn("/organize-preview", prompts)
 
     def test_direct_quick_commands_exclude_commands_that_need_arguments(self):
@@ -52,8 +53,9 @@ class DesktopBridgeTests(unittest.TestCase):
         labels = tuple(command.label for command in commands)
         prompts = tuple(command.prompt for command in commands)
 
-        self.assertEqual(labels, ("状态", "知识库", "常用目录", "生成日报"))
+        self.assertEqual(labels, ("状态", "知识库", "常用目录", "生成日报", "检查更新"))
         self.assertNotIn("/organize-preview", prompts)
+        self.assertIn("/update-status", prompts)
 
 
 if __name__ == "__main__":

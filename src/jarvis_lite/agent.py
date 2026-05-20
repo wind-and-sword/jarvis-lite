@@ -16,6 +16,7 @@ from .config import ProjectPaths, build_project_paths
 from .knowledge import answer_from_data, describe_knowledge_base, import_knowledge_path, set_document_tags
 from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
 from .tools import ToolRegistry
+from .update import describe_update_status
 from .voice import describe_voice, speak_text
 
 
@@ -48,6 +49,9 @@ class JarvisAgent:
         if prompt in {"/automation-status", "automation-status"}:
             self.tools.run("record_log", message="查看阶段 4 自动化状态")
             return describe_automation(self.paths)
+        if prompt in {"/update-status", "update-status"}:
+            self.tools.run("record_log", message="检查更新状态")
+            return describe_update_status()
         if prompt in {"/dirs", "dirs"}:
             self.tools.run("record_log", message="查看常用目录")
             return self._directories()
@@ -181,6 +185,11 @@ class JarvisAgent:
                 return "用法：/dir-open 常用目录别名"
             return self._open_directory(args[0])
 
+        if command == "/update-status":
+            source = self._strip_quotes(args[0]) if args else None
+            self.tools.run("record_log", message=f"检查更新状态：{source or '默认更新源'}")
+            return describe_update_status(source)
+
         if command == "/import":
             if not args:
                 return "用法：/import 源文件或目录路径 [目标文件名]"
@@ -216,6 +225,7 @@ class JarvisAgent:
                 "/speak 文本：播报一段文本",
                 "/voice 已识别的语音文本：按语音入口处理文本并播报回答",
                 "/automation-status：查看阶段 4 自动化状态",
+                "/update-status [清单路径或URL]：检查 Jarvis Lite 新版本",
                 "/dir-add 别名 目录路径：登记常用目录",
                 "/dirs：查看常用目录",
                 "/daily-report [文件名]：生成工作日报到 word/",
