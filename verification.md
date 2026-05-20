@@ -139,16 +139,17 @@ hello
 
 ## 验证结论
 
-- 单元测试：137 个测试通过。
+- 单元测试：146 个测试通过。
 - 桌面桥接层：`tests.test_desktop_bridge` 3 个测试通过，覆盖会话调用、错误状态和快捷命令。
-- 桌面入口：`tests.test_desktop_app` 4 个测试通过，覆盖桌面标题、应用身份和图标、脚本入口、PySide6 依赖声明和 smoke 创建桌面小助手窗口。
+- 桌面入口：`tests.test_desktop_app` 6 个测试通过，覆盖桌面标题、应用身份和图标、脚本入口、PySide6 依赖声明、设置同步、开机启动同步去重和 smoke 创建桌面小助手窗口。
 - 桌面素材：`tests.test_desktop_assets` 3 个测试通过，覆盖 5 个桌面状态 SVG 素材和应用图标均在项目内。
-- 桌面设置：`tests.test_desktop_settings` 8 个测试通过，覆盖运行态设置目录、窗口位置保存读取、偏好保存读取、面板尺寸保存读取、保存位置时保留偏好和损坏设置回退默认值。
+- 桌面开机启动：`tests.test_desktop_autostart` 7 个测试通过，覆盖 Startup 目录、源码模式快捷方式、打包模式快捷方式、PowerShell 脚本、启用、关闭和同步。
+- 桌面设置：`tests.test_desktop_settings` 8 个测试通过，覆盖运行态设置目录、窗口位置保存读取、偏好保存读取、开机启动偏好、面板尺寸保存读取、保存位置时保留偏好和损坏设置回退默认值。
 - 桌面托盘：`tests.test_desktop_tray` 8 个测试通过，覆盖托盘菜单、关闭到托盘、显示助手、隐藏助手、常用命令入口、最近结果入口和退出应用。
 - 桌面窗口：`tests.test_desktop_widgets` 15 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心、最近提交结果、面板尺寸恢复与保存、小助手状态同步、状态图片切换、窗口位置保存、状态动效、启动恢复设置、应用设置和面板设置回调。
 - 桌面打包准备：`tests.test_desktop_packaging` 7 个测试通过，覆盖 PyInstaller 参数、项目外输出目录、打包可选依赖、Windows 图标和版本资源。
 - Windows 安装器：`tests.test_windows_installer` 4 个测试通过，覆盖安装脚本、卸载脚本、项目版本号和 IExpress SED 文件。
-- Windows 打包产物：`scripts\build_windows_installer.py` 已生成 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe` 和 `E:\oyzj\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe`。
+- Windows 打包产物：`scripts\build_windows_installer.py` 已重新生成 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe` 和 `E:\oyzj\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe`。
 - Windows exe 元数据：PyInstaller 构建日志显示已复制图标和版本信息；`JarvisLite.exe` 的 `FileDescription` 为 `Jarvis Lite desktop assistant`，`ProductName` 为 `Jarvis Lite`，版本为 `0.1.0`。
 - 打包 exe smoke：`JarvisLite.exe --smoke` 退出码为 0。
 - 桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 可创建桌面小助手窗口并输出 `desktopPetWindow`。
@@ -181,4 +182,4 @@ hello
 
 - 未接入大模型 API。
 - 摄像头、麦克风等硬件入口按用户要求暂缓。
-- 未做代码签名、专业安装器替换和开机自启动。
+- 未做代码签名和专业安装器替换。

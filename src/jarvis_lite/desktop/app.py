@@ -3,12 +3,14 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from pathlib import Path
 from typing import Any
 
 from .. import __version__
+from .autostart import default_autostart_shortcut, sync_windows_autostart
 from .bridge import DesktopBridge
 from .assets import desktop_app_icon_path
-from .settings import load_desktop_settings
+from .settings import DesktopSettings, load_desktop_settings
 from .tray import DesktopTrayController
 from .widgets import AssistantPanel, DesktopPetWindow
 
@@ -46,6 +48,26 @@ def ensure_qt_available() -> None:
     from PySide6 import QtWidgets  # noqa: F401
 
 
+def apply_panel_settings(
+    values: DesktopSettings,
+    pet_window: DesktopPetWindow,
+    project_root: Path,
+    *,
+    syncer=sync_windows_autostart,
+) -> None:
+    """应用面板设置，并同步当前用户级开机启动。"""
+
+    previous_launch_at_login = load_desktop_settings(pet_window.paths).launch_at_login
+    pet_window.apply_preferences(
+        always_on_top=values.always_on_top,
+        opacity_percent=values.opacity_percent,
+        pet_size=values.pet_size,
+        launch_at_login=values.launch_at_login,
+    )
+    if values.launch_at_login != previous_launch_at_login:
+        syncer(values.launch_at_login, default_autostart_shortcut(project_root=project_root))
+
+
 def create_desktop_app(bridge: DesktopBridge | None = None) -> tuple[Any, Any]:
     from PySide6.QtGui import QFont, QIcon
     from PySide6.QtWidgets import QApplication
@@ -63,13 +85,7 @@ def create_desktop_app(bridge: DesktopBridge | None = None) -> tuple[Any, Any]:
     pet_window = DesktopPetWindow(panel, desktop_bridge.paths)
     panel.setWindowIcon(app_icon)
     pet_window.setWindowIcon(app_icon)
-    panel.set_settings_listener(
-        lambda values: pet_window.apply_preferences(
-            always_on_top=values.always_on_top,
-            opacity_percent=values.opacity_percent,
-            pet_size=values.pet_size,
-        )
-    )
+    panel.set_settings_listener(lambda values: apply_panel_settings(values, pet_window, desktop_bridge.paths.root))
     return app, pet_window
 
 

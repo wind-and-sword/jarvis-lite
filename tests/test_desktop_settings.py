@@ -47,6 +47,7 @@ class DesktopSettingsTests(unittest.TestCase):
         self.assertTrue(loaded.always_on_top)
         self.assertEqual(loaded.opacity_percent, 100)
         self.assertEqual(loaded.pet_size, 148)
+        self.assertFalse(loaded.launch_at_login)
 
     def test_save_and_load_desktop_preferences(self):
         saved = save_desktop_preferences(
@@ -54,15 +55,18 @@ class DesktopSettingsTests(unittest.TestCase):
             always_on_top=False,
             opacity_percent=82,
             pet_size=184,
+            launch_at_login=True,
         )
         loaded = load_desktop_settings(self.paths)
 
         self.assertFalse(saved.always_on_top)
         self.assertEqual(saved.opacity_percent, 82)
         self.assertEqual(saved.pet_size, 184)
+        self.assertTrue(saved.launch_at_login)
         self.assertFalse(loaded.always_on_top)
         self.assertEqual(loaded.opacity_percent, 82)
         self.assertEqual(loaded.pet_size, 184)
+        self.assertTrue(loaded.launch_at_login)
 
     def test_save_and_load_desktop_panel_size(self):
         saved = save_desktop_panel_size(self.paths, 560, 700)
@@ -82,6 +86,7 @@ class DesktopSettingsTests(unittest.TestCase):
                 always_on_top=False,
                 opacity_percent=76,
                 pet_size=172,
+                launch_at_login=True,
                 panel_width=560,
                 panel_height=700,
             ),
@@ -94,6 +99,7 @@ class DesktopSettingsTests(unittest.TestCase):
         self.assertFalse(loaded.always_on_top)
         self.assertEqual(loaded.opacity_percent, 76)
         self.assertEqual(loaded.pet_size, 172)
+        self.assertTrue(loaded.launch_at_login)
         self.assertEqual(loaded.panel_width, 560)
         self.assertEqual(loaded.panel_height, 700)
 
@@ -106,6 +112,7 @@ class DesktopSettingsTests(unittest.TestCase):
                 always_on_top=False,
                 opacity_percent=76,
                 pet_size=172,
+                launch_at_login=True,
             ),
         )
 
@@ -116,6 +123,7 @@ class DesktopSettingsTests(unittest.TestCase):
         self.assertFalse(loaded.always_on_top)
         self.assertEqual(loaded.opacity_percent, 76)
         self.assertEqual(loaded.pet_size, 172)
+        self.assertTrue(loaded.launch_at_login)
         self.assertEqual(loaded.panel_width, 580)
         self.assertEqual(loaded.panel_height, 720)
 

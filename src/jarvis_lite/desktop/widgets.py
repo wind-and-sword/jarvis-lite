@@ -167,12 +167,24 @@ class AssistantPanel(QWidget):
             always_on_top=self._always_on_top_checkbox.isChecked(),
             opacity_percent=self._opacity_slider.value(),
             pet_size=self._pet_size_slider.value(),
+            launch_at_login=self._launch_at_login_checkbox.isChecked(),
             panel_width=_clamp_int(self.width(), MIN_PANEL_WIDTH, MAX_PANEL_WIDTH),
             panel_height=_clamp_int(self.height(), MIN_PANEL_HEIGHT, MAX_PANEL_HEIGHT),
         )
 
-    def change_settings(self, *, always_on_top: bool, opacity_percent: int, pet_size: int) -> None:
+    def change_settings(
+        self,
+        *,
+        always_on_top: bool,
+        opacity_percent: int,
+        pet_size: int,
+        launch_at_login: bool | None = None,
+    ) -> None:
         self._set_settings_controls(always_on_top, opacity_percent, pet_size)
+        if launch_at_login is not None:
+            self._launch_at_login_checkbox.blockSignals(True)
+            self._launch_at_login_checkbox.setChecked(launch_at_login)
+            self._launch_at_login_checkbox.blockSignals(False)
         self._emit_settings_changed()
 
     def persist_size(self) -> DesktopSettings:
@@ -207,6 +219,8 @@ class AssistantPanel(QWidget):
     def _build_settings_row(self, settings: DesktopSettings) -> QHBoxLayout:
         self._always_on_top_checkbox = QCheckBox("置顶")
         self._always_on_top_checkbox.setObjectName("alwaysOnTopToggle")
+        self._launch_at_login_checkbox = QCheckBox("开机启动")
+        self._launch_at_login_checkbox.setObjectName("launchAtLoginToggle")
         self._opacity_slider = QSlider(Qt.Orientation.Horizontal)
         self._opacity_slider.setObjectName("opacitySlider")
         self._opacity_slider.setRange(MIN_OPACITY_PERCENT, MAX_OPACITY_PERCENT)
@@ -214,13 +228,16 @@ class AssistantPanel(QWidget):
         self._pet_size_slider.setObjectName("petSizeSlider")
         self._pet_size_slider.setRange(MIN_PET_SIZE, MAX_PET_SIZE)
         self._set_settings_controls(settings.always_on_top, settings.opacity_percent, settings.pet_size)
+        self._launch_at_login_checkbox.setChecked(settings.launch_at_login)
         self._always_on_top_checkbox.stateChanged.connect(lambda value: self._emit_settings_changed())
+        self._launch_at_login_checkbox.stateChanged.connect(lambda value: self._emit_settings_changed())
         self._opacity_slider.valueChanged.connect(lambda value: self._emit_settings_changed())
         self._pet_size_slider.valueChanged.connect(lambda value: self._emit_settings_changed())
 
         settings_row = QHBoxLayout()
         settings_row.addWidget(QLabel("设置"))
         settings_row.addWidget(self._always_on_top_checkbox)
+        settings_row.addWidget(self._launch_at_login_checkbox)
         settings_row.addWidget(QLabel("透明度"))
         settings_row.addWidget(self._opacity_slider)
         settings_row.addWidget(QLabel("尺寸"))
@@ -228,7 +245,12 @@ class AssistantPanel(QWidget):
         return settings_row
 
     def _set_settings_controls(self, always_on_top: bool, opacity_percent: int, pet_size: int) -> None:
-        controls = (self._always_on_top_checkbox, self._opacity_slider, self._pet_size_slider)
+        controls = (
+            self._always_on_top_checkbox,
+            self._launch_at_login_checkbox,
+            self._opacity_slider,
+            self._pet_size_slider,
+        )
         for control in controls:
             control.blockSignals(True)
         self._always_on_top_checkbox.setChecked(always_on_top)
@@ -329,7 +351,14 @@ class DesktopPetWindow(QWidget):
         self._pet_size = _clamp_int(settings.pet_size, MIN_PET_SIZE, MAX_PET_SIZE)
         self._apply_window_preferences()
 
-    def apply_preferences(self, *, always_on_top: bool, opacity_percent: int, pet_size: int) -> None:
+    def apply_preferences(
+        self,
+        *,
+        always_on_top: bool,
+        opacity_percent: int,
+        pet_size: int,
+        launch_at_login: bool | None = None,
+    ) -> None:
         current = load_desktop_settings(self.paths)
         settings = save_desktop_settings(
             self.paths,
@@ -339,6 +368,7 @@ class DesktopPetWindow(QWidget):
                 always_on_top=always_on_top,
                 opacity_percent=opacity_percent,
                 pet_size=pet_size,
+                launch_at_login=current.launch_at_login if launch_at_login is None else bool(launch_at_login),
                 panel_width=current.panel_width,
                 panel_height=current.panel_height,
             ),

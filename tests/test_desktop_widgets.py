@@ -168,7 +168,7 @@ class DesktopWidgetTests(unittest.TestCase):
     def test_panel_exposes_desktop_settings_controls(self):
         panel = AssistantPanel(
             self.bridge,
-            DesktopSettings(always_on_top=False, opacity_percent=70, pet_size=180),
+            DesktopSettings(always_on_top=False, opacity_percent=70, pet_size=180, launch_at_login=True),
         )
         self.addCleanup(panel.close)
 
@@ -177,6 +177,7 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertFalse(settings.always_on_top)
         self.assertEqual(settings.opacity_percent, 70)
         self.assertEqual(settings.pet_size, 180)
+        self.assertTrue(settings.launch_at_login)
 
     def test_panel_restores_saved_panel_size(self):
         panel = AssistantPanel(
@@ -205,12 +206,13 @@ class DesktopWidgetTests(unittest.TestCase):
         changes = []
         self.panel.set_settings_listener(changes.append)
 
-        self.panel.change_settings(always_on_top=False, opacity_percent=78, pet_size=172)
+        self.panel.change_settings(always_on_top=False, opacity_percent=78, pet_size=172, launch_at_login=True)
 
         self.assertEqual(len(changes), 1)
         self.assertFalse(changes[0].always_on_top)
         self.assertEqual(changes[0].opacity_percent, 78)
         self.assertEqual(changes[0].pet_size, 172)
+        self.assertTrue(changes[0].launch_at_login)
 
 
 if __name__ == "__main__":
