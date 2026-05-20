@@ -7,11 +7,10 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from .assets import desktop_app_icon_path
-from .bridge import quick_commands
+from .bridge import direct_quick_commands
 from .widgets import DesktopPetWindow
 
 
-TRAY_QUICK_COMMAND_PROMPTS = ("/status", "/kb", "/dirs", "/daily-report")
 RECENT_RESULT_EMPTY_TEXT = "最近结果（暂无）"
 
 
@@ -101,9 +100,7 @@ class DesktopTrayController:
         self.show_assistant()
 
     def _add_quick_command_actions(self) -> None:
-        for command in quick_commands():
-            if command.prompt not in TRAY_QUICK_COMMAND_PROMPTS:
-                continue
+        for command in direct_quick_commands():
             action = QAction(command.label, self.menu)
             action.triggered.connect(
                 lambda checked=False, label=command.label, prompt=command.prompt: self._run_quick_command(label, prompt)

@@ -139,15 +139,15 @@ hello
 
 ## 验证结论
 
-- 单元测试：151 个测试通过。
-- 桌面桥接层：`tests.test_desktop_bridge` 3 个测试通过，覆盖会话调用、错误状态和快捷命令。
+- 单元测试：154 个测试通过。
+- 桌面桥接层：`tests.test_desktop_bridge` 4 个测试通过，覆盖会话调用、错误状态、完整快捷命令和无参数快捷命令筛选。
 - 桌面入口：`tests.test_desktop_app` 6 个测试通过，覆盖桌面标题、应用身份和图标、脚本入口、PySide6 依赖声明、设置同步、开机启动同步去重和 smoke 创建桌面小助手窗口。
 - 桌面素材：`tests.test_desktop_assets` 3 个测试通过，覆盖 5 个桌面状态 SVG 素材和应用图标均在项目内。
 - 桌面开机启动：`tests.test_desktop_autostart` 7 个测试通过，覆盖 Startup 目录、源码模式快捷方式、打包模式快捷方式、PowerShell 脚本、启用、关闭和同步。
 - 桌面主题样式：`tests.test_desktop_style` 3 个测试通过，覆盖深色/浅色主题预设、无效主题回退和面板/小助手主题颜色。
 - 桌面设置：`tests.test_desktop_settings` 9 个测试通过，覆盖运行态设置目录、窗口位置保存读取、偏好保存读取、开机启动偏好、主题偏好、面板尺寸保存读取、保存位置时保留偏好和损坏设置回退默认值。
 - 桌面托盘：`tests.test_desktop_tray` 8 个测试通过，覆盖托盘菜单、关闭到托盘、显示助手、隐藏助手、常用命令入口、最近结果入口和退出应用。
-- 桌面窗口：`tests.test_desktop_widgets` 16 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心、最近提交结果、面板尺寸恢复与保存、小助手状态同步、状态图片切换、窗口位置保存、状态动效、启动恢复设置、应用设置、主题切换和面板设置回调。
+- 桌面窗口：`tests.test_desktop_widgets` 18 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心、面板快捷命令按钮、最近提交结果、面板尺寸恢复与保存、小助手状态同步、状态图片切换、窗口位置保存、状态动效、启动恢复设置、应用设置、主题切换和面板设置回调。
 - 桌面打包准备：`tests.test_desktop_packaging` 7 个测试通过，覆盖 PyInstaller 参数、项目外输出目录、打包可选依赖、Windows 图标和版本资源。
 - Windows 安装器：`tests.test_windows_installer` 4 个测试通过，覆盖安装脚本、卸载脚本、项目版本号和 IExpress SED 文件。
 - Windows 打包产物：`scripts\build_windows_installer.py` 已重新生成 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe` 和 `E:\oyzj\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe`。
@@ -220,6 +220,42 @@ Start-Process -FilePath "..\jarvis-lite-dist\desktop-exe\JarvisLite.exe" -Argume
 - 桌面 widget 测试 16 个通过。
 - 桌面入口测试 6 个通过。
 - 全量测试 151 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 未发现空白错误，仅出现 CRLF 换行提示。
+- 安装器重新生成成功。
+- 打包 exe smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`，退出码为 0。
+
+## 2026-05-20 桌面面板快捷命令收口验证
+
+### RED：无参数快捷命令筛选和面板入口缺失
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge tests.test_desktop_widgets tests.test_desktop_tray -v
+```
+
+结果：
+
+- `tests.test_desktop_bridge` 失败原因：缺少 `direct_quick_commands()`。
+- `tests.test_desktop_widgets` 失败原因：`AssistantPanel` 缺少快捷命令文本和按钮入口。
+- `tests.test_desktop_tray` 失败原因：托盘无法复用无参数快捷命令集合。
+
+### 验证命令
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge tests.test_desktop_widgets tests.test_desktop_tray -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+.\.venv\Scripts\python.exe scripts\build_windows_installer.py
+Start-Process -FilePath "..\jarvis-lite-dist\desktop-exe\JarvisLite.exe" -ArgumentList "--smoke" -Wait -PassThru -NoNewWindow
+```
+
+结果：
+
+- 桌面桥接层、widget 和托盘专项测试共 30 个通过。
+- 全量测试 154 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 未发现空白错误，仅出现 CRLF 换行提示。
 - 安装器重新生成成功。

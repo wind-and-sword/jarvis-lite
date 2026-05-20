@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.desktop.bridge import DesktopBridge, quick_commands
+from jarvis_lite.desktop.bridge import DesktopBridge, direct_quick_commands, quick_commands
 from jarvis_lite.desktop.state import DesktopState
 
 
@@ -46,6 +46,14 @@ class DesktopBridgeTests(unittest.TestCase):
         self.assertIn("/dirs", prompts)
         self.assertIn("/daily-report", prompts)
         self.assertIn("/organize-preview", prompts)
+
+    def test_direct_quick_commands_exclude_commands_that_need_arguments(self):
+        commands = direct_quick_commands()
+        labels = tuple(command.label for command in commands)
+        prompts = tuple(command.prompt for command in commands)
+
+        self.assertEqual(labels, ("状态", "知识库", "常用目录", "生成日报"))
+        self.assertNotIn("/organize-preview", prompts)
 
 
 if __name__ == "__main__":

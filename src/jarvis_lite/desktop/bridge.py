@@ -21,6 +21,9 @@ class QuickCommand:
     prompt: str
 
 
+DIRECT_QUICK_COMMAND_PROMPTS = ("/status", "/kb", "/dirs", "/daily-report")
+
+
 class DesktopBridge:
     """为桌面 UI 封装现有会话核心。"""
 
@@ -46,6 +49,12 @@ def quick_commands() -> tuple[QuickCommand, ...]:
         QuickCommand("生成日报", "/daily-report"),
         QuickCommand("整理预览", "/organize-preview"),
     )
+
+
+def direct_quick_commands() -> tuple[QuickCommand, ...]:
+    """返回不需要额外参数、可以直接点击执行的桌面快捷命令。"""
+
+    return tuple(command for command in quick_commands() if command.prompt in DIRECT_QUICK_COMMAND_PROMPTS)
 
 
 def _classify_response_state(assistant_text: str) -> DesktopState:

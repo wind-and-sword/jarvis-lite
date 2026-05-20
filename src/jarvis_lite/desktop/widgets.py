@@ -30,7 +30,7 @@ from .app_style import (
     pet_style,
 )
 from .assets import desktop_asset_path
-from .bridge import DesktopBridge, DesktopResponse, quick_commands
+from .bridge import DesktopBridge, DesktopResponse, direct_quick_commands
 from .settings import (
     DesktopSettings,
     load_desktop_settings,
@@ -116,10 +116,12 @@ class AssistantPanel(QWidget):
         input_row.addWidget(send_button)
 
         command_row = QHBoxLayout()
-        for command in quick_commands():
+        self._quick_command_buttons: dict[str, QPushButton] = {}
+        for command in direct_quick_commands():
             button = QPushButton(command.label)
             button.setObjectName(f"quickCommand_{command.prompt.strip('/').replace('-', '_')}")
             button.clicked.connect(lambda checked=False, prompt=command.prompt: self.submit_text(prompt))
+            self._quick_command_buttons[command.label] = button
             command_row.addWidget(button)
 
         settings_row = self._build_settings_row(initial_settings)
@@ -159,6 +161,12 @@ class AssistantPanel(QWidget):
 
     def last_result_text(self) -> str:
         return self._last_result_text
+
+    def quick_command_texts(self) -> tuple[str, ...]:
+        return tuple(self._quick_command_buttons)
+
+    def quick_command_button(self, label: str) -> QPushButton:
+        return self._quick_command_buttons[label]
 
     def status_text(self) -> str:
         return self._status_label.text()

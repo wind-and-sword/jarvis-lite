@@ -70,6 +70,17 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertIn("用户偏好：中文回答", self.panel.transcript_text())
         self.assertIn("状态：success", self.panel.status_text())
 
+    def test_panel_exposes_only_direct_quick_command_buttons(self):
+        self.assertEqual(self.panel.quick_command_texts(), ("状态", "知识库", "常用目录", "生成日报"))
+
+    def test_panel_quick_command_button_submits_prompt(self):
+        self.panel.quick_command_button("知识库").click()
+        QApplication.processEvents()
+
+        self.assertIn("用户：/kb", self.panel.transcript_text())
+        self.assertIn("Jarvis：", self.panel.transcript_text())
+        self.assertIn("状态：success", self.panel.status_text())
+
     def test_panel_tracks_last_result_after_submission(self):
         self.panel.submit_text("/memory")
 

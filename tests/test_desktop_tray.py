@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from PySide6.QtWidgets import QApplication
 
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.desktop.bridge import DesktopBridge
+from jarvis_lite.desktop.bridge import DesktopBridge, direct_quick_commands
 from jarvis_lite.desktop.tray import DesktopTrayController
 from jarvis_lite.desktop.widgets import AssistantPanel, DesktopPetWindow
 
@@ -45,8 +45,9 @@ class DesktopTrayTests(unittest.TestCase):
 
     def test_tray_controller_exposes_quick_command_actions(self):
         controller = DesktopTrayController(self.app, self.pet)
+        expected_labels = tuple(command.label for command in direct_quick_commands())
 
-        self.assertEqual(controller.quick_command_texts(), ("状态", "知识库", "常用目录", "生成日报"))
+        self.assertEqual(controller.quick_command_texts(), expected_labels)
 
     def test_tray_recent_result_starts_empty(self):
         controller = DesktopTrayController(self.app, self.pet)
