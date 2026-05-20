@@ -1,3 +1,5 @@
+import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -28,7 +30,7 @@ class ProjectPaths:
 def build_project_paths(root: Path | None = None) -> ProjectPaths:
     """构建并确保第一阶段需要的项目目录存在。"""
 
-    project_root = root or Path(__file__).resolve().parents[2]
+    project_root = root or _default_project_root()
     project_root = project_root.resolve()
     paths = ProjectPaths(
         root=project_root,
@@ -42,3 +44,9 @@ def build_project_paths(root: Path | None = None) -> ProjectPaths:
         directory.mkdir(parents=True, exist_ok=True)
 
     return paths
+
+
+def _default_project_root() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "Jarvis Lite"
+    return Path(__file__).resolve().parents[2]

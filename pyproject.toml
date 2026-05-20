@@ -8,6 +8,11 @@ dependencies = [
     "pypdf>=6,<7",
 ]
 
+[project.optional-dependencies]
+desktop-build = [
+    "pyinstaller>=6,<7",
+]
+
 [project.scripts]
 jarvis-lite = "jarvis_lite.app:main"
 jarvis-lite-desktop = "jarvis_lite.desktop.app:main"

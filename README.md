@@ -85,6 +85,15 @@ jarvis-lite-desktop
 桌面助手运行后，关闭小助手窗口只会隐藏到托盘；需要结束进程时使用托盘菜单里的“退出”。
 托盘菜单里的常用命令会自动显示助手面板，并把结果写入面板对话区；执行后可通过“最近结果”重新打开最近一次结果。
 
+准备桌面 exe 打包环境：
+
+```powershell
+python -m pip install -e ".[desktop-build]"
+python scripts/build_desktop_exe.py
+```
+
+桌面 exe 打包输出默认位于项目外的 `../jarvis-lite-dist/desktop-exe/`。
+
 运行本地测试：
 
 ```powershell
@@ -138,6 +147,7 @@ python src/app.py --once "/speak 你好，我是 Jarvis Lite"
 - [word/2026-05-20-jarvis-lite-desktop-panel-size-design.md](word/2026-05-20-jarvis-lite-desktop-panel-size-design.md)：桌面面板尺寸持久化设计。
 - [word/2026-05-20-jarvis-lite-desktop-installation-plan.md](word/2026-05-20-jarvis-lite-desktop-installation-plan.md)：桌面安装包三阶段计划。
 - [word/2026-05-20-jarvis-lite-desktop-experience-closeout-design.md](word/2026-05-20-jarvis-lite-desktop-experience-closeout-design.md)：桌面体验收口设计。
+- [word/2026-05-20-jarvis-lite-desktop-package-prep-design.md](word/2026-05-20-jarvis-lite-desktop-package-prep-design.md)：桌面打包前准备设计。
 - [word/2026-05-18-jarvis-lite-progress.md](word/2026-05-18-jarvis-lite-progress.md)：阶段 1 当前进度。
 - [word/2026-05-18-jarvis-lite-phase-2-progress.md](word/2026-05-18-jarvis-lite-phase-2-progress.md)：阶段 2 当前进度。
 - [word/2026-05-19-jarvis-lite-phase-2-progress.md](word/2026-05-19-jarvis-lite-phase-2-progress.md)：阶段 2 资料导入进度。
@@ -147,3 +157,4 @@ python src/app.py --once "/speak 你好，我是 Jarvis Lite"
 - [word/2026-05-20-jarvis-lite-desktop-app-progress.md](word/2026-05-20-jarvis-lite-desktop-app-progress.md)：桌面虚拟助手最近结果入口进度。
 - [word/2026-05-20-jarvis-lite-desktop-panel-size-progress.md](word/2026-05-20-jarvis-lite-desktop-panel-size-progress.md)：桌面面板尺寸持久化进度。
 - [word/2026-05-20-jarvis-lite-desktop-experience-closeout-progress.md](word/2026-05-20-jarvis-lite-desktop-experience-closeout-progress.md)：桌面体验收口进度。
+- [word/2026-05-20-jarvis-lite-desktop-package-prep-progress.md](word/2026-05-20-jarvis-lite-desktop-package-prep-progress.md)：桌面打包前准备进度。
