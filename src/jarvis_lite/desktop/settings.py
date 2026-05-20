@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ..config import ProjectPaths
+from .app_style import DEFAULT_THEME_NAME, normalize_theme_name
 
 
 RUNTIME_DIRNAME = "jarvis-lite-runtime"
@@ -19,6 +20,7 @@ class DesktopSettings:
     opacity_percent: int = 100
     pet_size: int = 148
     launch_at_login: bool = False
+    theme_name: str = DEFAULT_THEME_NAME
     panel_width: int = 420
     panel_height: int = 620
 
@@ -53,6 +55,7 @@ def load_desktop_settings(paths: ProjectPaths) -> DesktopSettings:
         opacity_percent=_read_int(raw.get("opacity_percent"), defaults.opacity_percent),
         pet_size=_read_int(raw.get("pet_size"), defaults.pet_size),
         launch_at_login=_read_bool(raw.get("launch_at_login"), defaults.launch_at_login),
+        theme_name=normalize_theme_name(_read_str(raw.get("theme_name"), defaults.theme_name)),
         panel_width=_read_int(raw.get("panel_width"), defaults.panel_width),
         panel_height=_read_int(raw.get("panel_height"), defaults.panel_height),
     )
@@ -70,6 +73,7 @@ def save_desktop_settings(paths: ProjectPaths, settings: DesktopSettings) -> Des
                 "opacity_percent": settings.opacity_percent,
                 "pet_size": settings.pet_size,
                 "launch_at_login": settings.launch_at_login,
+                "theme_name": normalize_theme_name(settings.theme_name),
                 "panel_width": settings.panel_width,
                 "panel_height": settings.panel_height,
             },
@@ -93,6 +97,7 @@ def save_desktop_position(paths: ProjectPaths, x: int, y: int) -> DesktopSetting
             opacity_percent=current.opacity_percent,
             pet_size=current.pet_size,
             launch_at_login=current.launch_at_login,
+            theme_name=current.theme_name,
             panel_width=current.panel_width,
             panel_height=current.panel_height,
         ),
@@ -106,6 +111,7 @@ def save_desktop_preferences(
     opacity_percent: int,
     pet_size: int,
     launch_at_login: bool | None = None,
+    theme_name: str | None = None,
 ) -> DesktopSettings:
     current = load_desktop_settings(paths)
     return save_desktop_settings(
@@ -117,6 +123,7 @@ def save_desktop_preferences(
             opacity_percent=int(opacity_percent),
             pet_size=int(pet_size),
             launch_at_login=current.launch_at_login if launch_at_login is None else bool(launch_at_login),
+            theme_name=current.theme_name if theme_name is None else normalize_theme_name(theme_name),
             panel_width=current.panel_width,
             panel_height=current.panel_height,
         ),
@@ -134,6 +141,7 @@ def save_desktop_panel_size(paths: ProjectPaths, panel_width: int, panel_height:
             opacity_percent=current.opacity_percent,
             pet_size=current.pet_size,
             launch_at_login=current.launch_at_login,
+            theme_name=current.theme_name,
             panel_width=int(panel_width),
             panel_height=int(panel_height),
         ),
@@ -146,3 +154,7 @@ def _read_int(value: object, default: int) -> int:
 
 def _read_bool(value: object, default: bool) -> bool:
     return value if isinstance(value, bool) else default
+
+
+def _read_str(value: object, default: str) -> str:
+    return value if isinstance(value, str) else default

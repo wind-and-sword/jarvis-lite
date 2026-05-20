@@ -134,6 +134,7 @@ class DesktopWidgetTests(unittest.TestCase):
                 always_on_top=False,
                 opacity_percent=74,
                 pet_size=184,
+                theme_name="daylight",
             ),
         )
 
@@ -143,6 +144,7 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertFalse(self.pet.is_always_on_top())
         self.assertEqual(self.pet.current_opacity_percent(), 74)
         self.assertEqual(self.pet.current_pet_size(), 184)
+        self.assertEqual(self.pet.current_theme_name(), "daylight")
         self.assertEqual(self.pet.width(), 184)
 
     def test_pet_window_applies_and_persists_desktop_preferences(self):
@@ -162,13 +164,22 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertFalse(settings.always_on_top)
         self.assertEqual(settings.opacity_percent, 82)
         self.assertEqual(settings.pet_size, 176)
+        self.assertEqual(settings.theme_name, "midnight")
         self.assertEqual(settings.panel_width, 560)
         self.assertEqual(settings.panel_height, 700)
+
+    def test_pet_window_applies_and_persists_theme_preference(self):
+        self.pet.apply_preferences(always_on_top=True, opacity_percent=90, pet_size=168, theme_name="daylight")
+
+        settings = load_desktop_settings(self.paths)
+        self.assertEqual(settings.theme_name, "daylight")
+        self.assertEqual(self.pet.current_theme_name(), "daylight")
+        self.assertIn("#ecfeff", self.pet.styleSheet())
 
     def test_panel_exposes_desktop_settings_controls(self):
         panel = AssistantPanel(
             self.bridge,
-            DesktopSettings(always_on_top=False, opacity_percent=70, pet_size=180, launch_at_login=True),
+            DesktopSettings(always_on_top=False, opacity_percent=70, pet_size=180, launch_at_login=True, theme_name="daylight"),
         )
         self.addCleanup(panel.close)
 
@@ -178,6 +189,8 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertEqual(settings.opacity_percent, 70)
         self.assertEqual(settings.pet_size, 180)
         self.assertTrue(settings.launch_at_login)
+        self.assertEqual(settings.theme_name, "daylight")
+        self.assertIn("#f8fafc", panel.styleSheet())
 
     def test_panel_restores_saved_panel_size(self):
         panel = AssistantPanel(
@@ -206,13 +219,14 @@ class DesktopWidgetTests(unittest.TestCase):
         changes = []
         self.panel.set_settings_listener(changes.append)
 
-        self.panel.change_settings(always_on_top=False, opacity_percent=78, pet_size=172, launch_at_login=True)
+        self.panel.change_settings(always_on_top=False, opacity_percent=78, pet_size=172, launch_at_login=True, theme_name="daylight")
 
         self.assertEqual(len(changes), 1)
         self.assertFalse(changes[0].always_on_top)
         self.assertEqual(changes[0].opacity_percent, 78)
         self.assertEqual(changes[0].pet_size, 172)
         self.assertTrue(changes[0].launch_at_login)
+        self.assertEqual(changes[0].theme_name, "daylight")
 
 
 if __name__ == "__main__":

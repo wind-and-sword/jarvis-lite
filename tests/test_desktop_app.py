@@ -53,8 +53,8 @@ class DesktopAppTests(unittest.TestCase):
                 self.paths = paths
                 self.values = None
 
-            def apply_preferences(self, *, always_on_top, opacity_percent, pet_size, launch_at_login):
-                self.values = (always_on_top, opacity_percent, pet_size, launch_at_login)
+            def apply_preferences(self, *, always_on_top, opacity_percent, pet_size, launch_at_login, theme_name):
+                self.values = (always_on_top, opacity_percent, pet_size, launch_at_login, theme_name)
 
         calls = []
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -63,13 +63,13 @@ class DesktopAppTests(unittest.TestCase):
             window = FakeWindow(paths)
 
             apply_panel_settings(
-                DesktopSettings(always_on_top=False, opacity_percent=76, pet_size=172, launch_at_login=True),
+                DesktopSettings(always_on_top=False, opacity_percent=76, pet_size=172, launch_at_login=True, theme_name="daylight"),
                 window,
                 project_root,
                 syncer=lambda enabled, shortcut: calls.append((enabled, shortcut)),
             )
 
-        self.assertEqual(window.values, (False, 76, 172, True))
+        self.assertEqual(window.values, (False, 76, 172, True, "daylight"))
         self.assertEqual(calls[0][0], True)
         self.assertEqual(calls[0][1].arguments, "-m jarvis_lite.desktop.app")
 
@@ -79,8 +79,8 @@ class DesktopAppTests(unittest.TestCase):
                 self.paths = paths
                 self.values = None
 
-            def apply_preferences(self, *, always_on_top, opacity_percent, pet_size, launch_at_login):
-                self.values = (always_on_top, opacity_percent, pet_size, launch_at_login)
+            def apply_preferences(self, *, always_on_top, opacity_percent, pet_size, launch_at_login, theme_name):
+                self.values = (always_on_top, opacity_percent, pet_size, launch_at_login, theme_name)
 
         calls = []
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -89,13 +89,13 @@ class DesktopAppTests(unittest.TestCase):
             window = FakeWindow(paths)
 
             apply_panel_settings(
-                DesktopSettings(always_on_top=False, opacity_percent=76, pet_size=172, launch_at_login=False),
+                DesktopSettings(always_on_top=False, opacity_percent=76, pet_size=172, launch_at_login=False, theme_name="daylight"),
                 window,
                 project_root,
                 syncer=lambda enabled, shortcut: calls.append((enabled, shortcut)),
             )
 
-        self.assertEqual(window.values, (False, 76, 172, False))
+        self.assertEqual(window.values, (False, 76, 172, False, "daylight"))
         self.assertEqual(calls, [])
 
 

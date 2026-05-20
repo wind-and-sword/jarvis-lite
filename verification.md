@@ -139,14 +139,15 @@ hello
 
 ## 验证结论
 
-- 单元测试：146 个测试通过。
+- 单元测试：151 个测试通过。
 - 桌面桥接层：`tests.test_desktop_bridge` 3 个测试通过，覆盖会话调用、错误状态和快捷命令。
 - 桌面入口：`tests.test_desktop_app` 6 个测试通过，覆盖桌面标题、应用身份和图标、脚本入口、PySide6 依赖声明、设置同步、开机启动同步去重和 smoke 创建桌面小助手窗口。
 - 桌面素材：`tests.test_desktop_assets` 3 个测试通过，覆盖 5 个桌面状态 SVG 素材和应用图标均在项目内。
 - 桌面开机启动：`tests.test_desktop_autostart` 7 个测试通过，覆盖 Startup 目录、源码模式快捷方式、打包模式快捷方式、PowerShell 脚本、启用、关闭和同步。
-- 桌面设置：`tests.test_desktop_settings` 8 个测试通过，覆盖运行态设置目录、窗口位置保存读取、偏好保存读取、开机启动偏好、面板尺寸保存读取、保存位置时保留偏好和损坏设置回退默认值。
+- 桌面主题样式：`tests.test_desktop_style` 3 个测试通过，覆盖深色/浅色主题预设、无效主题回退和面板/小助手主题颜色。
+- 桌面设置：`tests.test_desktop_settings` 9 个测试通过，覆盖运行态设置目录、窗口位置保存读取、偏好保存读取、开机启动偏好、主题偏好、面板尺寸保存读取、保存位置时保留偏好和损坏设置回退默认值。
 - 桌面托盘：`tests.test_desktop_tray` 8 个测试通过，覆盖托盘菜单、关闭到托盘、显示助手、隐藏助手、常用命令入口、最近结果入口和退出应用。
-- 桌面窗口：`tests.test_desktop_widgets` 15 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心、最近提交结果、面板尺寸恢复与保存、小助手状态同步、状态图片切换、窗口位置保存、状态动效、启动恢复设置、应用设置和面板设置回调。
+- 桌面窗口：`tests.test_desktop_widgets` 16 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心、最近提交结果、面板尺寸恢复与保存、小助手状态同步、状态图片切换、窗口位置保存、状态动效、启动恢复设置、应用设置、主题切换和面板设置回调。
 - 桌面打包准备：`tests.test_desktop_packaging` 7 个测试通过，覆盖 PyInstaller 参数、项目外输出目录、打包可选依赖、Windows 图标和版本资源。
 - Windows 安装器：`tests.test_windows_installer` 4 个测试通过，覆盖安装脚本、卸载脚本、项目版本号和 IExpress SED 文件。
 - Windows 打包产物：`scripts\build_windows_installer.py` 已重新生成 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe` 和 `E:\oyzj\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe`。
@@ -177,6 +178,52 @@ hello
 - 会话功能：交互式 CLI 可以查看 `/history`，并用 `/save-summary 文件名` 写入 `word/` 会话总结。
 - 长期记忆写入：`/remember`、`我叫...`、`我是...` 可以写入 `memory/profile.md`，并支持回答“我是谁”。
 - 长期记忆更新：同 key 记忆会替换旧值，例如 `用户姓名` 不会重复保留多个版本。
+
+## 2026-05-20 桌面主题预设验证
+
+### RED：主题预设、运行态字段和面板选择缺失
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_style -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_settings -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_app -v
+```
+
+结果：
+
+- `tests.test_desktop_style` 失败原因：缺少主题预设 API。
+- `tests.test_desktop_settings` 失败原因：`DesktopSettings` 缺少 `theme_name`。
+- `tests.test_desktop_widgets` 失败原因：面板设置和小助手偏好不支持主题。
+- `tests.test_desktop_app` 失败原因：设置同步不传递主题。
+
+### 验证命令
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_style -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_settings -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_app -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+.\.venv\Scripts\python.exe scripts\build_windows_installer.py
+Start-Process -FilePath "..\jarvis-lite-dist\desktop-exe\JarvisLite.exe" -ArgumentList "--smoke" -Wait -PassThru -NoNewWindow
+```
+
+结果：
+
+- 桌面主题样式测试 3 个通过。
+- 桌面设置测试 9 个通过。
+- 桌面 widget 测试 16 个通过。
+- 桌面入口测试 6 个通过。
+- 全量测试 151 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 未发现空白错误，仅出现 CRLF 换行提示。
+- 安装器重新生成成功。
+- 打包 exe smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`，退出码为 0。
 
 ## 未覆盖事项
 

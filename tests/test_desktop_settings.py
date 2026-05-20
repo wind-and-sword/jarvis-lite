@@ -48,6 +48,7 @@ class DesktopSettingsTests(unittest.TestCase):
         self.assertEqual(loaded.opacity_percent, 100)
         self.assertEqual(loaded.pet_size, 148)
         self.assertFalse(loaded.launch_at_login)
+        self.assertEqual(loaded.theme_name, "midnight")
 
     def test_save_and_load_desktop_preferences(self):
         saved = save_desktop_preferences(
@@ -56,6 +57,7 @@ class DesktopSettingsTests(unittest.TestCase):
             opacity_percent=82,
             pet_size=184,
             launch_at_login=True,
+            theme_name="daylight",
         )
         loaded = load_desktop_settings(self.paths)
 
@@ -63,10 +65,12 @@ class DesktopSettingsTests(unittest.TestCase):
         self.assertEqual(saved.opacity_percent, 82)
         self.assertEqual(saved.pet_size, 184)
         self.assertTrue(saved.launch_at_login)
+        self.assertEqual(saved.theme_name, "daylight")
         self.assertFalse(loaded.always_on_top)
         self.assertEqual(loaded.opacity_percent, 82)
         self.assertEqual(loaded.pet_size, 184)
         self.assertTrue(loaded.launch_at_login)
+        self.assertEqual(loaded.theme_name, "daylight")
 
     def test_save_and_load_desktop_panel_size(self):
         saved = save_desktop_panel_size(self.paths, 560, 700)
@@ -87,6 +91,7 @@ class DesktopSettingsTests(unittest.TestCase):
                 opacity_percent=76,
                 pet_size=172,
                 launch_at_login=True,
+                theme_name="daylight",
                 panel_width=560,
                 panel_height=700,
             ),
@@ -100,6 +105,7 @@ class DesktopSettingsTests(unittest.TestCase):
         self.assertEqual(loaded.opacity_percent, 76)
         self.assertEqual(loaded.pet_size, 172)
         self.assertTrue(loaded.launch_at_login)
+        self.assertEqual(loaded.theme_name, "daylight")
         self.assertEqual(loaded.panel_width, 560)
         self.assertEqual(loaded.panel_height, 700)
 
@@ -113,6 +119,7 @@ class DesktopSettingsTests(unittest.TestCase):
                 opacity_percent=76,
                 pet_size=172,
                 launch_at_login=True,
+                theme_name="daylight",
             ),
         )
 
@@ -124,6 +131,7 @@ class DesktopSettingsTests(unittest.TestCase):
         self.assertEqual(loaded.opacity_percent, 76)
         self.assertEqual(loaded.pet_size, 172)
         self.assertTrue(loaded.launch_at_login)
+        self.assertEqual(loaded.theme_name, "daylight")
         self.assertEqual(loaded.panel_width, 580)
         self.assertEqual(loaded.panel_height, 720)
 
@@ -136,6 +144,13 @@ class DesktopSettingsTests(unittest.TestCase):
 
         self.assertEqual(loaded.position_x, 80)
         self.assertEqual(loaded.position_y, 80)
+
+    def test_load_settings_falls_back_to_default_theme_when_theme_is_invalid(self):
+        save_desktop_settings(self.paths, DesktopSettings(theme_name="missing"))
+
+        loaded = load_desktop_settings(self.paths)
+
+        self.assertEqual(loaded.theme_name, "midnight")
 
 
 if __name__ == "__main__":

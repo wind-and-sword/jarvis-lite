@@ -63,6 +63,7 @@ def apply_panel_settings(
         opacity_percent=values.opacity_percent,
         pet_size=values.pet_size,
         launch_at_login=values.launch_at_login,
+        theme_name=values.theme_name,
     )
     if values.launch_at_login != previous_launch_at_login:
         syncer(values.launch_at_login, default_autostart_shortcut(project_root=project_root))

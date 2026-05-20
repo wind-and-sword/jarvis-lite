@@ -8,6 +8,7 @@ from PySide6.QtCore import QPoint, Qt, QTimer
 from PySide6.QtGui import QCloseEvent, QMouseEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -20,7 +21,14 @@ from PySide6.QtWidgets import (
 )
 
 from ..config import ProjectPaths
-from .app_style import PANEL_STYLE, PET_STYLE
+from .app_style import (
+    DEFAULT_THEME_NAME,
+    desktop_theme_label,
+    desktop_theme_names,
+    normalize_theme_name,
+    panel_style,
+    pet_style,
+)
 from .assets import desktop_asset_path
 from .bridge import DesktopBridge, DesktopResponse, quick_commands
 from .settings import (
@@ -80,13 +88,14 @@ class AssistantPanel(QWidget):
         self._settings_listener: Callable[[DesktopSettings], None] | None = None
         self._settings_position_x = initial_settings.position_x
         self._settings_position_y = initial_settings.position_y
+        self._theme_name = normalize_theme_name(initial_settings.theme_name)
         self._last_result_text = ""
         self._persist_panel_size_enabled = False
         self.setObjectName("assistantPanel")
         self.setWindowTitle("Jarvis Lite 助手面板")
         self.setMinimumSize(MIN_PANEL_WIDTH, MIN_PANEL_HEIGHT)
         self.setMaximumSize(MAX_PANEL_WIDTH, MAX_PANEL_HEIGHT)
-        self.setStyleSheet(PANEL_STYLE)
+        self.setStyleSheet(panel_style(self._theme_name))
 
         self._status_label = QLabel("状态：idle")
         self._status_label.setObjectName("statusLabel")
@@ -168,6 +177,7 @@ class AssistantPanel(QWidget):
             opacity_percent=self._opacity_slider.value(),
             pet_size=self._pet_size_slider.value(),
             launch_at_login=self._launch_at_login_checkbox.isChecked(),
+            theme_name=normalize_theme_name(self._theme_select.currentData()),
             panel_width=_clamp_int(self.width(), MIN_PANEL_WIDTH, MAX_PANEL_WIDTH),
             panel_height=_clamp_int(self.height(), MIN_PANEL_HEIGHT, MAX_PANEL_HEIGHT),
         )
@@ -179,8 +189,9 @@ class AssistantPanel(QWidget):
         opacity_percent: int,
         pet_size: int,
         launch_at_login: bool | None = None,
+        theme_name: str | None = None,
     ) -> None:
-        self._set_settings_controls(always_on_top, opacity_percent, pet_size)
+        self._set_settings_controls(always_on_top, opacity_percent, pet_size, theme_name or self._theme_name)
         if launch_at_login is not None:
             self._launch_at_login_checkbox.blockSignals(True)
             self._launch_at_login_checkbox.setChecked(launch_at_login)
@@ -221,16 +232,21 @@ class AssistantPanel(QWidget):
         self._always_on_top_checkbox.setObjectName("alwaysOnTopToggle")
         self._launch_at_login_checkbox = QCheckBox("开机启动")
         self._launch_at_login_checkbox.setObjectName("launchAtLoginToggle")
+        self._theme_select = QComboBox()
+        self._theme_select.setObjectName("themePresetSelect")
+        for theme_name in desktop_theme_names():
+            self._theme_select.addItem(desktop_theme_label(theme_name), theme_name)
         self._opacity_slider = QSlider(Qt.Orientation.Horizontal)
         self._opacity_slider.setObjectName("opacitySlider")
         self._opacity_slider.setRange(MIN_OPACITY_PERCENT, MAX_OPACITY_PERCENT)
         self._pet_size_slider = QSlider(Qt.Orientation.Horizontal)
         self._pet_size_slider.setObjectName("petSizeSlider")
         self._pet_size_slider.setRange(MIN_PET_SIZE, MAX_PET_SIZE)
-        self._set_settings_controls(settings.always_on_top, settings.opacity_percent, settings.pet_size)
+        self._set_settings_controls(settings.always_on_top, settings.opacity_percent, settings.pet_size, settings.theme_name)
         self._launch_at_login_checkbox.setChecked(settings.launch_at_login)
         self._always_on_top_checkbox.stateChanged.connect(lambda value: self._emit_settings_changed())
         self._launch_at_login_checkbox.stateChanged.connect(lambda value: self._emit_settings_changed())
+        self._theme_select.currentIndexChanged.connect(lambda value: self._emit_settings_changed())
         self._opacity_slider.valueChanged.connect(lambda value: self._emit_settings_changed())
         self._pet_size_slider.valueChanged.connect(lambda value: self._emit_settings_changed())
 
@@ -238,30 +254,47 @@ class AssistantPanel(QWidget):
         settings_row.addWidget(QLabel("设置"))
         settings_row.addWidget(self._always_on_top_checkbox)
         settings_row.addWidget(self._launch_at_login_checkbox)
+        settings_row.addWidget(QLabel("主题"))
+        settings_row.addWidget(self._theme_select)
         settings_row.addWidget(QLabel("透明度"))
         settings_row.addWidget(self._opacity_slider)
         settings_row.addWidget(QLabel("尺寸"))
         settings_row.addWidget(self._pet_size_slider)
         return settings_row
 
-    def _set_settings_controls(self, always_on_top: bool, opacity_percent: int, pet_size: int) -> None:
+    def _set_settings_controls(self, always_on_top: bool, opacity_percent: int, pet_size: int, theme_name: str | None = None) -> None:
         controls = (
             self._always_on_top_checkbox,
             self._launch_at_login_checkbox,
+            self._theme_select,
             self._opacity_slider,
             self._pet_size_slider,
         )
         for control in controls:
             control.blockSignals(True)
         self._always_on_top_checkbox.setChecked(always_on_top)
+        self._set_theme_selection(theme_name or DEFAULT_THEME_NAME)
         self._opacity_slider.setValue(_clamp_int(opacity_percent, MIN_OPACITY_PERCENT, MAX_OPACITY_PERCENT))
         self._pet_size_slider.setValue(_clamp_int(pet_size, MIN_PET_SIZE, MAX_PET_SIZE))
         for control in controls:
             control.blockSignals(False)
 
     def _emit_settings_changed(self) -> None:
+        self.apply_theme(self.settings_values().theme_name)
         if self._settings_listener is not None:
             self._settings_listener(self.settings_values())
+
+    def apply_theme(self, theme_name: str) -> None:
+        self._theme_name = normalize_theme_name(theme_name)
+        self.setStyleSheet(panel_style(self._theme_name))
+
+    def _set_theme_selection(self, theme_name: str) -> None:
+        normalized_theme = normalize_theme_name(theme_name)
+        for index in range(self._theme_select.count()):
+            if self._theme_select.itemData(index) == normalized_theme:
+                self._theme_select.setCurrentIndex(index)
+                return
+        self._theme_select.setCurrentIndex(0)
 
 
 class DesktopPetWindow(QWidget):
@@ -283,6 +316,7 @@ class DesktopPetWindow(QWidget):
         self._always_on_top = True
         self._opacity_percent = 100
         self._pet_size = DEFAULT_PET_SIZE
+        self._theme_name = DEFAULT_THEME_NAME
         self.setObjectName("desktopPetWindow")
         self.setWindowTitle("Jarvis Lite")
         self.setFixedSize(DEFAULT_PET_SIZE, DEFAULT_PET_SIZE)
@@ -312,7 +346,7 @@ class DesktopPetWindow(QWidget):
         layout.addWidget(self._avatar, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self._caption)
         self.setLayout(layout)
-        self.setStyleSheet(PET_STYLE)
+        self.setStyleSheet(pet_style(self._theme_name))
         self.set_state(DesktopState.IDLE)
         settings = load_desktop_settings(self.paths)
         self.move(settings.position_x, settings.position_y)
@@ -349,6 +383,7 @@ class DesktopPetWindow(QWidget):
         self._always_on_top = settings.always_on_top
         self._opacity_percent = _clamp_int(settings.opacity_percent, MIN_OPACITY_PERCENT, MAX_OPACITY_PERCENT)
         self._pet_size = _clamp_int(settings.pet_size, MIN_PET_SIZE, MAX_PET_SIZE)
+        self._theme_name = normalize_theme_name(settings.theme_name)
         self._apply_window_preferences()
 
     def apply_preferences(
@@ -358,6 +393,7 @@ class DesktopPetWindow(QWidget):
         opacity_percent: int,
         pet_size: int,
         launch_at_login: bool | None = None,
+        theme_name: str | None = None,
     ) -> None:
         current = load_desktop_settings(self.paths)
         settings = save_desktop_settings(
@@ -369,6 +405,7 @@ class DesktopPetWindow(QWidget):
                 opacity_percent=opacity_percent,
                 pet_size=pet_size,
                 launch_at_login=current.launch_at_login if launch_at_login is None else bool(launch_at_login),
+                theme_name=current.theme_name if theme_name is None else normalize_theme_name(theme_name),
                 panel_width=current.panel_width,
                 panel_height=current.panel_height,
             ),
@@ -380,6 +417,9 @@ class DesktopPetWindow(QWidget):
 
     def current_pet_size(self) -> int:
         return self._pet_size
+
+    def current_theme_name(self) -> str:
+        return self._theme_name
 
     def is_always_on_top(self) -> bool:
         return self._always_on_top
@@ -441,6 +481,7 @@ class DesktopPetWindow(QWidget):
         self.setWindowFlags(flags)
         self.setWindowOpacity(self._opacity_percent / 100)
         self.setFixedSize(self._pet_size, self._pet_size)
+        self.setStyleSheet(pet_style(self._theme_name))
         avatar_size = round(DEFAULT_AVATAR_SIZE * self._pet_size / DEFAULT_PET_SIZE)
         self._avatar.setFixedSize(avatar_size, avatar_size)
         self._render_asset()
