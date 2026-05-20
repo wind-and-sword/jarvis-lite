@@ -146,6 +146,11 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertEqual(self.pet.width(), 184)
 
     def test_pet_window_applies_and_persists_desktop_preferences(self):
+        save_desktop_settings(
+            self.paths,
+            DesktopSettings(panel_width=560, panel_height=700),
+        )
+
         self.pet.apply_preferences(always_on_top=False, opacity_percent=82, pet_size=176)
 
         settings = load_desktop_settings(self.paths)
@@ -157,6 +162,8 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertFalse(settings.always_on_top)
         self.assertEqual(settings.opacity_percent, 82)
         self.assertEqual(settings.pet_size, 176)
+        self.assertEqual(settings.panel_width, 560)
+        self.assertEqual(settings.panel_height, 700)
 
     def test_panel_exposes_desktop_settings_controls(self):
         panel = AssistantPanel(
@@ -170,6 +177,29 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertFalse(settings.always_on_top)
         self.assertEqual(settings.opacity_percent, 70)
         self.assertEqual(settings.pet_size, 180)
+
+    def test_panel_restores_saved_panel_size(self):
+        panel = AssistantPanel(
+            self.bridge,
+            DesktopSettings(panel_width=560, panel_height=700),
+        )
+        self.addCleanup(panel.close)
+
+        self.assertEqual(panel.width(), 560)
+        self.assertEqual(panel.height(), 700)
+        self.assertEqual(panel.settings_values().panel_width, 560)
+        self.assertEqual(panel.settings_values().panel_height, 700)
+
+    def test_panel_resize_persists_panel_size_to_runtime_settings(self):
+        self.panel.show()
+        QApplication.processEvents()
+
+        self.panel.resize(560, 700)
+        QApplication.processEvents()
+
+        settings = load_desktop_settings(self.paths)
+        self.assertEqual(settings.panel_width, 560)
+        self.assertEqual(settings.panel_height, 700)
 
     def test_panel_settings_change_notifies_listener(self):
         changes = []

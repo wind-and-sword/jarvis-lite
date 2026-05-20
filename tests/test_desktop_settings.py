@@ -11,6 +11,7 @@ from jarvis_lite.desktop.settings import (
     desktop_settings_path,
     load_desktop_settings,
     runtime_dir,
+    save_desktop_panel_size,
     save_desktop_preferences,
     save_desktop_position,
     save_desktop_settings,
@@ -63,7 +64,40 @@ class DesktopSettingsTests(unittest.TestCase):
         self.assertEqual(loaded.opacity_percent, 82)
         self.assertEqual(loaded.pet_size, 184)
 
+    def test_save_and_load_desktop_panel_size(self):
+        saved = save_desktop_panel_size(self.paths, 560, 700)
+        loaded = load_desktop_settings(self.paths)
+
+        self.assertEqual(saved.panel_width, 560)
+        self.assertEqual(saved.panel_height, 700)
+        self.assertEqual(loaded.panel_width, 560)
+        self.assertEqual(loaded.panel_height, 700)
+
     def test_save_position_preserves_existing_desktop_preferences(self):
+        save_desktop_settings(
+            self.paths,
+            DesktopSettings(
+                position_x=10,
+                position_y=20,
+                always_on_top=False,
+                opacity_percent=76,
+                pet_size=172,
+                panel_width=560,
+                panel_height=700,
+            ),
+        )
+
+        loaded = save_desktop_position(self.paths, 320, 180)
+
+        self.assertEqual(loaded.position_x, 320)
+        self.assertEqual(loaded.position_y, 180)
+        self.assertFalse(loaded.always_on_top)
+        self.assertEqual(loaded.opacity_percent, 76)
+        self.assertEqual(loaded.pet_size, 172)
+        self.assertEqual(loaded.panel_width, 560)
+        self.assertEqual(loaded.panel_height, 700)
+
+    def test_save_panel_size_preserves_position_and_preferences(self):
         save_desktop_settings(
             self.paths,
             DesktopSettings(
@@ -75,13 +109,15 @@ class DesktopSettingsTests(unittest.TestCase):
             ),
         )
 
-        loaded = save_desktop_position(self.paths, 320, 180)
+        loaded = save_desktop_panel_size(self.paths, 580, 720)
 
-        self.assertEqual(loaded.position_x, 320)
-        self.assertEqual(loaded.position_y, 180)
+        self.assertEqual(loaded.position_x, 10)
+        self.assertEqual(loaded.position_y, 20)
         self.assertFalse(loaded.always_on_top)
         self.assertEqual(loaded.opacity_percent, 76)
         self.assertEqual(loaded.pet_size, 172)
+        self.assertEqual(loaded.panel_width, 580)
+        self.assertEqual(loaded.panel_height, 720)
 
     def test_load_settings_falls_back_to_defaults_when_runtime_file_is_invalid(self):
         settings_path = desktop_settings_path(self.paths)

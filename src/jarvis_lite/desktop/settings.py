@@ -18,6 +18,8 @@ class DesktopSettings:
     always_on_top: bool = True
     opacity_percent: int = 100
     pet_size: int = 148
+    panel_width: int = 420
+    panel_height: int = 620
 
 
 def runtime_dir(paths: ProjectPaths) -> Path:
@@ -49,6 +51,8 @@ def load_desktop_settings(paths: ProjectPaths) -> DesktopSettings:
         always_on_top=_read_bool(raw.get("always_on_top"), defaults.always_on_top),
         opacity_percent=_read_int(raw.get("opacity_percent"), defaults.opacity_percent),
         pet_size=_read_int(raw.get("pet_size"), defaults.pet_size),
+        panel_width=_read_int(raw.get("panel_width"), defaults.panel_width),
+        panel_height=_read_int(raw.get("panel_height"), defaults.panel_height),
     )
 
 
@@ -63,6 +67,8 @@ def save_desktop_settings(paths: ProjectPaths, settings: DesktopSettings) -> Des
                 "always_on_top": settings.always_on_top,
                 "opacity_percent": settings.opacity_percent,
                 "pet_size": settings.pet_size,
+                "panel_width": settings.panel_width,
+                "panel_height": settings.panel_height,
             },
             ensure_ascii=False,
             indent=2,
@@ -83,6 +89,8 @@ def save_desktop_position(paths: ProjectPaths, x: int, y: int) -> DesktopSetting
             always_on_top=current.always_on_top,
             opacity_percent=current.opacity_percent,
             pet_size=current.pet_size,
+            panel_width=current.panel_width,
+            panel_height=current.panel_height,
         ),
     )
 
@@ -103,6 +111,24 @@ def save_desktop_preferences(
             always_on_top=bool(always_on_top),
             opacity_percent=int(opacity_percent),
             pet_size=int(pet_size),
+            panel_width=current.panel_width,
+            panel_height=current.panel_height,
+        ),
+    )
+
+
+def save_desktop_panel_size(paths: ProjectPaths, panel_width: int, panel_height: int) -> DesktopSettings:
+    current = load_desktop_settings(paths)
+    return save_desktop_settings(
+        paths,
+        DesktopSettings(
+            position_x=current.position_x,
+            position_y=current.position_y,
+            always_on_top=current.always_on_top,
+            opacity_percent=current.opacity_percent,
+            pet_size=current.pet_size,
+            panel_width=int(panel_width),
+            panel_height=int(panel_height),
         ),
     )
 

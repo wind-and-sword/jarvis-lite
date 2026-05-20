@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from PySide6.QtCore import QPoint, Qt, QTimer
-from PySide6.QtGui import QCloseEvent, QMouseEvent, QPixmap
+from PySide6.QtGui import QCloseEvent, QMouseEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QFrame,
@@ -23,7 +23,13 @@ from ..config import ProjectPaths
 from .app_style import PANEL_STYLE, PET_STYLE
 from .assets import desktop_asset_path
 from .bridge import DesktopBridge, DesktopResponse, quick_commands
-from .settings import DesktopSettings, load_desktop_settings, save_desktop_position, save_desktop_settings
+from .settings import (
+    DesktopSettings,
+    load_desktop_settings,
+    save_desktop_panel_size,
+    save_desktop_position,
+    save_desktop_settings,
+)
 from .state import DesktopState
 
 
@@ -53,6 +59,10 @@ STATE_ANIMATION_PROFILES = {
 
 DEFAULT_PET_SIZE = 148
 DEFAULT_AVATAR_SIZE = 112
+MIN_PANEL_WIDTH = 420
+MIN_PANEL_HEIGHT = 520
+MAX_PANEL_WIDTH = 980
+MAX_PANEL_HEIGHT = 900
 MIN_OPACITY_PERCENT = 50
 MAX_OPACITY_PERCENT = 100
 MIN_PET_SIZE = 120
@@ -71,9 +81,11 @@ class AssistantPanel(QWidget):
         self._settings_position_x = initial_settings.position_x
         self._settings_position_y = initial_settings.position_y
         self._last_result_text = ""
+        self._persist_panel_size_enabled = False
         self.setObjectName("assistantPanel")
         self.setWindowTitle("Jarvis Lite 助手面板")
-        self.setMinimumSize(420, 620)
+        self.setMinimumSize(MIN_PANEL_WIDTH, MIN_PANEL_HEIGHT)
+        self.setMaximumSize(MAX_PANEL_WIDTH, MAX_PANEL_HEIGHT)
         self.setStyleSheet(PANEL_STYLE)
 
         self._status_label = QLabel("状态：idle")
@@ -113,6 +125,11 @@ class AssistantPanel(QWidget):
         layout.addLayout(command_row)
         layout.addLayout(settings_row)
         self.setLayout(layout)
+        self.resize(
+            _clamp_int(initial_settings.panel_width, MIN_PANEL_WIDTH, MAX_PANEL_WIDTH),
+            _clamp_int(initial_settings.panel_height, MIN_PANEL_HEIGHT, MAX_PANEL_HEIGHT),
+        )
+        self._persist_panel_size_enabled = True
 
     def submit_text(self, text: str) -> DesktopResponse | None:
         prompt = text.strip()
@@ -150,11 +167,30 @@ class AssistantPanel(QWidget):
             always_on_top=self._always_on_top_checkbox.isChecked(),
             opacity_percent=self._opacity_slider.value(),
             pet_size=self._pet_size_slider.value(),
+            panel_width=_clamp_int(self.width(), MIN_PANEL_WIDTH, MAX_PANEL_WIDTH),
+            panel_height=_clamp_int(self.height(), MIN_PANEL_HEIGHT, MAX_PANEL_HEIGHT),
         )
 
     def change_settings(self, *, always_on_top: bool, opacity_percent: int, pet_size: int) -> None:
         self._set_settings_controls(always_on_top, opacity_percent, pet_size)
         self._emit_settings_changed()
+
+    def persist_size(self) -> DesktopSettings:
+        return save_desktop_panel_size(
+            self.bridge.paths,
+            _clamp_int(self.width(), MIN_PANEL_WIDTH, MAX_PANEL_WIDTH),
+            _clamp_int(self.height(), MIN_PANEL_HEIGHT, MAX_PANEL_HEIGHT),
+        )
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if self._persist_panel_size_enabled:
+            self.persist_size()
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if self._persist_panel_size_enabled:
+            self.persist_size()
+        super().closeEvent(event)
 
     def _submit_input(self) -> None:
         text = self._input.text().strip()
@@ -294,6 +330,7 @@ class DesktopPetWindow(QWidget):
         self._apply_window_preferences()
 
     def apply_preferences(self, *, always_on_top: bool, opacity_percent: int, pet_size: int) -> None:
+        current = load_desktop_settings(self.paths)
         settings = save_desktop_settings(
             self.paths,
             DesktopSettings(
@@ -302,6 +339,8 @@ class DesktopPetWindow(QWidget):
                 always_on_top=always_on_top,
                 opacity_percent=opacity_percent,
                 pet_size=pet_size,
+                panel_width=current.panel_width,
+                panel_height=current.panel_height,
             ),
         )
         self.apply_settings(settings)
