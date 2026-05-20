@@ -29,6 +29,13 @@ class WindowsInstallerTests(unittest.TestCase):
 
         self.assertIn('DisplayVersion /d "9.8.7"', script)
 
+    def test_install_script_prepares_for_cover_install_and_complete_uninstall_metadata(self):
+        script = render_install_script("JarvisLite.exe", version="9.8.7")
+
+        self.assertIn("taskkill /IM JarvisLite.exe /F", script)
+        self.assertIn('DisplayIcon /d "%INSTALL_DIR%\\JarvisLite.exe"', script)
+        self.assertIn('QuietUninstallString /d "\\"%INSTALL_DIR%\\uninstall.cmd\\""', script)
+
     def test_uninstall_script_removes_shortcuts_install_dir_and_registry(self):
         script = render_uninstall_script()
 
@@ -36,6 +43,20 @@ class WindowsInstallerTests(unittest.TestCase):
         self.assertIn("Uninstall Jarvis Lite.lnk", script)
         self.assertIn(r"%LOCALAPPDATA%\Programs\Jarvis Lite", script)
         self.assertIn(r"HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\JarvisLite", script)
+
+    def test_uninstall_script_removes_startup_shortcut_and_stops_running_app(self):
+        script = render_uninstall_script()
+
+        self.assertIn(r"%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup", script)
+        self.assertIn("taskkill /IM JarvisLite.exe /F", script)
+        self.assertIn('del "%STARTUP_DIR%\\Jarvis Lite.lnk"', script)
+
+    def test_uninstall_script_preserves_user_data_directory(self):
+        script = render_uninstall_script()
+
+        self.assertIn(r"%LOCALAPPDATA%\Jarvis Lite", script)
+        self.assertIn("User data kept", script)
+        self.assertNotIn(r'rmdir /S /Q "%LOCALAPPDATA%\Jarvis Lite"', script)
 
     def test_iexpress_sed_points_to_external_installer_output_and_packaged_exe(self):
         with tempfile.TemporaryDirectory() as temp_dir:

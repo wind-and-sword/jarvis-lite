@@ -139,7 +139,7 @@ hello
 
 ## 验证结论
 
-- 单元测试：154 个测试通过。
+- 单元测试：157 个测试通过。
 - 桌面桥接层：`tests.test_desktop_bridge` 4 个测试通过，覆盖会话调用、错误状态、完整快捷命令和无参数快捷命令筛选。
 - 桌面入口：`tests.test_desktop_app` 6 个测试通过，覆盖桌面标题、应用身份和图标、脚本入口、PySide6 依赖声明、设置同步、开机启动同步去重和 smoke 创建桌面小助手窗口。
 - 桌面素材：`tests.test_desktop_assets` 3 个测试通过，覆盖 5 个桌面状态 SVG 素材和应用图标均在项目内。
@@ -149,7 +149,7 @@ hello
 - 桌面托盘：`tests.test_desktop_tray` 8 个测试通过，覆盖托盘菜单、关闭到托盘、显示助手、隐藏助手、常用命令入口、最近结果入口和退出应用。
 - 桌面窗口：`tests.test_desktop_widgets` 18 个测试通过，覆盖小助手置顶无边框、点击展开/收起面板、面板调用会话核心、面板快捷命令按钮、最近提交结果、面板尺寸恢复与保存、小助手状态同步、状态图片切换、窗口位置保存、状态动效、启动恢复设置、应用设置、主题切换和面板设置回调。
 - 桌面打包准备：`tests.test_desktop_packaging` 7 个测试通过，覆盖 PyInstaller 参数、项目外输出目录、打包可选依赖、Windows 图标和版本资源。
-- Windows 安装器：`tests.test_windows_installer` 4 个测试通过，覆盖安装脚本、卸载脚本、项目版本号和 IExpress SED 文件。
+- Windows 安装器：`tests.test_windows_installer` 7 个测试通过，覆盖安装脚本、覆盖安装前关闭进程、卸载脚本、Startup 清理、用户数据保留约定、项目版本号和 IExpress SED 文件。
 - Windows 打包产物：`scripts\build_windows_installer.py` 已重新生成 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe` 和 `E:\oyzj\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe`。
 - Windows exe 元数据：PyInstaller 构建日志显示已复制图标和版本信息；`JarvisLite.exe` 的 `FileDescription` 为 `Jarvis Lite desktop assistant`，`ProductName` 为 `Jarvis Lite`，版本为 `0.1.0`。
 - 打包 exe smoke：`JarvisLite.exe --smoke` 退出码为 0。
@@ -256,6 +256,42 @@ Start-Process -FilePath "..\jarvis-lite-dist\desktop-exe\JarvisLite.exe" -Argume
 
 - 桌面桥接层、widget 和托盘专项测试共 30 个通过。
 - 全量测试 154 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 未发现空白错误，仅出现 CRLF 换行提示。
+- 安装器重新生成成功。
+- 打包 exe smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`，退出码为 0。
+
+## 2026-05-20 桌面安装生命周期收口验证
+
+### RED：卸载生命周期和覆盖安装前置处理缺失
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_windows_installer -v
+```
+
+结果：
+
+- `test_install_script_prepares_for_cover_install_and_complete_uninstall_metadata` 失败原因：安装脚本缺少 `taskkill`、`DisplayIcon` 和 `QuietUninstallString`。
+- `test_uninstall_script_removes_startup_shortcut_and_stops_running_app` 失败原因：卸载脚本缺少 Startup 清理和运行进程关闭。
+- `test_uninstall_script_preserves_user_data_directory` 失败原因：卸载脚本缺少用户数据保留约定。
+
+### 验证命令
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_windows_installer -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+.\.venv\Scripts\python.exe scripts\build_windows_installer.py
+Start-Process -FilePath "..\jarvis-lite-dist\desktop-exe\JarvisLite.exe" -ArgumentList "--smoke" -Wait -PassThru -NoNewWindow
+```
+
+结果：
+
+- Windows 安装器专项测试 7 个通过。
+- 全量测试 157 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 未发现空白错误，仅出现 CRLF 换行提示。
 - 安装器重新生成成功。
