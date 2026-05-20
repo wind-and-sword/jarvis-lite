@@ -6,9 +6,8 @@ from typing import Any
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
-from .assets import desktop_asset_path
+from .assets import desktop_app_icon_path
 from .bridge import quick_commands
-from .state import DesktopState
 from .widgets import DesktopPetWindow
 
 
@@ -51,7 +50,7 @@ class DesktopTrayController:
         self.menu.addSeparator()
         self.menu.addAction(self.quit_action)
 
-        icon = QIcon(str(desktop_asset_path(DesktopState.IDLE)))
+        icon = QIcon(str(desktop_app_icon_path()))
         self.tray_icon = QSystemTrayIcon(icon, self.app)
         self.tray_icon.setToolTip("Jarvis Lite")
         self.tray_icon.setContextMenu(self.menu)

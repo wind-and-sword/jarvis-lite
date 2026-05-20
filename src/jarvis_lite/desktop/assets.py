@@ -6,6 +6,7 @@ from .state import DesktopState
 
 
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+APP_ICON_FILENAME = "app-icon.svg"
 
 ASSET_FILENAMES = {
     DesktopState.IDLE: "idle.svg",
@@ -26,3 +27,9 @@ def all_desktop_asset_paths() -> dict[DesktopState, Path]:
     """返回所有桌面小助手状态素材，供启动检查和测试使用。"""
 
     return {state: desktop_asset_path(state) for state in DesktopState}
+
+
+def desktop_app_icon_path() -> Path:
+    """返回桌面应用图标路径。"""
+
+    return ASSETS_DIR / APP_ICON_FILENAME

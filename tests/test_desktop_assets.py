@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from jarvis_lite.desktop.assets import all_desktop_asset_paths, desktop_asset_path
+from jarvis_lite.desktop.assets import all_desktop_asset_paths, desktop_app_icon_path, desktop_asset_path
 from jarvis_lite.desktop.state import DesktopState
 
 
@@ -22,6 +22,14 @@ class DesktopAssetTests(unittest.TestCase):
     def test_desktop_asset_path_returns_state_specific_svg(self):
         self.assertEqual(desktop_asset_path(DesktopState.SUCCESS).name, "success.svg")
         self.assertEqual(desktop_asset_path(DesktopState.ERROR).name, "error.svg")
+
+    def test_desktop_app_icon_exists_in_project_assets(self):
+        path = desktop_app_icon_path()
+
+        self.assertTrue(path.is_file())
+        self.assertEqual(path.name, "app-icon.svg")
+        self.assertIn("src", path.parts)
+        self.assertIn("assets", path.parts)
 
 
 if __name__ == "__main__":

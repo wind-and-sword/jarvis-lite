@@ -5,12 +5,15 @@ import os
 import sys
 from typing import Any
 
+from .. import __version__
 from .bridge import DesktopBridge
+from .assets import desktop_app_icon_path
 from .settings import load_desktop_settings
 from .tray import DesktopTrayController
 from .widgets import AssistantPanel, DesktopPetWindow
 
 
+APP_NAME = "Jarvis Lite"
 APP_TITLE = "Jarvis Lite 桌面助手"
 
 
@@ -44,15 +47,22 @@ def ensure_qt_available() -> None:
 
 
 def create_desktop_app(bridge: DesktopBridge | None = None) -> tuple[Any, Any]:
-    from PySide6.QtGui import QFont
+    from PySide6.QtGui import QFont, QIcon
     from PySide6.QtWidgets import QApplication
 
     app = QApplication.instance() or QApplication(sys.argv[:1])
+    app_icon = QIcon(str(desktop_app_icon_path()))
+    app.setApplicationName(APP_NAME)
+    app.setApplicationVersion(__version__)
+    app.setOrganizationName(APP_NAME)
     app.setFont(QFont("Microsoft YaHei UI", 10))
+    app.setWindowIcon(app_icon)
     desktop_bridge = bridge or DesktopBridge()
     settings = load_desktop_settings(desktop_bridge.paths)
     panel = AssistantPanel(desktop_bridge, settings)
     pet_window = DesktopPetWindow(panel, desktop_bridge.paths)
+    panel.setWindowIcon(app_icon)
+    pet_window.setWindowIcon(app_icon)
     panel.set_settings_listener(
         lambda values: pet_window.apply_preferences(
             always_on_top=values.always_on_top,

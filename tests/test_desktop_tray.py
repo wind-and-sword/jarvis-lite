@@ -41,6 +41,7 @@ class DesktopTrayTests(unittest.TestCase):
         self.assertEqual(controller.action_texts(), ("显示助手", "隐藏助手", "退出"))
         self.assertFalse(self.app.quitOnLastWindowClosed())
         self.assertTrue(self.pet.is_close_to_tray_enabled())
+        self.assertFalse(controller.tray_icon.icon().isNull())
 
     def test_tray_controller_exposes_quick_command_actions(self):
         controller = DesktopTrayController(self.app, self.pet)
