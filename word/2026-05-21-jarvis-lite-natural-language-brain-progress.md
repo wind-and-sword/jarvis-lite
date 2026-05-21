@@ -220,8 +220,28 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：最近上下文状态查询
+
+- 新增自然语言查询：
+  - “查看最近上下文”
+  - “最近上下文状态”
+  - “你还记得刚才什么”
+- 查询结果会展示最近资料、最近目录和最近搜索结果列表。
+- 没有上下文时，会提示先提问、导入资料，或打开/整理目录。
+- 新建 Agent 实例后，如果已恢复最近搜索结果，也能在最近上下文状态中展示对应结果列表。
+- 本阶段只做状态可见性，不改变最近资料和最近目录的持久化策略。
+- RED 验证：
+  - 新增 3 个测试先全部落入长期记忆兜底，未返回最近上下文状态。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_empty_state tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_current_context tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_restored_search_results -v`：3 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：59 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：195 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
-- 下一步可以继续持久化最近资料和最近目录，或增加“最近上下文状态”查询能力。
+- 下一步可以继续持久化最近资料和最近目录。
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
 - 可以把成功任务沉淀为“经验记忆”，让助手逐步学习用户常用表达和常用流程。

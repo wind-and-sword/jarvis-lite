@@ -441,6 +441,57 @@ class AgentTests(unittest.TestCase):
         self.assertIn("data/runtime.md", response)
         self.assertIn("Python 3.13", response)
 
+    def test_natural_language_recent_context_status_reports_empty_state(self):
+        response = self.agent.handle("查看最近上下文")
+
+        self.assertIn("最近上下文", response)
+        self.assertIn("还没有记录", response)
+        self.assertIn("先提问", response)
+
+    def test_natural_language_recent_context_status_reports_current_context(self):
+        target = Path(self.temp_dir.name) / "project"
+        target.mkdir()
+        (self.paths.data_dir / "memory.md").write_text(
+            "Jarvis Lite 使用 memory/profile.md 保存长期记忆。\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+
+        self.agent.handle("/ask Jarvis Lite 使用什么？")
+        self.agent.handle(f"/dir-add 项目 {target}")
+        self.agent.handle("打开项目目录")
+        response = self.agent.handle("你还记得刚才什么")
+
+        self.assertIn("最近上下文", response)
+        self.assertIn("最近资料：data/memory.md", response)
+        self.assertIn(f"最近目录：项目 -> {target.resolve()}", response)
+        self.assertIn("最近搜索结果：2 条", response)
+        self.assertIn("1. data/memory.md", response)
+        self.assertIn("2. data/runtime.md", response)
+
+    def test_natural_language_recent_context_status_reports_restored_search_results(self):
+        (self.paths.data_dir / "memory.md").write_text(
+            "Jarvis Lite 使用 memory/profile.md 保存长期记忆。\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+        self.agent.handle("/ask Jarvis Lite 使用什么？")
+        restarted_agent = JarvisAgent(self.paths)
+
+        response = restarted_agent.handle("最近上下文状态")
+
+        self.assertIn("最近上下文", response)
+        self.assertIn("最近资料：data/memory.md", response)
+        self.assertIn("最近搜索结果：2 条", response)
+        self.assertIn("1. data/memory.md", response)
+        self.assertIn("2. data/runtime.md", response)
+
     def test_import_command_adds_text_file_to_knowledge_base(self):
         source = Path(self.temp_dir.name) / "outside.md"
         source.write_text("Jarvis Lite 可以导入外部资料。\n", encoding="utf-8")

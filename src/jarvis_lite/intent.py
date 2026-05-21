@@ -27,6 +27,8 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
 
     if _is_capability_question(prompt):
         return NaturalLanguageIntent("capabilities")
+    if _is_recent_context_status_question(prompt):
+        return NaturalLanguageIntent("recent_context_status")
     if _matches_any(prompt, ("查看知识库", "看看知识库", "知识库状态", "我的知识库", "资料库状态")):
         return NaturalLanguageIntent("command", command="/kb")
     if _matches_any(prompt, ("查看常用目录", "看看常用目录", "常用目录", "目录列表")):
@@ -72,6 +74,20 @@ def _normalize_text_preserving_spaces(text: str) -> str:
 def _is_capability_question(prompt: str) -> bool:
     capability_words = ("能做什么", "可以做什么", "会做什么", "能干什么", "有什么功能", "能帮我做什么")
     return any(word in prompt for word in capability_words)
+
+
+def _is_recent_context_status_question(prompt: str) -> bool:
+    direct_questions = (
+        "查看最近上下文",
+        "看看最近上下文",
+        "最近上下文",
+        "最近上下文状态",
+        "查看上下文",
+        "看看上下文",
+    )
+    if prompt in direct_questions:
+        return True
+    return "还记得" in prompt and any(word in prompt for word in ("刚才", "最近", "上次"))
 
 
 def _matches_any(prompt: str, candidates: tuple[str, ...]) -> bool:

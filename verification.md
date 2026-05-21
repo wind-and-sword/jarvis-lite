@@ -892,3 +892,55 @@ git diff --check
 - 全量测试 192 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-21 最近上下文状态查询验证
+
+### RED：自然语言最近上下文查询缺失
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_empty_state tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_current_context tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_restored_search_results -v
+```
+
+结果：
+
+- `查看最近上下文` 先落入长期记忆兜底，没有输出最近上下文空状态。
+- `你还记得刚才什么` 先落入长期记忆兜底，没有展示最近资料、最近目录和最近搜索结果。
+- `最近上下文状态` 在新 Agent 实例中也先落入长期记忆兜底，没有展示已恢复的搜索结果。
+
+### 根因与修复
+
+- 根因：自然语言意图层没有最近上下文状态意图，Agent 也没有统一格式化当前上下文的入口。
+- 修复：新增 `recent_context_status` 意图，支持“查看最近上下文”“最近上下文状态”“你还记得刚才什么”等表达。
+- 修复：Agent 新增最近上下文状态输出，展示最近资料、最近目录和最近搜索结果列表；空状态会提示下一步可先提问、导入资料或打开/整理目录。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_empty_state tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_current_context tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_restored_search_results -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- 最近上下文状态新增 3 个测试通过。
+- Agent 专项测试 59 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 195 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

@@ -275,6 +275,8 @@ class JarvisAgent:
     def _handle_natural_language_intent(self, intent) -> str:
         if intent.name == "capabilities":
             return self._capability_summary()
+        if intent.name == "recent_context_status":
+            return self._recent_context_status()
         if intent.name == "command":
             return self.handle(intent.command)
         if intent.name == "open_directory_path" and intent.path is not None:
@@ -307,6 +309,38 @@ class JarvisAgent:
                 "- 语音准备：/voice 会复用同一套文本理解流程。",
             ]
         )
+
+    def _recent_context_status(self) -> str:
+        self.tools.run("record_log", message="查看最近上下文状态")
+        has_document = self._recent_document_path is not None
+        has_directory = self._recent_directory is not None
+        has_search_results = bool(self._recent_search_result_paths)
+        if not has_document and not has_directory and not has_search_results:
+            return "\n".join(
+                [
+                    "最近上下文：还没有记录。",
+                    "- 你可以先提问、导入资料，或打开/整理目录。",
+                ]
+            )
+
+        lines = ["最近上下文："]
+        if has_document:
+            lines.append(f"- 最近资料：data/{self._recent_document_path}")
+        else:
+            lines.append("- 最近资料：无")
+
+        if has_directory and self._recent_directory is not None:
+            lines.append(f"- 最近目录：{self._recent_directory.alias} -> {self._recent_directory.path}")
+        else:
+            lines.append("- 最近目录：无")
+
+        if has_search_results:
+            lines.append(f"- 最近搜索结果：{len(self._recent_search_result_paths)} 条")
+            for index, relative_path in enumerate(self._recent_search_result_paths, start=1):
+                lines.append(f"  {index}. data/{relative_path}")
+        else:
+            lines.append("- 最近搜索结果：无")
+        return "\n".join(lines)
 
     def _sentence(self, text: str) -> str:
         return text if text.endswith(("。", "！", "？", ".", "!", "?")) else f"{text}。"
