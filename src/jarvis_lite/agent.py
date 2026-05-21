@@ -28,6 +28,7 @@ class JarvisAgent:
         self.paths = paths or build_project_paths()
         self.tools = ToolRegistry(self.paths)
         self._recent_document_path: str | None = None
+        self._recent_directory: CommonDirectory | None = None
 
     def handle(self, user_input: str) -> str:
         prompt = user_input.strip()
@@ -277,6 +278,10 @@ class JarvisAgent:
             return self._open_directory(intent.alias)
         if intent.name == "organize_directory_alias":
             return self._organize_preview(intent.alias)
+        if intent.name == "open_recent_directory":
+            return self._open_recent_directory()
+        if intent.name == "organize_recent_directory":
+            return self._organize_recent_directory()
         if intent.name == "tag_recent_document":
             return self._tag_recent_document(intent.tags)
         return "我还不能理解这个自然语言请求。你可以换一种说法，或输入 /help 查看当前能力。"
@@ -310,6 +315,9 @@ class JarvisAgent:
     def _remember_recent_document(self, relative_path: str) -> None:
         self._recent_document_path = relative_path
 
+    def _remember_recent_directory(self, alias: str, directory_path: Path) -> None:
+        self._recent_directory = CommonDirectory(alias, directory_path)
+
     def _directories(self) -> str:
         directories = list_common_directories(self.paths)
         if not directories:
@@ -324,11 +332,20 @@ class JarvisAgent:
         if directory is None:
             return f"没有找到常用目录：{alias}。可用 /dirs 查看。"
 
+        return self._organize_directory(directory)
+
+    def _organize_recent_directory(self) -> str:
+        if self._recent_directory is None:
+            return "还没有最近目录。你可以先打开或整理一个目录，或说“整理桌面”。"
+        return self._organize_directory(self._recent_directory)
+
+    def _organize_directory(self, directory: CommonDirectory) -> str:
         try:
             preview = preview_file_organization(directory.path)
         except FileNotFoundError as exc:
             return f"文件整理预览失败：{exc}"
 
+        self._remember_recent_directory(directory.alias, directory.path)
         self.tools.run("record_log", message=f"生成文件整理预览：{directory.alias} -> {directory.path}")
         lines = [
             f"文件整理预览：{directory.alias}",
@@ -354,12 +371,18 @@ class JarvisAgent:
 
         return self._open_directory_path(directory.alias, directory.path)
 
+    def _open_recent_directory(self) -> str:
+        if self._recent_directory is None:
+            return "还没有最近目录。你可以先打开或整理一个目录，或说“打开桌面”。"
+        return self._open_directory_path(self._recent_directory.alias, self._recent_directory.path)
+
     def _open_directory_path(self, alias: str, directory_path: Path) -> str:
         try:
             record = record_directory_open_request(self.paths, alias, directory_path)
         except FileNotFoundError as exc:
             return f"打开目录请求记录失败：{exc}"
 
+        self._remember_recent_directory(alias, directory_path.resolve())
         self.tools.run("record_log", message=f"记录打开目录请求：{alias} -> {directory_path}")
         return "\n".join(
             [

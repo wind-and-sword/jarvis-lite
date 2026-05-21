@@ -137,8 +137,24 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：最近目录上下文
+
+- JarvisAgent 现在会记录最近一次成功打开或整理预览的目录。
+- 打开常用目录后，可以继续说“整理这个目录”，会作用到刚才的目录。
+- 没有最近目录时，“打开这个目录”会提示先打开或整理一个目录，不再把“这个目录”当成普通目录别名。
+- 最近目录上下文只保存在当前 Agent 实例内，重启后不恢复。
+- RED 验证：
+  - 新增 2 个测试先把“这个目录”误当成别名“这个”，未能使用最近目录或提示缺少最近目录。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_organize_recent_directory_after_open_common_directory tests.test_agent.AgentTests.test_natural_language_open_recent_directory_requires_recent_directory_context -v`：2 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：49 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：185 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
-- 下一步可以继续沉淀“最近目录”“最近搜索结果”等上下文，扩大省略指代表达的覆盖范围。
+- 下一步可以继续沉淀“最近搜索结果”等上下文，扩大省略指代表达的覆盖范围。
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
 - 可以把成功任务沉淀为“经验记忆”，让助手逐步学习用户常用表达和常用流程。

@@ -119,12 +119,16 @@ def _parse_directory_alias_intent(prompt: str) -> NaturalLanguageIntent | None:
     if open_match:
         alias = _normalize_directory_alias(open_match.group(1))
         if alias:
+            if _is_recent_directory_reference(alias):
+                return NaturalLanguageIntent("open_recent_directory")
             return NaturalLanguageIntent("open_directory_alias", alias=alias)
 
     organize_match = re.fullmatch(r"(?:帮我)?(?:整理|整理预览|预览整理)(.+?)(?:目录|文件夹)?", prompt)
     if organize_match:
         alias = _normalize_directory_alias(organize_match.group(1))
         if alias:
+            if _is_recent_directory_reference(alias):
+                return NaturalLanguageIntent("organize_recent_directory")
             return NaturalLanguageIntent("organize_directory_alias", alias=alias)
 
     return None
@@ -132,6 +136,10 @@ def _parse_directory_alias_intent(prompt: str) -> NaturalLanguageIntent | None:
 
 def _normalize_directory_alias(alias: str) -> str:
     return alias.strip().removesuffix("目录").removesuffix("文件夹").strip()
+
+
+def _is_recent_directory_reference(alias: str) -> bool:
+    return alias in {"这个", "刚才的", "最近的", "当前"}
 
 
 def _split_tag_text(text: str) -> tuple[str, ...]:
