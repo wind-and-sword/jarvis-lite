@@ -430,3 +430,7 @@ git diff --check
 - 全量测试 173 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 未发现空白错误，仅出现 CRLF 换行提示。
+- 安装器重新生成成功：`E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe`。
+- 安装包大小：`47,472,640` 字节。
+- 安装包生成时间：`2026-05-21 11:17:54`。
+- 打包 exe smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`，退出码为 0。

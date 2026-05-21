@@ -37,6 +37,15 @@
   - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：173 个测试通过。
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：未发现空白错误，仅出现 CRLF 换行提示。
+  - `.venv\Scripts\python.exe scripts\build_windows_installer.py`：成功生成安装器。
+  - `Start-Process ..\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke -Wait -PassThru`：退出码 `0`。
+
+## 当前交付状态
+
+- 最新安装包：`E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe`
+- 文件大小：`47,472,640` 字节
+- 生成时间：`2026-05-21 11:17:54`
+- 本地代码提交：`d115d24 feat: 增加自然语言本地意图层`
 
 ## 后续建议
 
