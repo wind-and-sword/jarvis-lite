@@ -42,11 +42,45 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已记录经验：导入资料后先打标签", response)
         self.assertIn("导入资料后先打标签", self.agent.handle("/experiences"))
 
+    def test_experience_search_command_returns_matching_experiences(self):
+        self.agent.handle("/experience 导入资料后先打标签")
+        self.agent.handle("/experience 日报生成后检查最近经验")
+        self.agent.handle("/experience 导入 PDF 后查看知识库")
+
+        response = self.agent.handle("/experience-search 导入")
+
+        self.assertIn("经验搜索：导入", response)
+        self.assertIn("1. 导入 PDF 后查看知识库", response)
+        self.assertIn("2. 导入资料后先打标签", response)
+        self.assertNotIn("日报生成", response)
+
+    def test_experience_search_command_reports_no_match(self):
+        self.agent.handle("/experience 导入资料后先打标签")
+
+        response = self.agent.handle("/experience-search 语音")
+
+        self.assertIn("没有找到和“语音”相关的经验", response)
+
+    def test_experience_search_command_requires_keyword(self):
+        response = self.agent.handle("/experience-search")
+
+        self.assertIn("用法：/experience-search 关键词", response)
+
     def test_natural_language_record_experience_records_experience(self):
         response = self.agent.handle("记住这个经验：导入资料后先打标签")
 
         self.assertIn("已记录经验：导入资料后先打标签", response)
         self.assertIn("导入资料后先打标签", self.agent.handle("/experiences"))
+
+    def test_natural_language_search_experience_maps_to_experience_search(self):
+        self.agent.handle("/experience 导入资料后先打标签")
+        self.agent.handle("/experience 日报生成后检查最近经验")
+
+        response = self.agent.handle("搜索经验 导入")
+
+        self.assertIn("经验搜索：导入", response)
+        self.assertIn("导入资料后先打标签", response)
+        self.assertNotIn("日报生成", response)
 
     def test_natural_language_experience_memory_status_maps_to_experiences(self):
         self.agent.handle("/experience 导入资料后先打标签")

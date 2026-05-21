@@ -1104,3 +1104,48 @@ git diff --check
 - 全量测试 205 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-21 经验搜索第一版验证
+
+### RED：经验关键词检索入口缺失
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_memory.MemoryTests.test_search_experiences_returns_matching_items_latest_first -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_experience_search_command_returns_matching_experiences tests.test_agent.AgentTests.test_experience_search_command_reports_no_match tests.test_agent.AgentTests.test_experience_search_command_requires_keyword tests.test_agent.AgentTests.test_natural_language_search_experience_maps_to_experience_search -v
+```
+
+结果：
+
+- `tests.test_memory` 先因缺少 `search_experiences` 导入失败。
+- `/experience-search` 先返回未知命令。
+- “搜索经验 导入”先未映射到经验搜索命令。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_memory tests.test_agent -v
+```
+
+结果：
+
+- Memory 和 Agent 专项测试共 83 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 210 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

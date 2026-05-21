@@ -72,6 +72,21 @@ def list_recent_experiences(paths: ProjectPaths, limit: int = 3) -> tuple[str, .
     return tuple(reversed(experiences[-limit:]))
 
 
+def search_experiences(paths: ProjectPaths, query: str, limit: int = 5) -> tuple[str, ...]:
+    """按关键词搜索经验，最新匹配经验排在前面。"""
+
+    normalized_query = query.strip().lower()
+    if not normalized_query or limit <= 0:
+        return ()
+
+    matches = [
+        experience
+        for experience in list_recent_experiences(paths, limit=1000)
+        if normalized_query in experience.lower()
+    ]
+    return tuple(matches[:limit])
+
+
 def append_memory(paths: ProjectPaths, fact: str) -> str:
     """向长期记忆追加一条事实，重复事实不重复写入。"""
 

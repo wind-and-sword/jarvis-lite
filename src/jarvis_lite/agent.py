@@ -24,6 +24,7 @@ from .memory import (
     parse_identity_fact,
     read_experiences,
     read_profile,
+    search_experiences,
     summarize_profile,
 )
 from .runtime_context import RuntimeContext, RuntimeDirectoryContext, load_runtime_context, save_runtime_context
@@ -146,6 +147,11 @@ class JarvisAgent:
             if not args:
                 return "用法：/experience 经验内容"
             return self._remember_experience(self._strip_quotes(" ".join(args)))
+
+        if command == "/experience-search":
+            if not args:
+                return "用法：/experience-search 关键词"
+            return self._search_experiences(" ".join(args))
 
         if command == "/ask":
             if not args:
@@ -282,6 +288,7 @@ class JarvisAgent:
                 "/ask 问题：基于 data 目录中的文本资料回答",
                 "/remember 记忆内容：写入长期记忆",
                 "/experience 经验内容：写入经验记忆",
+                "/experience-search 关键词：搜索经验记忆",
                 "/note 标题 内容：写入 memory/notes/ 下的笔记",
                 "/summary 文件名 内容：写入 word/ 下的总结",
                 "/tools：查看第一阶段工具白名单",
@@ -382,6 +389,19 @@ class JarvisAgent:
             return f"经验记录失败：{exc}"
         self.tools.run("record_log", message=f"写入经验记忆：{remembered}")
         return f"已记录经验：{remembered}"
+
+    def _search_experiences(self, query: str) -> str:
+        normalized_query = self._strip_quotes(query)
+        if not normalized_query:
+            return "用法：/experience-search 关键词"
+        matches = search_experiences(self.paths, normalized_query)
+        self.tools.run("record_log", message=f"搜索经验记忆：{normalized_query}")
+        if not matches:
+            return f"没有找到和“{normalized_query}”相关的经验。"
+        lines = [f"经验搜索：{normalized_query}"]
+        for index, experience in enumerate(matches, start=1):
+            lines.append(f"{index}. {experience}")
+        return "\n".join(lines)
 
     def _answer_from_data(self, question: str) -> str:
         matches = find_data_matches(self.paths, question)

@@ -42,6 +42,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if _matches_any(prompt, ("查看经验记忆", "看看经验记忆", "经验记忆", "查看经验", "看看经验")):
         return NaturalLanguageIntent("command", command="/experiences")
 
+    experience_search_intent = _parse_experience_search_intent(readable_prompt)
+    if experience_search_intent is not None:
+        return experience_search_intent
+
     experience_intent = _parse_experience_intent(readable_prompt)
     if experience_intent is not None:
         return experience_intent
@@ -166,6 +170,21 @@ def _parse_experience_intent(prompt: str) -> NaturalLanguageIntent | None:
         experience = _strip_wrapping_quotes(match.group("experience").strip())
         if experience:
             return NaturalLanguageIntent("command", command=f"/experience {experience}")
+    return None
+
+
+def _parse_experience_search_intent(prompt: str) -> NaturalLanguageIntent | None:
+    patterns = (
+        r"(?:请)?(?:帮我)?(?:搜索|查找|查询)\s*经验\s*[:：]?\s*(?P<query>.+)",
+        r"(?:请)?(?:帮我)?经验\s*(?:搜索|查找|查询)\s*[:：]?\s*(?P<query>.+)",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, prompt)
+        if not match:
+            continue
+        query = _strip_wrapping_quotes(match.group("query").strip())
+        if query:
+            return NaturalLanguageIntent("command", command=f"/experience-search {query}")
     return None
 
 
