@@ -81,6 +81,32 @@ class AgentTests(unittest.TestCase):
         self.assertIn("当前版本：0.1.0", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
+    def test_update_download_command_downloads_package_to_runtime_directory(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            paths = build_project_paths(root / "jarvis-lite")
+            agent = JarvisAgent(paths)
+            package = root / "JarvisLiteSetup.exe"
+            package.write_bytes(b"installer")
+            manifest = root / "update.json"
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "version": "0.2.0",
+                        "download_url": str(package),
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            response = agent.handle(f"/update-download {manifest}")
+            downloaded = root / "jarvis-lite-runtime" / "updates" / "JarvisLiteSetup.exe"
+
+            self.assertIn("已下载更新安装包", response)
+            self.assertIn(str(downloaded), response)
+            self.assertEqual(downloaded.read_bytes(), b"installer")
+
     def test_dir_add_and_dirs_commands_manage_common_directories(self):
         target = Path(self.temp_dir.name) / "projects"
         target.mkdir()

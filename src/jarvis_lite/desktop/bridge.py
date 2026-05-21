@@ -21,7 +21,7 @@ class QuickCommand:
     prompt: str
 
 
-DIRECT_QUICK_COMMAND_PROMPTS = ("/status", "/kb", "/dirs", "/daily-report", "/update-status")
+DIRECT_QUICK_COMMAND_PROMPTS = ("/status", "/kb", "/dirs", "/daily-report", "/update-status", "/update-download")
 
 
 class DesktopBridge:
@@ -48,6 +48,7 @@ def quick_commands() -> tuple[QuickCommand, ...]:
         QuickCommand("常用目录", "/dirs"),
         QuickCommand("生成日报", "/daily-report"),
         QuickCommand("检查更新", "/update-status"),
+        QuickCommand("下载更新", "/update-download"),
         QuickCommand("整理预览", "/organize-preview"),
     )
 
@@ -71,6 +72,7 @@ def _classify_response_state(assistant_text: str) -> DesktopState:
         "文件整理预览失败：",
         "打开目录请求记录失败：",
         "更新检查失败：",
+        "更新下载失败：",
         "没有找到常用目录：",
     )
     return DesktopState.ERROR if assistant_text.startswith(error_prefixes) else DesktopState.SUCCESS

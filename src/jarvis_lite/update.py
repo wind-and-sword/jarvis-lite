@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 from urllib.request import urlopen
 
 from . import __version__
 
 
 UPDATE_MANIFEST_ENV = "JARVIS_LITE_UPDATE_MANIFEST_URL"
+UPDATE_RUNTIME_DIRNAME = "jarvis-lite-runtime"
+UPDATE_DOWNLOADS_DIRNAME = "updates"
 
 
 @dataclass(frozen=True)
@@ -31,10 +35,27 @@ class UpdateCheckResult:
     source: str
 
 
+@dataclass(frozen=True)
+class UpdateDownloadResult:
+    current_version: str
+    latest_version: str
+    update_available: bool
+    download_url: str
+    destination_path: Path | None
+    bytes_written: int
+    source: str
+
+
 def is_newer_version(candidate_version: str, current_version: str) -> bool:
     """比较点分数字版本号，避免把 0.10.0 当成小于 0.2.0。"""
 
     return _version_tuple(candidate_version) > _version_tuple(current_version)
+
+
+def update_download_dir(project_root: Path) -> Path:
+    """返回项目外更新下载目录，避免安装包进入 Git 工作区。"""
+
+    return project_root.resolve().parent / UPDATE_RUNTIME_DIRNAME / UPDATE_DOWNLOADS_DIRNAME
 
 
 def check_for_update(source: str | None = None, current_version: str = __version__) -> UpdateCheckResult:
@@ -99,6 +120,76 @@ def describe_update_status(source: str | None = None, current_version: str = __v
     )
 
 
+def download_update(
+    source: str | None = None,
+    *,
+    downloads_dir: Path | None = None,
+    current_version: str = __version__,
+) -> UpdateDownloadResult:
+    """检查更新并把新版本安装包下载到运行态目录。"""
+
+    result = check_for_update(source, current_version=current_version)
+    if not result.update_available:
+        return UpdateDownloadResult(
+            current_version=result.current_version,
+            latest_version=result.latest_version,
+            update_available=False,
+            download_url=result.download_url,
+            destination_path=None,
+            bytes_written=0,
+            source=result.source,
+        )
+
+    target_dir = downloads_dir or update_download_dir(Path.cwd())
+    target_dir.mkdir(parents=True, exist_ok=True)
+    destination = target_dir / _download_filename(result.download_url, result.latest_version)
+    bytes_written = _write_download(result.download_url, destination)
+    return UpdateDownloadResult(
+        current_version=result.current_version,
+        latest_version=result.latest_version,
+        update_available=True,
+        download_url=result.download_url,
+        destination_path=destination,
+        bytes_written=bytes_written,
+        source=result.source,
+    )
+
+
+def describe_update_download(
+    source: str | None = None,
+    *,
+    downloads_dir: Path | None = None,
+    current_version: str = __version__,
+) -> str:
+    """返回适合命令行和桌面面板展示的更新下载结果。"""
+
+    try:
+        result = download_update(source, downloads_dir=downloads_dir, current_version=current_version)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        return f"更新下载失败：{exc}"
+
+    if not result.update_available:
+        return "\n".join(
+            [
+                "当前已是最新版本，无需下载更新。",
+                f"- 当前版本：{result.current_version}",
+                f"- 最新版本：{result.latest_version}",
+                f"- 更新源：{result.source}",
+            ]
+        )
+
+    return "\n".join(
+        [
+            "已下载更新安装包：",
+            f"- 版本：{result.latest_version}",
+            f"- 保存位置：{result.destination_path}",
+            f"- 文件大小：{result.bytes_written} 字节",
+            f"- 下载来源：{result.download_url}",
+            "- 说明：请关闭 Jarvis Lite 后运行安装包覆盖安装。",
+        ]
+    )
+
+
 def load_update_manifest(source: str) -> UpdateManifest:
     raw = _read_manifest_text(source)
     data = json.loads(raw)
@@ -123,6 +214,52 @@ def _read_manifest_text(source: str) -> str:
         with urlopen(source, timeout=10) as response:
             return response.read().decode("utf-8")
     return Path(source).expanduser().read_text(encoding="utf-8")
+
+
+def _write_download(download_url: str, destination: Path) -> int:
+    if download_url.startswith(("http://", "https://")):
+        with urlopen(download_url, timeout=30) as response:
+            with destination.open("wb") as target:
+                shutil.copyfileobj(response, target)
+        return destination.stat().st_size
+
+    source_path = _download_local_path(download_url)
+    if not source_path.is_file():
+        raise FileNotFoundError(f"更新安装包不存在：{source_path}")
+    if source_path.resolve() == destination.resolve():
+        return destination.stat().st_size
+    with source_path.open("rb") as source_file:
+        with destination.open("wb") as target:
+            shutil.copyfileobj(source_file, target)
+    return destination.stat().st_size
+
+
+def _download_local_path(download_url: str) -> Path:
+    if _looks_like_windows_path(download_url):
+        return Path(download_url).expanduser()
+
+    parsed = urlparse(download_url)
+    if parsed.scheme == "file":
+        path_text = unquote(parsed.path)
+        if os.name == "nt" and path_text.startswith("/") and len(path_text) > 2 and path_text[2] == ":":
+            path_text = path_text[1:]
+        return Path(path_text).expanduser()
+    if parsed.scheme:
+        raise ValueError(f"不支持的下载地址协议：{parsed.scheme}")
+    return Path(download_url).expanduser()
+
+
+def _download_filename(download_url: str, latest_version: str) -> str:
+    parsed = urlparse(download_url)
+    raw_path = download_url if _looks_like_windows_path(download_url) else parsed.path if parsed.scheme else download_url
+    candidate = Path(unquote(raw_path)).name
+    if candidate:
+        return candidate
+    return f"JarvisLiteSetup-{latest_version}.exe"
+
+
+def _looks_like_windows_path(value: str) -> bool:
+    return len(value) >= 3 and value[1] == ":" and value[2] in {"\\", "/"}
 
 
 def _resolve_update_source(source: str | None) -> str:

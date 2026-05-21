@@ -71,7 +71,7 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertIn("状态：success", self.panel.status_text())
 
     def test_panel_exposes_only_direct_quick_command_buttons(self):
-        self.assertEqual(self.panel.quick_command_texts(), ("状态", "知识库", "常用目录", "生成日报", "检查更新"))
+        self.assertEqual(self.panel.quick_command_texts(), ("状态", "知识库", "常用目录", "生成日报", "检查更新", "下载更新"))
 
     def test_panel_quick_command_button_submits_prompt(self):
         self.panel.quick_command_button("知识库").click()
