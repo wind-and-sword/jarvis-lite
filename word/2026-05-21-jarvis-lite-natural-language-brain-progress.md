@@ -204,8 +204,24 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：最近搜索结果持久化
+
+- 最近搜索结果路径列表现在会写入项目外 `jarvis-lite-runtime/agent-context.json`。
+- 新建 Agent 实例后，仍可继续说“查看第二条结果”，读取上一次问答命中的第二条资料。
+- 读取运行态上下文时，如果文件缺失或损坏，会回退为空上下文。
+- Agent 测试根目录改为临时目录下的 `jarvis-lite` 子目录，和运行态目录隔离，避免跨测试串扰。
+- RED 验证：
+  - 新增 1 个测试先证明新 Agent 实例无法恢复最近搜索结果。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_recent_search_results_survive_new_agent_instance -v`：1 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：56 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：192 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
-- 下一步可以考虑把最近上下文持久化到运行态文件，减少重启后丢失上下文的问题。
+- 下一步可以继续持久化最近资料和最近目录，或增加“最近上下文状态”查询能力。
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
 - 可以把成功任务沉淀为“经验记忆”，让助手逐步学习用户常用表达和常用流程。

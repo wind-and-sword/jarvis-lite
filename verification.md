@@ -842,3 +842,53 @@ git diff --check
 - 全量测试 191 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-21 最近搜索结果持久化验证
+
+### RED：新 Agent 实例无法恢复最近搜索结果
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_recent_search_results_survive_new_agent_instance -v
+```
+
+结果：
+
+- 第一个 Agent 执行 `/ask Jarvis Lite 使用什么？` 后，新建第二个 Agent 再说 `查看第二条结果`，先提示还没有最近搜索结果。
+
+### 根因与修复
+
+- 根因：最近搜索结果列表只保存在 `JarvisAgent` 实例内。
+- 修复：新增 `runtime_context.py`，把最近搜索结果路径列表写入项目外 `jarvis-lite-runtime/agent-context.json`，并在 Agent 初始化时恢复。
+- 测试隔离：Agent 测试根目录改为临时目录下的 `jarvis-lite` 子目录，避免运行态文件写到系统临时目录的公共父级而串扰测试。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_recent_search_results_survive_new_agent_instance -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- 最近搜索结果持久化新增 1 个测试通过。
+- Agent 专项测试 56 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 192 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

@@ -15,7 +15,7 @@ from jarvis_lite.config import build_project_paths
 class AgentTests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.paths = build_project_paths(Path(self.temp_dir.name))
+        self.paths = build_project_paths(Path(self.temp_dir.name) / "jarvis-lite")
         (self.paths.memory_dir / "profile.md").write_text(
             "# 长期记忆\n\n- 用户偏好：中文简洁回答\n",
             encoding="utf-8",
@@ -423,6 +423,23 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("还没有最近搜索结果", response)
         self.assertIn("先提问", response)
+
+    def test_recent_search_results_survive_new_agent_instance(self):
+        (self.paths.data_dir / "memory.md").write_text(
+            "Jarvis Lite 使用 memory/profile.md 保存长期记忆。\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+        self.agent.handle("/ask Jarvis Lite 使用什么？")
+        restarted_agent = JarvisAgent(self.paths)
+
+        response = restarted_agent.handle("查看第二条结果")
+
+        self.assertIn("data/runtime.md", response)
+        self.assertIn("Python 3.13", response)
 
     def test_import_command_adds_text_file_to_knowledge_base(self):
         source = Path(self.temp_dir.name) / "outside.md"
