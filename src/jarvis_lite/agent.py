@@ -287,6 +287,8 @@ class JarvisAgent:
             return self._tag_recent_document(intent.tags)
         if intent.name == "tag_numbered_search_result":
             return self._tag_numbered_search_result(intent.result_index, intent.tags)
+        if intent.name == "read_numbered_search_result":
+            return self._read_numbered_search_result(intent.result_index)
         return "我还不能理解这个自然语言请求。你可以换一种说法，或输入 /help 查看当前能力。"
 
     def _capability_summary(self) -> str:
@@ -324,12 +326,29 @@ class JarvisAgent:
         return self.handle(f'/tag "{self._recent_document_path}" {" ".join(tags)}')
 
     def _tag_numbered_search_result(self, result_index: int, tags: tuple[str, ...]) -> str:
-        if not self._recent_search_result_paths:
-            return "还没有最近搜索结果。你可以先提问，例如“Jarvis Lite 使用什么？”。"
-        if result_index < 1 or result_index > len(self._recent_search_result_paths):
-            return f"最近搜索结果只有 {len(self._recent_search_result_paths)} 条，不能选择第 {result_index} 条。"
-        relative_path = self._recent_search_result_paths[result_index - 1]
+        relative_path, error = self._recent_search_result_path(result_index)
+        if error:
+            return error
+        assert relative_path is not None
         return self.handle(f'/tag "{relative_path}" {" ".join(tags)}')
+
+    def _read_numbered_search_result(self, result_index: int) -> str:
+        relative_path, error = self._recent_search_result_path(result_index)
+        if error:
+            return error
+        assert relative_path is not None
+        result = self.tools.run("read_data_file", path=relative_path)
+        if not result.success:
+            return result.message
+        self.tools.run("record_log", message=f"读取最近搜索结果：data/{relative_path}")
+        return f"第 {result_index} 条结果：data/{relative_path}\n{result.output}"
+
+    def _recent_search_result_path(self, result_index: int) -> tuple[str | None, str | None]:
+        if not self._recent_search_result_paths:
+            return None, "还没有最近搜索结果。你可以先提问，例如“Jarvis Lite 使用什么？”。"
+        if result_index < 1 or result_index > len(self._recent_search_result_paths):
+            return None, f"最近搜索结果只有 {len(self._recent_search_result_paths)} 条，不能选择第 {result_index} 条。"
+        return self._recent_search_result_paths[result_index - 1], None
 
     def _remember_recent_document(self, relative_path: str) -> None:
         self._recent_document_path = relative_path

@@ -46,6 +46,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if tag_intent is not None:
         return tag_intent
 
+    read_result_intent = _parse_read_result_intent(prompt)
+    if read_result_intent is not None:
+        return read_result_intent
+
     drive_intent = _parse_open_drive(prompt)
     if drive_intent is not None:
         return drive_intent
@@ -101,6 +105,16 @@ def _parse_tag_intent(prompt: str) -> NaturalLanguageIntent | None:
     if filename in {"这个资料", "这份资料", "刚才的资料", "最近的资料", "这个结果", "这条结果", "刚才的结果", "最近的结果"}:
         return NaturalLanguageIntent("tag_recent_document", tags=tags)
     return NaturalLanguageIntent("command", command=f"/tag {filename} {' '.join(tags)}")
+
+
+def _parse_read_result_intent(prompt: str) -> NaturalLanguageIntent | None:
+    match = re.fullmatch(r"(?:查看|看看|读取|打开)(?P<target>第[0-9一二三四五六七八九十]+(?:条|个)?结果)", prompt)
+    if not match:
+        return None
+    result_index = _parse_result_index(match.group("target"))
+    if result_index <= 0:
+        return None
+    return NaturalLanguageIntent("read_numbered_search_result", result_index=result_index)
 
 
 def _parse_import_intent(prompt: str) -> NaturalLanguageIntent | None:
