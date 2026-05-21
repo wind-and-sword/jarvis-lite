@@ -18,6 +18,7 @@ class NaturalLanguageIntent:
 def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     """把常见中文表达映射为可测试的本地动作。"""
 
+    readable_prompt = _normalize_text_preserving_spaces(text)
     prompt = _normalize_text(text)
     if not prompt:
         return None
@@ -35,6 +36,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if _matches_any(prompt, ("下载更新", "下载新版本", "下载最新版", "下载更新安装包")):
         return NaturalLanguageIntent("command", command="/update-download")
 
+    tag_intent = _parse_tag_intent(readable_prompt)
+    if tag_intent is not None:
+        return tag_intent
+
     drive_intent = _parse_open_drive(prompt)
     if drive_intent is not None:
         return drive_intent
@@ -48,6 +53,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
 
 def _normalize_text(text: str) -> str:
     return re.sub(r"\s+", "", text.strip().strip("。！？!?."))
+
+
+def _normalize_text_preserving_spaces(text: str) -> str:
+    return re.sub(r"\s+", " ", text.strip().strip("。！？!?."))
 
 
 def _is_capability_question(prompt: str) -> bool:
@@ -71,6 +80,18 @@ def _parse_open_drive(prompt: str) -> NaturalLanguageIntent | None:
     )
 
 
+def _parse_tag_intent(prompt: str) -> NaturalLanguageIntent | None:
+    match = re.fullmatch(r"(?:给|把)\s*(?P<filename>\S+)\s*(?:打标签|标记为)\s*(?P<tags>.+)", prompt)
+    if not match:
+        return None
+
+    filename = match.group("filename").strip()
+    tags = _split_tag_text(match.group("tags"))
+    if not filename or not tags:
+        return None
+    return NaturalLanguageIntent("command", command=f"/tag {filename} {' '.join(tags)}")
+
+
 def _parse_directory_alias_intent(prompt: str) -> NaturalLanguageIntent | None:
     open_match = re.fullmatch(r"(?:帮我)?打开(.+?)(?:目录|文件夹)?", prompt)
     if open_match:
@@ -89,3 +110,12 @@ def _parse_directory_alias_intent(prompt: str) -> NaturalLanguageIntent | None:
 
 def _normalize_directory_alias(alias: str) -> str:
     return alias.strip().removesuffix("目录").removesuffix("文件夹").strip()
+
+
+def _split_tag_text(text: str) -> tuple[str, ...]:
+    tags: list[str] = []
+    for raw_tag in re.split(r"[\s,，、]+", text.strip()):
+        tag = raw_tag.strip().lstrip("#").strip()
+        if tag:
+            tags.append(tag)
+    return tuple(tags)

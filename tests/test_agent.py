@@ -142,6 +142,18 @@ class AgentTests(unittest.TestCase):
         self.assertIn("更新状态", response)
         self.assertIn("更新源：未配置", response)
 
+    def test_natural_language_tag_document_updates_document_tags(self):
+        response = self.agent.handle("给 note.txt 打标签 项目 Python")
+
+        self.assertIn("已更新标签：data/note.txt（项目、Python）", response)
+        self.assertIn("标签：项目、Python", self.agent.handle("/kb"))
+
+    def test_natural_language_mark_document_as_tags_updates_document_tags(self):
+        response = self.agent.handle("把 note.txt 标记为 私人资料")
+
+        self.assertIn("已更新标签：data/note.txt（私人资料）", response)
+        self.assertIn("标签：私人资料", self.agent.handle("/kb"))
+
     def test_natural_language_open_windows_drive_records_request(self):
         drive = Path("D:/")
         if not drive.is_dir():

@@ -24,6 +24,8 @@
   - “整理项目目录”
   - “打开桌面”
   - “整理桌面”
+  - “给 note.txt 打标签 项目 Python”
+  - “把 note.txt 标记为 私人资料”
 - 修复身份误写入：
   - `我是你的什么人，你知道吗` 现在会作为身份问题处理。
   - 疑问句不会被 `我是...` 规则写入 `用户身份`。
@@ -81,8 +83,25 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：资料标签自然语言
+
+- 新增明确文件名的标签表达：
+  - “给 note.txt 打标签 项目 Python”
+  - “把 note.txt 标记为 私人资料”
+- 解析结果直接复用 `/tag 文件名 标签...`，标签仍由知识库模块规范化和持久化。
+- 本阶段不做“这个资料”上下文指代，不做模糊文件名搜索。
+- RED 验证：
+  - 新增 2 个测试先分别落入普通兜底和资料问答，未更新标签。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_tag_document_updates_document_tags tests.test_agent.AgentTests.test_natural_language_mark_document_as_tags_updates_document_tags -v`：2 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：43 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：179 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
-- 下一步可以扩展自然语言参数补全，例如“给这个资料打标签”“导入这个文件到知识库”。
+- 下一步可以扩展自然语言参数补全，例如“导入这个文件到知识库”，或增加最近资料上下文后再支持“给这个资料打标签”。
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
 - 可以把成功任务沉淀为“经验记忆”，让助手逐步学习用户常用表达和常用流程。
