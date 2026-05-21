@@ -13,7 +13,7 @@ from .automation import (
     write_daily_report,
 )
 from .config import ProjectPaths, build_project_paths
-from .knowledge import answer_from_data, describe_knowledge_base, import_knowledge_path, set_document_tags
+from .knowledge import answer_from_matches, describe_knowledge_base, find_data_matches, import_knowledge_path, set_document_tags
 from .intent import parse_natural_language_intent
 from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
 from .tools import ToolRegistry
@@ -79,7 +79,7 @@ class JarvisAgent:
         if intent is not None:
             return self._handle_natural_language_intent(intent)
 
-        data_answer = answer_from_data(self.paths, prompt)
+        data_answer = self._answer_from_data(prompt)
         if data_answer:
             self.tools.run("record_log", message=f"基于 data 目录回答普通问题：{prompt}")
             return data_answer
@@ -128,7 +128,7 @@ class JarvisAgent:
             if not args:
                 return "用法：/ask 问题"
             question = " ".join(args)
-            answer = answer_from_data(self.paths, question)
+            answer = self._answer_from_data(question)
             if not answer:
                 return f"没有在 data 目录找到和“{question}”相关的资料。"
             self.tools.run("record_log", message=f"基于 data 目录回答显式问题：{question}")
@@ -306,6 +306,13 @@ class JarvisAgent:
         remembered = append_memory(self.paths, fact)
         self.tools.run("record_log", message=f"写入长期记忆：{remembered}")
         return f"已记住：{remembered}"
+
+    def _answer_from_data(self, question: str) -> str:
+        matches = find_data_matches(self.paths, question)
+        if not matches:
+            return ""
+        self._remember_recent_document(matches[0].relative_path)
+        return answer_from_matches(matches)
 
     def _tag_recent_document(self, tags: tuple[str, ...]) -> str:
         if self._recent_document_path is None:

@@ -94,7 +94,7 @@ def _parse_tag_intent(prompt: str) -> NaturalLanguageIntent | None:
     tags = _split_tag_text(match.group("tags"))
     if not filename or not tags:
         return None
-    if filename in {"这个资料", "这份资料", "刚才的资料", "最近的资料"}:
+    if filename in {"这个资料", "这份资料", "刚才的资料", "最近的资料", "这个结果", "这条结果", "刚才的结果", "最近的结果"}:
         return NaturalLanguageIntent("tag_recent_document", tags=tags)
     return NaturalLanguageIntent("command", command=f"/tag {filename} {' '.join(tags)}")
 

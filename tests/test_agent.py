@@ -354,6 +354,30 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("data/note.txt:1", response)
 
+    def test_natural_language_tag_recent_search_result_after_ask_command(self):
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 推荐使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+        self.agent.handle("/ask Python 3.13")
+
+        response = self.agent.handle("给这个结果打标签 运行环境")
+
+        self.assertIn("已更新标签：data/runtime.md（运行环境）", response)
+        self.assertIn("标签：运行环境", self.agent.handle("/kb"))
+
+    def test_natural_language_tag_recent_search_result_after_plain_question(self):
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 推荐使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+        self.agent.handle("Jarvis Lite 推荐使用什么 Python 版本？")
+
+        response = self.agent.handle("给这个结果打标签 运行环境")
+
+        self.assertIn("已更新标签：data/runtime.md（运行环境）", response)
+        self.assertIn("标签：运行环境", self.agent.handle("/kb"))
+
     def test_import_command_adds_text_file_to_knowledge_base(self):
         source = Path(self.temp_dir.name) / "outside.md"
         source.write_text("Jarvis Lite 可以导入外部资料。\n", encoding="utf-8")

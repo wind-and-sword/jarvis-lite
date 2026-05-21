@@ -702,3 +702,50 @@ git diff --check
 - 全量测试 185 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-21 最近搜索结果上下文验证
+
+### RED：这个结果无法指向最近搜索命中
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_tag_recent_search_result_after_ask_command tests.test_agent.AgentTests.test_natural_language_tag_recent_search_result_after_plain_question -v
+```
+
+结果：
+
+- `/ask Python 3.13` 命中 `data/runtime.md` 后，`给这个结果打标签 运行环境` 先把 `这个结果` 当成真实文件名，标签更新失败。
+- 普通问题命中 `data/runtime.md` 后，`给这个结果打标签 运行环境` 同样先把 `这个结果` 当成真实文件名，标签更新失败。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_tag_recent_search_result_after_ask_command tests.test_agent.AgentTests.test_natural_language_tag_recent_search_result_after_plain_question -v
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- 最近搜索结果上下文新增 2 个测试通过。
+- Knowledge 专项测试 23 个通过。
+- Agent 专项测试 51 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 187 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

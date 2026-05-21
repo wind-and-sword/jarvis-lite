@@ -153,8 +153,25 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：最近搜索结果上下文
+
+- `/ask 问题` 命中资料后，JarvisAgent 会把第一条命中的 data 文件记录为最近资料。
+- 普通自然语言问题命中资料后，也会记录第一条命中的 data 文件。
+- 现在可以在问答之后说“给这个结果打标签 运行环境”，会作用到刚才命中的资料。
+- 本阶段不改变知识库检索排序、得分和回答格式，也不支持“第二条结果”这类编号选择。
+- RED 验证：
+  - 新增 2 个测试先把“这个结果”误当成真实文件名，未能给最近搜索命中的资料打标签。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_tag_recent_search_result_after_ask_command tests.test_agent.AgentTests.test_natural_language_tag_recent_search_result_after_plain_question -v`：2 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_knowledge -v`：23 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：51 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：187 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
-- 下一步可以继续沉淀“最近搜索结果”等上下文，扩大省略指代表达的覆盖范围。
+- 下一步可以考虑支持结果编号选择，例如“给第二条结果打标签”，或把最近上下文持久化到运行态文件。
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
 - 可以把成功任务沉淀为“经验记忆”，让助手逐步学习用户常用表达和常用流程。

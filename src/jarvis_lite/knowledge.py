@@ -94,9 +94,21 @@ def search_data(paths: ProjectPaths, query: str, limit: int = 3) -> list[DataMat
 def answer_from_data(paths: ProjectPaths, question: str) -> str:
     """基于 data 目录命中的片段生成规则式回答；无命中时返回空字符串。"""
 
-    matches = _filter_weak_matches(search_data(paths, question))
+    matches = find_data_matches(paths, question)
     if not matches:
         return ""
+
+    return answer_from_matches(matches)
+
+
+def find_data_matches(paths: ProjectPaths, question: str) -> list[DataMatch]:
+    """返回经过弱相关过滤的资料命中结果。"""
+
+    return _filter_weak_matches(search_data(paths, question))
+
+
+def answer_from_matches(matches: list[DataMatch]) -> str:
+    """把结构化资料命中结果格式化为用户可读回答。"""
 
     lines = [f"我在 data 目录找到 {len(matches)} 条相关资料："]
     for index, match in enumerate(matches, start=1):
