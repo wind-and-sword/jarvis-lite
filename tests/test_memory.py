@@ -11,6 +11,7 @@ from jarvis_lite.memory import (
     append_memory,
     find_identity,
     is_identity_question,
+    list_recent_experiences,
     parse_identity_fact,
     read_experiences,
     read_profile,
@@ -101,6 +102,19 @@ class MemoryTests(unittest.TestCase):
             content = read_experiences(paths)
             self.assertIn("# 经验记忆", content)
             self.assertEqual(content.count("导入资料后先打标签"), 1)
+
+    def test_list_recent_experiences_returns_latest_items_first(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir))
+
+            append_experience(paths, "经验一")
+            append_experience(paths, "经验二")
+            append_experience(paths, "经验三")
+            append_experience(paths, "经验四")
+
+            experiences = list_recent_experiences(paths, limit=3)
+
+            self.assertEqual(experiences, ("经验四", "经验三", "经验二"))
 
     def test_find_identity_extracts_name_and_role(self):
         content = "# 长期记忆\n\n- 用户姓名：张三\n- 用户身份：Jarvis Lite 项目创建者\n"

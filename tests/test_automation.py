@@ -15,6 +15,7 @@ from jarvis_lite.automation import (
     write_daily_report,
 )
 from jarvis_lite.config import build_project_paths
+from jarvis_lite.memory import append_experience
 
 
 class AutomationTests(unittest.TestCase):
@@ -48,6 +49,7 @@ class AutomationTests(unittest.TestCase):
             encoding="utf-8",
         )
         (self.paths.data_dir / "note.md").write_text("Jarvis Lite 支持日报。\n", encoding="utf-8")
+        append_experience(self.paths, "导入资料后先打标签")
         self.paths.log_path.write_text("2026-05-19T12:00:00\trecord_log\t测试日志\n", encoding="utf-8")
 
         report = write_daily_report(self.paths, "daily.md")
@@ -57,6 +59,8 @@ class AutomationTests(unittest.TestCase):
         self.assertIn("Jarvis Lite 日报", content)
         self.assertIn("用户偏好：中文回答", content)
         self.assertIn("知识库资料：1 个", content)
+        self.assertIn("经验记忆", content)
+        self.assertIn("导入资料后先打标签", content)
         self.assertIn("测试日志", content)
 
     def test_preview_file_organization_groups_files_by_extension(self):

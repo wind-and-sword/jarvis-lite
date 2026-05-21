@@ -151,6 +151,14 @@ class AgentTests(unittest.TestCase):
         self.assertIn("知识库", response)
         self.assertIn("日报", response)
 
+    def test_natural_language_capability_question_reports_recent_experiences(self):
+        self.agent.handle("/experience 导入资料后先打标签")
+
+        response = self.agent.handle("你现在能做什么事")
+
+        self.assertIn("最近经验", response)
+        self.assertIn("导入资料后先打标签", response)
+
     def test_natural_language_daily_report_generates_report(self):
         response = self.agent.handle("生成日报")
 

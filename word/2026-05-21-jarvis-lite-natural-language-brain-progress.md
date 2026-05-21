@@ -281,7 +281,24 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：经验引用第一版
+
+- 新增 `list_recent_experiences()`，默认返回最近 3 条经验，最新经验排在前面。
+- “你现在能做什么事”会在已有经验时展示最近经验列表。
+- 日报新增“经验记忆”段，列出最近经验；没有经验时写明暂无经验记忆。
+- 本阶段不改变 `/experiences` 全文查看格式，不做经验搜索、分类、评分或自动抽取。
+- RED 验证：
+  - `tests.test_memory` 先因缺少 `list_recent_experiences` 导入失败。
+  - 能力摘要先没有展示“最近经验”。
+  - 日报先没有“经验记忆”段。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_memory tests.test_agent tests.test_automation -v`：83 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：205 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以做“经验引用”：在能力摘要、日报或最近上下文里展示最近几条经验。
+- 下一步可以做“经验搜索”或“经验与具体命令联动”，让经验真正参与操作建议。

@@ -52,6 +52,26 @@ def read_experiences(paths: ProjectPaths) -> str:
     return content
 
 
+def list_recent_experiences(paths: ProjectPaths, limit: int = 3) -> tuple[str, ...]:
+    """读取最近经验，最新经验排在前面。"""
+
+    if limit <= 0:
+        return ()
+
+    content = read_experiences(paths)
+    if content == DEFAULT_EXPERIENCES_MESSAGE:
+        return ()
+
+    experiences: list[str] = []
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        if line.startswith("- "):
+            experience = line[2:].strip()
+            if experience:
+                experiences.append(experience)
+    return tuple(reversed(experiences[-limit:]))
+
+
 def append_memory(paths: ProjectPaths, fact: str) -> str:
     """向长期记忆追加一条事实，重复事实不重复写入。"""
 

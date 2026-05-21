@@ -20,6 +20,7 @@ from .memory import (
     append_memory,
     find_identity,
     is_identity_question,
+    list_recent_experiences,
     parse_identity_fact,
     read_experiences,
     read_profile,
@@ -317,18 +318,22 @@ class JarvisAgent:
         return "我还不能理解这个自然语言请求。你可以换一种说法，或输入 /help 查看当前能力。"
 
     def _capability_summary(self) -> str:
-        return "\n".join(
-            [
-                "我现在可以做这些事：",
-                "- 记忆：记住你的姓名、身份和偏好，也能回答“我是谁”。",
-                "- 经验：记录和查看可复用流程经验。",
-                "- 知识库：导入 Markdown、txt、PDF、JSON 聊天记录，并基于资料回答。",
-                "- 工作台：登记常用目录、查看目录、生成日报、做文件整理预览。",
-                "- 桌面：通过小助手面板和托盘触发常用能力。",
-                "- 更新：检查更新，也可以下载更新安装包到运行态目录。",
-                "- 语音准备：/voice 会复用同一套文本理解流程。",
-            ]
-        )
+        lines = [
+            "我现在可以做这些事：",
+            "- 记忆：记住你的姓名、身份和偏好，也能回答“我是谁”。",
+            "- 经验：记录和查看可复用流程经验。",
+            "- 知识库：导入 Markdown、txt、PDF、JSON 聊天记录，并基于资料回答。",
+            "- 工作台：登记常用目录、查看目录、生成日报、做文件整理预览。",
+            "- 桌面：通过小助手面板和托盘触发常用能力。",
+            "- 更新：检查更新，也可以下载更新安装包到运行态目录。",
+            "- 语音准备：/voice 会复用同一套文本理解流程。",
+        ]
+        recent_experiences = list_recent_experiences(self.paths)
+        if recent_experiences:
+            lines.append("最近经验：")
+            for experience in recent_experiences:
+                lines.append(f"- {experience}")
+        return "\n".join(lines)
 
     def _recent_context_status(self) -> str:
         self.tools.run("record_log", message="查看最近上下文状态")

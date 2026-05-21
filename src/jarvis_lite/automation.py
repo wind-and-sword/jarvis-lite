@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .config import ProjectPaths
 from .knowledge import build_knowledge_index
-from .memory import read_profile, summarize_profile
+from .memory import list_recent_experiences, read_profile, summarize_profile
 
 
 DIRECTORIES_FILENAME = "directories.json"
@@ -212,6 +212,14 @@ def _daily_report_content(paths: ProjectPaths) -> str:
             lines.append(f"- {directory.alias}：{directory.path}")
     else:
         lines.append("- 还没有登记常用目录。")
+
+    lines.extend(["", "## 经验记忆", ""])
+    recent_experiences = list_recent_experiences(paths)
+    if recent_experiences:
+        for experience in recent_experiences:
+            lines.append(f"- {experience}")
+    else:
+        lines.append("- 暂无经验记忆。")
 
     lines.extend(["", "## 最近工具日志", ""])
     recent_logs = _recent_log_lines(paths)

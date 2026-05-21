@@ -1052,3 +1052,55 @@ git diff --check
 - 全量测试 203 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-21 经验引用第一版验证
+
+### RED：能力摘要和日报未引用经验
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_memory.MemoryTests.test_list_recent_experiences_returns_latest_items_first -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_capability_question_reports_recent_experiences -v
+.\.venv\Scripts\python.exe -m unittest tests.test_automation.AutomationTests.test_write_daily_report_creates_word_markdown -v
+```
+
+结果：
+
+- `tests.test_memory` 先因缺少 `list_recent_experiences` 导入失败。
+- 能力摘要先没有“最近经验”内容。
+- 日报先没有“经验记忆”段。
+
+### 根因与修复
+
+- 根因：经验记忆只有写入和全文查看入口，没有结构化最近经验 API。
+- 修复：新增 `list_recent_experiences(paths, limit=3)`，最新经验排在前面。
+- 修复：能力摘要和日报复用最近经验列表。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_memory tests.test_agent tests.test_automation -v
+```
+
+结果：
+
+- Memory、Agent、Automation 专项测试共 83 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 205 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
