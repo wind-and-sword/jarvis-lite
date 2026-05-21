@@ -16,7 +16,7 @@ from .config import ProjectPaths, build_project_paths
 from .knowledge import answer_from_matches, describe_knowledge_base, find_data_matches, import_knowledge_path, set_document_tags
 from .intent import parse_natural_language_intent
 from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
-from .runtime_context import RuntimeContext, load_runtime_context, save_runtime_context
+from .runtime_context import RuntimeContext, RuntimeDirectoryContext, load_runtime_context, save_runtime_context
 from .tools import ToolRegistry
 from .update import describe_update_download, describe_update_status, update_download_dir
 from .voice import describe_voice, speak_text
@@ -29,11 +29,11 @@ class JarvisAgent:
         self.paths = paths or build_project_paths()
         self.tools = ToolRegistry(self.paths)
         runtime_context = load_runtime_context(self.paths)
-        self._recent_document_path: str | None = None
-        self._recent_directory: CommonDirectory | None = None
+        self._recent_document_path: str | None = runtime_context.recent_document_path
+        self._recent_directory: CommonDirectory | None = self._restore_recent_directory(runtime_context.recent_directory)
         self._recent_search_result_paths: tuple[str, ...] = runtime_context.recent_search_result_paths
-        if self._recent_search_result_paths:
-            self._remember_recent_document(self._recent_search_result_paths[0])
+        if self._recent_document_path is None and self._recent_search_result_paths:
+            self._recent_document_path = self._recent_search_result_paths[0]
 
     def handle(self, user_input: str) -> str:
         prompt = user_input.strip()
@@ -390,13 +390,36 @@ class JarvisAgent:
 
     def _remember_recent_document(self, relative_path: str) -> None:
         self._recent_document_path = relative_path
+        self._save_runtime_context()
 
     def _remember_recent_search_results(self, relative_paths: tuple[str, ...]) -> None:
         self._recent_search_result_paths = relative_paths
-        save_runtime_context(self.paths, RuntimeContext(recent_search_result_paths=relative_paths))
+        self._save_runtime_context()
 
     def _remember_recent_directory(self, alias: str, directory_path: Path) -> None:
         self._recent_directory = CommonDirectory(alias, directory_path)
+        self._save_runtime_context()
+
+    def _restore_recent_directory(self, context: RuntimeDirectoryContext | None) -> CommonDirectory | None:
+        if context is None:
+            return None
+        return CommonDirectory(context.alias, Path(context.path))
+
+    def _save_runtime_context(self) -> None:
+        recent_directory = None
+        if self._recent_directory is not None:
+            recent_directory = RuntimeDirectoryContext(
+                alias=self._recent_directory.alias,
+                path=str(self._recent_directory.path),
+            )
+        save_runtime_context(
+            self.paths,
+            RuntimeContext(
+                recent_document_path=self._recent_document_path,
+                recent_directory=recent_directory,
+                recent_search_result_paths=self._recent_search_result_paths,
+            ),
+        )
 
     def _directories(self) -> str:
         directories = list_common_directories(self.paths)

@@ -944,3 +944,57 @@ git diff --check
 - 全量测试 195 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-21 最近资料和最近目录持久化验证
+
+### RED：新 Agent 实例无法恢复最近资料和最近目录
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_recent_imported_document_survives_new_agent_instance -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_recent_directory_survives_new_agent_instance -v
+```
+
+结果：
+
+- 导入单个资料后新建 Agent，再说“给这个资料打标签 项目”先提示还没有最近资料。
+- 打开常用目录后新建 Agent，再说“打开这个目录”先提示还没有最近目录。
+
+### 根因与修复
+
+- 根因：`RuntimeContext` 只保存最近搜索结果列表，最近资料和最近目录只保存在 `JarvisAgent` 实例内。
+- 修复：`RuntimeContext` 新增 `recent_document_path` 和 `recent_directory`。
+- 修复：`JarvisAgent` 初始化时恢复最近资料和最近目录；资料、目录、搜索结果变化时统一保存完整运行态上下文。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_recent_imported_document_survives_new_agent_instance -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_recent_directory_survives_new_agent_instance -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- 最近资料持久化新增 1 个测试通过。
+- 最近目录持久化新增 1 个测试通过。
+- Agent 专项测试 61 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 197 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

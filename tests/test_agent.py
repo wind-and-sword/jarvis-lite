@@ -441,6 +441,29 @@ class AgentTests(unittest.TestCase):
         self.assertIn("data/runtime.md", response)
         self.assertIn("Python 3.13", response)
 
+    def test_recent_imported_document_survives_new_agent_instance(self):
+        source = Path(self.temp_dir.name) / "recent-persistent.md"
+        source.write_text("Jarvis Lite 可以跨 Agent 实例记住最近资料。\n", encoding="utf-8")
+        self.agent.handle(f"/import {source}")
+        restarted_agent = JarvisAgent(self.paths)
+
+        response = restarted_agent.handle("给这个资料打标签 项目")
+
+        self.assertIn("已更新标签：data/recent-persistent.md（项目）", response)
+        self.assertIn("标签：项目", restarted_agent.handle("/kb"))
+
+    def test_recent_directory_survives_new_agent_instance(self):
+        target = Path(self.temp_dir.name) / "project"
+        target.mkdir()
+        self.agent.handle(f"/dir-add 项目 {target}")
+        self.agent.handle("打开项目目录")
+        restarted_agent = JarvisAgent(self.paths)
+
+        response = restarted_agent.handle("打开这个目录")
+
+        self.assertIn("已记录打开目录请求：项目", response)
+        self.assertIn(str(target.resolve()), response)
+
     def test_natural_language_recent_context_status_reports_empty_state(self):
         response = self.agent.handle("查看最近上下文")
 
