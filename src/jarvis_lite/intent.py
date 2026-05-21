@@ -14,6 +14,7 @@ class NaturalLanguageIntent:
     alias: str = ""
     path: Path | None = None
     tags: tuple[str, ...] = ()
+    result_index: int = 0
 
 
 def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
@@ -94,6 +95,9 @@ def _parse_tag_intent(prompt: str) -> NaturalLanguageIntent | None:
     tags = _split_tag_text(match.group("tags"))
     if not filename or not tags:
         return None
+    result_index = _parse_result_index(filename)
+    if result_index > 0:
+        return NaturalLanguageIntent("tag_numbered_search_result", tags=tags, result_index=result_index)
     if filename in {"这个资料", "这份资料", "刚才的资料", "最近的资料", "这个结果", "这条结果", "刚才的结果", "最近的结果"}:
         return NaturalLanguageIntent("tag_recent_document", tags=tags)
     return NaturalLanguageIntent("command", command=f"/tag {filename} {' '.join(tags)}")
@@ -149,6 +153,32 @@ def _split_tag_text(text: str) -> tuple[str, ...]:
         if tag:
             tags.append(tag)
     return tuple(tags)
+
+
+def _parse_result_index(text: str) -> int:
+    match = re.fullmatch(r"第(?P<number>[0-9一二三四五六七八九十]+)(?:条|个)?结果", text)
+    if not match:
+        return 0
+    return _parse_positive_number(match.group("number"))
+
+
+def _parse_positive_number(text: str) -> int:
+    if text.isdigit():
+        return int(text)
+    mapping = {
+        "一": 1,
+        "二": 2,
+        "两": 2,
+        "三": 3,
+        "四": 4,
+        "五": 5,
+        "六": 6,
+        "七": 7,
+        "八": 8,
+        "九": 9,
+        "十": 10,
+    }
+    return mapping.get(text, 0)
 
 
 def _strip_wrapping_quotes(text: str) -> str:

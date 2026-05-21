@@ -378,6 +378,30 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已更新标签：data/runtime.md（运行环境）", response)
         self.assertIn("标签：运行环境", self.agent.handle("/kb"))
 
+    def test_natural_language_tag_numbered_search_result_after_ask_command(self):
+        (self.paths.data_dir / "memory.md").write_text(
+            "Jarvis Lite 使用 memory/profile.md 保存长期记忆。\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+
+        search_response = self.agent.handle("/ask Jarvis Lite 使用什么？")
+        response = self.agent.handle("给第二条结果打标签 运行环境")
+
+        self.assertIn("1. 根据 data/memory.md:1", search_response)
+        self.assertIn("2. 根据 data/runtime.md:1", search_response)
+        self.assertIn("已更新标签：data/runtime.md（运行环境）", response)
+        self.assertIn("标签：运行环境", self.agent.handle("/kb"))
+
+    def test_natural_language_tag_numbered_search_result_requires_recent_results(self):
+        response = self.agent.handle("给第二条结果打标签 运行环境")
+
+        self.assertIn("还没有最近搜索结果", response)
+        self.assertIn("先提问", response)
+
     def test_import_command_adds_text_file_to_knowledge_base(self):
         source = Path(self.temp_dir.name) / "outside.md"
         source.write_text("Jarvis Lite 可以导入外部资料。\n", encoding="utf-8")

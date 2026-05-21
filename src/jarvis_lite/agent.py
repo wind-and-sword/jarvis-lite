@@ -29,6 +29,7 @@ class JarvisAgent:
         self.tools = ToolRegistry(self.paths)
         self._recent_document_path: str | None = None
         self._recent_directory: CommonDirectory | None = None
+        self._recent_search_result_paths: tuple[str, ...] = ()
 
     def handle(self, user_input: str) -> str:
         prompt = user_input.strip()
@@ -284,6 +285,8 @@ class JarvisAgent:
             return self._organize_recent_directory()
         if intent.name == "tag_recent_document":
             return self._tag_recent_document(intent.tags)
+        if intent.name == "tag_numbered_search_result":
+            return self._tag_numbered_search_result(intent.result_index, intent.tags)
         return "我还不能理解这个自然语言请求。你可以换一种说法，或输入 /help 查看当前能力。"
 
     def _capability_summary(self) -> str:
@@ -311,6 +314,7 @@ class JarvisAgent:
         matches = find_data_matches(self.paths, question)
         if not matches:
             return ""
+        self._remember_recent_search_results(tuple(match.relative_path for match in matches))
         self._remember_recent_document(matches[0].relative_path)
         return answer_from_matches(matches)
 
@@ -319,8 +323,19 @@ class JarvisAgent:
             return "还没有最近资料。你可以先导入资料，或说“给 note.txt 打标签 项目”。"
         return self.handle(f'/tag "{self._recent_document_path}" {" ".join(tags)}')
 
+    def _tag_numbered_search_result(self, result_index: int, tags: tuple[str, ...]) -> str:
+        if not self._recent_search_result_paths:
+            return "还没有最近搜索结果。你可以先提问，例如“Jarvis Lite 使用什么？”。"
+        if result_index < 1 or result_index > len(self._recent_search_result_paths):
+            return f"最近搜索结果只有 {len(self._recent_search_result_paths)} 条，不能选择第 {result_index} 条。"
+        relative_path = self._recent_search_result_paths[result_index - 1]
+        return self.handle(f'/tag "{relative_path}" {" ".join(tags)}')
+
     def _remember_recent_document(self, relative_path: str) -> None:
         self._recent_document_path = relative_path
+
+    def _remember_recent_search_results(self, relative_paths: tuple[str, ...]) -> None:
+        self._recent_search_result_paths = relative_paths
 
     def _remember_recent_directory(self, alias: str, directory_path: Path) -> None:
         self._recent_directory = CommonDirectory(alias, directory_path)
