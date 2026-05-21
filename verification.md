@@ -434,3 +434,46 @@ git diff --check
 - 安装包大小：`47,472,640` 字节。
 - 安装包生成时间：`2026-05-21 11:17:54`。
 - 打包 exe smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`，退出码为 0。
+
+## 2026-05-21 常用目录别名自然语言验证
+
+### RED：打开和整理常用目录别名缺失
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- `打开项目目录` 先未记录打开目录请求。
+- `整理项目目录` 先落入通用兜底，未返回文件整理预览。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- Agent 专项测试 39 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 175 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

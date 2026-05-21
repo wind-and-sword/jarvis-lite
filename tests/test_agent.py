@@ -154,6 +154,30 @@ class AgentTests(unittest.TestCase):
         self.assertIn("open_directory", transcript)
         self.assertIn(str(drive.resolve()), transcript)
 
+    def test_natural_language_open_common_directory_alias_records_request(self):
+        target = Path(self.temp_dir.name) / "project"
+        target.mkdir()
+        self.agent.handle(f"/dir-add 项目 {target}")
+
+        response = self.agent.handle("打开项目目录")
+        transcript = (self.paths.logs_dir / "desktop-actions.txt").read_text(encoding="utf-8")
+
+        self.assertIn("已记录打开目录请求：项目", response)
+        self.assertIn("open_directory", transcript)
+        self.assertIn(str(target.resolve()), transcript)
+
+    def test_natural_language_organize_common_directory_alias_returns_preview(self):
+        target = Path(self.temp_dir.name) / "project"
+        target.mkdir()
+        (target / "notes.md").write_text("笔记", encoding="utf-8")
+        self.agent.handle(f"/dir-add 项目 {target}")
+
+        response = self.agent.handle("整理项目目录")
+
+        self.assertIn("文件整理预览：项目", response)
+        self.assertIn("notes.md", response)
+        self.assertIn("不会移动或删除文件", response)
+
     def test_dir_add_and_dirs_commands_manage_common_directories(self):
         target = Path(self.temp_dir.name) / "projects"
         target.mkdir()

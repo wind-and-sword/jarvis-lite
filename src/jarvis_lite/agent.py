@@ -268,6 +268,10 @@ class JarvisAgent:
             return self.handle(intent.command)
         if intent.name == "open_directory_path" and intent.path is not None:
             return self._open_directory_path(intent.alias, intent.path)
+        if intent.name == "open_directory_alias":
+            return self._open_directory(intent.alias)
+        if intent.name == "organize_directory_alias":
+            return self._organize_preview(intent.alias)
         return "我还不能理解这个自然语言请求。你可以换一种说法，或输入 /help 查看当前能力。"
 
     def _capability_summary(self) -> str:

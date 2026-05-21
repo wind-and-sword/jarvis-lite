@@ -39,6 +39,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if drive_intent is not None:
         return drive_intent
 
+    alias_intent = _parse_directory_alias_intent(prompt)
+    if alias_intent is not None:
+        return alias_intent
+
     return None
 
 
@@ -65,3 +69,23 @@ def _parse_open_drive(prompt: str) -> NaturalLanguageIntent | None:
         alias=f"{drive_letter}盘",
         path=Path(f"{drive_letter}:/"),
     )
+
+
+def _parse_directory_alias_intent(prompt: str) -> NaturalLanguageIntent | None:
+    open_match = re.fullmatch(r"(?:帮我)?打开(.+?)(?:目录|文件夹)?", prompt)
+    if open_match:
+        alias = _normalize_directory_alias(open_match.group(1))
+        if alias:
+            return NaturalLanguageIntent("open_directory_alias", alias=alias)
+
+    organize_match = re.fullmatch(r"(?:帮我)?(?:整理|整理预览|预览整理)(.+?)(?:目录|文件夹)?", prompt)
+    if organize_match:
+        alias = _normalize_directory_alias(organize_match.group(1))
+        if alias:
+            return NaturalLanguageIntent("organize_directory_alias", alias=alias)
+
+    return None
+
+
+def _normalize_directory_alias(alias: str) -> str:
+    return alias.strip().removesuffix("目录").removesuffix("文件夹").strip()
