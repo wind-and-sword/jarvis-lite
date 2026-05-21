@@ -66,6 +66,33 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("用法：/experience-search 关键词", response)
 
+    def test_experience_advice_command_returns_related_experiences(self):
+        self.agent.handle("/experience 导入资料后先打标签")
+        self.agent.handle("/experience 日报生成后检查最近经验")
+        self.agent.handle("/experience 导入 PDF 后查看知识库")
+
+        response = self.agent.handle("/experience-advice 导入")
+
+        self.assertIn("操作建议：导入", response)
+        self.assertIn("相关经验：", response)
+        self.assertIn("1. 导入 PDF 后查看知识库", response)
+        self.assertIn("2. 导入资料后先打标签", response)
+        self.assertIn("/experience-search 导入", response)
+        self.assertNotIn("日报生成", response)
+
+    def test_experience_advice_command_reports_no_related_experience(self):
+        self.agent.handle("/experience 导入资料后先打标签")
+
+        response = self.agent.handle("/experience-advice 语音")
+
+        self.assertIn("还没有找到和“语音”相关的经验建议", response)
+        self.assertIn("/experience 经验内容", response)
+
+    def test_experience_advice_command_requires_keyword(self):
+        response = self.agent.handle("/experience-advice")
+
+        self.assertIn("用法：/experience-advice 关键词", response)
+
     def test_natural_language_record_experience_records_experience(self):
         response = self.agent.handle("记住这个经验：导入资料后先打标签")
 
@@ -79,6 +106,16 @@ class AgentTests(unittest.TestCase):
         response = self.agent.handle("搜索经验 导入")
 
         self.assertIn("经验搜索：导入", response)
+        self.assertIn("导入资料后先打标签", response)
+        self.assertNotIn("日报生成", response)
+
+    def test_natural_language_experience_advice_uses_related_experiences(self):
+        self.agent.handle("/experience 导入资料后先打标签")
+        self.agent.handle("/experience 日报生成后检查最近经验")
+
+        response = self.agent.handle("我该怎么导入资料")
+
+        self.assertIn("操作建议：导入资料", response)
         self.assertIn("导入资料后先打标签", response)
         self.assertNotIn("日报生成", response)
 

@@ -153,6 +153,11 @@ class JarvisAgent:
                 return "用法：/experience-search 关键词"
             return self._search_experiences(" ".join(args))
 
+        if command == "/experience-advice":
+            if not args:
+                return "用法：/experience-advice 关键词"
+            return self._experience_advice(" ".join(args))
+
         if command == "/ask":
             if not args:
                 return "用法：/ask 问题"
@@ -289,6 +294,7 @@ class JarvisAgent:
                 "/remember 记忆内容：写入长期记忆",
                 "/experience 经验内容：写入经验记忆",
                 "/experience-search 关键词：搜索经验记忆",
+                "/experience-advice 关键词：根据经验给出操作建议",
                 "/note 标题 内容：写入 memory/notes/ 下的笔记",
                 "/summary 文件名 内容：写入 word/ 下的总结",
                 "/tools：查看第一阶段工具白名单",
@@ -401,6 +407,23 @@ class JarvisAgent:
         lines = [f"经验搜索：{normalized_query}"]
         for index, experience in enumerate(matches, start=1):
             lines.append(f"{index}. {experience}")
+        return "\n".join(lines)
+
+    def _experience_advice(self, query: str) -> str:
+        normalized_query = self._strip_quotes(query)
+        if not normalized_query:
+            return "用法：/experience-advice 关键词"
+        matches = search_experiences(self.paths, normalized_query)
+        self.tools.run("record_log", message=f"生成经验操作建议：{normalized_query}")
+        if not matches:
+            return (
+                f"还没有找到和“{normalized_query}”相关的经验建议。"
+                "你可以先用 /experience 经验内容 记录可复用流程。"
+            )
+        lines = [f"操作建议：{normalized_query}", "相关经验："]
+        for index, experience in enumerate(matches, start=1):
+            lines.append(f"{index}. {experience}")
+        lines.append(f"可继续使用：/experience-search {normalized_query}")
         return "\n".join(lines)
 
     def _answer_from_data(self, question: str) -> str:

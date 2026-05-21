@@ -316,7 +316,26 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：经验操作建议第一版
+
+- 新增 `/experience-advice 关键词`，复用经验搜索结果给出操作建议。
+- 新增自然语言表达：
+  - “我该怎么导入资料”
+  - “导入资料有什么经验”
+  - “给我导入资料的建议”
+- 有匹配经验时会输出“操作建议”、相关经验编号和可继续使用的 `/experience-search 关键词`。
+- 没有匹配经验时会提示先用 `/experience 经验内容` 沉淀可复用流程。
+- 本阶段不做开放式规划、不调用大模型、不做经验评分或分类。
+- RED 验证：
+  - 新增 4 个 Agent 测试先分别因 `/experience-advice` 未知命令和自然语言落入资料问答失败。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：74 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：214 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以做“经验与具体命令联动”，让经验真正参与操作建议。
+- 下一步可以做“经验建议与具体命令参数联动”，让建议直接带出可执行的下一步命令。
