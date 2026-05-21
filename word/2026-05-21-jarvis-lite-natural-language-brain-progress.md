@@ -28,6 +28,7 @@
   - “把 note.txt 标记为 私人资料”
   - “导入 C:\path\note.md 到知识库”
   - “把 C:\path\note.md 导入知识库”
+  - 导入单个资料后：“给这个资料打标签 项目 Python”
 - 修复身份误写入：
   - `我是你的什么人，你知道吗` 现在会作为身份问题处理。
   - 疑问句不会被 `我是...` 规则写入 `用户身份`。
@@ -120,8 +121,24 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：最近资料上下文
+
+- JarvisAgent 现在会记录最近一次成功导入的单个资料。
+- 导入单个资料后，可以说“给这个资料打标签 项目 Python”，会作用到刚导入的 data 文件。
+- 没有最近资料时，会提示先导入资料或指定文件名，不再把“这个资料”当成真实文件名。
+- 目录批量导入不作为最近单个资料处理，避免“这个资料”指向多个文件。
+- RED 验证：
+  - 新增 2 个测试先把“这个资料”误当成文件名，未能更新最近导入资料。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_tag_recent_imported_document_updates_document_tags tests.test_agent.AgentTests.test_natural_language_tag_recent_document_requires_recent_document_context -v`：2 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：47 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：183 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
-- 下一步可以增加最近资料上下文，再支持“给这个资料打标签”“导入这个文件到知识库”这类省略文件名的表达。
+- 下一步可以继续沉淀“最近目录”“最近搜索结果”等上下文，扩大省略指代表达的覆盖范围。
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
 - 可以把成功任务沉淀为“经验记忆”，让助手逐步学习用户常用表达和常用流程。

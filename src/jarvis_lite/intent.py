@@ -13,6 +13,7 @@ class NaturalLanguageIntent:
     command: str = ""
     alias: str = ""
     path: Path | None = None
+    tags: tuple[str, ...] = ()
 
 
 def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
@@ -93,6 +94,8 @@ def _parse_tag_intent(prompt: str) -> NaturalLanguageIntent | None:
     tags = _split_tag_text(match.group("tags"))
     if not filename or not tags:
         return None
+    if filename in {"这个资料", "这份资料", "刚才的资料", "最近的资料"}:
+        return NaturalLanguageIntent("tag_recent_document", tags=tags)
     return NaturalLanguageIntent("command", command=f"/tag {filename} {' '.join(tags)}")
 
 

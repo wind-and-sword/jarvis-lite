@@ -154,6 +154,22 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已更新标签：data/note.txt（私人资料）", response)
         self.assertIn("标签：私人资料", self.agent.handle("/kb"))
 
+    def test_natural_language_tag_recent_imported_document_updates_document_tags(self):
+        source = Path(self.temp_dir.name) / "recent.md"
+        source.write_text("Jarvis Lite 可以记住最近导入的资料。\n", encoding="utf-8")
+        self.agent.handle(f"/import {source}")
+
+        response = self.agent.handle("给这个资料打标签 项目 Python")
+
+        self.assertIn("已更新标签：data/recent.md（项目、Python）", response)
+        self.assertIn("标签：项目、Python", self.agent.handle("/kb"))
+
+    def test_natural_language_tag_recent_document_requires_recent_document_context(self):
+        response = self.agent.handle("给这个资料打标签 项目")
+
+        self.assertIn("还没有最近资料", response)
+        self.assertIn("先导入资料", response)
+
     def test_natural_language_import_file_adds_document_to_knowledge_base(self):
         source = Path(self.temp_dir.name) / "outside-natural.md"
         source.write_text("Jarvis Lite 可以用自然语言导入资料。\n", encoding="utf-8")

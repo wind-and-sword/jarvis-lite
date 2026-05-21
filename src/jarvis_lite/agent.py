@@ -27,6 +27,7 @@ class JarvisAgent:
     def __init__(self, paths: ProjectPaths | None = None):
         self.paths = paths or build_project_paths()
         self.tools = ToolRegistry(self.paths)
+        self._recent_document_path: str | None = None
 
     def handle(self, user_input: str) -> str:
         prompt = user_input.strip()
@@ -140,6 +141,7 @@ class JarvisAgent:
             except (FileNotFoundError, ValueError) as exc:
                 return f"标签更新失败：{exc}"
             tags = "、".join(document.tags)
+            self._remember_recent_document(document.relative_path)
             self.tools.run("record_log", message=f"更新知识库标签：data/{document.relative_path} -> {tags}")
             return f"已更新标签：data/{document.relative_path}（{tags}）"
 
@@ -206,16 +208,19 @@ class JarvisAgent:
         if command == "/import":
             if not args:
                 return "用法：/import 源文件或目录路径 [目标文件名]"
+            source_arg = self._strip_quotes(args[0])
             try:
                 summary = import_knowledge_path(
                     self.paths,
-                    self._strip_quotes(args[0]),
+                    source_arg,
                     self._strip_quotes(args[1]) if len(args) > 1 else None,
                 )
             except (FileExistsError, FileNotFoundError, RuntimeError, UnicodeDecodeError, ValueError) as exc:
                 return f"导入失败：{exc}"
             imported_paths = "、".join(f"data/{document.relative_path}" for document in summary.documents)
             self.tools.run("record_log", message=f"导入知识库资料：{imported_paths}")
+            if len(summary.documents) == 1 and Path(source_arg).expanduser().is_file():
+                self._remember_recent_document(summary.documents[0].relative_path)
             if summary.scanned_count == 1 and summary.documents:
                 document = summary.documents[0]
                 return f"已导入知识库：data/{document.relative_path}（{document.searchable_line_count} 行）"
@@ -272,6 +277,8 @@ class JarvisAgent:
             return self._open_directory(intent.alias)
         if intent.name == "organize_directory_alias":
             return self._organize_preview(intent.alias)
+        if intent.name == "tag_recent_document":
+            return self._tag_recent_document(intent.tags)
         return "我还不能理解这个自然语言请求。你可以换一种说法，或输入 /help 查看当前能力。"
 
     def _capability_summary(self) -> str:
@@ -294,6 +301,14 @@ class JarvisAgent:
         remembered = append_memory(self.paths, fact)
         self.tools.run("record_log", message=f"写入长期记忆：{remembered}")
         return f"已记住：{remembered}"
+
+    def _tag_recent_document(self, tags: tuple[str, ...]) -> str:
+        if self._recent_document_path is None:
+            return "还没有最近资料。你可以先导入资料，或说“给 note.txt 打标签 项目”。"
+        return self.handle(f'/tag "{self._recent_document_path}" {" ".join(tags)}')
+
+    def _remember_recent_document(self, relative_path: str) -> None:
+        self._recent_document_path = relative_path
 
     def _directories(self) -> str:
         directories = list_common_directories(self.paths)
