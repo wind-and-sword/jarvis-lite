@@ -373,6 +373,14 @@ Start-Process -FilePath "..\jarvis-lite-dist\desktop-exe\JarvisLite.exe" -Argume
 - 安装器重新生成成功。
 - 打包 exe smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`，退出码为 0。
 
+### 本地测试交付
+
+- 已推送远程 `main`：`0b7237d feat: 增加更新下载入口`。
+- 已重新生成安装包：`E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe`。
+- 安装包大小：`47,468,544` 字节。
+- 安装包生成时间：`2026-05-21 10:36:38`。
+- 当前安装包未做代码签名，Windows 安装时可能出现未签名提示。
+
 ## 未覆盖事项
 
 - 未接入大模型 API。

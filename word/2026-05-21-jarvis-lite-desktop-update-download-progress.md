@@ -37,6 +37,27 @@
   - `.venv\Scripts\python.exe scripts\build_windows_installer.py`：成功生成安装器。
   - `Start-Process ..\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke -Wait -PassThru`：退出码 `0`。
 
+## 当前交付状态
+
+- 代码已提交并推送到远程 `main`：
+  - `0b7237d feat: 增加更新下载入口`
+- 已重新生成本地测试安装包：
+  - `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe`
+  - 文件大小：`47,468,544` 字节
+  - 生成时间：`2026-05-21 10:36:38`
+- 打包 exe 已完成 smoke 验证：
+  - 输出 `Jarvis Lite 桌面助手`
+  - 输出 `desktopPetWindow`
+- 当前安装包仍未做代码签名，Windows 可能提示未签名应用。
+
+## 本地测试重点
+
+- 安装后能否从开始菜单或桌面快捷方式启动。
+- 小助手窗口是否能常驻桌面并展开面板。
+- 面板快捷命令是否可用，包括“检查更新”和“下载更新”。
+- 关闭窗口后是否进入托盘，托盘菜单是否能显示、隐藏和退出。
+- 卸载时是否清理快捷方式，并保留用户数据目录。
+
 ## 后续建议
 
 - 下一步可以继续做“更新清单发布约定”：生成示例 manifest、把安装器路径和版本号输出成可发布清单。
