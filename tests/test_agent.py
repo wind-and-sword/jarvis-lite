@@ -31,13 +31,15 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("用户偏好：中文简洁回答", response)
 
-    def test_status_command_reports_phase_one_capabilities(self):
+    def test_status_command_reports_current_capabilities(self):
         response = self.agent.handle("/status")
 
-        self.assertIn("阶段 1 状态", response)
+        self.assertIn("Jarvis Lite 当前状态", response)
         self.assertIn("长期记忆", response)
-        self.assertIn("data 文本问答", response)
+        self.assertIn("个人知识库", response)
         self.assertIn("工具日志", response)
+        self.assertIn("自然语言", response)
+        self.assertIn("桌面能力", response)
         self.assertIn("memory/profile.md", response)
 
     def test_knowledge_status_command_reports_data_index(self):
@@ -106,6 +108,51 @@ class AgentTests(unittest.TestCase):
             self.assertIn("已下载更新安装包", response)
             self.assertIn(str(downloaded), response)
             self.assertEqual(downloaded.read_bytes(), b"installer")
+
+    def test_natural_language_identity_question_does_not_pollute_memory(self):
+        self.agent.handle("我叫欧阳")
+
+        response = self.agent.handle("我是你的什么人，你知道吗")
+        content = self.paths.profile_path.read_text(encoding="utf-8")
+
+        self.assertIn("你是欧阳", response)
+        self.assertNotIn("用户身份：你的什么人", content)
+
+    def test_natural_language_capability_question_returns_capability_summary(self):
+        response = self.agent.handle("你现在能做什么事")
+
+        self.assertIn("我现在可以", response)
+        self.assertIn("记忆", response)
+        self.assertIn("知识库", response)
+        self.assertIn("日报", response)
+
+    def test_natural_language_daily_report_generates_report(self):
+        response = self.agent.handle("生成日报")
+
+        self.assertIn("已生成日报：word/", response)
+
+    def test_natural_language_knowledge_status_maps_to_kb(self):
+        response = self.agent.handle("查看知识库")
+
+        self.assertIn("个人知识库状态", response)
+
+    def test_natural_language_update_status_maps_to_update_status(self):
+        response = self.agent.handle("检查更新")
+
+        self.assertIn("更新状态", response)
+        self.assertIn("更新源：未配置", response)
+
+    def test_natural_language_open_windows_drive_records_request(self):
+        drive = Path("D:/")
+        if not drive.is_dir():
+            self.skipTest("本机没有 D 盘，跳过自然语言打开 D 盘验证。")
+
+        response = self.agent.handle("打开D盘")
+        transcript = (self.paths.logs_dir / "desktop-actions.txt").read_text(encoding="utf-8")
+
+        self.assertIn("已记录打开目录请求：D盘", response)
+        self.assertIn("open_directory", transcript)
+        self.assertIn(str(drive.resolve()), transcript)
 
     def test_dir_add_and_dirs_commands_manage_common_directories(self):
         target = Path(self.temp_dir.name) / "projects"

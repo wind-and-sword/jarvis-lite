@@ -386,3 +386,47 @@ Start-Process -FilePath "..\jarvis-lite-dist\desktop-exe\JarvisLite.exe" -Argume
 - 未接入大模型 API。
 - 摄像头、麦克风等硬件入口按用户要求暂缓。
 - 未做代码签名和专业安装器替换。
+
+## 2026-05-21 自然语言本地大脑第一版验证
+
+### RED：自然语言常用意图缺失
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_memory tests.test_agent -v
+```
+
+结果：
+
+- `tests.test_memory` 先因 `我是你的什么人，你知道吗` 未识别为身份问题失败。
+- `tests.test_agent` 先因自然语言能力询问、生成日报、查看知识库、检查更新和打开 D 盘都落入通用兜底失败。
+- `/status` 旧断言显示文案仍停留在“阶段 1 状态”，已同步更新为当前完整状态。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_memory tests.test_agent -v
+```
+
+结果：
+
+- 记忆和 Agent 专项测试共 46 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 173 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 未发现空白错误，仅出现 CRLF 换行提示。

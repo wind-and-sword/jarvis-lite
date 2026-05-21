@@ -76,6 +76,8 @@ def parse_identity_fact(text: str) -> str:
     """从简单中文自我介绍中解析可写入的身份事实。"""
 
     prompt = text.strip().strip("。！？!?.")
+    if _looks_like_question(prompt):
+        return ""
 
     name_match = re.fullmatch(r"我叫\s*(.+)", prompt)
     if name_match:
@@ -100,7 +102,16 @@ def parse_identity_fact(text: str) -> str:
 
 def is_identity_question(text: str) -> bool:
     prompt = text.strip().strip("。！？!?.")
-    return prompt in {"我是谁", "你知道我是谁吗", "你知道我是谁", "知道我是谁吗"}
+    direct_questions = {
+        "我是谁",
+        "你知道我是谁吗",
+        "你知道我是谁",
+        "知道我是谁吗",
+        "我是你的什么人",
+        "我是你的什么人你知道吗",
+    }
+    normalized_prompt = re.sub(r"[，,\s]", "", prompt)
+    return prompt in direct_questions or normalized_prompt in direct_questions
 
 
 def _find_memory_value(content: str, key: str) -> str:
@@ -141,3 +152,7 @@ def _memory_key(normalized: str) -> str:
     if not key.strip() or not value.strip():
         return ""
     return key.strip()
+
+
+def _looks_like_question(prompt: str) -> bool:
+    return any(marker in prompt for marker in ("?", "？", "吗", "什么", "谁", "知道"))

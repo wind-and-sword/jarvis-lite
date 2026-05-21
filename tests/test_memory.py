@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.memory import append_memory, find_identity, read_profile, summarize_profile
+from jarvis_lite.memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
 
 
 class MemoryTests(unittest.TestCase):
@@ -80,6 +80,10 @@ class MemoryTests(unittest.TestCase):
         identity = find_identity(content)
 
         self.assertEqual(identity, "你是张三，Jarvis Lite 项目创建者。")
+
+    def test_identity_question_about_relationship_is_not_saved_as_role(self):
+        self.assertTrue(is_identity_question("我是你的什么人，你知道吗"))
+        self.assertEqual(parse_identity_fact("我是你的什么人，你知道吗"), "")
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ from .automation import (
 )
 from .config import ProjectPaths, build_project_paths
 from .knowledge import answer_from_data, describe_knowledge_base, import_knowledge_path, set_document_tags
+from .intent import parse_natural_language_intent
 from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
 from .tools import ToolRegistry
 from .update import describe_update_download, describe_update_status, update_download_dir
@@ -71,6 +72,10 @@ class JarvisAgent:
         fact = parse_identity_fact(prompt)
         if fact:
             return self._remember(fact)
+
+        intent = parse_natural_language_intent(prompt)
+        if intent is not None:
+            return self._handle_natural_language_intent(intent)
 
         data_answer = answer_from_data(self.paths, prompt)
         if data_answer:
@@ -256,6 +261,28 @@ class JarvisAgent:
             ]
         )
 
+    def _handle_natural_language_intent(self, intent) -> str:
+        if intent.name == "capabilities":
+            return self._capability_summary()
+        if intent.name == "command":
+            return self.handle(intent.command)
+        if intent.name == "open_directory_path" and intent.path is not None:
+            return self._open_directory_path(intent.alias, intent.path)
+        return "我还不能理解这个自然语言请求。你可以换一种说法，或输入 /help 查看当前能力。"
+
+    def _capability_summary(self) -> str:
+        return "\n".join(
+            [
+                "我现在可以做这些事：",
+                "- 记忆：记住你的姓名、身份和偏好，也能回答“我是谁”。",
+                "- 知识库：导入 Markdown、txt、PDF、JSON 聊天记录，并基于资料回答。",
+                "- 工作台：登记常用目录、查看目录、生成日报、做文件整理预览。",
+                "- 桌面：通过小助手面板和托盘触发常用能力。",
+                "- 更新：检查更新，也可以下载更新安装包到运行态目录。",
+                "- 语音准备：/voice 会复用同一套文本理解流程。",
+            ]
+        )
+
     def _sentence(self, text: str) -> str:
         return text if text.endswith(("。", "！", "？", ".", "!", "?")) else f"{text}。"
 
@@ -306,15 +333,18 @@ class JarvisAgent:
         if directory is None:
             return f"没有找到常用目录：{alias}。可用 /dirs 查看。"
 
+        return self._open_directory_path(directory.alias, directory.path)
+
+    def _open_directory_path(self, alias: str, directory_path: Path) -> str:
         try:
-            record = record_directory_open_request(self.paths, directory.alias, directory.path)
+            record = record_directory_open_request(self.paths, alias, directory_path)
         except FileNotFoundError as exc:
             return f"打开目录请求记录失败：{exc}"
 
-        self.tools.run("record_log", message=f"记录打开目录请求：{directory.alias} -> {directory.path}")
+        self.tools.run("record_log", message=f"记录打开目录请求：{alias} -> {directory_path}")
         return "\n".join(
             [
-                f"已记录打开目录请求：{directory.alias} -> {directory.path}",
+                f"已记录打开目录请求：{alias} -> {directory_path.resolve()}",
                 f"- 记录文件：{record.relative_path}",
                 "- 当前不会启动外部应用。",
             ]
@@ -336,10 +366,15 @@ class JarvisAgent:
     def _status(self) -> str:
         return "\n".join(
             [
-                "阶段 1 状态：命令行助手基础闭环已具备。",
+                "Jarvis Lite 当前状态：本地助手基础闭环已具备。",
+                "- 入口：命令行、桌面小助手、助手面板和系统托盘",
                 f"- 长期记忆：{self._project_path(self.paths.profile_path)}",
-                f"- data 文本问答：{self._project_path(self.paths.data_dir)}",
+                f"- 个人知识库：{self._project_path(self.paths.data_dir)}",
                 f"- 工具日志：{self._project_path(self.paths.log_path)}",
+                "- 自然语言：已支持能力询问、身份询问、日报、知识库、更新和打开磁盘等第一批意图",
+                "- 语音入口：/voice、/speak、/voice-status",
+                "- 工作台自动化：常用目录、日报、整理预览和目录打开记录",
+                "- 桌面能力：小助手窗口、面板、托盘、主题、开机启动、安装包、更新检查和下载",
                 "- 会话能力：/history、/save-summary、/clear",
                 "- 记忆写入：/remember、我叫...、我是...",
                 "- 本地验证：python -m unittest discover -s tests -v",
