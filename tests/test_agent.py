@@ -178,6 +178,30 @@ class AgentTests(unittest.TestCase):
         self.assertIn("notes.md", response)
         self.assertIn("不会移动或删除文件", response)
 
+    def test_natural_language_organize_desktop_uses_known_desktop_directory(self):
+        desktop = Path(self.temp_dir.name) / "Desktop"
+        desktop.mkdir()
+        (desktop / "todo.txt").write_text("待办", encoding="utf-8")
+
+        with patch("jarvis_lite.agent.Path.home", return_value=Path(self.temp_dir.name)):
+            response = self.agent.handle("整理桌面")
+
+        self.assertIn("文件整理预览：桌面", response)
+        self.assertIn("todo.txt", response)
+        self.assertIn("不会移动或删除文件", response)
+
+    def test_natural_language_open_desktop_uses_known_desktop_directory(self):
+        desktop = Path(self.temp_dir.name) / "Desktop"
+        desktop.mkdir()
+
+        with patch("jarvis_lite.agent.Path.home", return_value=Path(self.temp_dir.name)):
+            response = self.agent.handle("打开桌面")
+
+        transcript = (self.paths.logs_dir / "desktop-actions.txt").read_text(encoding="utf-8")
+        self.assertIn("已记录打开目录请求：桌面", response)
+        self.assertIn("open_directory", transcript)
+        self.assertIn(str(desktop.resolve()), transcript)
+
     def test_dir_add_and_dirs_commands_manage_common_directories(self):
         target = Path(self.temp_dir.name) / "projects"
         target.mkdir()

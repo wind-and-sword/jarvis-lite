@@ -359,7 +359,19 @@ class JarvisAgent:
         for directory in list_common_directories(self.paths):
             if directory.alias == normalized_alias:
                 return directory
+        return self._known_directory(normalized_alias)
+
+    def _known_directory(self, alias: str) -> CommonDirectory | None:
+        for directory_name in self._known_directory_candidates(alias):
+            directory = Path.home() / directory_name
+            if directory.is_dir():
+                return CommonDirectory(alias, directory.resolve())
         return None
+
+    def _known_directory_candidates(self, alias: str) -> tuple[str, ...]:
+        if alias.strip().lower() in {"桌面", "desktop"}:
+            return ("Desktop", "桌面")
+        return ()
 
     def _project_path(self, path: Path) -> str:
         return path.relative_to(self.paths.root).as_posix()

@@ -22,6 +22,8 @@
   - “打开D盘”
   - “打开项目目录”
   - “整理项目目录”
+  - “打开桌面”
+  - “整理桌面”
 - 修复身份误写入：
   - `我是你的什么人，你知道吗` 现在会作为身份问题处理。
   - 疑问句不会被 `我是...` 规则写入 `用户身份`。
@@ -55,6 +57,7 @@
 - 新增“打开别名目录”意图，例如“打开项目目录”。
 - 新增“整理别名目录”意图，例如“整理项目目录”。
 - 两类意图都复用已登记的常用目录，不新增移动或删除文件能力。
+- 本地代码提交：`391516d feat: 支持常用目录自然语言别名`
 - 专项验证：
   - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：39 个测试通过。
 - 收尾验证：
@@ -62,8 +65,24 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：已知桌面目录自然语言
+
+- 未登记常用目录时，`整理桌面` 会尝试使用系统桌面目录生成文件整理预览。
+- 未登记常用目录时，`打开桌面` 会尝试使用系统桌面目录写入打开请求记录。
+- 已登记的常用目录仍优先于系统目录 fallback，方便用户覆盖自己的桌面路径。
+- 仍然不移动、不删除文件，也不启动外部应用。
+- RED 验证：
+  - 新增 2 个测试先分别因找不到 `桌面` 常用目录和未写入打开记录失败。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_organize_desktop_uses_known_desktop_directory tests.test_agent.AgentTests.test_natural_language_open_desktop_uses_known_desktop_directory -v`：2 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：41 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：177 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
-- 下一步可以扩展自然语言参数补全，例如“整理桌面”“打开项目目录”“给这个资料打标签”。
+- 下一步可以扩展自然语言参数补全，例如“给这个资料打标签”“导入这个文件到知识库”。
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
 - 可以把成功任务沉淀为“经验记忆”，让助手逐步学习用户常用表达和常用流程。
