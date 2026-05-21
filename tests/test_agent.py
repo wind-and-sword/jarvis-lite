@@ -31,6 +31,31 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("用户偏好：中文简洁回答", response)
 
+    def test_experiences_command_reports_empty_state(self):
+        response = self.agent.handle("/experiences")
+
+        self.assertIn("还没有经验记忆", response)
+
+    def test_experience_command_records_experience(self):
+        response = self.agent.handle("/experience 导入资料后先打标签")
+
+        self.assertIn("已记录经验：导入资料后先打标签", response)
+        self.assertIn("导入资料后先打标签", self.agent.handle("/experiences"))
+
+    def test_natural_language_record_experience_records_experience(self):
+        response = self.agent.handle("记住这个经验：导入资料后先打标签")
+
+        self.assertIn("已记录经验：导入资料后先打标签", response)
+        self.assertIn("导入资料后先打标签", self.agent.handle("/experiences"))
+
+    def test_natural_language_experience_memory_status_maps_to_experiences(self):
+        self.agent.handle("/experience 导入资料后先打标签")
+
+        response = self.agent.handle("查看经验记忆")
+
+        self.assertIn("经验记忆", response)
+        self.assertIn("导入资料后先打标签", response)
+
     def test_status_command_reports_current_capabilities(self):
         response = self.agent.handle("/status")
 

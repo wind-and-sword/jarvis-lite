@@ -998,3 +998,57 @@ git diff --check
 - 全量测试 197 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-21 经验记忆第一版验证
+
+### RED：缺少独立经验记忆入口
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_memory -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_experiences_command_reports_empty_state tests.test_agent.AgentTests.test_experience_command_records_experience tests.test_agent.AgentTests.test_natural_language_record_experience_records_experience tests.test_agent.AgentTests.test_natural_language_experience_memory_status_maps_to_experiences -v
+```
+
+结果：
+
+- `tests.test_memory` 先因缺少 `append_experience` 和 `read_experiences` 导入失败。
+- `/experience` 和 `/experiences` 先返回未知命令。
+- “记住这个经验：...” 先被 `parse_identity_fact()` 当成普通长期记忆写入。
+- “查看经验记忆” 先落入长期记忆兜底。
+
+### 根因与修复
+
+- 根因：长期记忆只有 `memory/profile.md`，没有独立经验记忆文件和 Agent 入口。
+- 修复：新增 `memory/experiences.md` 读写函数，重复经验不重复写入。
+- 修复：新增 `/experience`、`/experiences` 和自然语言“记录经验：...”“记住这个经验：...”“查看经验记忆”。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_memory -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- Memory 专项测试 11 个通过。
+- Agent 专项测试 65 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 203 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 
 from .config import ProjectPaths
 
 
 DEFAULT_PROFILE_MESSAGE = "还没有长期记忆。可以先在 memory/profile.md 里记录用户偏好和项目目标。"
+DEFAULT_EXPERIENCES_MESSAGE = "还没有经验记忆。你可以说“记录经验：...”或使用 /experience 经验内容。"
 PROFILE_HEADER = "# 长期记忆\n\n> 日期：2026-05-18\n> 执行者：Codex\n"
+EXPERIENCE_HEADER = "# 经验记忆\n\n> 日期：2026-05-21\n> 执行者：Codex\n"
 
 
 def read_profile(paths: ProjectPaths) -> str:
@@ -36,6 +39,19 @@ def summarize_profile(content: str) -> str:
     return DEFAULT_PROFILE_MESSAGE
 
 
+def read_experiences(paths: ProjectPaths) -> str:
+    """读取经验记忆文件；缺失时返回清晰的可展示说明。"""
+
+    path = _experiences_path(paths)
+    if not path.exists():
+        return DEFAULT_EXPERIENCES_MESSAGE
+
+    content = path.read_text(encoding="utf-8").strip()
+    if not content:
+        return DEFAULT_EXPERIENCES_MESSAGE
+    return content
+
+
 def append_memory(paths: ProjectPaths, fact: str) -> str:
     """向长期记忆追加一条事实，重复事实不重复写入。"""
 
@@ -54,6 +70,28 @@ def append_memory(paths: ProjectPaths, fact: str) -> str:
         content = _replace_or_append_bullet(existing, normalized)
 
     paths.profile_path.write_text(content, encoding="utf-8")
+    return normalized
+
+
+def append_experience(paths: ProjectPaths, experience: str) -> str:
+    """向经验记忆追加一条可复用流程，重复经验不重复写入。"""
+
+    normalized = experience.strip().lstrip("-").strip()
+    if not normalized:
+        raise ValueError("经验内容不能为空。")
+
+    path = _experiences_path(paths)
+    existing = "" if not path.exists() else path.read_text(encoding="utf-8")
+    bullet = f"- {normalized}"
+    if bullet in existing:
+        return normalized
+
+    if not existing.strip():
+        content = f"{EXPERIENCE_HEADER}\n{bullet}\n"
+    else:
+        content = existing.rstrip() + f"\n{bullet}\n"
+
+    path.write_text(content, encoding="utf-8")
     return normalized
 
 
@@ -94,6 +132,8 @@ def parse_identity_fact(text: str) -> str:
     remember_match = re.fullmatch(r"记住\s*(.+)", prompt)
     if remember_match:
         fact = remember_match.group(1).strip()
+        if fact.startswith(("这个经验", "这条经验", "经验：", "经验:")):
+            return ""
         if fact:
             return fact
 
@@ -152,6 +192,10 @@ def _memory_key(normalized: str) -> str:
     if not key.strip() or not value.strip():
         return ""
     return key.strip()
+
+
+def _experiences_path(paths: ProjectPaths) -> Path:
+    return paths.memory_dir / "experiences.md"
 
 
 def _looks_like_question(prompt: str) -> bool:

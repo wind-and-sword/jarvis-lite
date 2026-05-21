@@ -15,7 +15,16 @@ from .automation import (
 from .config import ProjectPaths, build_project_paths
 from .knowledge import answer_from_matches, describe_knowledge_base, find_data_matches, import_knowledge_path, set_document_tags
 from .intent import parse_natural_language_intent
-from .memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
+from .memory import (
+    append_experience,
+    append_memory,
+    find_identity,
+    is_identity_question,
+    parse_identity_fact,
+    read_experiences,
+    read_profile,
+    summarize_profile,
+)
 from .runtime_context import RuntimeContext, RuntimeDirectoryContext, load_runtime_context, save_runtime_context
 from .tools import ToolRegistry
 from .update import describe_update_download, describe_update_status, update_download_dir
@@ -44,6 +53,9 @@ class JarvisAgent:
             return self._help()
         if prompt in {"/memory", "memory"}:
             return read_profile(self.paths)
+        if prompt in {"/experiences", "experiences"}:
+            self.tools.run("record_log", message="查看经验记忆")
+            return read_experiences(self.paths)
         if prompt in {"/tools", "tools"}:
             return "\n".join(sorted(self.tools.allowed_tool_names))
         if prompt in {"/status", "status"}:
@@ -128,6 +140,11 @@ class JarvisAgent:
             if not args:
                 return "用法：/remember 记忆内容"
             return self._remember(" ".join(args))
+
+        if command == "/experience":
+            if not args:
+                return "用法：/experience 经验内容"
+            return self._remember_experience(self._strip_quotes(" ".join(args)))
 
         if command == "/ask":
             if not args:
@@ -243,6 +260,7 @@ class JarvisAgent:
             [
                 "Jarvis Lite 可用命令：",
                 "/memory：查看长期记忆",
+                "/experiences：查看经验记忆",
                 "/status：查看阶段 1 当前状态",
                 "/kb：查看个人知识库状态",
                 "/voice-status：查看阶段 3 语音入口状态",
@@ -262,6 +280,7 @@ class JarvisAgent:
                 "/read 文件名：读取 data 目录中的文本文件",
                 "/ask 问题：基于 data 目录中的文本资料回答",
                 "/remember 记忆内容：写入长期记忆",
+                "/experience 经验内容：写入经验记忆",
                 "/note 标题 内容：写入 memory/notes/ 下的笔记",
                 "/summary 文件名 内容：写入 word/ 下的总结",
                 "/tools：查看第一阶段工具白名单",
@@ -302,6 +321,7 @@ class JarvisAgent:
             [
                 "我现在可以做这些事：",
                 "- 记忆：记住你的姓名、身份和偏好，也能回答“我是谁”。",
+                "- 经验：记录和查看可复用流程经验。",
                 "- 知识库：导入 Markdown、txt、PDF、JSON 聊天记录，并基于资料回答。",
                 "- 工作台：登记常用目录、查看目录、生成日报、做文件整理预览。",
                 "- 桌面：通过小助手面板和托盘触发常用能力。",
@@ -349,6 +369,14 @@ class JarvisAgent:
         remembered = append_memory(self.paths, fact)
         self.tools.run("record_log", message=f"写入长期记忆：{remembered}")
         return f"已记住：{remembered}"
+
+    def _remember_experience(self, experience: str) -> str:
+        try:
+            remembered = append_experience(self.paths, experience)
+        except ValueError as exc:
+            return f"经验记录失败：{exc}"
+        self.tools.run("record_log", message=f"写入经验记忆：{remembered}")
+        return f"已记录经验：{remembered}"
 
     def _answer_from_data(self, question: str) -> str:
         matches = find_data_matches(self.paths, question)
@@ -526,6 +554,7 @@ class JarvisAgent:
                 "Jarvis Lite 当前状态：本地助手基础闭环已具备。",
                 "- 入口：命令行、桌面小助手、助手面板和系统托盘",
                 f"- 长期记忆：{self._project_path(self.paths.profile_path)}",
+                f"- 经验记忆：{self._project_path(self.paths.memory_dir / 'experiences.md')}",
                 f"- 个人知识库：{self._project_path(self.paths.data_dir)}",
                 f"- 工具日志：{self._project_path(self.paths.log_path)}",
                 "- 自然语言：已支持能力询问、身份询问、日报、知识库、更新和打开磁盘等第一批意图",
@@ -533,7 +562,7 @@ class JarvisAgent:
                 "- 工作台自动化：常用目录、日报、整理预览和目录打开记录",
                 "- 桌面能力：小助手窗口、面板、托盘、主题、开机启动、安装包、更新检查和下载",
                 "- 会话能力：/history、/save-summary、/clear",
-                "- 记忆写入：/remember、我叫...、我是...",
+                "- 记忆写入：/remember、/experience、我叫...、我是...",
                 "- 本地验证：python -m unittest discover -s tests -v",
             ]
         )

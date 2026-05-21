@@ -39,6 +39,12 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
         return NaturalLanguageIntent("command", command="/update-status")
     if _matches_any(prompt, ("下载更新", "下载新版本", "下载最新版", "下载更新安装包")):
         return NaturalLanguageIntent("command", command="/update-download")
+    if _matches_any(prompt, ("查看经验记忆", "看看经验记忆", "经验记忆", "查看经验", "看看经验")):
+        return NaturalLanguageIntent("command", command="/experiences")
+
+    experience_intent = _parse_experience_intent(readable_prompt)
+    if experience_intent is not None:
+        return experience_intent
 
     import_intent = _parse_import_intent(readable_prompt)
     if import_intent is not None:
@@ -145,6 +151,21 @@ def _parse_import_intent(prompt: str) -> NaturalLanguageIntent | None:
         source = _strip_wrapping_quotes(match.group("source").strip())
         if source:
             return NaturalLanguageIntent("command", command=f'/import "{source}"')
+    return None
+
+
+def _parse_experience_intent(prompt: str) -> NaturalLanguageIntent | None:
+    patterns = (
+        r"(?:请)?(?:帮我)?(?:记录|保存|沉淀)\s*(?:一条)?经验\s*[:：]\s*(?P<experience>.+)",
+        r"(?:请)?(?:帮我)?记住\s*(?:这个|这条)?经验\s*[:：]\s*(?P<experience>.+)",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, prompt)
+        if not match:
+            continue
+        experience = _strip_wrapping_quotes(match.group("experience").strip())
+        if experience:
+            return NaturalLanguageIntent("command", command=f"/experience {experience}")
     return None
 
 

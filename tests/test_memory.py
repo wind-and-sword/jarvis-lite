@@ -6,7 +6,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.memory import append_memory, find_identity, is_identity_question, parse_identity_fact, read_profile, summarize_profile
+from jarvis_lite.memory import (
+    append_experience,
+    append_memory,
+    find_identity,
+    is_identity_question,
+    parse_identity_fact,
+    read_experiences,
+    read_profile,
+    summarize_profile,
+)
 
 
 class MemoryTests(unittest.TestCase):
@@ -73,6 +82,25 @@ class MemoryTests(unittest.TestCase):
             self.assertNotIn("用户姓名：张三", content)
             self.assertIn("用户姓名：李四", content)
             self.assertEqual(content.count("用户姓名："), 1)
+
+    def test_read_experiences_returns_clear_message_when_missing(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir))
+
+            content = read_experiences(paths)
+
+            self.assertIn("还没有经验记忆", content)
+
+    def test_append_experience_creates_file_and_deduplicates(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir))
+
+            append_experience(paths, "导入资料后先打标签")
+            append_experience(paths, "导入资料后先打标签")
+
+            content = read_experiences(paths)
+            self.assertIn("# 经验记忆", content)
+            self.assertEqual(content.count("导入资料后先打标签"), 1)
 
     def test_find_identity_extracts_name_and_role(self):
         content = "# 长期记忆\n\n- 用户姓名：张三\n- 用户身份：Jarvis Lite 项目创建者\n"

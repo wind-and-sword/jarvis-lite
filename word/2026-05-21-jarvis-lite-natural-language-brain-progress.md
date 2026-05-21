@@ -258,7 +258,30 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：经验记忆第一版
+
+- 新增 `memory/experiences.md`，用于保存可复用流程经验。
+- 新增 `/experience 经验内容`，写入经验记忆。
+- 新增 `/experiences`，查看经验记忆；经验文件缺失时会返回清晰空状态。
+- 新增自然语言表达：
+  - “记录经验：导入资料后先打标签”
+  - “记住这个经验：导入资料后先打标签”
+  - “查看经验记忆”
+- “记住这个经验：...” 不再误写入长期身份/偏好记忆。
+- 本阶段不自动抽取任务日志，不调用大模型总结经验，不做经验搜索、评分或分类。
+- RED 验证：
+  - `tests.test_memory` 先因缺少 `append_experience` 和 `read_experiences` 导入失败。
+  - `/experience` 和 `/experiences` 先返回未知命令。
+  - “记住这个经验：...” 先被误写入长期记忆。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_memory -v`：11 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：65 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：203 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 可以把成功任务沉淀为“经验记忆”，让助手逐步学习用户常用表达和常用流程。
+- 下一步可以做“经验引用”：在能力摘要、日报或最近上下文里展示最近几条经验。
