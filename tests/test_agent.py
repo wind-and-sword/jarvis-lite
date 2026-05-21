@@ -154,6 +154,26 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已更新标签：data/note.txt（私人资料）", response)
         self.assertIn("标签：私人资料", self.agent.handle("/kb"))
 
+    def test_natural_language_import_file_adds_document_to_knowledge_base(self):
+        source = Path(self.temp_dir.name) / "outside-natural.md"
+        source.write_text("Jarvis Lite 可以用自然语言导入资料。\n", encoding="utf-8")
+
+        response = self.agent.handle(f"导入 {source} 到知识库")
+
+        self.assertIn("已导入知识库", response)
+        self.assertIn("data/outside-natural.md", response)
+        self.assertIn("自然语言导入资料", self.agent.handle("/ask 自然语言导入资料"))
+
+    def test_natural_language_import_quoted_file_path_adds_document_to_knowledge_base(self):
+        source = Path(self.temp_dir.name) / "outside natural.md"
+        source.write_text("Jarvis Lite 可以导入带空格路径的资料。\n", encoding="utf-8")
+
+        response = self.agent.handle(f'把 "{source}" 导入知识库')
+
+        self.assertIn("已导入知识库", response)
+        self.assertIn("data/outside natural.md", response)
+        self.assertIn("带空格路径", self.agent.handle("/ask 带空格路径"))
+
     def test_natural_language_open_windows_drive_records_request(self):
         drive = Path("D:/")
         if not drive.is_dir():

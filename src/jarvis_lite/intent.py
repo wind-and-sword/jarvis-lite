@@ -36,6 +36,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if _matches_any(prompt, ("下载更新", "下载新版本", "下载最新版", "下载更新安装包")):
         return NaturalLanguageIntent("command", command="/update-download")
 
+    import_intent = _parse_import_intent(readable_prompt)
+    if import_intent is not None:
+        return import_intent
+
     tag_intent = _parse_tag_intent(readable_prompt)
     if tag_intent is not None:
         return tag_intent
@@ -92,6 +96,21 @@ def _parse_tag_intent(prompt: str) -> NaturalLanguageIntent | None:
     return NaturalLanguageIntent("command", command=f"/tag {filename} {' '.join(tags)}")
 
 
+def _parse_import_intent(prompt: str) -> NaturalLanguageIntent | None:
+    patterns = (
+        r"(?:请)?(?:帮我)?导入\s*(?P<source>.+?)\s*(?:到|进|加入)?\s*(?:知识库|资料库)",
+        r"(?:请)?(?:帮我)?把\s*(?P<source>.+?)\s*(?:导入|加入|放进)\s*(?:知识库|资料库)",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, prompt)
+        if not match:
+            continue
+        source = _strip_wrapping_quotes(match.group("source").strip())
+        if source:
+            return NaturalLanguageIntent("command", command=f'/import "{source}"')
+    return None
+
+
 def _parse_directory_alias_intent(prompt: str) -> NaturalLanguageIntent | None:
     open_match = re.fullmatch(r"(?:帮我)?打开(.+?)(?:目录|文件夹)?", prompt)
     if open_match:
@@ -119,3 +138,10 @@ def _split_tag_text(text: str) -> tuple[str, ...]:
         if tag:
             tags.append(tag)
     return tuple(tags)
+
+
+def _strip_wrapping_quotes(text: str) -> str:
+    stripped = text.strip()
+    if len(stripped) >= 2 and stripped[0] == stripped[-1] and stripped[0] in {"'", '"'}:
+        return stripped[1:-1].strip()
+    return stripped

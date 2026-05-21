@@ -26,6 +26,8 @@
   - “整理桌面”
   - “给 note.txt 打标签 项目 Python”
   - “把 note.txt 标记为 私人资料”
+  - “导入 C:\path\note.md 到知识库”
+  - “把 C:\path\note.md 导入知识库”
 - 修复身份误写入：
   - `我是你的什么人，你知道吗` 现在会作为身份问题处理。
   - 疑问句不会被 `我是...` 规则写入 `用户身份`。
@@ -100,8 +102,26 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：自然语言导入资料
+
+- 新增明确路径导入表达：
+  - “导入 C:\path\note.md 到知识库”
+  - “把 C:\path\note.md 导入知识库”
+- 路径带空格时支持加引号，例如 `把 "C:\path with space\note.md" 导入知识库`。
+- 解析结果直接复用 `/import 源文件或目录路径`，文件类型、重名和错误提示仍由现有导入逻辑处理。
+- 本阶段不做“这个文件”上下文指代，不做拖拽入口或文件选择器。
+- RED 验证：
+  - 新增 2 个测试先落入普通兜底，未导入资料。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_import_file_adds_document_to_knowledge_base tests.test_agent.AgentTests.test_natural_language_import_quoted_file_path_adds_document_to_knowledge_base -v`：2 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：45 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：181 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
-- 下一步可以扩展自然语言参数补全，例如“导入这个文件到知识库”，或增加最近资料上下文后再支持“给这个资料打标签”。
+- 下一步可以增加最近资料上下文，再支持“给这个资料打标签”“导入这个文件到知识库”这类省略文件名的表达。
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
 - 可以把成功任务沉淀为“经验记忆”，让助手逐步学习用户常用表达和常用流程。
