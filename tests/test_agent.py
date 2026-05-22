@@ -691,6 +691,41 @@ class AgentTests(unittest.TestCase):
         self.assertIn("没有找到", response)
         self.assertIn("项目目录、桌面或下载目录", response)
 
+    def test_natural_language_read_numbered_recent_file_reports_file_metadata(self):
+        recent_file = self.paths.root / "recent-report.md"
+        recent_file.write_text("最近文件内容不应被读取。\n", encoding="utf-8")
+        os.utime(recent_file, (200, 200))
+        with patch("jarvis_lite.agent.Path.home", return_value=Path(self.temp_dir.name)):
+            self.agent.handle("查看最近文件")
+
+        response = self.agent.handle("查看第一份最近文件")
+
+        self.assertIn("第 1 份最近文件：recent-report.md", response)
+        self.assertIn("来源：项目", response)
+        self.assertIn(f"路径：{recent_file.resolve()}", response)
+        self.assertIn("修改时间：", response)
+        self.assertIn("不会读取或打开文件", response)
+        self.assertNotIn("最近文件内容不应被读取", response)
+
+    def test_recent_file_list_survives_new_agent_instance(self):
+        recent_file = self.paths.root / "persistent-recent.txt"
+        recent_file.write_text("最近文件列表应跨实例恢复。\n", encoding="utf-8")
+        os.utime(recent_file, (200, 200))
+        with patch("jarvis_lite.agent.Path.home", return_value=Path(self.temp_dir.name)):
+            self.agent.handle("/recent-files")
+        restarted_agent = JarvisAgent(self.paths)
+
+        response = restarted_agent.handle("查看第一份最近文件")
+
+        self.assertIn("第 1 份最近文件：persistent-recent.txt", response)
+        self.assertIn(f"路径：{recent_file.resolve()}", response)
+
+    def test_natural_language_read_numbered_recent_file_requires_recent_files(self):
+        response = self.agent.handle("查看第一份最近文件")
+
+        self.assertIn("还没有最近文件列表", response)
+        self.assertIn("先查看最近文件", response)
+
     def test_dir_add_and_dirs_commands_manage_common_directories(self):
         target = Path(self.temp_dir.name) / "projects"
         target.mkdir()

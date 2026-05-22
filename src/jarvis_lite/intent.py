@@ -80,6 +80,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if read_numbered_recent_document_intent is not None:
         return read_numbered_recent_document_intent
 
+    read_numbered_recent_file_intent = _parse_read_numbered_recent_file_intent(prompt)
+    if read_numbered_recent_file_intent is not None:
+        return read_numbered_recent_file_intent
+
     read_result_intent = _parse_read_result_intent(prompt)
     if read_result_intent is not None:
         return read_result_intent
@@ -191,6 +195,16 @@ def _parse_read_numbered_recent_document_intent(prompt: str) -> NaturalLanguageI
     if document_index <= 0:
         return None
     return NaturalLanguageIntent("read_numbered_recent_document", result_index=document_index)
+
+
+def _parse_read_numbered_recent_file_intent(prompt: str) -> NaturalLanguageIntent | None:
+    match = re.fullmatch(r"(?:读取|查看|看看)第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个|份)?(?:最近文件|系统最近文件)", prompt)
+    if not match:
+        return None
+    file_index = _parse_positive_number(match.group("number"))
+    if file_index <= 0:
+        return None
+    return NaturalLanguageIntent("read_numbered_recent_file", result_index=file_index)
 
 
 def _parse_read_result_intent(prompt: str) -> NaturalLanguageIntent | None:

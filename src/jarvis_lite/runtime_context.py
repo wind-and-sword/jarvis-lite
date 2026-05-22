@@ -20,6 +20,14 @@ class RuntimeDirectoryContext:
 
 
 @dataclass(frozen=True)
+class RuntimeRecentFileContext:
+    """保存最近文件的可序列化运行态信息。"""
+
+    alias: str
+    path: str
+
+
+@dataclass(frozen=True)
 class RuntimeContext:
     """保存可跨 Agent 实例恢复的轻量运行态上下文。"""
 
@@ -28,6 +36,7 @@ class RuntimeContext:
     recent_directory: RuntimeDirectoryContext | None = None
     recent_search_result_paths: tuple[str, ...] = ()
     recent_advice_suggestions: tuple[str, ...] = ()
+    recent_files: tuple[RuntimeRecentFileContext, ...] = ()
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -57,6 +66,7 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         recent_directory=_read_directory_context(raw.get("recent_directory")),
         recent_search_result_paths=_read_str_tuple(raw.get("recent_search_result_paths")),
         recent_advice_suggestions=_read_str_tuple(raw.get("recent_advice_suggestions")),
+        recent_files=_read_recent_file_contexts(raw.get("recent_files")),
     )
 
 
@@ -73,6 +83,7 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                 "recent_directory": _directory_context_to_json(context.recent_directory),
                 "recent_search_result_paths": list(context.recent_search_result_paths),
                 "recent_advice_suggestions": list(context.recent_advice_suggestions),
+                "recent_files": [_recent_file_context_to_json(recent_file) for recent_file in context.recent_files],
             },
             ensure_ascii=False,
             indent=2,
@@ -112,7 +123,26 @@ def _read_directory_context(value: object) -> RuntimeDirectoryContext | None:
     return RuntimeDirectoryContext(alias=alias, path=path)
 
 
+def _read_recent_file_contexts(value: object) -> tuple[RuntimeRecentFileContext, ...]:
+    if not isinstance(value, list):
+        return ()
+    recent_files: list[RuntimeRecentFileContext] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        alias = _read_optional_str(item.get("alias"))
+        path = _read_optional_str(item.get("path"))
+        if alias is None or path is None:
+            continue
+        recent_files.append(RuntimeRecentFileContext(alias=alias, path=path))
+    return tuple(recent_files)
+
+
 def _directory_context_to_json(context: RuntimeDirectoryContext | None) -> dict[str, str] | None:
     if context is None:
         return None
+    return {"alias": context.alias, "path": context.path}
+
+
+def _recent_file_context_to_json(context: RuntimeRecentFileContext) -> dict[str, str]:
     return {"alias": context.alias, "path": context.path}

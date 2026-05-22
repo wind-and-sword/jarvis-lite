@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shlex
+from datetime import datetime
 from pathlib import Path
 
 from .automation import (
@@ -28,7 +29,13 @@ from .memory import (
     search_experiences,
     summarize_profile,
 )
-from .runtime_context import RuntimeContext, RuntimeDirectoryContext, load_runtime_context, save_runtime_context
+from .runtime_context import (
+    RuntimeContext,
+    RuntimeDirectoryContext,
+    RuntimeRecentFileContext,
+    load_runtime_context,
+    save_runtime_context,
+)
 from .tools import ToolRegistry
 from .update import describe_update_download, describe_update_status, update_download_dir
 from .voice import describe_voice, speak_text
@@ -46,6 +53,7 @@ class JarvisAgent:
         self._recent_directory: CommonDirectory | None = self._restore_recent_directory(runtime_context.recent_directory)
         self._recent_search_result_paths: tuple[str, ...] = runtime_context.recent_search_result_paths
         self._recent_advice_suggestions: tuple[str, ...] = runtime_context.recent_advice_suggestions
+        self._recent_files: tuple[RuntimeRecentFileContext, ...] = runtime_context.recent_files
         self._pending_advice_command: str | None = None
         self._pending_advice_command_draft_command: str | None = None
         if self._recent_document_path is None and self._recent_search_result_paths:
@@ -362,6 +370,8 @@ class JarvisAgent:
             return self._read_recent_document()
         if intent.name == "read_numbered_recent_document":
             return self._read_numbered_recent_document(intent.result_index)
+        if intent.name == "read_numbered_recent_file":
+            return self._read_numbered_recent_file(intent.result_index)
         if intent.name == "read_numbered_search_result":
             return self._read_numbered_search_result(intent.result_index)
         if intent.name == "read_numbered_advice_suggestion":
@@ -450,8 +460,12 @@ class JarvisAgent:
         self.tools.run("record_log", message="查看最近文件")
         recent_files = list_recent_files(self._recent_file_directories(), limit=5)
         if not recent_files:
+            self._remember_recent_files(())
             return "最近文件：没有找到最近文件。你可以先在项目目录、桌面或下载目录放入文件，或使用 /dir-add 登记常用目录。"
 
+        self._remember_recent_files(
+            tuple(RuntimeRecentFileContext(alias=recent_file.alias, path=str(recent_file.path)) for recent_file in recent_files)
+        )
         lines = ["最近文件："]
         for index, recent_file in enumerate(recent_files, start=1):
             modified_at = recent_file.modified_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -631,6 +645,28 @@ class JarvisAgent:
         output = self.handle(f'/read "{relative_path}"')
         return f"第 {document_index} 份资料：data/{relative_path}\n{output}"
 
+    def _read_numbered_recent_file(self, file_index: int) -> str:
+        if not self._recent_files:
+            return "还没有最近文件列表。你可以先查看最近文件，或使用 /recent-files。"
+        if file_index < 1 or file_index > len(self._recent_files):
+            return f"最近文件列表只有 {len(self._recent_files)} 条，不能选择第 {file_index} 份。"
+        recent_file = self._recent_files[file_index - 1]
+        path = Path(recent_file.path)
+        if not path.is_file():
+            return f"最近文件已不存在：{path}。你可以先重新查看最近文件。"
+        modified_at = path.stat().st_mtime
+        modified_text = self._format_timestamp(modified_at)
+        self.tools.run("record_log", message=f"查看最近文件详情：第 {file_index} 份 -> {path}")
+        return "\n".join(
+            [
+                f"第 {file_index} 份最近文件：{path.name}",
+                f"- 来源：{recent_file.alias}",
+                f"- 路径：{path}",
+                f"- 修改时间：{modified_text}",
+                "- 说明：只展示文件信息，不会读取或打开文件。",
+            ]
+        )
+
     def _tag_numbered_search_result(self, result_index: int, tags: tuple[str, ...]) -> str:
         relative_path, error = self._recent_search_result_path(result_index)
         if error:
@@ -796,6 +832,10 @@ class JarvisAgent:
         self._pending_advice_command_draft_command = None
         self._save_runtime_context()
 
+    def _remember_recent_files(self, recent_files: tuple[RuntimeRecentFileContext, ...]) -> None:
+        self._recent_files = recent_files
+        self._save_runtime_context()
+
     def _remember_recent_directory(self, alias: str, directory_path: Path) -> None:
         self._recent_directory = CommonDirectory(alias, directory_path)
         self._save_runtime_context()
@@ -820,6 +860,7 @@ class JarvisAgent:
                 recent_directory=recent_directory,
                 recent_search_result_paths=self._recent_search_result_paths,
                 recent_advice_suggestions=self._recent_advice_suggestions,
+                recent_files=self._recent_files,
             ),
         )
 
@@ -947,6 +988,9 @@ class JarvisAgent:
     def _strip_quotes(self, value: str) -> str:
         return value.strip().strip('"').strip("'")
 
+    def _format_timestamp(self, timestamp: float) -> str:
+        return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
+
     def _status(self) -> str:
         return "\n".join(
             [
@@ -958,7 +1002,7 @@ class JarvisAgent:
                 f"- 工具日志：{self._project_path(self.paths.log_path)}",
                 "- 自然语言：已支持能力询问、身份询问、日报、知识库、更新和打开磁盘等第一批意图",
                 "- 语音入口：/voice、/speak、/voice-status",
-                "- 工作台自动化：常用目录、日报、整理预览和目录打开记录",
+                "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",
                 "- 桌面能力：小助手窗口、面板、托盘、主题、开机启动、安装包、更新检查和下载",
                 "- 会话能力：/history、/save-summary、/clear",
                 "- 记忆写入：/remember、/experience、我叫...、我是...",
