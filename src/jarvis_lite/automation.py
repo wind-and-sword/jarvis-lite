@@ -50,6 +50,13 @@ class FileOrganizationPreview:
         return sum(len(group.files) for group in self.groups)
 
 
+@dataclass(frozen=True)
+class RecentFile:
+    alias: str
+    path: Path
+    modified_at: datetime
+
+
 def describe_automation(paths: ProjectPaths) -> str:
     """输出阶段 4 工作台自动化状态。"""
 
@@ -58,7 +65,7 @@ def describe_automation(paths: ProjectPaths) -> str:
         "阶段 4 自动化状态：",
         f"- 常用目录：{len(directories)} 个",
         "- 日报目录：word",
-        "- 当前能力：/dir-add、/dirs、/daily-report、/organize-preview、/dir-open",
+        "- 当前能力：/dir-add、/dirs、/recent-files、/daily-report、/organize-preview、/dir-open",
         "- 硬件入口：摄像头、麦克风暂缓",
     ]
     if directories:
@@ -140,6 +147,54 @@ def preview_file_organization(directory: str | Path) -> FileOrganizationPreview:
         for (label, folder), files in sorted(grouped_files.items(), key=lambda item: item[0][1])
     )
     return FileOrganizationPreview(target, groups, skipped_directory_count)
+
+
+def list_recent_files(directories: tuple[CommonDirectory, ...], limit: int = 5) -> tuple[RecentFile, ...]:
+    """列出一组目录顶层最近修改的普通文件。"""
+
+    if limit <= 0:
+        return ()
+
+    recent_files: list[tuple[float, RecentFile]] = []
+    seen_paths: set[str] = set()
+    for directory in directories:
+        target = Path(directory.path).expanduser().resolve()
+        if not target.is_dir():
+            continue
+        for item in target.iterdir():
+            try:
+                if item.name.startswith(".") or not item.is_file():
+                    continue
+                resolved = item.resolve()
+                path_key = str(resolved).casefold()
+                if path_key in seen_paths:
+                    continue
+                stat = resolved.stat()
+            except OSError:
+                continue
+            seen_paths.add(path_key)
+            recent_files.append(
+                (
+                    stat.st_mtime,
+                    RecentFile(
+                        alias=directory.alias,
+                        path=resolved,
+                        modified_at=datetime.fromtimestamp(stat.st_mtime),
+                    ),
+                )
+            )
+
+    return tuple(
+        recent_file
+        for _, recent_file in sorted(
+            recent_files,
+            key=lambda item: (
+                -item[0],
+                item[1].alias.lower(),
+                item[1].path.name.lower(),
+            ),
+        )[:limit]
+    )
 
 
 def _directories_path(paths: ProjectPaths) -> Path:

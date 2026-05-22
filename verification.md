@@ -2055,3 +2055,51 @@ git diff --check
 - 全量测试 250 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-22 系统最近文件列表第一版验证
+
+### RED：最近文件入口缺失
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_automation.AutomationTests.test_list_recent_files_returns_top_level_files_newest_first tests.test_agent.AgentTests.test_natural_language_recent_files_reports_known_project_files_newest_first tests.test_agent.AgentTests.test_recent_files_command_reports_empty_state -v
+```
+
+结果：
+
+- 新增 Automation 测试先因 `list_recent_files` 不存在而失败。
+- “查看最近文件”先落入长期记忆兜底，没有展示最近文件。
+- `/recent-files` 先返回未知命令。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_automation.AutomationTests.test_list_recent_files_returns_top_level_files_newest_first tests.test_agent.AgentTests.test_natural_language_recent_files_reports_known_project_files_newest_first tests.test_agent.AgentTests.test_recent_files_command_reports_empty_state -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+.\.venv\Scripts\python.exe -m unittest tests.test_automation -v
+```
+
+结果：
+
+- 最近文件列表新增 1 个 Automation 测试和 2 个 Agent 测试通过。
+- Agent 专项测试 109 个通过。
+- Automation 专项测试 8 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 253 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

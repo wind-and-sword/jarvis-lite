@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,8 +9,10 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.automation import (
+    CommonDirectory,
     add_common_directory,
     describe_automation,
+    list_recent_files,
     list_common_directories,
     preview_file_organization,
     record_directory_open_request,
@@ -44,6 +47,7 @@ class AutomationTests(unittest.TestCase):
 
         self.assertIn("阶段 4 自动化状态", output)
         self.assertIn("常用目录：0 个", output)
+        self.assertIn("/recent-files", output)
 
     def test_write_daily_report_creates_word_markdown(self):
         (self.paths.memory_dir / "profile.md").write_text(
@@ -142,6 +146,26 @@ class AutomationTests(unittest.TestCase):
         self.assertEqual(groups[".md"].files, ("notes.md",))
         self.assertEqual(groups[".txt"].files, ("todo.TXT",))
         self.assertEqual(groups["无后缀"].files, ("README",))
+
+    def test_list_recent_files_returns_top_level_files_newest_first(self):
+        target = Path(self.temp_dir.name) / "workspace"
+        target.mkdir()
+        old_file = target / "old.txt"
+        new_file = target / "new.md"
+        nested = target / "nested"
+        nested.mkdir()
+        nested_file = nested / "hidden.txt"
+        old_file.write_text("旧文件", encoding="utf-8")
+        new_file.write_text("新文件", encoding="utf-8")
+        nested_file.write_text("不扫描子目录", encoding="utf-8")
+        os.utime(old_file, (100, 100))
+        os.utime(new_file, (200, 200))
+        os.utime(nested_file, (300, 300))
+
+        files = list_recent_files((CommonDirectory("项目", target),), limit=5)
+
+        self.assertEqual([recent_file.path.name for recent_file in files], ["new.md", "old.txt"])
+        self.assertEqual(files[0].alias, "项目")
 
     def test_record_directory_open_request_writes_transcript(self):
         target = Path(self.temp_dir.name) / "project"

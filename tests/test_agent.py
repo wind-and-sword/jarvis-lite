@@ -662,6 +662,35 @@ class AgentTests(unittest.TestCase):
         self.assertIn("open_directory", transcript)
         self.assertIn(str(downloads.resolve()), transcript)
 
+    def test_natural_language_recent_files_reports_known_project_files_newest_first(self):
+        old_file = self.paths.root / "old-note.txt"
+        new_file = self.paths.root / "new-note.md"
+        nested = self.paths.root / "nested"
+        nested.mkdir()
+        nested_file = nested / "nested-note.txt"
+        old_file.write_text("旧项目文件", encoding="utf-8")
+        new_file.write_text("新项目文件", encoding="utf-8")
+        nested_file.write_text("不扫描子目录", encoding="utf-8")
+        os.utime(old_file, (100, 100))
+        os.utime(new_file, (200, 200))
+        os.utime(nested_file, (300, 300))
+
+        with patch("jarvis_lite.agent.Path.home", return_value=Path(self.temp_dir.name)):
+            response = self.agent.handle("查看最近文件")
+
+        self.assertIn("最近文件", response)
+        self.assertIn("项目", response)
+        self.assertLess(response.index("new-note.md"), response.index("old-note.txt"))
+        self.assertNotIn("nested-note.txt", response)
+
+    def test_recent_files_command_reports_empty_state(self):
+        with patch("jarvis_lite.agent.Path.home", return_value=Path(self.temp_dir.name)):
+            response = self.agent.handle("/recent-files")
+
+        self.assertIn("最近文件", response)
+        self.assertIn("没有找到", response)
+        self.assertIn("项目目录、桌面或下载目录", response)
+
     def test_dir_add_and_dirs_commands_manage_common_directories(self):
         target = Path(self.temp_dir.name) / "projects"
         target.mkdir()

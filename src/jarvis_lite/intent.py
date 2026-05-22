@@ -33,6 +33,8 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
         return NaturalLanguageIntent("command", command="/kb")
     if _matches_any(prompt, ("查看常用目录", "看看常用目录", "常用目录", "目录列表")):
         return NaturalLanguageIntent("command", command="/dirs")
+    if _matches_any(prompt, ("查看最近文件", "看看最近文件", "最近文件", "最近文件列表", "查看系统最近文件")):
+        return NaturalLanguageIntent("recent_files_status")
     if _matches_any(prompt, ("生成日报", "写日报", "创建日报", "今天日报", "生成今天日报", "帮我生成日报")):
         return NaturalLanguageIntent("command", command="/daily-report")
     if _matches_any(prompt, ("检查更新", "查看更新", "有没有更新", "看看更新")):

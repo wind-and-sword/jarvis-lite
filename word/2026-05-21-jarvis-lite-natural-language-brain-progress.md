@@ -633,7 +633,24 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：系统最近文件列表第一版
+
+- 新增 `/recent-files` 和自然语言“查看最近文件”“最近文件列表”。
+- 第一版扫描已登记常用目录，以及已知项目目录、桌面和下载目录的顶层普通文件。
+- 最近文件按修改时间倒序展示最多 5 个，输出来源别名、文件名、路径和修改时间。
+- 本阶段不递归扫描，不读取文件内容，不打开、不移动、不删除文件。
+- RED 验证：
+  - 新增 1 个 Automation 测试和 2 个 Agent 测试先证明底层函数、自然语言入口和 `/recent-files` 命令缺失。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_automation.AutomationTests.test_list_recent_files_returns_top_level_files_newest_first tests.test_agent.AgentTests.test_natural_language_recent_files_reports_known_project_files_newest_first tests.test_agent.AgentTests.test_recent_files_command_reports_empty_state -v`：3 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：109 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_automation -v`：8 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：253 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕最近文件列表、知识库摘要和跨入口任务建议做更稳定的上下文识别。
+- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕最近文件列表持久化、知识库摘要和跨入口任务建议做更稳定的上下文识别。

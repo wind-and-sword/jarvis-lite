@@ -7,6 +7,7 @@ from .automation import (
     CommonDirectory,
     add_common_directory,
     describe_automation,
+    list_recent_files,
     list_common_directories,
     preview_file_organization,
     record_directory_open_request,
@@ -77,6 +78,8 @@ class JarvisAgent:
         if prompt in {"/automation-status", "automation-status"}:
             self.tools.run("record_log", message="查看阶段 4 自动化状态")
             return describe_automation(self.paths)
+        if prompt in {"/recent-files", "recent-files"}:
+            return self._recent_files_status()
         if prompt in {"/update-status", "update-status"}:
             self.tools.run("record_log", message="检查更新状态")
             return describe_update_status()
@@ -303,6 +306,7 @@ class JarvisAgent:
                 "/speak 文本：播报一段文本",
                 "/voice 已识别的语音文本：按语音入口处理文本并播报回答",
                 "/automation-status：查看阶段 4 自动化状态",
+                "/recent-files：查看常用目录、项目目录、桌面和下载目录中的最近文件",
                 "/update-status [清单路径或URL]：检查 Jarvis Lite 新版本",
                 "/update-download [清单路径或URL]：下载新版本安装包到运行态目录",
                 "/dir-add 别名 目录路径：登记常用目录",
@@ -334,6 +338,8 @@ class JarvisAgent:
             return self._capability_summary()
         if intent.name == "recent_context_status":
             return self._recent_context_status()
+        if intent.name == "recent_files_status":
+            return self._recent_files_status()
         if intent.name == "command":
             return self.handle(intent.command)
         if intent.name == "open_directory_path" and intent.path is not None:
@@ -438,6 +444,20 @@ class JarvisAgent:
             lines.append(f"- 待确认建议命令：{self._pending_advice_command}")
         else:
             lines.append("- 待确认建议命令：无")
+        return "\n".join(lines)
+
+    def _recent_files_status(self) -> str:
+        self.tools.run("record_log", message="查看最近文件")
+        recent_files = list_recent_files(self._recent_file_directories(), limit=5)
+        if not recent_files:
+            return "最近文件：没有找到最近文件。你可以先在项目目录、桌面或下载目录放入文件，或使用 /dir-add 登记常用目录。"
+
+        lines = ["最近文件："]
+        for index, recent_file in enumerate(recent_files, start=1):
+            modified_at = recent_file.modified_at.strftime("%Y-%m-%d %H:%M:%S")
+            lines.append(f"{index}. {recent_file.alias}：{recent_file.path.name}")
+            lines.append(f"   路径：{recent_file.path}")
+            lines.append(f"   修改时间：{modified_at}")
         return "\n".join(lines)
 
     def _sentence(self, text: str) -> str:
@@ -883,6 +903,26 @@ class JarvisAgent:
             if directory.alias == normalized_alias:
                 return directory
         return self._known_directory(normalized_alias)
+
+    def _recent_file_directories(self) -> tuple[CommonDirectory, ...]:
+        directories: list[CommonDirectory] = []
+        seen_paths: set[str] = set()
+
+        def add(directory: CommonDirectory | None) -> None:
+            if directory is None:
+                return
+            resolved_path = directory.path.resolve()
+            path_key = str(resolved_path).casefold()
+            if path_key in seen_paths:
+                return
+            seen_paths.add(path_key)
+            directories.append(CommonDirectory(directory.alias, resolved_path))
+
+        for directory in list_common_directories(self.paths):
+            add(directory)
+        for alias in ("项目", "桌面", "下载"):
+            add(self._known_directory(alias))
+        return tuple(directories)
 
     def _known_directory(self, alias: str) -> CommonDirectory | None:
         if alias.strip().lower() in {"项目", "当前项目", "project", "repo", "repository"}:
