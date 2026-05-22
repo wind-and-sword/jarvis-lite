@@ -1505,3 +1505,48 @@ git diff --check
 - 全量测试 231 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-22 草稿参数接收第一版验证
+
+### RED：补全草稿后直接执行
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_completed_advice_command_draft_waits_for_confirmation -v
+```
+
+结果：
+
+- 新增测试先失败，拿到 `/import` 命令草稿后输入完整 `/import 路径` 会直接返回“已导入知识库”，没有进入待确认建议命令状态。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_completed_advice_command_draft_waits_for_confirmation tests.test_agent.AgentTests.test_natural_language_prepare_advice_with_missing_parameters_returns_command_draft tests.test_agent.AgentTests.test_natural_language_prepare_and_confirm_executable_advice -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- 草稿参数接收新增测试通过。
+- 最近建议执行相关 3 个测试通过。
+- Agent 专项测试 92 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 232 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

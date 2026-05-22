@@ -234,6 +234,21 @@ class AgentTests(unittest.TestCase):
         self.assertIn("方括号参数可以按需保留或替换", prepare_response)
         self.assertIn("还没有待确认的建议命令", confirm_response)
 
+    def test_completed_advice_command_draft_waits_for_confirmation(self):
+        source = Path(self.temp_dir.name) / "draft-source.md"
+        source.write_text("Jarvis Lite 可以确认执行补全后的建议命令。\n", encoding="utf-8")
+        self.agent.handle("/experience-advice 导入资料")
+        self.agent.handle("执行第一条建议")
+
+        prepare_response = self.agent.handle(f"/import {source}")
+        confirm_response = self.agent.handle("确认执行")
+
+        self.assertIn("已补全建议命令，等待确认执行", prepare_response)
+        self.assertIn(f"命令：/import {source}", prepare_response)
+        self.assertNotIn("已导入知识库", prepare_response)
+        self.assertIn(f"已确认执行建议命令：/import {source}", confirm_response)
+        self.assertIn("已导入知识库：data/draft-source.md", confirm_response)
+
     def test_natural_language_confirm_advice_requires_pending_command(self):
         response = self.agent.handle("确认执行")
 

@@ -45,6 +45,7 @@ class JarvisAgent:
         self._recent_search_result_paths: tuple[str, ...] = runtime_context.recent_search_result_paths
         self._recent_advice_suggestions: tuple[str, ...] = runtime_context.recent_advice_suggestions
         self._pending_advice_command: str | None = None
+        self._pending_advice_command_draft_command: str | None = None
         if self._recent_document_path is None and self._recent_search_result_paths:
             self._recent_document_path = self._recent_search_result_paths[0]
 
@@ -117,6 +118,20 @@ class JarvisAgent:
 
         command = parts[0]
         args = parts[1:]
+
+        if self._pending_advice_command_draft_command == command:
+            completed_command = self._executable_advice_command(prompt)
+            if completed_command is not None:
+                self._pending_advice_command = completed_command
+                self._pending_advice_command_draft_command = None
+                self.tools.run("record_log", message=f"补全最近建议命令草稿：{completed_command}")
+                return "\n".join(
+                    [
+                        "已补全建议命令，等待确认执行。",
+                        f"命令：{completed_command}",
+                        "确认执行请说“确认执行”，取消请说“取消执行”。",
+                    ]
+                )
 
         if command == "/list":
             result = self.tools.run("list_data", path=args[0] if args else ".")
@@ -588,11 +603,13 @@ class JarvisAgent:
         command = self._executable_advice_command(suggestion)
         if command is None:
             self._pending_advice_command = None
+            self._pending_advice_command_draft_command = None
             draft_command = self._advice_command_draft(suggestion)
             lines = [
                 f"第 {advice_index} 条建议需要补充参数，不能直接执行：{suggestion}",
             ]
             if draft_command is not None:
+                self._pending_advice_command_draft_command = self._advice_command_name(suggestion)
                 lines.append(f"命令草稿：{draft_command}")
                 lines.append("请把尖括号里的占位内容替换成真实参数；方括号参数可以按需保留或替换。")
             else:
@@ -602,6 +619,7 @@ class JarvisAgent:
             )
 
         self._pending_advice_command = command
+        self._pending_advice_command_draft_command = None
         self.tools.run("record_log", message=f"准备执行最近建议：第 {advice_index} 条 -> {command}")
         return "\n".join(
             [
@@ -616,6 +634,7 @@ class JarvisAgent:
             return "还没有待确认的建议命令。你可以先说“执行第一条建议”。"
         command = self._pending_advice_command
         self._pending_advice_command = None
+        self._pending_advice_command_draft_command = None
         self.tools.run("record_log", message=f"确认执行最近建议命令：{command}")
         return f"已确认执行建议命令：{command}\n{self.handle(command)}"
 
@@ -624,6 +643,7 @@ class JarvisAgent:
             return "还没有待取消的建议命令。"
         command = self._pending_advice_command
         self._pending_advice_command = None
+        self._pending_advice_command_draft_command = None
         self.tools.run("record_log", message=f"取消执行最近建议命令：{command}")
         return f"已取消待执行建议：{command}"
 
@@ -650,10 +670,16 @@ class JarvisAgent:
         return " ".join(self._advice_command_draft_token(token) for token in command.split())
 
     def _advice_command_text(self, suggestion: str) -> str | None:
-        command = suggestion.split("：", 1)[0].split(":", 1)[0].strip()
+        command = suggestion.split("：", 1)[0].strip()
         if not command.startswith("/"):
             return None
         return command
+
+    def _advice_command_name(self, suggestion: str) -> str | None:
+        command = self._advice_command_text(suggestion)
+        if command is None:
+            return None
+        return command.split()[0]
 
     def _advice_command_draft_token(self, token: str) -> str:
         if token.startswith("/") or (token.startswith("[") and token.endswith("]")):
@@ -694,6 +720,7 @@ class JarvisAgent:
     def _remember_recent_advice_suggestions(self, suggestions: tuple[str, ...]) -> None:
         self._recent_advice_suggestions = suggestions
         self._pending_advice_command = None
+        self._pending_advice_command_draft_command = None
         self._save_runtime_context()
 
     def _remember_recent_directory(self, alias: str, directory_path: Path) -> None:

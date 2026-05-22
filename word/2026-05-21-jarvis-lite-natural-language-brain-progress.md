@@ -449,7 +449,21 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：草稿参数接收第一版
+
+- 用户对含占位符建议说“执行第一条建议”后，Jarvis Lite 会记录当前草稿对应的命令名。
+- 用户在同一 Agent 实例内输入补全后的同类命令，例如 `/import C:\path\to\draft-source.md`，不会立即执行，而是进入待确认建议命令状态。
+- 用户再说“确认执行”后，才复用现有命令路径真正导入资料。
+- 没有草稿上下文时，普通 `/import 路径` 保持原有直接执行行为。
+- 修正建议命令文本解析，只用中文冒号拆分建议描述，避免 Windows 路径中的 `C:` 被误切断。
+- 本阶段不做自然语言填槽、不推断真实路径、不持久化草稿状态。
+- RED 验证：
+  - 新增 1 个 Agent 测试先证明补全后的 `/import` 会直接执行，没有等待确认。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_completed_advice_command_draft_waits_for_confirmation tests.test_agent.AgentTests.test_natural_language_prepare_advice_with_missing_parameters_returns_command_draft tests.test_agent.AgentTests.test_natural_language_prepare_and_confirm_executable_advice -v`：3 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：92 个测试通过。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以做“草稿参数接收第一版”，让用户在草稿基础上输入真实参数后重新进入确认执行流程。
+- 下一步可以做“个人设备级 Agent 电脑工作台增强”，优先围绕下载目录、桌面和项目目录做更稳定的上下文识别。
