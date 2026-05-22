@@ -984,6 +984,28 @@ class AgentTests(unittest.TestCase):
         self.assertIn(f"2. 项目 -> {older_file.resolve()}", response)
         self.assertNotIn("新文件内容不应进入上下文状态", response)
 
+    def test_natural_language_recent_context_status_suggests_next_actions(self):
+        target = Path(self.temp_dir.name) / "project"
+        target.mkdir()
+        recent_file = self.paths.root / "recent-task.txt"
+        recent_file.write_text("最近文件内容不应进入建议。\n", encoding="utf-8")
+        os.utime(recent_file, (200, 200))
+        self.agent.handle("/read note.txt")
+        self.agent.handle(f"/dir-add 项目 {target}")
+        self.agent.handle("打开项目目录")
+        with patch("jarvis_lite.agent.Path.home", return_value=Path(self.temp_dir.name)):
+            self.agent.handle("/recent-files")
+        self.agent.handle("/experience-advice 导入资料")
+
+        response = self.agent.handle("查看最近上下文")
+
+        self.assertIn("下一步建议：", response)
+        self.assertIn("继续处理最近资料：/read note.txt；/tag note.txt 标签...", response)
+        self.assertIn("继续处理最近目录：/organize-preview 项目；/dir-open 项目", response)
+        self.assertIn("继续处理最近文件：查看第一份最近文件；/recent-files", response)
+        self.assertIn("继续最近建议：查看第一条建议；执行第一条建议", response)
+        self.assertNotIn("最近文件内容不应进入建议", response)
+
     def test_recent_document_list_survives_new_agent_instance(self):
         (self.paths.data_dir / "manual.md").write_text(
             "第一份持久化最近资料。\n",

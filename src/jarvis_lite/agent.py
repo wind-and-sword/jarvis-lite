@@ -12,6 +12,7 @@ from .automation import (
     list_common_directories,
     preview_file_organization,
     record_directory_open_request,
+    suggest_next_actions_from_context,
     write_daily_report,
 )
 from .config import ProjectPaths, build_project_paths
@@ -470,6 +471,9 @@ class JarvisAgent:
             lines.append(f"- 待确认建议命令：{self._pending_advice_command}")
         else:
             lines.append("- 待确认建议命令：无")
+        lines.append("下一步建议：")
+        for suggestion in suggest_next_actions_from_context(self._runtime_context(), list_recent_experiences(self.paths)):
+            lines.append(f"- {suggestion}")
         return "\n".join(lines)
 
     def _recent_files_status(self) -> str:
@@ -861,24 +865,24 @@ class JarvisAgent:
             return None
         return CommonDirectory(context.alias, Path(context.path))
 
-    def _save_runtime_context(self) -> None:
+    def _runtime_context(self) -> RuntimeContext:
         recent_directory = None
         if self._recent_directory is not None:
             recent_directory = RuntimeDirectoryContext(
                 alias=self._recent_directory.alias,
                 path=str(self._recent_directory.path),
             )
-        save_runtime_context(
-            self.paths,
-            RuntimeContext(
-                recent_document_path=self._recent_document_path,
-                recent_document_paths=self._recent_document_paths,
-                recent_directory=recent_directory,
-                recent_search_result_paths=self._recent_search_result_paths,
-                recent_advice_suggestions=self._recent_advice_suggestions,
-                recent_files=self._recent_files,
-            ),
+        return RuntimeContext(
+            recent_document_path=self._recent_document_path,
+            recent_document_paths=self._recent_document_paths,
+            recent_directory=recent_directory,
+            recent_search_result_paths=self._recent_search_result_paths,
+            recent_advice_suggestions=self._recent_advice_suggestions,
+            recent_files=self._recent_files,
         )
+
+    def _save_runtime_context(self) -> None:
+        save_runtime_context(self.paths, self._runtime_context())
 
     def _directories(self) -> str:
         directories = list_common_directories(self.paths)

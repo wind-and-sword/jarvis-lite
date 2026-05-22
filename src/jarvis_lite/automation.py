@@ -338,6 +338,17 @@ def _append_next_action_lines(
     recent_experiences: tuple[str, ...],
     recent_logs: list[str],
 ) -> None:
+    for suggestion in suggest_next_actions_from_context(context, recent_experiences, tuple(recent_logs)):
+        lines.append(f"- {suggestion}")
+
+
+def suggest_next_actions_from_context(
+    context: RuntimeContext,
+    recent_experiences: tuple[str, ...] = (),
+    recent_logs: tuple[str, ...] = (),
+) -> tuple[str, ...]:
+    """根据运行态上下文生成可跨入口复用的下一步建议。"""
+
     suggestions: list[str] = []
     if context.recent_document_path:
         suggestions.append(
@@ -364,8 +375,7 @@ def _append_next_action_lines(
             ]
         )
 
-    for suggestion in suggestions:
-        lines.append(f"- {suggestion}")
+    return tuple(suggestions)
 
 
 def _recent_log_lines(paths: ProjectPaths, limit: int = 5) -> list[str]:
