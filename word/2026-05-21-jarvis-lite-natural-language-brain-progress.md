@@ -702,7 +702,25 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：桌面快捷入口补齐最近上下文和最近文件
+
+- 桌面面板快捷命令新增“最近上下文”和“最近文件”。
+- 托盘快捷命令继续复用同一套 `direct_quick_commands()`，会同步出现这两个入口。
+- “最近上下文”快捷入口提交自然语言 `查看最近上下文`，复用本地意图层。
+- “最近文件”快捷入口提交 `/recent-files`。
+- `/organize-preview` 仍然因为需要参数而不会进入直接快捷入口。
+- RED 验证：
+  - 扩展桌面桥接和面板测试，先证明快捷命令缺少 `查看最近上下文`、`/recent-files`，面板无法点击“最近上下文”。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge -v`：4 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets -v`：19 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_desktop_tray -v`：8 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：260 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕知识库摘要、桌面面板快捷入口和最近文件后续操作做更稳定的上下文识别。
+- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕知识库摘要、最近文件后续操作和桌面入口细化做更稳定的上下文识别。

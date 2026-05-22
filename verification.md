@@ -2246,3 +2246,51 @@ git diff --check
 - 全量测试 259 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-23 桌面最近上下文和最近文件快捷入口验证
+
+### RED：桌面快捷入口缺少最近上下文和最近文件
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge.DesktopBridgeTests.test_quick_commands_include_current_assistant_capabilities tests.test_desktop_bridge.DesktopBridgeTests.test_direct_quick_commands_exclude_commands_that_need_arguments -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets.DesktopWidgetTests.test_panel_exposes_only_direct_quick_command_buttons tests.test_desktop_widgets.DesktopWidgetTests.test_panel_recent_context_quick_command_submits_natural_language_prompt -v
+```
+
+结果：
+
+- 桌面桥接层快捷命令先没有 `查看最近上下文` 和 `/recent-files`。
+- 面板快捷按钮先没有“最近上下文”，点击测试出现 `KeyError`。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_tray -v
+```
+
+结果：
+
+- Desktop bridge 专项测试 4 个通过。
+- Desktop widgets 专项测试 19 个通过。
+- Desktop tray 专项测试 8 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 260 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

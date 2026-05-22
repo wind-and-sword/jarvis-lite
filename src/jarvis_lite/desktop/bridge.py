@@ -21,7 +21,16 @@ class QuickCommand:
     prompt: str
 
 
-DIRECT_QUICK_COMMAND_PROMPTS = ("/status", "/kb", "/dirs", "/daily-report", "/update-status", "/update-download")
+DIRECT_QUICK_COMMAND_PROMPTS = (
+    "/status",
+    "/kb",
+    "/dirs",
+    "查看最近上下文",
+    "/recent-files",
+    "/daily-report",
+    "/update-status",
+    "/update-download",
+)
 
 
 class DesktopBridge:
@@ -46,6 +55,8 @@ def quick_commands() -> tuple[QuickCommand, ...]:
         QuickCommand("状态", "/status"),
         QuickCommand("知识库", "/kb"),
         QuickCommand("常用目录", "/dirs"),
+        QuickCommand("最近上下文", "查看最近上下文"),
+        QuickCommand("最近文件", "/recent-files"),
         QuickCommand("生成日报", "/daily-report"),
         QuickCommand("检查更新", "/update-status"),
         QuickCommand("下载更新", "/update-download"),
