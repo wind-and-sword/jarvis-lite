@@ -414,17 +414,60 @@ class JarvisAgent:
         if not normalized_query:
             return "用法：/experience-advice 关键词"
         matches = search_experiences(self.paths, normalized_query)
+        command_suggestions = self._experience_command_suggestions(normalized_query)
         self.tools.run("record_log", message=f"生成经验操作建议：{normalized_query}")
-        if not matches:
+        if not matches and not command_suggestions:
             return (
                 f"还没有找到和“{normalized_query}”相关的经验建议。"
                 "你可以先用 /experience 经验内容 记录可复用流程。"
             )
         lines = [f"操作建议：{normalized_query}", "相关经验："]
-        for index, experience in enumerate(matches, start=1):
-            lines.append(f"{index}. {experience}")
+        if matches:
+            for index, experience in enumerate(matches, start=1):
+                lines.append(f"{index}. {experience}")
+        else:
+            lines.append(f"- 还没有找到和“{normalized_query}”相关的经验建议。")
+            lines.append("- 可以先用 /experience 经验内容 记录可复用流程。")
+        if command_suggestions:
+            lines.append("可执行命令：")
+            lines.extend(f"- {suggestion}" for suggestion in command_suggestions)
         lines.append(f"可继续使用：/experience-search {normalized_query}")
         return "\n".join(lines)
+
+    def _experience_command_suggestions(self, query: str) -> tuple[str, ...]:
+        prompt = query.lower()
+        suggestions: list[str] = []
+
+        def add(command: str) -> None:
+            if command not in suggestions:
+                suggestions.append(command)
+
+        if any(word in prompt for word in ("导入", "资料", "知识库", "pdf", "聊天记录")):
+            add("/import 源文件或目录路径 [目标文件名]：导入资料到知识库")
+            add("/kb：查看知识库状态")
+            add("/tag 文件名 标签...：给资料设置标签")
+        if any(word in prompt for word in ("标签", "标记")):
+            add("/tag 文件名 标签...：给资料设置标签")
+            add("/kb：查看资料标签")
+        if "日报" in prompt:
+            add("/daily-report [文件名]：生成工作日报")
+        if any(word in prompt for word in ("目录", "文件夹", "整理", "打开")):
+            add("/dirs：查看常用目录")
+            add("/dir-add 别名 目录路径：登记常用目录")
+            add("/organize-preview 常用目录别名：预览文件整理")
+            add("/dir-open 常用目录别名：记录打开目录请求")
+        if "更新" in prompt:
+            add("/update-status [清单路径或URL]：检查更新")
+            add("/update-download [清单路径或URL]：下载更新安装包")
+        if "语音" in prompt:
+            add("/voice-status：查看语音入口状态")
+            add("/speak 文本：播报文本")
+            add("/voice 已识别的语音文本：处理语音文本")
+        if "经验" in prompt:
+            add("/experience 经验内容：记录经验")
+            add("/experience-search 关键词：搜索经验")
+
+        return tuple(suggestions)
 
     def _answer_from_data(self, question: str) -> str:
         matches = find_data_matches(self.paths, question)

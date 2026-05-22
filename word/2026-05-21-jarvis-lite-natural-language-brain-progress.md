@@ -335,7 +335,23 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：经验建议命令联动第一版
+
+- `/experience-advice 关键词` 现在会在相关经验之外追加“可执行命令”。
+- 第一版按固定关键词映射现有本地命令，覆盖导入、标签、知识库、日报、目录、更新、语音和经验。
+- 例如“导入资料有什么建议”会提示 `/import 源文件或目录路径 [目标文件名]`、`/kb` 和 `/tag 文件名 标签...`。
+- 没有相关经验但命中已知能力时，仍会给出命令建议，并提示可先用 `/experience 经验内容` 沉淀经验。
+- 本阶段不做开放式计划生成、不推断真实文件路径、不执行建议命令。
+- RED 验证：
+  - 新增 3 个 Agent 测试先因建议输出缺少“可执行命令”失败。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：77 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：217 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以做“经验建议与具体命令参数联动”，让建议直接带出可执行的下一步命令。
+- 下一步可以做“经验建议引用最近上下文”，让“这个资料/这个目录”的建议更贴近当前操作。

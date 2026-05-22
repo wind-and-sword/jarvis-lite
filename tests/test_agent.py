@@ -80,6 +80,16 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/experience-search 导入", response)
         self.assertNotIn("日报生成", response)
 
+    def test_experience_advice_command_suggests_import_commands(self):
+        self.agent.handle("/experience 导入资料后先打标签")
+
+        response = self.agent.handle("/experience-advice 导入资料")
+
+        self.assertIn("可执行命令：", response)
+        self.assertIn("/import 源文件或目录路径 [目标文件名]", response)
+        self.assertIn("/kb", response)
+        self.assertIn("/tag 文件名 标签...", response)
+
     def test_experience_advice_command_reports_no_related_experience(self):
         self.agent.handle("/experience 导入资料后先打标签")
 
@@ -87,6 +97,13 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("还没有找到和“语音”相关的经验建议", response)
         self.assertIn("/experience 经验内容", response)
+
+    def test_experience_advice_command_suggests_known_commands_without_experience(self):
+        response = self.agent.handle("/experience-advice 生成日报")
+
+        self.assertIn("还没有找到和“生成日报”相关的经验建议", response)
+        self.assertIn("可执行命令：", response)
+        self.assertIn("/daily-report [文件名]", response)
 
     def test_experience_advice_command_requires_keyword(self):
         response = self.agent.handle("/experience-advice")
@@ -118,6 +135,15 @@ class AgentTests(unittest.TestCase):
         self.assertIn("操作建议：导入资料", response)
         self.assertIn("导入资料后先打标签", response)
         self.assertNotIn("日报生成", response)
+
+    def test_natural_language_experience_advice_includes_command_suggestions(self):
+        self.agent.handle("/experience 导入资料后先打标签")
+
+        response = self.agent.handle("导入资料有什么建议")
+
+        self.assertIn("操作建议：导入资料", response)
+        self.assertIn("可执行命令：", response)
+        self.assertIn("/import 源文件或目录路径 [目标文件名]", response)
 
     def test_natural_language_experience_memory_status_maps_to_experiences(self):
         self.agent.handle("/experience 导入资料后先打标签")

@@ -1192,3 +1192,47 @@ git diff --check
 - 全量测试 214 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-22 经验建议命令联动第一版验证
+
+### RED：经验建议缺少可执行命令
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_experience_advice_command_suggests_import_commands tests.test_agent.AgentTests.test_experience_advice_command_suggests_known_commands_without_experience tests.test_agent.AgentTests.test_natural_language_experience_advice_includes_command_suggestions -v
+```
+
+结果：
+
+- `/experience-advice 导入资料` 先只有相关经验，没有“可执行命令”。
+- `/experience-advice 生成日报` 先只提示缺少经验，没有 `/daily-report [文件名]`。
+- “导入资料有什么建议”先没有输出 `/import 源文件或目录路径 [目标文件名]`。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- Agent 专项测试 77 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 217 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
