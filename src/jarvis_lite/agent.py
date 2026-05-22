@@ -43,7 +43,7 @@ class JarvisAgent:
         self._recent_document_path: str | None = runtime_context.recent_document_path
         self._recent_directory: CommonDirectory | None = self._restore_recent_directory(runtime_context.recent_directory)
         self._recent_search_result_paths: tuple[str, ...] = runtime_context.recent_search_result_paths
-        self._recent_advice_suggestions: tuple[str, ...] = ()
+        self._recent_advice_suggestions: tuple[str, ...] = runtime_context.recent_advice_suggestions
         if self._recent_document_path is None and self._recent_search_result_paths:
             self._recent_document_path = self._recent_search_result_paths[0]
 
@@ -576,6 +576,7 @@ class JarvisAgent:
 
     def _remember_recent_advice_suggestions(self, suggestions: tuple[str, ...]) -> None:
         self._recent_advice_suggestions = suggestions
+        self._save_runtime_context()
 
     def _remember_recent_directory(self, alias: str, directory_path: Path) -> None:
         self._recent_directory = CommonDirectory(alias, directory_path)
@@ -599,6 +600,7 @@ class JarvisAgent:
                 recent_document_path=self._recent_document_path,
                 recent_directory=recent_directory,
                 recent_search_result_paths=self._recent_search_result_paths,
+                recent_advice_suggestions=self._recent_advice_suggestions,
             ),
         )
 

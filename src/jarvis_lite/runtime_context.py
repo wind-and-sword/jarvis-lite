@@ -26,6 +26,7 @@ class RuntimeContext:
     recent_document_path: str | None = None
     recent_directory: RuntimeDirectoryContext | None = None
     recent_search_result_paths: tuple[str, ...] = ()
+    recent_advice_suggestions: tuple[str, ...] = ()
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -52,6 +53,7 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         recent_document_path=_read_optional_str(raw.get("recent_document_path")),
         recent_directory=_read_directory_context(raw.get("recent_directory")),
         recent_search_result_paths=_read_str_tuple(raw.get("recent_search_result_paths")),
+        recent_advice_suggestions=_read_str_tuple(raw.get("recent_advice_suggestions")),
     )
 
 
@@ -66,6 +68,7 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                 "recent_document_path": context.recent_document_path,
                 "recent_directory": _directory_context_to_json(context.recent_directory),
                 "recent_search_result_paths": list(context.recent_search_result_paths),
+                "recent_advice_suggestions": list(context.recent_advice_suggestions),
             },
             ensure_ascii=False,
             indent=2,

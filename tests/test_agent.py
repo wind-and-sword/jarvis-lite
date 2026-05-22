@@ -192,6 +192,15 @@ class AgentTests(unittest.TestCase):
         self.assertIn("第 2 条建议：", response)
         self.assertIn("/kb", response)
 
+    def test_recent_advice_suggestions_survive_new_agent_instance(self):
+        self.agent.handle("/experience-advice 导入资料")
+        restarted_agent = JarvisAgent(self.paths)
+
+        response = restarted_agent.handle("查看第一条建议")
+
+        self.assertIn("第 1 条建议：", response)
+        self.assertIn("/import 源文件或目录路径 [目标文件名]", response)
+
     def test_natural_language_read_advice_requires_recent_advice(self):
         response = self.agent.handle("查看第一条建议")
 
