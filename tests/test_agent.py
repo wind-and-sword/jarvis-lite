@@ -967,6 +967,23 @@ class AgentTests(unittest.TestCase):
         self.assertIn("1. data/note.txt", response)
         self.assertIn("2. data/manual.md", response)
 
+    def test_natural_language_recent_context_status_reports_recent_file_list(self):
+        older_file = self.paths.root / "older-report.md"
+        newer_file = self.paths.root / "newer-report.md"
+        older_file.write_text("旧文件内容不应进入上下文状态。\n", encoding="utf-8")
+        newer_file.write_text("新文件内容不应进入上下文状态。\n", encoding="utf-8")
+        os.utime(older_file, (200, 200))
+        os.utime(newer_file, (300, 300))
+        with patch("jarvis_lite.agent.Path.home", return_value=Path(self.temp_dir.name)):
+            self.agent.handle("查看最近文件")
+
+        response = self.agent.handle("查看最近上下文")
+
+        self.assertIn("最近文件列表：2 条", response)
+        self.assertIn(f"1. 项目 -> {newer_file.resolve()}", response)
+        self.assertIn(f"2. 项目 -> {older_file.resolve()}", response)
+        self.assertNotIn("新文件内容不应进入上下文状态", response)
+
     def test_recent_document_list_survives_new_agent_instance(self):
         (self.paths.data_dir / "manual.md").write_text(
             "第一份持久化最近资料。\n",
@@ -981,6 +998,20 @@ class AgentTests(unittest.TestCase):
         self.assertIn("最近资料列表：2 条", response)
         self.assertIn("1. data/note.txt", response)
         self.assertIn("2. data/manual.md", response)
+
+    def test_recent_file_list_survives_new_agent_instance_in_recent_context(self):
+        recent_file = self.paths.root / "restored-recent.txt"
+        recent_file.write_text("恢复后的最近文件内容不应被读取。\n", encoding="utf-8")
+        os.utime(recent_file, (200, 200))
+        with patch("jarvis_lite.agent.Path.home", return_value=Path(self.temp_dir.name)):
+            self.agent.handle("/recent-files")
+        restarted_agent = JarvisAgent(self.paths)
+
+        response = restarted_agent.handle("最近上下文状态")
+
+        self.assertIn("最近文件列表：1 条", response)
+        self.assertIn(f"1. 项目 -> {recent_file.resolve()}", response)
+        self.assertNotIn("恢复后的最近文件内容不应被读取", response)
 
     def test_natural_language_recent_context_status_reports_recent_advice(self):
         self.agent.handle("/experience-advice 导入资料")

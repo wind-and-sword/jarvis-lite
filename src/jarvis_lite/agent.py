@@ -407,14 +407,23 @@ class JarvisAgent:
         has_document = self._recent_document_path is not None
         has_document_list = bool(self._recent_document_paths)
         has_directory = self._recent_directory is not None
+        has_recent_files = bool(self._recent_files)
         has_search_results = bool(self._recent_search_result_paths)
         has_advice_suggestions = bool(self._recent_advice_suggestions)
         has_pending_advice_command = self._pending_advice_command is not None
-        if not has_document and not has_document_list and not has_directory and not has_search_results and not has_advice_suggestions and not has_pending_advice_command:
+        if (
+            not has_document
+            and not has_document_list
+            and not has_directory
+            and not has_recent_files
+            and not has_search_results
+            and not has_advice_suggestions
+            and not has_pending_advice_command
+        ):
             return "\n".join(
                 [
                     "最近上下文：还没有记录。",
-                    "- 你可以先提问、导入资料、打开/整理目录，或生成经验建议。",
+                    "- 你可以先提问、导入资料、查看最近文件、打开/整理目录，或生成经验建议。",
                 ]
             )
 
@@ -435,6 +444,13 @@ class JarvisAgent:
             lines.append(f"- 最近目录：{self._recent_directory.alias} -> {self._recent_directory.path}")
         else:
             lines.append("- 最近目录：无")
+
+        if has_recent_files:
+            lines.append(f"- 最近文件列表：{len(self._recent_files)} 条")
+            for index, recent_file in enumerate(self._recent_files, start=1):
+                lines.append(f"  {index}. {recent_file.alias} -> {recent_file.path}")
+        else:
+            lines.append("- 最近文件列表：无")
 
         if has_search_results:
             lines.append(f"- 最近搜索结果：{len(self._recent_search_result_paths)} 条")

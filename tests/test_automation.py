@@ -20,7 +20,13 @@ from jarvis_lite.automation import (
 )
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.memory import append_experience
-from jarvis_lite.runtime_context import RuntimeContext, RuntimeDirectoryContext, runtime_context_path, save_runtime_context
+from jarvis_lite.runtime_context import (
+    RuntimeContext,
+    RuntimeDirectoryContext,
+    RuntimeRecentFileContext,
+    runtime_context_path,
+    save_runtime_context,
+)
 
 
 class AutomationTests(unittest.TestCase):
@@ -82,6 +88,7 @@ class AutomationTests(unittest.TestCase):
                     "recent_directory": {"alias": "项目", "path": str(project_dir.resolve())},
                     "recent_search_result_paths": ["note.md", "manual.md"],
                     "recent_advice_suggestions": ["/read note.md：读取当前资料"],
+                    "recent_files": [{"alias": "项目", "path": str((project_dir / "recent.txt").resolve())}],
                 },
                 ensure_ascii=False,
                 indent=2,
@@ -101,6 +108,8 @@ class AutomationTests(unittest.TestCase):
         self.assertIn("1. data/note.md", content)
         self.assertIn("最近建议：1 条", content)
         self.assertIn("/read note.md：读取当前资料", content)
+        self.assertIn("最近文件列表：1 条", content)
+        self.assertIn(f"1. 项目 -> {(project_dir / 'recent.txt').resolve()}", content)
 
     def test_write_daily_report_suggests_next_actions_from_context(self):
         project_dir = Path(self.temp_dir.name) / "project"
@@ -113,6 +122,7 @@ class AutomationTests(unittest.TestCase):
                 recent_document_path="note.md",
                 recent_directory=RuntimeDirectoryContext(alias="项目", path=str(project_dir.resolve())),
                 recent_advice_suggestions=("/tag note.md 标签...：给当前资料设置标签",),
+                recent_files=(RuntimeRecentFileContext(alias="项目", path=str((project_dir / "recent.txt").resolve())),),
             ),
         )
 
@@ -123,6 +133,7 @@ class AutomationTests(unittest.TestCase):
         self.assertIn("继续处理最近资料：/read note.md；/tag note.md 标签...", content)
         self.assertIn("继续处理最近目录：/organize-preview 项目；/dir-open 项目", content)
         self.assertIn("继续最近建议：查看第一条建议；执行第一条建议", content)
+        self.assertIn("继续处理最近文件：查看第一份最近文件；/recent-files", content)
         self.assertIn("复用经验记忆：/experience-advice 关键词", content)
         self.assertIn("沉淀工具流程：/experience 经验内容", content)
 

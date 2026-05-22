@@ -301,6 +301,7 @@ def _append_recent_context_lines(lines: list[str], context: RuntimeContext) -> N
             context.recent_document_path,
             context.recent_document_paths,
             context.recent_directory,
+            context.recent_files,
             context.recent_search_result_paths,
             context.recent_advice_suggestions,
         )
@@ -317,6 +318,10 @@ def _append_recent_context_lines(lines: list[str], context: RuntimeContext) -> N
             lines.append(f"  {index}. data/{path}")
     if context.recent_directory is not None:
         lines.append(f"- 最近目录：{context.recent_directory.alias} -> {context.recent_directory.path}")
+    if context.recent_files:
+        lines.append(f"- 最近文件列表：{len(context.recent_files)} 条")
+        for index, recent_file in enumerate(context.recent_files, start=1):
+            lines.append(f"  {index}. {recent_file.alias} -> {recent_file.path}")
     if context.recent_search_result_paths:
         lines.append(f"- 最近搜索结果：{len(context.recent_search_result_paths)} 条")
         for index, path in enumerate(context.recent_search_result_paths, start=1):
@@ -342,6 +347,8 @@ def _append_next_action_lines(
         suggestions.append(
             f"继续处理最近目录：/organize-preview {context.recent_directory.alias}；/dir-open {context.recent_directory.alias}"
         )
+    if context.recent_files:
+        suggestions.append("继续处理最近文件：查看第一份最近文件；/recent-files")
     if context.recent_advice_suggestions:
         suggestions.append("继续最近建议：查看第一条建议；执行第一条建议")
     if recent_experiences:
