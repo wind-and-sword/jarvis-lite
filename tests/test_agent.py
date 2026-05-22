@@ -462,6 +462,41 @@ class AgentTests(unittest.TestCase):
         self.assertIn("还没有最近资料", response)
         self.assertIn("先读取资料", response)
 
+    def test_natural_language_read_numbered_recent_document_reads_selected_document(self):
+        (self.paths.data_dir / "manual.md").write_text(
+            "Second recent document payload.\n",
+            encoding="utf-8",
+        )
+        self.agent.handle("/read manual.md")
+        self.agent.handle("/read note.txt")
+
+        response = self.agent.handle("读取第二份资料")
+
+        self.assertIn("第 2 份资料：data/manual.md", response)
+        self.assertIn("Second recent document payload", response)
+
+    def test_natural_language_read_numbered_recent_document_requires_recent_list(self):
+        response = self.agent.handle("读取第二份资料")
+
+        self.assertIn("还没有最近资料列表", response)
+        self.assertIn("先读取资料", response)
+
+    def test_natural_language_read_numbered_recent_document_does_not_override_search_result(self):
+        (self.paths.data_dir / "memory.md").write_text(
+            "Jarvis Lite 使用 memory/profile.md 保存长期记忆。\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+        self.agent.handle("/ask Jarvis Lite 使用什么？")
+
+        response = self.agent.handle("查看第二条结果")
+
+        self.assertIn("第 2 条结果：data/runtime.md", response)
+        self.assertIn("Python 3.13", response)
+
     def test_natural_language_import_file_adds_document_to_knowledge_base(self):
         source = Path(self.temp_dir.name) / "outside-natural.md"
         source.write_text("Jarvis Lite 可以用自然语言导入资料。\n", encoding="utf-8")

@@ -601,6 +601,22 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：按编号读取最近资料
+
+- 看到最近资料列表后，可以继续说“读取第二份资料”“查看第2个文档”。
+- 该能力只作用于最近资料列表，不改变“查看第二条结果”的最近搜索结果语义。
+- 读取成功后复用 `/read`，被读取的资料会成为当前最近资料，并移动到最近资料列表第一位。
+- 缺少最近资料列表或编号越界时，会给出明确提示。
+- RED 验证：
+  - 新增 3 个 Agent 测试，其中“读取第二份资料”和缺少最近资料列表提示都先落入普通知识库检索；“查看第二条结果”回归通过。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_read_numbered_recent_document_reads_selected_document tests.test_agent.AgentTests.test_natural_language_read_numbered_recent_document_requires_recent_list tests.test_agent.AgentTests.test_natural_language_read_numbered_recent_document_does_not_override_search_result tests.test_agent.AgentTests.test_natural_language_read_recent_document_reads_current_document -v`：4 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：105 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：248 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。

@@ -74,6 +74,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if read_recent_document_intent is not None:
         return read_recent_document_intent
 
+    read_numbered_recent_document_intent = _parse_read_numbered_recent_document_intent(prompt)
+    if read_numbered_recent_document_intent is not None:
+        return read_numbered_recent_document_intent
+
     read_result_intent = _parse_read_result_intent(prompt)
     if read_result_intent is not None:
         return read_result_intent
@@ -172,6 +176,16 @@ def _parse_read_recent_document_intent(prompt: str) -> NaturalLanguageIntent | N
     if re.fullmatch(r"(?:读取|查看|看看)(?:这个|这份|刚才的|最近的|当前)(?:资料|文档|文件)", prompt):
         return NaturalLanguageIntent("read_recent_document")
     return None
+
+
+def _parse_read_numbered_recent_document_intent(prompt: str) -> NaturalLanguageIntent | None:
+    match = re.fullmatch(r"(?:读取|查看|看看)(?P<target>第[0-9一二两三四五六七八九十]+(?:条|个|份)?(?:资料|文档|文件))", prompt)
+    if not match:
+        return None
+    document_index = _parse_document_index(match.group("target"))
+    if document_index <= 0:
+        return None
+    return NaturalLanguageIntent("read_numbered_recent_document", result_index=document_index)
 
 
 def _parse_read_result_intent(prompt: str) -> NaturalLanguageIntent | None:
@@ -311,6 +325,13 @@ def _parse_result_index(text: str) -> int:
 
 def _parse_advice_index(text: str) -> int:
     match = re.fullmatch(r"第(?P<number>[0-9一二三四五六七八九十]+)(?:条|个)?建议", text)
+    if not match:
+        return 0
+    return _parse_positive_number(match.group("number"))
+
+
+def _parse_document_index(text: str) -> int:
+    match = re.fullmatch(r"第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个|份)?(?:资料|文档|文件)", text)
     if not match:
         return 0
     return _parse_positive_number(match.group("number"))

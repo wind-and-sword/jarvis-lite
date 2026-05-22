@@ -352,6 +352,8 @@ class JarvisAgent:
             return self._tag_numbered_search_result(intent.result_index, intent.tags)
         if intent.name == "read_recent_document":
             return self._read_recent_document()
+        if intent.name == "read_numbered_recent_document":
+            return self._read_numbered_recent_document(intent.result_index)
         if intent.name == "read_numbered_search_result":
             return self._read_numbered_search_result(intent.result_index)
         if intent.name == "read_numbered_advice_suggestion":
@@ -589,6 +591,15 @@ class JarvisAgent:
         if self._recent_document_path is None:
             return "还没有最近资料。你可以先读取资料、导入资料，或说“读取 note.txt”。"
         return self.handle(f'/read "{self._recent_document_path}"')
+
+    def _read_numbered_recent_document(self, document_index: int) -> str:
+        if not self._recent_document_paths:
+            return "还没有最近资料列表。你可以先读取资料、导入资料，或说“读取 note.txt”。"
+        if document_index < 1 or document_index > len(self._recent_document_paths):
+            return f"最近资料列表只有 {len(self._recent_document_paths)} 条，不能选择第 {document_index} 份。"
+        relative_path = self._recent_document_paths[document_index - 1]
+        output = self.handle(f'/read "{relative_path}"')
+        return f"第 {document_index} 份资料：data/{relative_path}\n{output}"
 
     def _tag_numbered_search_result(self, result_index: int, tags: tuple[str, ...]) -> str:
         relative_path, error = self._recent_search_result_path(result_index)
