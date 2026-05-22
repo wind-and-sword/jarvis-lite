@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,7 +17,7 @@ from jarvis_lite.automation import (
 )
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.memory import append_experience
-from jarvis_lite.runtime_context import RuntimeContext, RuntimeDirectoryContext, save_runtime_context
+from jarvis_lite.runtime_context import RuntimeContext, RuntimeDirectoryContext, runtime_context_path, save_runtime_context
 
 
 class AutomationTests(unittest.TestCase):
@@ -67,14 +68,21 @@ class AutomationTests(unittest.TestCase):
     def test_write_daily_report_includes_runtime_recent_context(self):
         project_dir = Path(self.temp_dir.name) / "project"
         project_dir.mkdir()
-        save_runtime_context(
-            self.paths,
-            RuntimeContext(
-                recent_document_path="note.md",
-                recent_directory=RuntimeDirectoryContext(alias="项目", path=str(project_dir.resolve())),
-                recent_search_result_paths=("note.md", "manual.md"),
-                recent_advice_suggestions=("/read note.md：读取当前资料",),
+        context_path = runtime_context_path(self.paths)
+        context_path.parent.mkdir(parents=True, exist_ok=True)
+        context_path.write_text(
+            json.dumps(
+                {
+                    "recent_document_path": "note.md",
+                    "recent_document_paths": ["note.md", "manual.md"],
+                    "recent_directory": {"alias": "项目", "path": str(project_dir.resolve())},
+                    "recent_search_result_paths": ["note.md", "manual.md"],
+                    "recent_advice_suggestions": ["/read note.md：读取当前资料"],
+                },
+                ensure_ascii=False,
+                indent=2,
             ),
+            encoding="utf-8",
         )
 
         report = write_daily_report(self.paths, "context-daily.md")
@@ -82,6 +90,8 @@ class AutomationTests(unittest.TestCase):
         content = report.path.read_text(encoding="utf-8")
         self.assertIn("## 最近上下文", content)
         self.assertIn("最近资料：data/note.md", content)
+        self.assertIn("最近资料列表：2 条", content)
+        self.assertIn("2. data/manual.md", content)
         self.assertIn(f"最近目录：项目 -> {project_dir.resolve()}", content)
         self.assertIn("最近搜索结果：2 条", content)
         self.assertIn("1. data/note.md", content)

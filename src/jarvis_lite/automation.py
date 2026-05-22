@@ -244,6 +244,7 @@ def _append_recent_context_lines(lines: list[str], context: RuntimeContext) -> N
     has_context = any(
         (
             context.recent_document_path,
+            context.recent_document_paths,
             context.recent_directory,
             context.recent_search_result_paths,
             context.recent_advice_suggestions,
@@ -255,6 +256,10 @@ def _append_recent_context_lines(lines: list[str], context: RuntimeContext) -> N
 
     if context.recent_document_path:
         lines.append(f"- 最近资料：data/{context.recent_document_path}")
+    if context.recent_document_paths:
+        lines.append(f"- 最近资料列表：{len(context.recent_document_paths)} 条")
+        for index, path in enumerate(context.recent_document_paths, start=1):
+            lines.append(f"  {index}. data/{path}")
     if context.recent_directory is not None:
         lines.append(f"- 最近目录：{context.recent_directory.alias} -> {context.recent_directory.path}")
     if context.recent_search_result_paths:

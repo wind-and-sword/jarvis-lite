@@ -41,6 +41,7 @@ class JarvisAgent:
         self.tools = ToolRegistry(self.paths)
         runtime_context = load_runtime_context(self.paths)
         self._recent_document_path: str | None = runtime_context.recent_document_path
+        self._recent_document_paths: tuple[str, ...] = runtime_context.recent_document_paths
         self._recent_directory: CommonDirectory | None = self._restore_recent_directory(runtime_context.recent_directory)
         self._recent_search_result_paths: tuple[str, ...] = runtime_context.recent_search_result_paths
         self._recent_advice_suggestions: tuple[str, ...] = runtime_context.recent_advice_suggestions
@@ -48,6 +49,8 @@ class JarvisAgent:
         self._pending_advice_command_draft_command: str | None = None
         if self._recent_document_path is None and self._recent_search_result_paths:
             self._recent_document_path = self._recent_search_result_paths[0]
+        if self._recent_document_path is not None and self._recent_document_path not in self._recent_document_paths:
+            self._recent_document_paths = (self._recent_document_path, *self._recent_document_paths)
 
     def handle(self, user_input: str) -> str:
         prompt = user_input.strip()
@@ -382,11 +385,12 @@ class JarvisAgent:
     def _recent_context_status(self) -> str:
         self.tools.run("record_log", message="查看最近上下文状态")
         has_document = self._recent_document_path is not None
+        has_document_list = bool(self._recent_document_paths)
         has_directory = self._recent_directory is not None
         has_search_results = bool(self._recent_search_result_paths)
         has_advice_suggestions = bool(self._recent_advice_suggestions)
         has_pending_advice_command = self._pending_advice_command is not None
-        if not has_document and not has_directory and not has_search_results and not has_advice_suggestions and not has_pending_advice_command:
+        if not has_document and not has_document_list and not has_directory and not has_search_results and not has_advice_suggestions and not has_pending_advice_command:
             return "\n".join(
                 [
                     "最近上下文：还没有记录。",
@@ -399,6 +403,13 @@ class JarvisAgent:
             lines.append(f"- 最近资料：data/{self._recent_document_path}")
         else:
             lines.append("- 最近资料：无")
+
+        if has_document_list:
+            lines.append(f"- 最近资料列表：{len(self._recent_document_paths)} 条")
+            for index, relative_path in enumerate(self._recent_document_paths, start=1):
+                lines.append(f"  {index}. data/{relative_path}")
+        else:
+            lines.append("- 最近资料列表：无")
 
         if has_directory and self._recent_directory is not None:
             lines.append(f"- 最近目录：{self._recent_directory.alias} -> {self._recent_directory.path}")
@@ -722,7 +733,17 @@ class JarvisAgent:
 
     def _remember_recent_document(self, relative_path: str) -> None:
         self._recent_document_path = relative_path
+        self._recent_document_paths = self._recent_document_list_with(relative_path)
         self._save_runtime_context()
+
+    def _recent_document_list_with(self, relative_path: str) -> tuple[str, ...]:
+        paths = [relative_path]
+        for existing_path in self._recent_document_paths:
+            if existing_path not in paths:
+                paths.append(existing_path)
+            if len(paths) >= 5:
+                break
+        return tuple(paths)
 
     def _remember_recent_search_results(self, relative_paths: tuple[str, ...]) -> None:
         self._recent_search_result_paths = relative_paths
@@ -754,6 +775,7 @@ class JarvisAgent:
             self.paths,
             RuntimeContext(
                 recent_document_path=self._recent_document_path,
+                recent_document_paths=self._recent_document_paths,
                 recent_directory=recent_directory,
                 recent_search_result_paths=self._recent_search_result_paths,
                 recent_advice_suggestions=self._recent_advice_suggestions,

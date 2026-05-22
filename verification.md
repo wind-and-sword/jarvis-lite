@@ -1915,3 +1915,51 @@ git diff --check
 - 全量测试 243 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-22 最近资料列表验证
+
+### RED：最近上下文和日报缺少最近资料列表
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_recent_document_list tests.test_agent.AgentTests.test_recent_document_list_survives_new_agent_instance tests.test_automation.AutomationTests.test_write_daily_report_includes_runtime_recent_context -v
+```
+
+结果：
+
+- 新增测试先失败，“查看最近上下文”只显示单个最近资料，没有“最近资料列表：2 条”。
+- 新建 Agent 实例后也只能恢复单个最近资料。
+- 日报读取运行态上下文时忽略 `recent_document_paths`。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_recent_document_list tests.test_agent.AgentTests.test_recent_document_list_survives_new_agent_instance tests.test_agent.AgentTests.test_natural_language_read_recent_document_reads_current_document tests.test_automation.AutomationTests.test_write_daily_report_includes_runtime_recent_context -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+.\.venv\Scripts\python.exe -m unittest tests.test_automation -v
+```
+
+结果：
+
+- 最近资料列表新增 2 个 Agent 测试通过，读取当前资料回归通过，日报最近上下文测试通过。
+- Agent 专项测试 102 个通过。
+- Automation 专项测试 7 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 245 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

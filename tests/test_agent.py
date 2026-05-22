@@ -833,6 +833,36 @@ class AgentTests(unittest.TestCase):
         self.assertIn("1. data/memory.md", response)
         self.assertIn("2. data/runtime.md", response)
 
+    def test_natural_language_recent_context_status_reports_recent_document_list(self):
+        (self.paths.data_dir / "manual.md").write_text(
+            "第一份最近资料。\n",
+            encoding="utf-8",
+        )
+        self.agent.handle("/read manual.md")
+        self.agent.handle("/read note.txt")
+
+        response = self.agent.handle("查看最近上下文")
+
+        self.assertIn("最近资料：data/note.txt", response)
+        self.assertIn("最近资料列表：2 条", response)
+        self.assertIn("1. data/note.txt", response)
+        self.assertIn("2. data/manual.md", response)
+
+    def test_recent_document_list_survives_new_agent_instance(self):
+        (self.paths.data_dir / "manual.md").write_text(
+            "第一份持久化最近资料。\n",
+            encoding="utf-8",
+        )
+        self.agent.handle("/read manual.md")
+        self.agent.handle("/read note.txt")
+        restarted_agent = JarvisAgent(self.paths)
+
+        response = restarted_agent.handle("最近上下文状态")
+
+        self.assertIn("最近资料列表：2 条", response)
+        self.assertIn("1. data/note.txt", response)
+        self.assertIn("2. data/manual.md", response)
+
     def test_natural_language_recent_context_status_reports_recent_advice(self):
         self.agent.handle("/experience-advice 导入资料")
 
