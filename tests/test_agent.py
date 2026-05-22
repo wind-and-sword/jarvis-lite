@@ -444,6 +444,24 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已更新标签：data/manual.md（项目）", tag_response)
         self.assertIn("标签：项目", self.agent.handle("/kb"))
 
+    def test_natural_language_read_recent_document_reads_current_document(self):
+        (self.paths.data_dir / "manual.md").write_text(
+            "Recent document payload.\nSecond recent document line.\n",
+            encoding="utf-8",
+        )
+        self.agent.handle("读取 manual.md")
+
+        response = self.agent.handle("读取这个资料")
+
+        self.assertIn("Recent document payload", response)
+        self.assertIn("Second recent document line", response)
+
+    def test_natural_language_read_recent_document_requires_recent_context(self):
+        response = self.agent.handle("读取这个资料")
+
+        self.assertIn("还没有最近资料", response)
+        self.assertIn("先读取资料", response)
+
     def test_natural_language_import_file_adds_document_to_knowledge_base(self):
         source = Path(self.temp_dir.name) / "outside-natural.md"
         source.write_text("Jarvis Lite 可以用自然语言导入资料。\n", encoding="utf-8")

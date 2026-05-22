@@ -347,6 +347,8 @@ class JarvisAgent:
             return self._tag_recent_document(intent.tags)
         if intent.name == "tag_numbered_search_result":
             return self._tag_numbered_search_result(intent.result_index, intent.tags)
+        if intent.name == "read_recent_document":
+            return self._read_recent_document()
         if intent.name == "read_numbered_search_result":
             return self._read_numbered_search_result(intent.result_index)
         if intent.name == "read_numbered_advice_suggestion":
@@ -571,6 +573,11 @@ class JarvisAgent:
         if self._recent_document_path is None:
             return "还没有最近资料。你可以先导入资料，或说“给 note.txt 打标签 项目”。"
         return self.handle(f'/tag "{self._recent_document_path}" {" ".join(tags)}')
+
+    def _read_recent_document(self) -> str:
+        if self._recent_document_path is None:
+            return "还没有最近资料。你可以先读取资料、导入资料，或说“读取 note.txt”。"
+        return self.handle(f'/read "{self._recent_document_path}"')
 
     def _tag_numbered_search_result(self, result_index: int, tags: tuple[str, ...]) -> str:
         relative_path, error = self._recent_search_result_path(result_index)

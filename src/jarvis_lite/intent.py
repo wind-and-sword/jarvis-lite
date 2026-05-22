@@ -70,6 +70,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if read_document_intent is not None:
         return read_document_intent
 
+    read_recent_document_intent = _parse_read_recent_document_intent(prompt)
+    if read_recent_document_intent is not None:
+        return read_recent_document_intent
+
     read_result_intent = _parse_read_result_intent(prompt)
     if read_result_intent is not None:
         return read_result_intent
@@ -162,6 +166,12 @@ def _parse_read_document_intent(prompt: str) -> NaturalLanguageIntent | None:
     if not filename:
         return None
     return NaturalLanguageIntent("command", command=f'/read "{filename}"')
+
+
+def _parse_read_recent_document_intent(prompt: str) -> NaturalLanguageIntent | None:
+    if re.fullmatch(r"(?:读取|查看|看看)(?:这个|这份|刚才的|最近的|当前)(?:资料|文档|文件)", prompt):
+        return NaturalLanguageIntent("read_recent_document")
+    return None
 
 
 def _parse_read_result_intent(prompt: str) -> NaturalLanguageIntent | None:
