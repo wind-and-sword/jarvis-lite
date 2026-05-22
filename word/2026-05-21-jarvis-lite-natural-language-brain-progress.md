@@ -463,7 +463,23 @@
   - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_completed_advice_command_draft_waits_for_confirmation tests.test_agent.AgentTests.test_natural_language_prepare_advice_with_missing_parameters_returns_command_draft tests.test_agent.AgentTests.test_natural_language_prepare_and_confirm_executable_advice -v`：3 个测试通过。
   - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：92 个测试通过。
 
+## 追加进度：已知下载目录自然语言
+
+- 未登记常用目录时，`整理下载目录` 会尝试使用用户主目录下的 `Downloads` 或 `下载` 目录生成文件整理预览。
+- 未登记常用目录时，`打开下载目录` 会尝试使用用户主目录下的 `Downloads` 或 `下载` 目录写入打开请求记录。
+- 已登记的常用目录仍优先于系统目录 fallback，方便用户覆盖自己的下载目录路径。
+- 本阶段仍只做目录识别、整理预览和打开记录，不真实移动文件，也不启动外部资源管理器。
+- RED 验证：
+  - 新增 2 个测试先分别因找不到 `下载` 常用目录和未写入打开记录失败。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_organize_downloads_uses_known_downloads_directory tests.test_agent.AgentTests.test_natural_language_open_downloads_uses_known_downloads_directory tests.test_agent.AgentTests.test_natural_language_organize_desktop_uses_known_desktop_directory tests.test_agent.AgentTests.test_natural_language_open_desktop_uses_known_desktop_directory -v`：4 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：94 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：234 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以做“个人设备级 Agent 电脑工作台增强”，优先围绕下载目录、桌面和项目目录做更稳定的上下文识别。
+- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕项目目录、最近文件和知识库证据做更稳定的上下文识别。

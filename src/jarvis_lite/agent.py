@@ -838,8 +838,11 @@ class JarvisAgent:
         return None
 
     def _known_directory_candidates(self, alias: str) -> tuple[str, ...]:
-        if alias.strip().lower() in {"桌面", "desktop"}:
+        normalized_alias = alias.strip().lower()
+        if normalized_alias in {"桌面", "desktop"}:
             return ("Desktop", "桌面")
+        if normalized_alias in {"下载", "download", "downloads"}:
+            return ("Downloads", "下载")
         return ()
 
     def _project_path(self, path: Path) -> str:
