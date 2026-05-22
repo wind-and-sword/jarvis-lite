@@ -432,7 +432,24 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：建议命令参数补全草稿
+
+- 对含占位符的最近建议说“执行第一条建议”时，不会进入待确认执行状态，而是返回可编辑命令草稿。
+- 例如 `/import 源文件或目录路径 [目标文件名]` 会提示 `命令草稿：/import <源文件或目录路径> [目标文件名]`。
+- 尖括号表示必须替换的占位内容，方括号参数可以按需保留或替换。
+- 完整命令建议仍保持原有两步确认流程，例如“执行第二条建议”后再说“确认执行”。
+- 本阶段不推断真实路径，不自动补全参数，也不执行不完整命令。
+- RED 验证：
+  - 新增 1 个 Agent 测试先因缺少“命令草稿”失败。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_prepare_advice_with_missing_parameters_returns_command_draft tests.test_agent.AgentTests.test_natural_language_prepare_and_confirm_executable_advice tests.test_agent.AgentTests.test_natural_language_prepare_advice_requires_completed_parameters -v`：3 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：91 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：231 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以做“建议命令参数补全草稿”，让用户针对含占位符的建议得到可编辑命令模板。
+- 下一步可以做“草稿参数接收第一版”，让用户在草稿基础上输入真实参数后重新进入确认执行流程。

@@ -223,6 +223,17 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/import 源文件或目录路径 [目标文件名]", prepare_response)
         self.assertIn("还没有待确认的建议命令", confirm_response)
 
+    def test_natural_language_prepare_advice_with_missing_parameters_returns_command_draft(self):
+        self.agent.handle("/experience-advice 导入资料")
+
+        prepare_response = self.agent.handle("执行第一条建议")
+        confirm_response = self.agent.handle("确认执行")
+
+        self.assertIn("需要补充参数", prepare_response)
+        self.assertIn("命令草稿：/import <源文件或目录路径> [目标文件名]", prepare_response)
+        self.assertIn("方括号参数可以按需保留或替换", prepare_response)
+        self.assertIn("还没有待确认的建议命令", confirm_response)
+
     def test_natural_language_confirm_advice_requires_pending_command(self):
         response = self.agent.handle("确认执行")
 

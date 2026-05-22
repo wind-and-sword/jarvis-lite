@@ -588,11 +588,17 @@ class JarvisAgent:
         command = self._executable_advice_command(suggestion)
         if command is None:
             self._pending_advice_command = None
+            draft_command = self._advice_command_draft(suggestion)
+            lines = [
+                f"第 {advice_index} 条建议需要补充参数，不能直接执行：{suggestion}",
+            ]
+            if draft_command is not None:
+                lines.append(f"命令草稿：{draft_command}")
+                lines.append("请把尖括号里的占位内容替换成真实参数；方括号参数可以按需保留或替换。")
+            else:
+                lines.append("你可以把占位内容补完整后手动输入命令。")
             return "\n".join(
-                [
-                    f"第 {advice_index} 条建议需要补充参数，不能直接执行：{suggestion}",
-                    "你可以把占位内容补完整后手动输入命令。",
-                ]
+                lines
             )
 
         self._pending_advice_command = command
@@ -629,13 +635,46 @@ class JarvisAgent:
         return self._recent_advice_suggestions[advice_index - 1], None
 
     def _executable_advice_command(self, suggestion: str) -> str | None:
-        command = suggestion.split("：", 1)[0].split(":", 1)[0].strip()
-        if not command.startswith("/"):
+        command = self._advice_command_text(suggestion)
+        if command is None:
             return None
         placeholder_words = ("[", "]", "...", "源文件", "目录路径", "目标文件名", "文件名", "标签", "文本", "问题", "关键词", "别名")
         if any(word in command for word in placeholder_words):
             return None
         return command
+
+    def _advice_command_draft(self, suggestion: str) -> str | None:
+        command = self._advice_command_text(suggestion)
+        if command is None:
+            return None
+        return " ".join(self._advice_command_draft_token(token) for token in command.split())
+
+    def _advice_command_text(self, suggestion: str) -> str | None:
+        command = suggestion.split("：", 1)[0].split(":", 1)[0].strip()
+        if not command.startswith("/"):
+            return None
+        return command
+
+    def _advice_command_draft_token(self, token: str) -> str:
+        if token.startswith("/") or (token.startswith("[") and token.endswith("]")):
+            return token
+        placeholder_tokens = {
+            "源文件或目录路径",
+            "目录路径",
+            "文件名",
+            "标签",
+            "文本",
+            "问题",
+            "关键词",
+            "别名",
+            "常用目录别名",
+            "清单路径或URL",
+            "已识别的语音文本",
+            "经验内容",
+        }
+        if token in placeholder_tokens or token.endswith("..."):
+            return f"<{token}>"
+        return token
 
     def _recent_search_result_path(self, result_index: int) -> tuple[str | None, str | None]:
         if not self._recent_search_result_paths:
