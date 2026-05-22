@@ -1596,3 +1596,49 @@ git diff --check
 - 全量测试 234 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-22 已知项目目录自然语言验证
+
+### RED：项目目录缺少项目根目录 fallback
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_organize_project_uses_known_project_directory tests.test_agent.AgentTests.test_natural_language_open_project_uses_known_project_directory -v
+```
+
+结果：
+
+- 新增测试先失败，`整理项目目录` 返回 `没有找到常用目录：项目`。
+- `打开项目目录` 返回 `没有找到常用目录：项目`。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_organize_project_uses_known_project_directory tests.test_agent.AgentTests.test_natural_language_open_project_uses_known_project_directory tests.test_agent.AgentTests.test_natural_language_open_common_directory_alias_records_request tests.test_agent.AgentTests.test_natural_language_organize_common_directory_alias_returns_preview -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- 项目目录新增 2 个测试通过。
+- 项目目录 fallback 与用户登记项目目录优先级相关 4 个测试通过。
+- Agent 专项测试 96 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 236 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

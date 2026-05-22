@@ -472,6 +472,26 @@ class AgentTests(unittest.TestCase):
         self.assertIn("notes.md", response)
         self.assertIn("不会移动或删除文件", response)
 
+    def test_natural_language_organize_project_uses_known_project_directory(self):
+        project_note = self.paths.root / "project-note.md"
+        project_note.write_text("项目说明", encoding="utf-8")
+
+        response = self.agent.handle("整理项目目录")
+
+        self.assertIn("文件整理预览：项目", response)
+        self.assertIn("project-note.md", response)
+        self.assertIn("不会移动或删除文件", response)
+
+    def test_natural_language_open_project_uses_known_project_directory(self):
+        response = self.agent.handle("打开项目目录")
+
+        transcript_path = self.paths.logs_dir / "desktop-actions.txt"
+        self.assertIn("已记录打开目录请求：项目", response)
+        self.assertTrue(transcript_path.is_file())
+        transcript = transcript_path.read_text(encoding="utf-8")
+        self.assertIn("open_directory", transcript)
+        self.assertIn(str(self.paths.root.resolve()), transcript)
+
     def test_natural_language_organize_recent_directory_after_open_common_directory(self):
         target = Path(self.temp_dir.name) / "project"
         target.mkdir()

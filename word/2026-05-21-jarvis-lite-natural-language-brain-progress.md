@@ -479,7 +479,19 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：已知项目目录自然语言
+
+- 未登记常用目录时，`整理项目目录` 会直接使用当前 Jarvis Lite 项目根目录生成文件整理预览。
+- 未登记常用目录时，`打开项目目录` 会直接使用当前 Jarvis Lite 项目根目录写入打开请求记录。
+- 已登记的 `项目` 常用目录仍优先于项目根目录 fallback，方便用户覆盖实际工作项目路径。
+- 本阶段仍只做目录识别、整理预览和打开记录，不真实移动文件，也不启动外部资源管理器。
+- RED 验证：
+  - 新增 2 个测试先分别因找不到 `项目` 常用目录失败。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_organize_project_uses_known_project_directory tests.test_agent.AgentTests.test_natural_language_open_project_uses_known_project_directory tests.test_agent.AgentTests.test_natural_language_open_common_directory_alias_records_request tests.test_agent.AgentTests.test_natural_language_organize_common_directory_alias_returns_preview -v`：4 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：96 个测试通过。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕项目目录、最近文件和知识库证据做更稳定的上下文识别。
+- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕最近文件、知识库证据和日报联动做更稳定的上下文识别。

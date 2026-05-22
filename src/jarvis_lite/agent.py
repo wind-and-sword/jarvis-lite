@@ -831,6 +831,8 @@ class JarvisAgent:
         return self._known_directory(normalized_alias)
 
     def _known_directory(self, alias: str) -> CommonDirectory | None:
+        if alias.strip().lower() in {"项目", "当前项目", "project", "repo", "repository"}:
+            return CommonDirectory(alias, self.paths.root.resolve())
         for directory_name in self._known_directory_candidates(alias):
             directory = Path.home() / directory_name
             if directory.is_dir():
