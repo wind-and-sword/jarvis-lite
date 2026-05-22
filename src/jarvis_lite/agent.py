@@ -363,11 +363,13 @@ class JarvisAgent:
         has_document = self._recent_document_path is not None
         has_directory = self._recent_directory is not None
         has_search_results = bool(self._recent_search_result_paths)
-        if not has_document and not has_directory and not has_search_results:
+        has_advice_suggestions = bool(self._recent_advice_suggestions)
+        has_pending_advice_command = self._pending_advice_command is not None
+        if not has_document and not has_directory and not has_search_results and not has_advice_suggestions and not has_pending_advice_command:
             return "\n".join(
                 [
                     "最近上下文：还没有记录。",
-                    "- 你可以先提问、导入资料，或打开/整理目录。",
+                    "- 你可以先提问、导入资料、打开/整理目录，或生成经验建议。",
                 ]
             )
 
@@ -388,6 +390,18 @@ class JarvisAgent:
                 lines.append(f"  {index}. data/{relative_path}")
         else:
             lines.append("- 最近搜索结果：无")
+
+        if has_advice_suggestions:
+            lines.append(f"- 最近建议：{len(self._recent_advice_suggestions)} 条")
+            for index, suggestion in enumerate(self._recent_advice_suggestions, start=1):
+                lines.append(f"  {index}. {suggestion}")
+        else:
+            lines.append("- 最近建议：无")
+
+        if self._pending_advice_command is not None:
+            lines.append(f"- 待确认建议命令：{self._pending_advice_command}")
+        else:
+            lines.append("- 待确认建议命令：无")
         return "\n".join(lines)
 
     def _sentence(self, text: str) -> str:
@@ -640,6 +654,7 @@ class JarvisAgent:
 
     def _remember_recent_advice_suggestions(self, suggestions: tuple[str, ...]) -> None:
         self._recent_advice_suggestions = suggestions
+        self._pending_advice_command = None
         self._save_runtime_context()
 
     def _remember_recent_directory(self, alias: str, directory_path: Path) -> None:

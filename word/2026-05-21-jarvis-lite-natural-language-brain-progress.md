@@ -416,7 +416,23 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：最近建议状态展示第一版
+
+- “查看最近上下文”现在会展示最近建议数量，并按编号列出建议文本。
+- 准备执行建议后，“查看最近上下文”会展示当前待确认建议命令，例如 `/kb`。
+- 新建 `JarvisAgent` 实例后，最近建议会从运行态上下文恢复并显示在最近上下文状态中；待确认命令仍然只存在当前实例内，重启后显示为无。
+- 生成新的最近建议时会清空旧待确认命令，避免用户确认执行过期建议。
+- RED 验证：
+  - 新增 3 个 Agent 测试先证明最近上下文状态未展示最近建议、待确认命令和恢复后的最近建议。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_recent_advice tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_pending_advice_command tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_restored_advice -v`：3 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：90 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：230 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以做“最近建议状态展示”，让“查看最近上下文”也列出最近建议数量和待确认命令状态。
+- 下一步可以做“建议命令参数补全草稿”，让用户针对含占位符的建议得到可编辑命令模板。

@@ -715,6 +715,25 @@ class AgentTests(unittest.TestCase):
         self.assertIn("1. data/memory.md", response)
         self.assertIn("2. data/runtime.md", response)
 
+    def test_natural_language_recent_context_status_reports_recent_advice(self):
+        self.agent.handle("/experience-advice 导入资料")
+
+        response = self.agent.handle("查看最近上下文")
+
+        self.assertIn("最近上下文", response)
+        self.assertIn("最近建议：3 条", response)
+        self.assertIn("1. /import 源文件或目录路径 [目标文件名]", response)
+        self.assertIn("待确认建议命令：无", response)
+
+    def test_natural_language_recent_context_status_reports_pending_advice_command(self):
+        self.agent.handle("/experience-advice 导入资料")
+        self.agent.handle("执行第二条建议")
+
+        response = self.agent.handle("查看最近上下文")
+
+        self.assertIn("最近建议：3 条", response)
+        self.assertIn("待确认建议命令：/kb", response)
+
     def test_natural_language_recent_context_status_reports_restored_search_results(self):
         (self.paths.data_dir / "memory.md").write_text(
             "Jarvis Lite 使用 memory/profile.md 保存长期记忆。\n",
@@ -734,6 +753,17 @@ class AgentTests(unittest.TestCase):
         self.assertIn("最近搜索结果：2 条", response)
         self.assertIn("1. data/memory.md", response)
         self.assertIn("2. data/runtime.md", response)
+
+    def test_natural_language_recent_context_status_reports_restored_advice(self):
+        self.agent.handle("/experience-advice 导入资料")
+        restarted_agent = JarvisAgent(self.paths)
+
+        response = restarted_agent.handle("最近上下文状态")
+
+        self.assertIn("最近上下文", response)
+        self.assertIn("最近建议：3 条", response)
+        self.assertIn("1. /import 源文件或目录路径 [目标文件名]", response)
+        self.assertIn("待确认建议命令：无", response)
 
     def test_import_command_adds_text_file_to_knowledge_base(self):
         source = Path(self.temp_dir.name) / "outside.md"
