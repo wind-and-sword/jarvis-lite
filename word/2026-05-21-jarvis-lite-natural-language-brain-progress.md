@@ -517,7 +517,26 @@
   - `.venv\Scripts\python.exe -m unittest tests.test_automation -v`：6 个测试通过。
   - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：96 个测试通过。
 
+## 追加进度：日报下一步建议生成
+
+- 日报新增“下一步建议”段，复用已有最近上下文、经验记忆和工具日志。
+- 有最近资料时，日报会提示继续 `/read` 和 `/tag` 当前资料。
+- 有最近目录时，日报会提示 `/organize-preview` 和 `/dir-open` 当前目录。
+- 有最近建议、经验记忆或工具日志时，日报会提示查看建议、检索经验或沉淀工具流程。
+- 没有任何上下文时，日报会给出导入资料、登记常用目录和记录经验的基础建议。
+- 本阶段不调用大模型，不自动执行建议，也不改动运行态上下文文件格式。
+- RED 验证：
+  - 新增 1 个 Automation 测试先证明日报缺少“下一步建议”段。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_automation.AutomationTests.test_write_daily_report_suggests_next_actions_from_context tests.test_automation.AutomationTests.test_write_daily_report_includes_runtime_recent_context tests.test_automation.AutomationTests.test_write_daily_report_creates_word_markdown -v`：3 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_automation -v`：7 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：96 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：239 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕最近文件、知识库摘要和日报建议生成做更稳定的上下文识别。
+- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕最近文件、知识库摘要和跨入口任务建议做更稳定的上下文识别。

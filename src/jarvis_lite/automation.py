@@ -214,8 +214,9 @@ def _daily_report_content(paths: ProjectPaths) -> str:
     else:
         lines.append("- 还没有登记常用目录。")
 
+    runtime_context = load_runtime_context(paths)
     lines.extend(["", "## 最近上下文", ""])
-    _append_recent_context_lines(lines, load_runtime_context(paths))
+    _append_recent_context_lines(lines, runtime_context)
 
     lines.extend(["", "## 经验记忆", ""])
     recent_experiences = list_recent_experiences(paths)
@@ -232,6 +233,9 @@ def _daily_report_content(paths: ProjectPaths) -> str:
             lines.append(f"- {line}")
     else:
         lines.append("- 暂无工具日志。")
+
+    lines.extend(["", "## 下一步建议", ""])
+    _append_next_action_lines(lines, runtime_context, recent_experiences, recent_logs)
 
     return "\n".join(lines).rstrip() + "\n"
 
@@ -261,6 +265,40 @@ def _append_recent_context_lines(lines: list[str], context: RuntimeContext) -> N
         lines.append(f"- 最近建议：{len(context.recent_advice_suggestions)} 条")
         for index, suggestion in enumerate(context.recent_advice_suggestions, start=1):
             lines.append(f"  {index}. {suggestion}")
+
+
+def _append_next_action_lines(
+    lines: list[str],
+    context: RuntimeContext,
+    recent_experiences: tuple[str, ...],
+    recent_logs: list[str],
+) -> None:
+    suggestions: list[str] = []
+    if context.recent_document_path:
+        suggestions.append(
+            f"继续处理最近资料：/read {context.recent_document_path}；/tag {context.recent_document_path} 标签..."
+        )
+    if context.recent_directory is not None:
+        suggestions.append(
+            f"继续处理最近目录：/organize-preview {context.recent_directory.alias}；/dir-open {context.recent_directory.alias}"
+        )
+    if context.recent_advice_suggestions:
+        suggestions.append("继续最近建议：查看第一条建议；执行第一条建议")
+    if recent_experiences:
+        suggestions.append("复用经验记忆：/experience-advice 关键词")
+    if recent_logs:
+        suggestions.append("沉淀工具流程：/experience 经验内容")
+    if not suggestions:
+        suggestions.extend(
+            [
+                "导入资料：/import 源文件或目录路径 [目标文件名]",
+                "登记常用目录：/dir-add 别名 目录路径",
+                "记录经验：/experience 经验内容",
+            ]
+        )
+
+    for suggestion in suggestions:
+        lines.append(f"- {suggestion}")
 
 
 def _recent_log_lines(paths: ProjectPaths, limit: int = 5) -> list[str]:

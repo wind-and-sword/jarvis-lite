@@ -88,6 +88,30 @@ class AutomationTests(unittest.TestCase):
         self.assertIn("最近建议：1 条", content)
         self.assertIn("/read note.md：读取当前资料", content)
 
+    def test_write_daily_report_suggests_next_actions_from_context(self):
+        project_dir = Path(self.temp_dir.name) / "project"
+        project_dir.mkdir()
+        append_experience(self.paths, "导入资料后先打标签")
+        self.paths.log_path.write_text("2026-05-22T12:00:00\trecord_log\t生成日报\n", encoding="utf-8")
+        save_runtime_context(
+            self.paths,
+            RuntimeContext(
+                recent_document_path="note.md",
+                recent_directory=RuntimeDirectoryContext(alias="项目", path=str(project_dir.resolve())),
+                recent_advice_suggestions=("/tag note.md 标签...：给当前资料设置标签",),
+            ),
+        )
+
+        report = write_daily_report(self.paths, "next-actions.md")
+
+        content = report.path.read_text(encoding="utf-8")
+        self.assertIn("## 下一步建议", content)
+        self.assertIn("继续处理最近资料：/read note.md；/tag note.md 标签...", content)
+        self.assertIn("继续处理最近目录：/organize-preview 项目；/dir-open 项目", content)
+        self.assertIn("继续最近建议：查看第一条建议；执行第一条建议", content)
+        self.assertIn("复用经验记忆：/experience-advice 关键词", content)
+        self.assertIn("沉淀工具流程：/experience 经验内容", content)
+
     def test_preview_file_organization_groups_files_by_extension(self):
         target = Path(self.temp_dir.name) / "desktop"
         target.mkdir()
