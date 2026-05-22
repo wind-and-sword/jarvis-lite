@@ -536,7 +536,23 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：读取资料写入最近上下文
+
+- `/read 文件名` 成功读取 data 资料后，会把该文件写入最近资料上下文。
+- 新建 `JarvisAgent` 实例后，也能恢复这份最近资料，继续执行“给这个资料打标签 项目”。
+- 读取失败时不更新最近资料，避免把不存在的文件写入运行态上下文。
+- 本阶段只处理已有 `/read` 命令，不新增自然语言读取意图，也不改变运行态上下文字段。
+- RED 验证：
+  - 新增 1 个 Agent 测试先证明 `/read manual.md` 后重启 Agent 仍然没有最近资料。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_read_command_sets_persistent_recent_document_context -v`：1 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：97 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：240 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕最近文件、知识库摘要和跨入口任务建议做更稳定的上下文识别。
+- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕最近文件列表、知识库摘要和跨入口任务建议做更稳定的上下文识别。

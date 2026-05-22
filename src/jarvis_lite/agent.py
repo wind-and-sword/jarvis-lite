@@ -140,8 +140,12 @@ class JarvisAgent:
         if command == "/read":
             if not args:
                 return "用法：/read 文件名"
-            result = self.tools.run("read_data_file", path=args[0])
-            return result.output if result.success else result.message
+            document_path = self._strip_quotes(args[0])
+            result = self.tools.run("read_data_file", path=document_path)
+            if not result.success:
+                return result.message
+            self._remember_recent_document(document_path)
+            return result.output
 
         if command == "/note":
             if len(args) < 2:

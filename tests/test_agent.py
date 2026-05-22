@@ -416,6 +416,20 @@ class AgentTests(unittest.TestCase):
         self.assertIn("还没有最近资料", response)
         self.assertIn("先导入资料", response)
 
+    def test_read_command_sets_persistent_recent_document_context(self):
+        (self.paths.data_dir / "manual.md").write_text(
+            "Jarvis Lite 读取资料后应更新最近资料上下文。\n",
+            encoding="utf-8",
+        )
+
+        read_response = self.agent.handle("/read manual.md")
+        restarted_agent = JarvisAgent(self.paths)
+        tag_response = restarted_agent.handle("给这个资料打标签 项目")
+
+        self.assertIn("读取资料后应更新最近资料上下文", read_response)
+        self.assertIn("已更新标签：data/manual.md（项目）", tag_response)
+        self.assertIn("标签：项目", restarted_agent.handle("/kb"))
+
     def test_natural_language_import_file_adds_document_to_knowledge_base(self):
         source = Path(self.temp_dir.name) / "outside-natural.md"
         source.write_text("Jarvis Lite 可以用自然语言导入资料。\n", encoding="utf-8")
