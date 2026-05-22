@@ -66,6 +66,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if tag_intent is not None:
         return tag_intent
 
+    read_document_intent = _parse_read_document_intent(readable_prompt)
+    if read_document_intent is not None:
+        return read_document_intent
+
     read_result_intent = _parse_read_result_intent(prompt)
     if read_result_intent is not None:
         return read_result_intent
@@ -147,6 +151,17 @@ def _parse_tag_intent(prompt: str) -> NaturalLanguageIntent | None:
     if filename in {"这个资料", "这份资料", "刚才的资料", "最近的资料", "这个结果", "这条结果", "刚才的结果", "最近的结果"}:
         return NaturalLanguageIntent("tag_recent_document", tags=tags)
     return NaturalLanguageIntent("command", command=f"/tag {filename} {' '.join(tags)}")
+
+
+def _parse_read_document_intent(prompt: str) -> NaturalLanguageIntent | None:
+    match = re.fullmatch(r"(?:请)?(?:帮我)?(?:读取|查看|看看)\s*(?P<filename>.+\.(?:md|txt))", prompt, flags=re.IGNORECASE)
+    if not match:
+        return None
+    filename = _strip_wrapping_quotes(match.group("filename").strip())
+    filename = filename.replace("\\", "/").removeprefix("data/").lstrip("/")
+    if not filename:
+        return None
+    return NaturalLanguageIntent("command", command=f'/read "{filename}"')
 
 
 def _parse_read_result_intent(prompt: str) -> NaturalLanguageIntent | None:

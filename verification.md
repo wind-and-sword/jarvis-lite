@@ -1824,3 +1824,48 @@ git diff --check
 - 全量测试 240 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-22 自然语言读取资料验证
+
+### RED：自然语言读取资料落入兜底
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_read_document_updates_recent_document_context -v
+```
+
+结果：
+
+- 新增测试先失败，“读取 manual.md”返回长期记忆兜底，没有返回 `manual.md` 的文件内容。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_read_document_updates_recent_document_context tests.test_agent.AgentTests.test_natural_language_read_numbered_search_result_after_ask_command tests.test_agent.AgentTests.test_natural_language_read_first_advice_after_experience_advice -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- 自然语言读取资料新增 1 个测试通过。
+- 编号搜索结果和编号建议读取回归测试通过。
+- Agent 专项测试 98 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 241 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

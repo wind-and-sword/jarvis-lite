@@ -552,6 +552,22 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：自然语言读取资料
+
+- “读取 manual.md”“查看 note.txt”“看看 data/note.md”会映射到现有 `/read` 命令。
+- 自然语言读取成功后，继续复用 `/read` 的最近资料上下文更新；后续可以说“给这个资料打标签 项目”。
+- 只识别 `.md` 和 `.txt` 后缀的资料文件名，避免误判“查看知识库”“查看最近上下文”等状态查询。
+- “查看第一条结果”和“查看第一条建议”仍然走编号上下文逻辑，不被文件读取意图覆盖。
+- RED 验证：
+  - 新增 1 个 Agent 测试先证明“读取 manual.md”落入长期记忆兜底，没有返回资料内容。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_read_document_updates_recent_document_context tests.test_agent.AgentTests.test_natural_language_read_numbered_search_result_after_ask_command tests.test_agent.AgentTests.test_natural_language_read_first_advice_after_experience_advice -v`：3 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：98 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：241 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
