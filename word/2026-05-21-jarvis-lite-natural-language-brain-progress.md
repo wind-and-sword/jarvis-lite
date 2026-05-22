@@ -491,7 +491,20 @@
   - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_organize_project_uses_known_project_directory tests.test_agent.AgentTests.test_natural_language_open_project_uses_known_project_directory tests.test_agent.AgentTests.test_natural_language_open_common_directory_alias_records_request tests.test_agent.AgentTests.test_natural_language_organize_common_directory_alias_returns_preview -v`：4 个测试通过。
   - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：96 个测试通过。
 
+## 追加进度：知识库问答证据增强
+
+- `/ask` 和普通问题命中知识库时，每条结果会继续显示 `data/文件:行号` 和原始命中文本。
+- 每条结果新增“命中原因：关键词匹配分数 N”，让用户知道这是规则式关键词匹配，而不是无来源生成。
+- 回答末尾新增“可继续操作”，提示可以“查看第一条结果”“给这个结果打标签 标签”或 `/read 文件名`。
+- 本阶段不改变搜索排序、匹配分数算法、弱相关过滤、最近搜索结果持久化和结果数量。
+- RED 验证：
+  - 新增 1 个 Knowledge 测试先证明回答缺少“命中原因”和“可继续操作”。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_knowledge.KnowledgeTests.test_answer_from_data_reports_match_reason_and_follow_up_actions tests.test_knowledge.KnowledgeTests.test_answer_from_data_includes_source_and_matching_content tests.test_knowledge.KnowledgeTests.test_answer_from_data_numbers_multiple_sources_after_summary tests.test_knowledge.KnowledgeTests.test_answer_from_data_can_include_multiple_sources -v`：4 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_knowledge -v`：24 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：96 个测试通过。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕最近文件、知识库证据和日报联动做更稳定的上下文识别。
+- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕最近文件、日报联动和知识库摘要做更稳定的上下文识别。

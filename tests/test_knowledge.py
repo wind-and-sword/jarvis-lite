@@ -83,6 +83,19 @@ class KnowledgeTests(unittest.TestCase):
         self.assertIn("1. 根据 data/jarvis.txt:1", answer)
         self.assertIn("读取 data 目录里的文本资料", answer)
 
+    def test_answer_from_data_reports_match_reason_and_follow_up_actions(self):
+        (self.paths.data_dir / "jarvis.txt").write_text(
+            "Jarvis Lite 可以读取 data 目录里的文本资料。\n",
+            encoding="utf-8",
+        )
+
+        answer = answer_from_data(self.paths, "Jarvis Lite 可以读取什么资料？")
+
+        self.assertIn("命中原因：关键词匹配分数", answer)
+        self.assertIn("可继续操作：查看第一条结果", answer)
+        self.assertIn("给这个结果打标签 标签", answer)
+        self.assertIn("/read jarvis.txt", answer)
+
     def test_search_data_prioritizes_specific_version_term_over_generic_terms(self):
         (self.paths.data_dir / "alpha.md").write_text(
             "Jarvis Lite 使用 Python 工具，版本信息另见配置。\n",

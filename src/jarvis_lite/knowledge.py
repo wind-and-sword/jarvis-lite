@@ -113,6 +113,9 @@ def answer_from_matches(matches: list[DataMatch]) -> str:
     lines = [f"我在 data 目录找到 {len(matches)} 条相关资料："]
     for index, match in enumerate(matches, start=1):
         lines.append(f"{index}. 根据 data/{match.relative_path}:{match.line_number}，{match.text}")
+        lines.append(f"   - 命中原因：关键词匹配分数 {match.score}")
+    first_match = matches[0]
+    lines.append(f"可继续操作：查看第一条结果；给这个结果打标签 标签；/read {first_match.relative_path}")
     return "\n".join(lines)
 
 
