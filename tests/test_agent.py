@@ -105,6 +105,37 @@ class AgentTests(unittest.TestCase):
         self.assertIn("可执行命令：", response)
         self.assertIn("/daily-report [文件名]", response)
 
+    def test_experience_advice_for_recent_document_uses_recent_document_context(self):
+        source = Path(self.temp_dir.name) / "recent-advice.md"
+        source.write_text("Jarvis Lite 可以给最近资料提供建议。\n", encoding="utf-8")
+        self.agent.handle("/experience 资料导入后先打标签")
+        self.agent.handle(f"/import {source}")
+
+        response = self.agent.handle("/experience-advice 这个资料")
+
+        self.assertIn("当前资料：data/recent-advice.md", response)
+        self.assertIn("资料导入后先打标签", response)
+        self.assertIn("/read recent-advice.md", response)
+        self.assertIn("/tag recent-advice.md 标签...", response)
+
+    def test_experience_advice_for_recent_document_requires_recent_context(self):
+        response = self.agent.handle("/experience-advice 这个资料")
+
+        self.assertIn("还没有最近资料", response)
+        self.assertIn("/import 源文件或目录路径 [目标文件名]", response)
+
+    def test_experience_advice_for_recent_directory_uses_recent_directory_context(self):
+        target = Path(self.temp_dir.name) / "project"
+        target.mkdir()
+        self.agent.handle(f"/dir-add 项目 {target}")
+        self.agent.handle("打开项目目录")
+
+        response = self.agent.handle("/experience-advice 这个目录")
+
+        self.assertIn(f"当前目录：项目 -> {target.resolve()}", response)
+        self.assertIn("/organize-preview 项目", response)
+        self.assertIn("/dir-open 项目", response)
+
     def test_experience_advice_command_requires_keyword(self):
         response = self.agent.handle("/experience-advice")
 

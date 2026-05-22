@@ -351,7 +351,24 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：经验建议引用最近上下文第一版
+
+- `/experience-advice 这个资料` 会引用最近导入、标签更新或问答命中的资料。
+- `/experience-advice 这个目录` 会引用最近打开或整理预览的目录。
+- 有最近资料时，会输出 `当前资料：data/...`，并提示 `/read ...`、`/tag ... 标签...` 和 `/ask 问题`。
+- 有最近目录时，会输出 `当前目录：别名 -> 路径`，并提示 `/organize-preview 别名` 和 `/dir-open 别名`。
+- 缺少最近资料或目录时，会明确提示当前上下文缺失，并保留通用命令建议。
+- 本阶段不自动执行建议命令，不推断路径，也不改变运行态上下文格式。
+- RED 验证：
+  - 新增 3 个 Agent 测试先因建议未输出当前资料、当前目录和具体命令失败。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：80 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：220 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以做“经验建议引用最近上下文”，让“这个资料/这个目录”的建议更贴近当前操作。
+- 下一步可以做“经验建议的一键应用候选”，把建议和桌面面板快捷入口结合起来。

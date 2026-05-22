@@ -413,15 +413,19 @@ class JarvisAgent:
         normalized_query = self._strip_quotes(query)
         if not normalized_query:
             return "用法：/experience-advice 关键词"
-        matches = search_experiences(self.paths, normalized_query)
+        search_query = self._experience_search_query(normalized_query)
+        matches = search_experiences(self.paths, search_query)
+        context_lines = self._experience_context_lines(normalized_query)
         command_suggestions = self._experience_command_suggestions(normalized_query)
         self.tools.run("record_log", message=f"生成经验操作建议：{normalized_query}")
-        if not matches and not command_suggestions:
+        if not matches and not context_lines and not command_suggestions:
             return (
                 f"还没有找到和“{normalized_query}”相关的经验建议。"
                 "你可以先用 /experience 经验内容 记录可复用流程。"
             )
-        lines = [f"操作建议：{normalized_query}", "相关经验："]
+        lines = [f"操作建议：{normalized_query}"]
+        lines.extend(context_lines)
+        lines.append("相关经验：")
         if matches:
             for index, experience in enumerate(matches, start=1):
                 lines.append(f"{index}. {experience}")
@@ -434,6 +438,24 @@ class JarvisAgent:
         lines.append(f"可继续使用：/experience-search {normalized_query}")
         return "\n".join(lines)
 
+    def _experience_search_query(self, query: str) -> str:
+        if self._is_recent_document_query(query):
+            return "资料"
+        if self._is_recent_directory_query(query):
+            return "目录"
+        return query
+
+    def _experience_context_lines(self, query: str) -> tuple[str, ...]:
+        if self._is_recent_document_query(query):
+            if self._recent_document_path is None:
+                return ("当前资料：还没有最近资料。",)
+            return (f"当前资料：data/{self._recent_document_path}",)
+        if self._is_recent_directory_query(query):
+            if self._recent_directory is None:
+                return ("当前目录：还没有最近目录。",)
+            return (f"当前目录：{self._recent_directory.alias} -> {self._recent_directory.path}",)
+        return ()
+
     def _experience_command_suggestions(self, query: str) -> tuple[str, ...]:
         prompt = query.lower()
         suggestions: list[str] = []
@@ -441,6 +463,22 @@ class JarvisAgent:
         def add(command: str) -> None:
             if command not in suggestions:
                 suggestions.append(command)
+
+        if self._is_recent_document_query(query):
+            if self._recent_document_path is not None:
+                add(f"/read {self._recent_document_path}：读取当前资料")
+                add(f"/tag {self._recent_document_path} 标签...：给当前资料设置标签")
+            else:
+                add("/import 源文件或目录路径 [目标文件名]：先导入一份资料")
+            add("/ask 问题：基于知识库提问")
+
+        if self._is_recent_directory_query(query):
+            if self._recent_directory is not None:
+                add(f"/organize-preview {self._recent_directory.alias}：预览整理当前目录")
+                add(f"/dir-open {self._recent_directory.alias}：记录打开当前目录")
+            else:
+                add("/dir-add 别名 目录路径：先登记常用目录")
+                add("/dirs：查看常用目录")
 
         if any(word in prompt for word in ("导入", "资料", "知识库", "pdf", "聊天记录")):
             add("/import 源文件或目录路径 [目标文件名]：导入资料到知识库")
@@ -468,6 +506,12 @@ class JarvisAgent:
             add("/experience-search 关键词：搜索经验")
 
         return tuple(suggestions)
+
+    def _is_recent_document_query(self, query: str) -> bool:
+        return query.strip() in {"这个资料", "这份资料", "刚才的资料", "最近的资料", "当前资料"}
+
+    def _is_recent_directory_query(self, query: str) -> bool:
+        return query.strip() in {"这个目录", "这个文件夹", "刚才的目录", "最近的目录", "当前目录"}
 
     def _answer_from_data(self, question: str) -> str:
         matches = find_data_matches(self.paths, question)
