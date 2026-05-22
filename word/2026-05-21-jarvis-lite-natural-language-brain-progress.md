@@ -617,6 +617,22 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：按编号给最近资料打标签
+
+- 看到最近资料列表后，可以继续说“给第二份资料打标签 项目”“给第2个文档打标签 Python”。
+- 该能力只作用于最近资料列表，不改变“给第二条结果打标签”的最近搜索结果语义。
+- 标签更新复用现有 `/tag`，保持知识库标签写入、工具日志和最近资料列表更新逻辑一致。
+- 缺少最近资料列表或编号越界时，会给出明确提示。
+- RED 验证：
+  - 新增 2 个 Agent 测试先证明“给第二份资料打标签”会误走普通 `/tag` 文件名；“给第二条结果打标签”回归通过。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_tag_numbered_recent_document_updates_selected_document_tags tests.test_agent.AgentTests.test_natural_language_tag_numbered_recent_document_requires_recent_list tests.test_agent.AgentTests.test_natural_language_tag_numbered_search_result_after_ask_command tests.test_agent.AgentTests.test_natural_language_read_numbered_recent_document_reads_selected_document -v`：4 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：107 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：250 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。

@@ -156,6 +156,9 @@ def _parse_tag_intent(prompt: str) -> NaturalLanguageIntent | None:
     result_index = _parse_result_index(filename)
     if result_index > 0:
         return NaturalLanguageIntent("tag_numbered_search_result", tags=tags, result_index=result_index)
+    document_index = _parse_document_index(filename)
+    if document_index > 0:
+        return NaturalLanguageIntent("tag_numbered_recent_document", tags=tags, result_index=document_index)
     if filename in {"这个资料", "这份资料", "刚才的资料", "最近的资料", "这个结果", "这条结果", "刚才的结果", "最近的结果"}:
         return NaturalLanguageIntent("tag_recent_document", tags=tags)
     return NaturalLanguageIntent("command", command=f"/tag {filename} {' '.join(tags)}")

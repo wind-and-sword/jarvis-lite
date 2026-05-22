@@ -348,6 +348,8 @@ class JarvisAgent:
             return self._organize_recent_directory()
         if intent.name == "tag_recent_document":
             return self._tag_recent_document(intent.tags)
+        if intent.name == "tag_numbered_recent_document":
+            return self._tag_numbered_recent_document(intent.result_index, intent.tags)
         if intent.name == "tag_numbered_search_result":
             return self._tag_numbered_search_result(intent.result_index, intent.tags)
         if intent.name == "read_recent_document":
@@ -586,6 +588,14 @@ class JarvisAgent:
         if self._recent_document_path is None:
             return "还没有最近资料。你可以先导入资料，或说“给 note.txt 打标签 项目”。"
         return self.handle(f'/tag "{self._recent_document_path}" {" ".join(tags)}')
+
+    def _tag_numbered_recent_document(self, document_index: int, tags: tuple[str, ...]) -> str:
+        if not self._recent_document_paths:
+            return "还没有最近资料列表。你可以先读取资料、导入资料，或说“读取 note.txt”。"
+        if document_index < 1 or document_index > len(self._recent_document_paths):
+            return f"最近资料列表只有 {len(self._recent_document_paths)} 条，不能选择第 {document_index} 份。"
+        relative_path = self._recent_document_paths[document_index - 1]
+        return self.handle(f'/tag "{relative_path}" {" ".join(tags)}')
 
     def _read_recent_document(self) -> str:
         if self._recent_document_path is None:

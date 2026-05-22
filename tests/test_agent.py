@@ -416,6 +416,26 @@ class AgentTests(unittest.TestCase):
         self.assertIn("还没有最近资料", response)
         self.assertIn("先导入资料", response)
 
+    def test_natural_language_tag_numbered_recent_document_updates_selected_document_tags(self):
+        (self.paths.data_dir / "manual.md").write_text(
+            "第二份最近资料可被打标签。\n",
+            encoding="utf-8",
+        )
+        self.agent.handle("/read manual.md")
+        self.agent.handle("/read note.txt")
+
+        response = self.agent.handle("给第二份资料打标签 项目 Python")
+
+        self.assertIn("已更新标签：data/manual.md（项目、Python）", response)
+        self.assertIn("manual.md", self.agent.handle("/kb"))
+        self.assertIn("标签：项目、Python", self.agent.handle("/kb"))
+
+    def test_natural_language_tag_numbered_recent_document_requires_recent_list(self):
+        response = self.agent.handle("给第二份资料打标签 项目")
+
+        self.assertIn("还没有最近资料列表", response)
+        self.assertIn("先读取资料", response)
+
     def test_read_command_sets_persistent_recent_document_context(self):
         (self.paths.data_dir / "manual.md").write_text(
             "Jarvis Lite 读取资料后应更新最近资料上下文。\n",
