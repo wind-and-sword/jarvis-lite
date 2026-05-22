@@ -504,7 +504,20 @@
   - `.venv\Scripts\python.exe -m unittest tests.test_knowledge -v`：24 个测试通过。
   - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：96 个测试通过。
 
+## 追加进度：日报运行态上下文联动
+
+- 日报新增“最近上下文”段，读取项目外 `jarvis-lite-runtime/agent-context.json`。
+- 最近上下文段会展示最近资料、最近目录、最近搜索结果和最近建议。
+- 没有运行态上下文时，日报会写明“暂无最近上下文”。
+- 本阶段不改变运行态上下文文件格式，不改变“查看最近上下文”命令，也不改动经验记忆和工具日志段。
+- RED 验证：
+  - 新增 1 个 Automation 测试先证明日报缺少“最近上下文”段。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_automation.AutomationTests.test_write_daily_report_includes_runtime_recent_context tests.test_automation.AutomationTests.test_write_daily_report_creates_word_markdown -v`：2 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_automation -v`：6 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：96 个测试通过。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕最近文件、日报联动和知识库摘要做更稳定的上下文识别。
+- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕最近文件、知识库摘要和日报建议生成做更稳定的上下文识别。

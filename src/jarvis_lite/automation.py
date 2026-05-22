@@ -8,6 +8,7 @@ from pathlib import Path
 from .config import ProjectPaths
 from .knowledge import build_knowledge_index
 from .memory import list_recent_experiences, read_profile, summarize_profile
+from .runtime_context import RuntimeContext, load_runtime_context
 
 
 DIRECTORIES_FILENAME = "directories.json"
@@ -213,6 +214,9 @@ def _daily_report_content(paths: ProjectPaths) -> str:
     else:
         lines.append("- 还没有登记常用目录。")
 
+    lines.extend(["", "## 最近上下文", ""])
+    _append_recent_context_lines(lines, load_runtime_context(paths))
+
     lines.extend(["", "## 经验记忆", ""])
     recent_experiences = list_recent_experiences(paths)
     if recent_experiences:
@@ -230,6 +234,33 @@ def _daily_report_content(paths: ProjectPaths) -> str:
         lines.append("- 暂无工具日志。")
 
     return "\n".join(lines).rstrip() + "\n"
+
+
+def _append_recent_context_lines(lines: list[str], context: RuntimeContext) -> None:
+    has_context = any(
+        (
+            context.recent_document_path,
+            context.recent_directory,
+            context.recent_search_result_paths,
+            context.recent_advice_suggestions,
+        )
+    )
+    if not has_context:
+        lines.append("- 暂无最近上下文。")
+        return
+
+    if context.recent_document_path:
+        lines.append(f"- 最近资料：data/{context.recent_document_path}")
+    if context.recent_directory is not None:
+        lines.append(f"- 最近目录：{context.recent_directory.alias} -> {context.recent_directory.path}")
+    if context.recent_search_result_paths:
+        lines.append(f"- 最近搜索结果：{len(context.recent_search_result_paths)} 条")
+        for index, path in enumerate(context.recent_search_result_paths, start=1):
+            lines.append(f"  {index}. data/{path}")
+    if context.recent_advice_suggestions:
+        lines.append(f"- 最近建议：{len(context.recent_advice_suggestions)} 条")
+        for index, suggestion in enumerate(context.recent_advice_suggestions, start=1):
+            lines.append(f"  {index}. {suggestion}")
 
 
 def _recent_log_lines(paths: ProjectPaths, limit: int = 5) -> list[str]:

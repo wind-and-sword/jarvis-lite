@@ -16,6 +16,7 @@ from jarvis_lite.automation import (
 )
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.memory import append_experience
+from jarvis_lite.runtime_context import RuntimeContext, RuntimeDirectoryContext, save_runtime_context
 
 
 class AutomationTests(unittest.TestCase):
@@ -62,6 +63,30 @@ class AutomationTests(unittest.TestCase):
         self.assertIn("经验记忆", content)
         self.assertIn("导入资料后先打标签", content)
         self.assertIn("测试日志", content)
+
+    def test_write_daily_report_includes_runtime_recent_context(self):
+        project_dir = Path(self.temp_dir.name) / "project"
+        project_dir.mkdir()
+        save_runtime_context(
+            self.paths,
+            RuntimeContext(
+                recent_document_path="note.md",
+                recent_directory=RuntimeDirectoryContext(alias="项目", path=str(project_dir.resolve())),
+                recent_search_result_paths=("note.md", "manual.md"),
+                recent_advice_suggestions=("/read note.md：读取当前资料",),
+            ),
+        )
+
+        report = write_daily_report(self.paths, "context-daily.md")
+
+        content = report.path.read_text(encoding="utf-8")
+        self.assertIn("## 最近上下文", content)
+        self.assertIn("最近资料：data/note.md", content)
+        self.assertIn(f"最近目录：项目 -> {project_dir.resolve()}", content)
+        self.assertIn("最近搜索结果：2 条", content)
+        self.assertIn("1. data/note.md", content)
+        self.assertIn("最近建议：1 条", content)
+        self.assertIn("/read note.md：读取当前资料", content)
 
     def test_preview_file_organization_groups_files_by_extension(self):
         target = Path(self.temp_dir.name) / "desktop"
