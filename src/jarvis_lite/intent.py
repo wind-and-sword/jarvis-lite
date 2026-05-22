@@ -41,6 +41,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
         return NaturalLanguageIntent("command", command="/update-download")
     if _matches_any(prompt, ("查看经验记忆", "看看经验记忆", "经验记忆", "查看经验", "看看经验")):
         return NaturalLanguageIntent("command", command="/experiences")
+    if _matches_any(prompt, ("确认执行", "确认运行", "执行确认")):
+        return NaturalLanguageIntent("confirm_pending_advice_suggestion_execution")
+    if _matches_any(prompt, ("取消执行", "取消运行", "不执行了")):
+        return NaturalLanguageIntent("cancel_pending_advice_suggestion_execution")
 
     experience_search_intent = _parse_experience_search_intent(readable_prompt)
     if experience_search_intent is not None:
@@ -69,6 +73,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     read_advice_intent = _parse_read_advice_intent(prompt)
     if read_advice_intent is not None:
         return read_advice_intent
+
+    execute_advice_intent = _parse_execute_advice_intent(prompt)
+    if execute_advice_intent is not None:
+        return execute_advice_intent
 
     drive_intent = _parse_open_drive(prompt)
     if drive_intent is not None:
@@ -159,6 +167,16 @@ def _parse_read_advice_intent(prompt: str) -> NaturalLanguageIntent | None:
     if advice_index <= 0:
         return None
     return NaturalLanguageIntent("read_numbered_advice_suggestion", result_index=advice_index)
+
+
+def _parse_execute_advice_intent(prompt: str) -> NaturalLanguageIntent | None:
+    match = re.fullmatch(r"(?:执行|运行)(?P<target>第[0-9一二三四五六七八九十]+(?:条|个)?建议)", prompt)
+    if not match:
+        return None
+    advice_index = _parse_advice_index(match.group("target"))
+    if advice_index <= 0:
+        return None
+    return NaturalLanguageIntent("prepare_numbered_advice_suggestion_execution", result_index=advice_index)
 
 
 def _parse_import_intent(prompt: str) -> NaturalLanguageIntent | None:

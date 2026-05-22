@@ -44,6 +44,7 @@ class JarvisAgent:
         self._recent_directory: CommonDirectory | None = self._restore_recent_directory(runtime_context.recent_directory)
         self._recent_search_result_paths: tuple[str, ...] = runtime_context.recent_search_result_paths
         self._recent_advice_suggestions: tuple[str, ...] = runtime_context.recent_advice_suggestions
+        self._pending_advice_command: str | None = None
         if self._recent_document_path is None and self._recent_search_result_paths:
             self._recent_document_path = self._recent_search_result_paths[0]
 
@@ -331,6 +332,12 @@ class JarvisAgent:
             return self._read_numbered_search_result(intent.result_index)
         if intent.name == "read_numbered_advice_suggestion":
             return self._read_numbered_advice_suggestion(intent.result_index)
+        if intent.name == "prepare_numbered_advice_suggestion_execution":
+            return self._prepare_numbered_advice_suggestion_execution(intent.result_index)
+        if intent.name == "confirm_pending_advice_suggestion_execution":
+            return self._confirm_pending_advice_suggestion_execution()
+        if intent.name == "cancel_pending_advice_suggestion_execution":
+            return self._cancel_pending_advice_suggestion_execution()
         return "我还不能理解这个自然语言请求。你可以换一种说法，或输入 /help 查看当前能力。"
 
     def _capability_summary(self) -> str:
@@ -558,6 +565,63 @@ class JarvisAgent:
         suggestion = self._recent_advice_suggestions[advice_index - 1]
         self.tools.run("record_log", message=f"查看最近建议：第 {advice_index} 条")
         return f"第 {advice_index} 条建议：{suggestion}"
+
+    def _prepare_numbered_advice_suggestion_execution(self, advice_index: int) -> str:
+        suggestion, error = self._recent_advice_suggestion(advice_index)
+        if error:
+            return error
+        assert suggestion is not None
+        command = self._executable_advice_command(suggestion)
+        if command is None:
+            self._pending_advice_command = None
+            return "\n".join(
+                [
+                    f"第 {advice_index} 条建议需要补充参数，不能直接执行：{suggestion}",
+                    "你可以把占位内容补完整后手动输入命令。",
+                ]
+            )
+
+        self._pending_advice_command = command
+        self.tools.run("record_log", message=f"准备执行最近建议：第 {advice_index} 条 -> {command}")
+        return "\n".join(
+            [
+                f"准备执行第 {advice_index} 条建议：{suggestion}",
+                f"命令：{command}",
+                "确认执行请说“确认执行”，取消请说“取消执行”。",
+            ]
+        )
+
+    def _confirm_pending_advice_suggestion_execution(self) -> str:
+        if self._pending_advice_command is None:
+            return "还没有待确认的建议命令。你可以先说“执行第一条建议”。"
+        command = self._pending_advice_command
+        self._pending_advice_command = None
+        self.tools.run("record_log", message=f"确认执行最近建议命令：{command}")
+        return f"已确认执行建议命令：{command}\n{self.handle(command)}"
+
+    def _cancel_pending_advice_suggestion_execution(self) -> str:
+        if self._pending_advice_command is None:
+            return "还没有待取消的建议命令。"
+        command = self._pending_advice_command
+        self._pending_advice_command = None
+        self.tools.run("record_log", message=f"取消执行最近建议命令：{command}")
+        return f"已取消待执行建议：{command}"
+
+    def _recent_advice_suggestion(self, advice_index: int) -> tuple[str | None, str | None]:
+        if not self._recent_advice_suggestions:
+            return None, "还没有最近建议。你可以先说“我该怎么导入资料”，或使用 /experience-advice 关键词。"
+        if advice_index < 1 or advice_index > len(self._recent_advice_suggestions):
+            return None, f"最近建议只有 {len(self._recent_advice_suggestions)} 条，不能选择第 {advice_index} 条。"
+        return self._recent_advice_suggestions[advice_index - 1], None
+
+    def _executable_advice_command(self, suggestion: str) -> str | None:
+        command = suggestion.split("：", 1)[0].split(":", 1)[0].strip()
+        if not command.startswith("/"):
+            return None
+        placeholder_words = ("[", "]", "...", "源文件", "目录路径", "目标文件名", "文件名", "标签", "文本", "问题", "关键词", "别名")
+        if any(word in command for word in placeholder_words):
+            return None
+        return command
 
     def _recent_search_result_path(self, result_index: int) -> tuple[str | None, str | None]:
         if not self._recent_search_result_paths:

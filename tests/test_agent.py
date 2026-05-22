@@ -201,6 +201,34 @@ class AgentTests(unittest.TestCase):
         self.assertIn("第 1 条建议：", response)
         self.assertIn("/import 源文件或目录路径 [目标文件名]", response)
 
+    def test_natural_language_prepare_and_confirm_executable_advice(self):
+        self.agent.handle("/experience-advice 导入资料")
+
+        prepare_response = self.agent.handle("执行第二条建议")
+        confirm_response = self.agent.handle("确认执行")
+
+        self.assertIn("准备执行第 2 条建议", prepare_response)
+        self.assertIn("命令：/kb", prepare_response)
+        self.assertIn("确认执行", prepare_response)
+        self.assertIn("已确认执行建议命令：/kb", confirm_response)
+        self.assertIn("个人知识库状态", confirm_response)
+
+    def test_natural_language_prepare_advice_requires_completed_parameters(self):
+        self.agent.handle("/experience-advice 导入资料")
+
+        prepare_response = self.agent.handle("执行第一条建议")
+        confirm_response = self.agent.handle("确认执行")
+
+        self.assertIn("需要补充参数", prepare_response)
+        self.assertIn("/import 源文件或目录路径 [目标文件名]", prepare_response)
+        self.assertIn("还没有待确认的建议命令", confirm_response)
+
+    def test_natural_language_confirm_advice_requires_pending_command(self):
+        response = self.agent.handle("确认执行")
+
+        self.assertIn("还没有待确认的建议命令", response)
+        self.assertIn("执行第一条建议", response)
+
     def test_natural_language_read_advice_requires_recent_advice(self):
         response = self.agent.handle("查看第一条建议")
 

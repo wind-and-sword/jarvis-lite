@@ -399,7 +399,24 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：最近建议执行前确认第一版
+
+- 用户获取经验建议后，可以说“执行第二条建议”，Jarvis Lite 会先展示将执行的命令并等待确认。
+- 说“确认执行”后，会复用现有 `JarvisAgent.handle()` 命令路径执行待确认命令，例如 `/kb` 会返回知识库状态。
+- 说“取消执行”会清空当前待确认建议命令。
+- 建议命令包含占位符参数时，例如 `/import 源文件或目录路径 [目标文件名]`，不会进入待确认状态，会提示用户补全参数后手动输入。
+- 待确认命令只保存在当前 Agent 实例内，不写入运行态文件。
+- RED 验证：
+  - 新增 3 个 Agent 测试先全部落入长期记忆兜底，无法准备执行、确认执行或提示缺少待确认命令。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_prepare_and_confirm_executable_advice tests.test_agent.AgentTests.test_natural_language_prepare_advice_requires_completed_parameters tests.test_agent.AgentTests.test_natural_language_confirm_advice_requires_pending_command -v`：3 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：87 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：227 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以做“经验建议执行前确认”，让用户明确选择后再运行建议命令。
+- 下一步可以做“最近建议状态展示”，让“查看最近上下文”也列出最近建议数量和待确认命令状态。
