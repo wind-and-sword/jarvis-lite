@@ -43,6 +43,7 @@ class JarvisAgent:
         self._recent_document_path: str | None = runtime_context.recent_document_path
         self._recent_directory: CommonDirectory | None = self._restore_recent_directory(runtime_context.recent_directory)
         self._recent_search_result_paths: tuple[str, ...] = runtime_context.recent_search_result_paths
+        self._recent_advice_suggestions: tuple[str, ...] = ()
         if self._recent_document_path is None and self._recent_search_result_paths:
             self._recent_document_path = self._recent_search_result_paths[0]
 
@@ -328,6 +329,8 @@ class JarvisAgent:
             return self._tag_numbered_search_result(intent.result_index, intent.tags)
         if intent.name == "read_numbered_search_result":
             return self._read_numbered_search_result(intent.result_index)
+        if intent.name == "read_numbered_advice_suggestion":
+            return self._read_numbered_advice_suggestion(intent.result_index)
         return "我还不能理解这个自然语言请求。你可以换一种说法，或输入 /help 查看当前能力。"
 
     def _capability_summary(self) -> str:
@@ -433,8 +436,11 @@ class JarvisAgent:
             lines.append(f"- 还没有找到和“{normalized_query}”相关的经验建议。")
             lines.append("- 可以先用 /experience 经验内容 记录可复用流程。")
         if command_suggestions:
+            self._remember_recent_advice_suggestions(command_suggestions)
             lines.append("可执行命令：")
             lines.extend(f"- {suggestion}" for suggestion in command_suggestions)
+        else:
+            self._remember_recent_advice_suggestions(())
         lines.append(f"可继续使用：/experience-search {normalized_query}")
         return "\n".join(lines)
 
@@ -544,6 +550,15 @@ class JarvisAgent:
         self.tools.run("record_log", message=f"读取最近搜索结果：data/{relative_path}")
         return f"第 {result_index} 条结果：data/{relative_path}\n{result.output}"
 
+    def _read_numbered_advice_suggestion(self, advice_index: int) -> str:
+        if not self._recent_advice_suggestions:
+            return "还没有最近建议。你可以先说“我该怎么导入资料”，或使用 /experience-advice 关键词。"
+        if advice_index < 1 or advice_index > len(self._recent_advice_suggestions):
+            return f"最近建议只有 {len(self._recent_advice_suggestions)} 条，不能选择第 {advice_index} 条。"
+        suggestion = self._recent_advice_suggestions[advice_index - 1]
+        self.tools.run("record_log", message=f"查看最近建议：第 {advice_index} 条")
+        return f"第 {advice_index} 条建议：{suggestion}"
+
     def _recent_search_result_path(self, result_index: int) -> tuple[str | None, str | None]:
         if not self._recent_search_result_paths:
             return None, "还没有最近搜索结果。你可以先提问，例如“Jarvis Lite 使用什么？”。"
@@ -558,6 +573,9 @@ class JarvisAgent:
     def _remember_recent_search_results(self, relative_paths: tuple[str, ...]) -> None:
         self._recent_search_result_paths = relative_paths
         self._save_runtime_context()
+
+    def _remember_recent_advice_suggestions(self, suggestions: tuple[str, ...]) -> None:
+        self._recent_advice_suggestions = suggestions
 
     def _remember_recent_directory(self, alias: str, directory_path: Path) -> None:
         self._recent_directory = CommonDirectory(alias, directory_path)

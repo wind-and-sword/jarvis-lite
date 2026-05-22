@@ -176,6 +176,28 @@ class AgentTests(unittest.TestCase):
         self.assertIn("可执行命令：", response)
         self.assertIn("/import 源文件或目录路径 [目标文件名]", response)
 
+    def test_natural_language_read_first_advice_after_experience_advice(self):
+        self.agent.handle("/experience-advice 导入资料")
+
+        response = self.agent.handle("查看第一条建议")
+
+        self.assertIn("第 1 条建议：", response)
+        self.assertIn("/import 源文件或目录路径 [目标文件名]", response)
+
+    def test_natural_language_read_numbered_advice_after_experience_advice(self):
+        self.agent.handle("/experience-advice 导入资料")
+
+        response = self.agent.handle("查看第二条建议")
+
+        self.assertIn("第 2 条建议：", response)
+        self.assertIn("/kb", response)
+
+    def test_natural_language_read_advice_requires_recent_advice(self):
+        response = self.agent.handle("查看第一条建议")
+
+        self.assertIn("还没有最近建议", response)
+        self.assertIn("我该怎么导入资料", response)
+
     def test_natural_language_experience_memory_status_maps_to_experiences(self):
         self.agent.handle("/experience 导入资料后先打标签")
 

@@ -66,6 +66,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if read_result_intent is not None:
         return read_result_intent
 
+    read_advice_intent = _parse_read_advice_intent(prompt)
+    if read_advice_intent is not None:
+        return read_advice_intent
+
     drive_intent = _parse_open_drive(prompt)
     if drive_intent is not None:
         return drive_intent
@@ -145,6 +149,16 @@ def _parse_read_result_intent(prompt: str) -> NaturalLanguageIntent | None:
     if result_index <= 0:
         return None
     return NaturalLanguageIntent("read_numbered_search_result", result_index=result_index)
+
+
+def _parse_read_advice_intent(prompt: str) -> NaturalLanguageIntent | None:
+    match = re.fullmatch(r"(?:查看|看看|读取)(?P<target>第[0-9一二三四五六七八九十]+(?:条|个)?建议)", prompt)
+    if not match:
+        return None
+    advice_index = _parse_advice_index(match.group("target"))
+    if advice_index <= 0:
+        return None
+    return NaturalLanguageIntent("read_numbered_advice_suggestion", result_index=advice_index)
 
 
 def _parse_import_intent(prompt: str) -> NaturalLanguageIntent | None:
@@ -247,6 +261,13 @@ def _split_tag_text(text: str) -> tuple[str, ...]:
 
 def _parse_result_index(text: str) -> int:
     match = re.fullmatch(r"第(?P<number>[0-9一二三四五六七八九十]+)(?:条|个)?结果", text)
+    if not match:
+        return 0
+    return _parse_positive_number(match.group("number"))
+
+
+def _parse_advice_index(text: str) -> int:
+    match = re.fullmatch(r"第(?P<number>[0-9一二三四五六七八九十]+)(?:条|个)?建议", text)
     if not match:
         return 0
     return _parse_positive_number(match.group("number"))

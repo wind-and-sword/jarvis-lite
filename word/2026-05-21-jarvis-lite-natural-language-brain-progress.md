@@ -368,7 +368,22 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：最近建议编号查看第一版
+
+- `JarvisAgent` 现在会在当前实例内记录最近一次经验建议生成的命令建议列表。
+- 用户获取建议后，可以继续说“查看第一条建议”或“查看第二条建议”。
+- 返回内容只展示对应建议命令，不自动执行，也不持久化到运行态文件。
+- 没有最近建议时，会提示先说“我该怎么导入资料”或使用 `/experience-advice 关键词`。
+- RED 验证：
+  - 新增 3 个 Agent 测试先全部落入普通兜底，无法查看编号建议。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：83 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：223 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以做“经验建议的一键应用候选”，把建议和桌面面板快捷入口结合起来。
+- 下一步可以做“最近建议持久化”，让重启后的 Agent 也能恢复最近建议列表。
