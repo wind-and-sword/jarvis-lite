@@ -2294,3 +2294,51 @@ git diff --check
 - 全量测试 260 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-23 按编号导入最近文件验证
+
+### RED：最近文件编号导入被误当成普通路径
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_import_numbered_recent_file_adds_document_to_knowledge_base tests.test_agent.AgentTests.test_natural_language_import_numbered_recent_file_requires_recent_files tests.test_agent.AgentTests.test_natural_language_import_numbered_recent_file_reports_out_of_range -v
+```
+
+结果：
+
+- “导入第一份最近文件到知识库”先返回 `导入失败：源路径不存在：第一份最近文件`。
+- 缺少最近文件列表时没有提示先查看最近文件。
+- 编号越界时没有提示最近文件列表数量。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_import_numbered_recent_file_adds_document_to_knowledge_base tests.test_agent.AgentTests.test_natural_language_import_numbered_recent_file_requires_recent_files tests.test_agent.AgentTests.test_natural_language_import_numbered_recent_file_reports_out_of_range -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge -v
+```
+
+结果：
+
+- 按编号导入最近文件新增 3 个 Agent 测试通过。
+- Agent 专项测试 118 个通过。
+- Knowledge 专项测试 24 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 263 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

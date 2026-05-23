@@ -726,6 +726,39 @@ class AgentTests(unittest.TestCase):
         self.assertIn("还没有最近文件列表", response)
         self.assertIn("先查看最近文件", response)
 
+    def test_natural_language_import_numbered_recent_file_adds_document_to_knowledge_base(self):
+        recent_file = self.paths.root / "recent-source.md"
+        recent_file.write_text("最近文件可以导入知识库。\n", encoding="utf-8")
+        os.utime(recent_file, (200, 200))
+        with patch("jarvis_lite.agent.Path.home", return_value=Path(self.temp_dir.name)):
+            self.agent.handle("/recent-files")
+
+        response = self.agent.handle("导入第一份最近文件到知识库")
+
+        self.assertIn("已导入知识库", response)
+        self.assertIn("data/recent-source.md", response)
+        ask_response = self.agent.handle("/ask 最近文件可以导入什么？")
+        self.assertIn("data/recent-source.md", ask_response)
+        self.assertIn("最近文件可以导入知识库", ask_response)
+
+    def test_natural_language_import_numbered_recent_file_requires_recent_files(self):
+        response = self.agent.handle("导入第一份最近文件到知识库")
+
+        self.assertIn("还没有最近文件列表", response)
+        self.assertIn("先查看最近文件", response)
+
+    def test_natural_language_import_numbered_recent_file_reports_out_of_range(self):
+        recent_file = self.paths.root / "only-recent.md"
+        recent_file.write_text("只有一份最近文件。\n", encoding="utf-8")
+        os.utime(recent_file, (200, 200))
+        with patch("jarvis_lite.agent.Path.home", return_value=Path(self.temp_dir.name)):
+            self.agent.handle("查看最近文件")
+
+        response = self.agent.handle("把第2份最近文件导入知识库")
+
+        self.assertIn("最近文件列表只有 1 条", response)
+        self.assertIn("不能选择第 2 份", response)
+
     def test_dir_add_and_dirs_commands_manage_common_directories(self):
         target = Path(self.temp_dir.name) / "projects"
         target.mkdir()

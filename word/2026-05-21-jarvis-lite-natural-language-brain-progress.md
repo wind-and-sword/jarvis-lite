@@ -720,6 +720,23 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：按编号导入最近文件到知识库
+
+- 执行 `/recent-files` 或“查看最近文件”后，可以继续说“导入第一份最近文件到知识库”。
+- 也支持“把第2份最近文件导入知识库”等编号表达。
+- Agent 只负责从运行态最近文件列表中选择路径，实际导入继续复用 `/import` 和 `import_knowledge_path()`。
+- 缺少最近文件列表、编号越界或文件已不存在时，会返回明确提示。
+- RED 验证：
+  - 新增 3 个 Agent 测试先证明“第一份最近文件”会被误当成普通导入路径，缺列表和编号越界也没有最近文件语义提示。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_import_numbered_recent_file_adds_document_to_knowledge_base tests.test_agent.AgentTests.test_natural_language_import_numbered_recent_file_requires_recent_files tests.test_agent.AgentTests.test_natural_language_import_numbered_recent_file_reports_out_of_range -v`：3 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：118 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_knowledge -v`：24 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：263 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。

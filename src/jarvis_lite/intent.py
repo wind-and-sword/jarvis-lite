@@ -60,6 +60,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if experience_intent is not None:
         return experience_intent
 
+    import_numbered_recent_file_intent = _parse_import_numbered_recent_file_intent(prompt)
+    if import_numbered_recent_file_intent is not None:
+        return import_numbered_recent_file_intent
+
     import_intent = _parse_import_intent(readable_prompt)
     if import_intent is not None:
         return import_intent
@@ -205,6 +209,21 @@ def _parse_read_numbered_recent_file_intent(prompt: str) -> NaturalLanguageInten
     if file_index <= 0:
         return None
     return NaturalLanguageIntent("read_numbered_recent_file", result_index=file_index)
+
+
+def _parse_import_numbered_recent_file_intent(prompt: str) -> NaturalLanguageIntent | None:
+    patterns = (
+        r"(?:请)?(?:帮我)?导入第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个|份)?(?:最近文件|系统最近文件)(?:(?:到|进|加入|放进)?(?:知识库|资料库))?",
+        r"(?:请)?(?:帮我)?把第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个|份)?(?:最近文件|系统最近文件)(?:导入|加入|放进)(?:(?:到|进|加入|放进)?(?:知识库|资料库))?",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, prompt)
+        if not match:
+            continue
+        file_index = _parse_positive_number(match.group("number"))
+        if file_index > 0:
+            return NaturalLanguageIntent("import_numbered_recent_file", result_index=file_index)
+    return None
 
 
 def _parse_read_result_intent(prompt: str) -> NaturalLanguageIntent | None:

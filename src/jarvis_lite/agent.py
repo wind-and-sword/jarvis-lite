@@ -373,6 +373,8 @@ class JarvisAgent:
             return self._read_numbered_recent_document(intent.result_index)
         if intent.name == "read_numbered_recent_file":
             return self._read_numbered_recent_file(intent.result_index)
+        if intent.name == "import_numbered_recent_file":
+            return self._import_numbered_recent_file(intent.result_index)
         if intent.name == "read_numbered_search_result":
             return self._read_numbered_search_result(intent.result_index)
         if intent.name == "read_numbered_advice_suggestion":
@@ -686,6 +688,18 @@ class JarvisAgent:
                 "- 说明：只展示文件信息，不会读取或打开文件。",
             ]
         )
+
+    def _import_numbered_recent_file(self, file_index: int) -> str:
+        if not self._recent_files:
+            return "还没有最近文件列表。你可以先查看最近文件，或使用 /recent-files。"
+        if file_index < 1 or file_index > len(self._recent_files):
+            return f"最近文件列表只有 {len(self._recent_files)} 条，不能选择第 {file_index} 份。"
+        recent_file = self._recent_files[file_index - 1]
+        path = Path(recent_file.path)
+        if not path.is_file():
+            return f"最近文件已不存在：{path}。你可以先重新查看最近文件。"
+        self.tools.run("record_log", message=f"导入最近文件到知识库：第 {file_index} 份 -> {path}")
+        return self.handle(f'/import "{path}"')
 
     def _tag_numbered_search_result(self, result_index: int, tags: tuple[str, ...]) -> str:
         relative_path, error = self._recent_search_result_path(result_index)
