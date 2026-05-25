@@ -2389,3 +2389,51 @@ git diff --check
 - 全量测试 263 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-25 知识库摘要增强验证
+
+### RED：知识库摘要命令和自然语言入口缺失
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_reports_document_previews_with_sources tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_reports_empty_state tests.test_agent.AgentTests.test_knowledge_summary_command_reports_document_previews tests.test_agent.AgentTests.test_natural_language_knowledge_summary_maps_to_summary -v
+```
+
+结果：
+
+- `tests.test_knowledge` 先因 `summarize_knowledge_base` 不存在导入失败。
+- `/kb-summary` 先返回未知命令。
+- “总结知识库”先落入长期记忆兜底，没有返回知识库摘要。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_reports_document_previews_with_sources tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_reports_empty_state tests.test_agent.AgentTests.test_knowledge_summary_command_reports_document_previews tests.test_agent.AgentTests.test_natural_language_knowledge_summary_maps_to_summary -v
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- 知识库摘要新增 4 个目标测试通过。
+- Knowledge 专项测试 26 个通过。
+- Agent 专项测试 120 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 267 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

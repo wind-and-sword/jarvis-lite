@@ -165,6 +165,30 @@ def describe_knowledge_base(paths: ProjectPaths) -> str:
     return "\n".join(lines)
 
 
+def summarize_knowledge_base(paths: ProjectPaths) -> str:
+    """输出每份知识库资料的确定性摘要预览。"""
+
+    index = build_knowledge_index(paths)
+    lines = [
+        "知识库摘要：",
+        f"- 资料文件：{index.document_count} 个",
+        f"- 可检索文本行：{index.searchable_line_count} 行",
+    ]
+
+    if not index.documents:
+        lines.append("- 资料概览：还没有可摘要资料。")
+        return "\n".join(lines)
+
+    lines.append("- 资料概览：")
+    for document_index, document in enumerate(index.documents, start=1):
+        tag_text = f"，标签：{'、'.join(document.tags)}" if document.tags else ""
+        lines.append(f"  {document_index}. data/{document.relative_path}（{document.searchable_line_count} 行{tag_text}）")
+        preview_lines = _searchable_lines(paths.data_dir / document.relative_path)
+        preview = preview_lines[0] if preview_lines else "暂无可摘要文本。"
+        lines.append(f"     摘要：{preview}")
+    return "\n".join(lines)
+
+
 def import_knowledge_file(paths: ProjectPaths, source_path: str | Path, target_name: str | None = None) -> KnowledgeDocument:
     """把外部资料导入 data 目录，供知识库检索。"""
 

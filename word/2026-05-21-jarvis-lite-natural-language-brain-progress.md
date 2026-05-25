@@ -753,7 +753,24 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：知识库摘要增强
+
+- 新增 `/kb-summary` 命令，用于按资料输出确定性知识库摘要。
+- “总结知识库”“知识库摘要”“总结资料库”“资料库摘要”会映射到 `/kb-summary`。
+- 摘要输出包含资料文件数、可检索文本行数、每份资料来源、行数、标签和第一条可检索文本预览。
+- 本阶段复用现有 `_searchable_lines()`、`build_knowledge_index()` 和标签元数据，不改变 `/kb` 状态展示和 `/ask` 检索问答。
+- RED 验证：
+  - 新增 Knowledge 和 Agent 测试先因 `summarize_knowledge_base` 不存在、`/kb-summary` 未识别、“总结知识库”落入兜底而失败。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_reports_document_previews_with_sources tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_reports_empty_state tests.test_agent.AgentTests.test_knowledge_summary_command_reports_document_previews tests.test_agent.AgentTests.test_natural_language_knowledge_summary_maps_to_summary -v`：4 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_knowledge -v`：26 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：120 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：267 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
-- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕知识库摘要、最近文件后续操作和桌面入口细化做更稳定的上下文识别。
+- 下一步可以继续做“个人设备级 Agent 电脑工作台增强”，优先围绕知识库摘要可读性、最近文件后续操作和桌面入口细化做更稳定的上下文识别。

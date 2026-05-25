@@ -16,7 +16,14 @@ from .automation import (
     write_daily_report,
 )
 from .config import ProjectPaths, build_project_paths
-from .knowledge import answer_from_matches, describe_knowledge_base, find_data_matches, import_knowledge_path, set_document_tags
+from .knowledge import (
+    answer_from_matches,
+    describe_knowledge_base,
+    find_data_matches,
+    import_knowledge_path,
+    set_document_tags,
+    summarize_knowledge_base,
+)
 from .intent import parse_natural_language_intent
 from .memory import (
     append_experience,
@@ -81,6 +88,9 @@ class JarvisAgent:
         if prompt in {"/kb", "kb", "/knowledge", "knowledge"}:
             self.tools.run("record_log", message="查看个人知识库状态")
             return describe_knowledge_base(self.paths)
+        if prompt in {"/kb-summary", "kb-summary", "/knowledge-summary", "knowledge-summary"}:
+            self.tools.run("record_log", message="查看知识库摘要")
+            return summarize_knowledge_base(self.paths)
         if prompt in {"/voice-status", "voice-status"}:
             self.tools.run("record_log", message="查看语音入口状态")
             return describe_voice(self.paths)
@@ -311,6 +321,7 @@ class JarvisAgent:
                 "/experiences：查看经验记忆",
                 "/status：查看阶段 1 当前状态",
                 "/kb：查看个人知识库状态",
+                "/kb-summary：查看知识库资料摘要",
                 "/voice-status：查看阶段 3 语音入口状态",
                 "/speak 文本：播报一段文本",
                 "/voice 已识别的语音文本：按语音入口处理文本并播报回答",

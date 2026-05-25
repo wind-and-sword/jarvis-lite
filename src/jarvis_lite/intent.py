@@ -29,6 +29,8 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
         return NaturalLanguageIntent("capabilities")
     if _is_recent_context_status_question(prompt):
         return NaturalLanguageIntent("recent_context_status")
+    if _matches_any(prompt, ("总结知识库", "知识库摘要", "总结资料库", "资料库摘要")):
+        return NaturalLanguageIntent("command", command="/kb-summary")
     if _matches_any(prompt, ("查看知识库", "看看知识库", "知识库状态", "我的知识库", "资料库状态")):
         return NaturalLanguageIntent("command", command="/kb")
     if _matches_any(prompt, ("查看常用目录", "看看常用目录", "常用目录", "目录列表")):

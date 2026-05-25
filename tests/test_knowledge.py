@@ -15,6 +15,7 @@ from jarvis_lite.knowledge import (
     import_knowledge_path,
     search_data,
     set_document_tags,
+    summarize_knowledge_base,
 )
 
 
@@ -200,6 +201,33 @@ class KnowledgeTests(unittest.TestCase):
 
         self.assertIn("个人知识库状态", description)
         self.assertIn("还没有可检索资料", description)
+
+    def test_summarize_knowledge_base_reports_document_previews_with_sources(self):
+        project_dir = self.paths.data_dir / "projects"
+        project_dir.mkdir()
+        (self.paths.data_dir / "intro.md").write_text(
+            "# 标题\n\nJarvis Lite 是个人助手。\n第二行资料。\n",
+            encoding="utf-8",
+        )
+        (project_dir / "workflow.txt").write_text("工作流资料可以生成摘要。\n", encoding="utf-8")
+        set_document_tags(self.paths, "intro.md", ["项目"])
+
+        summary = summarize_knowledge_base(self.paths)
+
+        self.assertIn("知识库摘要：", summary)
+        self.assertIn("资料文件：2 个", summary)
+        self.assertIn("可检索文本行：3 行", summary)
+        self.assertIn("1. data/intro.md（2 行，标签：项目）", summary)
+        self.assertIn("摘要：Jarvis Lite 是个人助手。", summary)
+        self.assertIn("2. data/projects/workflow.txt（1 行）", summary)
+        self.assertIn("摘要：工作流资料可以生成摘要。", summary)
+        self.assertNotIn("# 标题", summary)
+
+    def test_summarize_knowledge_base_reports_empty_state(self):
+        summary = summarize_knowledge_base(self.paths)
+
+        self.assertIn("知识库摘要", summary)
+        self.assertIn("还没有可摘要资料", summary)
 
     def test_import_knowledge_file_copies_supported_text_into_data(self):
         source = Path(self.temp_dir.name) / "outside.md"

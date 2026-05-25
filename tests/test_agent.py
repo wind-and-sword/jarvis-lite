@@ -288,6 +288,14 @@ class AgentTests(unittest.TestCase):
         self.assertIn("可检索文本行：1 行", response)
         self.assertIn("data/note.txt", response)
 
+    def test_knowledge_summary_command_reports_document_previews(self):
+        response = self.agent.handle("/kb-summary")
+
+        self.assertIn("知识库摘要：", response)
+        self.assertIn("资料文件：1 个", response)
+        self.assertIn("1. data/note.txt（1 行）", response)
+        self.assertIn("摘要：资料内容", response)
+
     def test_voice_status_command_reports_voice_entry(self):
         with patch.dict(os.environ, {"JARVIS_LITE_VOICE_ENGINE": "transcript"}):
             response = self.agent.handle("/voice-status")
@@ -381,6 +389,13 @@ class AgentTests(unittest.TestCase):
         response = self.agent.handle("查看知识库")
 
         self.assertIn("个人知识库状态", response)
+
+    def test_natural_language_knowledge_summary_maps_to_summary(self):
+        response = self.agent.handle("总结知识库")
+
+        self.assertIn("知识库摘要：", response)
+        self.assertIn("data/note.txt", response)
+        self.assertIn("摘要：资料内容", response)
 
     def test_natural_language_update_status_maps_to_update_status(self):
         response = self.agent.handle("检查更新")
