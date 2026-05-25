@@ -405,6 +405,8 @@ class JarvisAgent:
             return self._tag_numbered_recent_document(intent.result_index, intent.tags)
         if intent.name == "tag_numbered_search_result":
             return self._tag_numbered_search_result(intent.result_index, intent.tags)
+        if intent.name == "read_tagged_documents":
+            return self._read_tagged_documents(intent.alias)
         if intent.name == "read_recent_document":
             return self._read_recent_document()
         if intent.name == "read_numbered_recent_document":
@@ -690,6 +692,39 @@ class JarvisAgent:
             return f"最近资料列表只有 {len(self._recent_document_paths)} 条，不能选择第 {document_index} 份。"
         relative_path = self._recent_document_paths[document_index - 1]
         return self.handle(f'/tag "{relative_path}" {" ".join(tags)}')
+
+    def _read_tagged_documents(self, tag: str) -> str:
+        index = build_knowledge_index(self.paths)
+        documents = tuple(document for document in index.documents if tag in document.tags)
+        if not documents:
+            return f"没有找到标签为“{tag}”的资料。你可以先用 /kb-summary 查看标签分组，或给资料打标签。"
+
+        document_paths = tuple(document.relative_path for document in documents)
+        self._recent_document_path = document_paths[0]
+        self._recent_document_paths = document_paths
+        self._save_runtime_context()
+        self.tools.run("record_log", message=f"按标签读取知识库资料：{tag} -> {len(documents)} 份")
+
+        lines = [f"标签资料：{tag}"]
+        for document_index, document in enumerate(documents, start=1):
+            tag_text = f"，标签：{'、'.join(document.tags)}" if document.tags else ""
+            lines.append(
+                f"{document_index}. data/{document.relative_path}"
+                f"（{document.searchable_line_count} 行{tag_text}）"
+            )
+            preview = self._document_preview(document.relative_path)
+            if preview:
+                lines.append(f"   摘要：{preview}")
+        lines.append(f"可继续操作：读取第一份资料；给第一份资料打标签 标签；/ask {tag}")
+        return "\n".join(lines)
+
+    def _document_preview(self, relative_path: str) -> str:
+        document_path = self.paths.data_dir / relative_path
+        for raw_line in document_path.read_text(encoding="utf-8").splitlines():
+            text = raw_line.strip()
+            if text and not text.startswith("#"):
+                return text
+        return ""
 
     def _read_recent_document(self) -> str:
         if self._recent_document_path is None:

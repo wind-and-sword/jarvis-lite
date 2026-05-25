@@ -327,6 +327,27 @@ class AgentTests(unittest.TestCase):
         self.assertIn("第 2 份资料：data/zeta.md", response)
         self.assertIn("第二份持久摘要资料", response)
 
+    def test_natural_language_read_tagged_documents_sets_recent_document_list(self):
+        (self.paths.data_dir / "zeta.md").write_text("第二份项目标签资料。\n", encoding="utf-8")
+        self.agent.handle("/tag note.txt 项目")
+        self.agent.handle("/tag zeta.md 项目")
+
+        response = self.agent.handle("读取项目标签资料")
+        followup = self.agent.handle("读取第二份资料")
+
+        self.assertIn("标签资料：项目", response)
+        self.assertIn("1. data/note.txt（1 行，标签：项目）", response)
+        self.assertIn("2. data/zeta.md（1 行，标签：项目）", response)
+        self.assertIn("可继续操作：读取第一份资料；给第一份资料打标签 标签；/ask 项目", response)
+        self.assertIn("第 2 份资料：data/zeta.md", followup)
+        self.assertIn("第二份项目标签资料", followup)
+
+    def test_natural_language_read_tagged_documents_reports_no_match(self):
+        response = self.agent.handle("查看缺失标签资料")
+
+        self.assertIn("没有找到标签为“缺失”的资料", response)
+        self.assertIn("/kb-summary", response)
+
     def test_voice_status_command_reports_voice_entry(self):
         with patch.dict(os.environ, {"JARVIS_LITE_VOICE_ENGINE": "transcript"}):
             response = self.agent.handle("/voice-status")
