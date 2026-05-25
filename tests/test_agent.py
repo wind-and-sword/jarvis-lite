@@ -1035,7 +1035,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("下一步建议：", response)
         self.assertIn("继续处理最近资料：/read note.txt；/tag note.txt 标签...", response)
         self.assertIn("继续处理最近目录：/organize-preview 项目；/dir-open 项目", response)
-        self.assertIn("继续处理最近文件：查看第一份最近文件；/recent-files", response)
+        self.assertIn("继续处理最近文件：查看第一份最近文件；导入第一份最近文件到知识库；/recent-files", response)
         self.assertIn("继续最近建议：查看第一条建议；执行第一条建议", response)
         self.assertNotIn("最近文件内容不应进入建议", response)
 

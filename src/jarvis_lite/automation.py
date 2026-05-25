@@ -359,7 +359,7 @@ def suggest_next_actions_from_context(
             f"继续处理最近目录：/organize-preview {context.recent_directory.alias}；/dir-open {context.recent_directory.alias}"
         )
     if context.recent_files:
-        suggestions.append("继续处理最近文件：查看第一份最近文件；/recent-files")
+        suggestions.append("继续处理最近文件：查看第一份最近文件；导入第一份最近文件到知识库；/recent-files")
     if context.recent_advice_suggestions:
         suggestions.append("继续最近建议：查看第一条建议；执行第一条建议")
     if recent_experiences:

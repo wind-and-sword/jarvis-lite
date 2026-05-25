@@ -133,7 +133,7 @@ class AutomationTests(unittest.TestCase):
         self.assertIn("继续处理最近资料：/read note.md；/tag note.md 标签...", content)
         self.assertIn("继续处理最近目录：/organize-preview 项目；/dir-open 项目", content)
         self.assertIn("继续最近建议：查看第一条建议；执行第一条建议", content)
-        self.assertIn("继续处理最近文件：查看第一份最近文件；/recent-files", content)
+        self.assertIn("继续处理最近文件：查看第一份最近文件；导入第一份最近文件到知识库；/recent-files", content)
         self.assertIn("复用经验记忆：/experience-advice 关键词", content)
         self.assertIn("沉淀工具流程：/experience 经验内容", content)
 

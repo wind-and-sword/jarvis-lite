@@ -2342,3 +2342,50 @@ git diff --check
 - 全量测试 263 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-25 最近文件导入进入下一步建议验证
+
+### RED：最近文件建议未提示导入动作
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_recent_context_status_suggests_next_actions tests.test_automation.AutomationTests.test_write_daily_report_suggests_next_actions_from_context -v
+```
+
+结果：
+
+- “查看最近上下文”的最近文件建议仍是 `查看第一份最近文件；/recent-files`。
+- 日报“下一步建议”的最近文件建议也没有提示“导入第一份最近文件到知识库”。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_recent_context_status_suggests_next_actions tests.test_automation.AutomationTests.test_write_daily_report_suggests_next_actions_from_context -v
+```
+
+结果：
+
+- 最近上下文和日报最近文件建议 2 个测试通过。
+
+### 专项与收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+.\.venv\Scripts\python.exe -m unittest tests.test_automation -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- Agent 专项测试 118 个通过。
+- Automation 专项测试 8 个通过。
+- 全量测试 263 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
