@@ -43,6 +43,7 @@ class DesktopBridgeTests(unittest.TestCase):
 
         self.assertIn("/status", prompts)
         self.assertIn("/kb", prompts)
+        self.assertIn("/kb-summary", prompts)
         self.assertIn("/dirs", prompts)
         self.assertIn("查看最近上下文", prompts)
         self.assertIn("/recent-files", prompts)
@@ -56,7 +57,8 @@ class DesktopBridgeTests(unittest.TestCase):
         labels = tuple(command.label for command in commands)
         prompts = tuple(command.prompt for command in commands)
 
-        self.assertEqual(labels, ("状态", "知识库", "常用目录", "最近上下文", "最近文件", "生成日报", "检查更新", "下载更新"))
+        self.assertEqual(labels, ("状态", "知识库", "知识库摘要", "常用目录", "最近上下文", "最近文件", "生成日报", "检查更新", "下载更新"))
+        self.assertIn("/kb-summary", prompts)
         self.assertIn("查看最近上下文", prompts)
         self.assertIn("/recent-files", prompts)
         self.assertNotIn("/organize-preview", prompts)

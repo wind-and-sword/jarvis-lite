@@ -35,6 +35,10 @@
   - `/kb-summary` 保留“读取第一份资料；给第一份资料打标签 标签；/ask 关键词”的通用提示。
   - 当知识库存在标签时，摘要末尾会额外提示 `按标签提问：/ask 标签A；/ask 标签B`。
   - 标签建议去重后按名称排序，最多展示 3 个，避免提示过长。
+- 桌面知识库摘要快捷入口：
+  - 桌面面板和托盘快捷命令新增“知识库摘要”。
+  - 该入口直接执行 `/kb-summary`，仍然属于无参数快捷命令。
+  - 面板和托盘继续复用 `direct_quick_commands()`，不维护两套列表。
 - 文档与进度记录审计：
   - 发现 `word/` 独立日期文档停留在 2026-05-22，后续进度散落在 2026-05-21 和 2026-05-22 的长文档中。
   - 已补充 2026-05-23 与 2026-05-25 两份进度总账，并更新 `word/文档索引.md`。
@@ -69,6 +73,11 @@
   - 编号后续建议和最近资料上下文 2 个回归测试通过。
   - `tests.test_agent`：124 个测试通过。
   - `tests.test_knowledge`：28 个测试通过。
+- 桌面知识库摘要快捷入口：
+  - 3 个目标测试先失败后通过。
+  - `tests.test_desktop_bridge`：4 个测试通过。
+  - `tests.test_desktop_widgets`：19 个测试通过。
+  - `tests.test_desktop_tray`：8 个测试通过。
 - 收尾验证：
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
@@ -83,6 +92,7 @@
 - 本轮新增：
   - 知识库摘要按标签分组
   - 知识库摘要按标签后续建议
+  - 桌面知识库摘要快捷入口
 - 对应 `.codex/` 留痕：
   - `.codex/context-scan-recent-file-import-suggestions.json`
   - `.codex/recent-file-import-suggestions-plan.md`
@@ -96,6 +106,8 @@
   - `.codex/kb-summary-grouping-plan.md`
   - `.codex/context-scan-kb-summary-tag-suggestions.json`
   - `.codex/kb-summary-tag-suggestions-plan.md`
+  - `.codex/context-scan-desktop-kb-summary-quick-command.json`
+  - `.codex/desktop-kb-summary-quick-command-plan.md`
   - `.codex/testing.md`
   - `.codex/review-report.md`
 

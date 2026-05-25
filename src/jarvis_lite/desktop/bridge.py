@@ -24,6 +24,7 @@ class QuickCommand:
 DIRECT_QUICK_COMMAND_PROMPTS = (
     "/status",
     "/kb",
+    "/kb-summary",
     "/dirs",
     "查看最近上下文",
     "/recent-files",
@@ -54,6 +55,7 @@ def quick_commands() -> tuple[QuickCommand, ...]:
     return (
         QuickCommand("状态", "/status"),
         QuickCommand("知识库", "/kb"),
+        QuickCommand("知识库摘要", "/kb-summary"),
         QuickCommand("常用目录", "/dirs"),
         QuickCommand("最近上下文", "查看最近上下文"),
         QuickCommand("最近文件", "/recent-files"),

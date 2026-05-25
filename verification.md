@@ -2664,3 +2664,54 @@ git diff --check
 - 全量测试 273 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-25 桌面知识库摘要快捷入口验证
+
+### RED：桌面快捷入口缺少知识库摘要
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge.DesktopBridgeTests.test_quick_commands_include_current_assistant_capabilities tests.test_desktop_bridge.DesktopBridgeTests.test_direct_quick_commands_exclude_commands_that_need_arguments -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets.DesktopWidgetTests.test_panel_exposes_only_direct_quick_command_buttons -v
+```
+
+结果：
+
+- `quick_commands()` 中没有 `/kb-summary`。
+- `direct_quick_commands()` 和面板按钮列表中没有“知识库摘要”。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge.DesktopBridgeTests.test_quick_commands_include_current_assistant_capabilities tests.test_desktop_bridge.DesktopBridgeTests.test_direct_quick_commands_exclude_commands_that_need_arguments -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets.DesktopWidgetTests.test_panel_exposes_only_direct_quick_command_buttons -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_tray -v
+```
+
+结果：
+
+- 桌面知识库摘要快捷入口 3 个目标测试通过。
+- Desktop bridge 专项测试 4 个通过。
+- Desktop widgets 专项测试 19 个通过。
+- Desktop tray 专项测试 8 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 273 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
