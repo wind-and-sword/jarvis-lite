@@ -180,6 +180,8 @@ def summarize_knowledge_base(paths: ProjectPaths) -> str:
         lines.append("- 资料概览：还没有可摘要资料。")
         return "\n".join(lines)
 
+    lines.append("- 标签分组：")
+    lines.extend(_summary_tag_group_lines(index.documents))
     lines.append("- 资料概览：")
     for document_index, document in enumerate(index.documents, start=1):
         tag_text = f"，标签：{'、'.join(document.tags)}" if document.tags else ""
@@ -338,6 +340,26 @@ def _summary_preview(text: str) -> str:
     if len(text) <= SUMMARY_PREVIEW_MAX_CHARS:
         return text
     return text[: SUMMARY_PREVIEW_MAX_CHARS - 3].rstrip() + "..."
+
+
+def _summary_tag_group_lines(documents: tuple[KnowledgeDocument, ...]) -> list[str]:
+    groups: dict[str, list[str]] = {}
+    untagged: list[str] = []
+    for document in documents:
+        document_name = f"data/{document.relative_path}"
+        if not document.tags:
+            untagged.append(document_name)
+            continue
+        for tag in document.tags:
+            groups.setdefault(tag, []).append(document_name)
+
+    lines = []
+    for tag in sorted(groups):
+        document_names = "、".join(groups[tag])
+        lines.append(f"  - {tag}（{len(groups[tag])} 个）：{document_names}")
+    if untagged:
+        lines.append(f"  - 未标签（{len(untagged)} 个）：{'、'.join(untagged)}")
+    return lines
 
 
 def _target_suffix_for_source(source: Path) -> str:

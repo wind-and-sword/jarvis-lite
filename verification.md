@@ -2566,3 +2566,52 @@ git diff --check
 - 全量测试 271 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅提示 `word/文档索引.md` 后续会从 LF 转 CRLF。
+
+## 2026-05-25 知识库摘要按标签分组验证
+
+### RED：摘要没有标签分组
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_groups_documents_by_tags -v
+```
+
+结果：
+
+- 新增测试先失败，`summarize_knowledge_base()` 输出中没有 `- 标签分组：`。
+- 现有摘要直接从总数进入 `- 资料概览：`，无法先按标签扫读多资料知识库。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_groups_documents_by_tags -v
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_reports_document_previews_with_sources tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_truncates_long_document_preview -v
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+```
+
+结果：
+
+- 标签分组新增 1 个目标测试通过。
+- 摘要来源预览和长预览截断回归测试通过。
+- Knowledge 专项测试 28 个通过。
+- Agent 专项测试 123 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 272 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

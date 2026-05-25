@@ -239,6 +239,21 @@ class KnowledgeTests(unittest.TestCase):
         self.assertIn("...", summary)
         self.assertNotIn("长文本" * 20, summary)
 
+    def test_summarize_knowledge_base_groups_documents_by_tags(self):
+        (self.paths.data_dir / "intro.md").write_text("Jarvis Lite 是个人助手。\n", encoding="utf-8")
+        (self.paths.data_dir / "runtime.md").write_text("Python 3.13 是当前运行环境。\n", encoding="utf-8")
+        (self.paths.data_dir / "untagged.txt").write_text("还没有标签的资料。\n", encoding="utf-8")
+        set_document_tags(self.paths, "intro.md", ["项目", "助手"])
+        set_document_tags(self.paths, "runtime.md", ["项目"])
+
+        summary = summarize_knowledge_base(self.paths)
+
+        self.assertIn("- 标签分组：", summary)
+        self.assertIn("  - 助手（1 个）：data/intro.md", summary)
+        self.assertIn("  - 项目（2 个）：data/intro.md、data/runtime.md", summary)
+        self.assertIn("  - 未标签（1 个）：data/untagged.txt", summary)
+        self.assertLess(summary.index("- 标签分组："), summary.index("- 资料概览："))
+
     def test_import_knowledge_file_copies_supported_text_into_data(self):
         source = Path(self.temp_dir.name) / "outside.md"
         source.write_text("# 外部资料\n\nJarvis Lite 可以导入 Markdown。\n", encoding="utf-8")
