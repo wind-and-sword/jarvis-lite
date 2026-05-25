@@ -2615,3 +2615,52 @@ git diff --check
 - 全量测试 272 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-25 知识库摘要按标签后续建议验证
+
+### RED：摘要没有按标签提问建议
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_knowledge_summary_command_suggests_tagged_ask_followups -v
+```
+
+结果：
+
+- 新增测试先失败，`/kb-summary` 已有“标签分组”，但末尾没有 `按标签提问：/ask 助手；/ask 项目`。
+- 现有输出只保留通用 `可继续操作：读取第一份资料；给第一份资料打标签 标签；/ask 关键词`。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_knowledge_summary_command_suggests_tagged_ask_followups -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_knowledge_summary_command_suggests_numbered_followups tests.test_agent.AgentTests.test_knowledge_summary_command_sets_recent_document_list_for_numbered_followups -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge -v
+```
+
+结果：
+
+- 标签化 `/ask` 建议新增 1 个目标测试通过。
+- 编号后续建议和最近资料上下文 2 个回归测试通过。
+- Agent 专项测试 124 个通过。
+- Knowledge 专项测试 28 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 273 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

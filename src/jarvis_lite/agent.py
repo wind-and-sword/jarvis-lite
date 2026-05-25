@@ -17,6 +17,7 @@ from .automation import (
 )
 from .config import ProjectPaths, build_project_paths
 from .knowledge import (
+    KnowledgeIndex,
     answer_from_matches,
     build_knowledge_index,
     describe_knowledge_base,
@@ -356,19 +357,28 @@ class JarvisAgent:
 
     def _knowledge_summary(self) -> str:
         summary = summarize_knowledge_base(self.paths)
-        document_paths = tuple(document.relative_path for document in build_knowledge_index(self.paths).documents)
+        index = build_knowledge_index(self.paths)
+        document_paths = tuple(document.relative_path for document in index.documents)
         if not document_paths:
             return summary
 
         self._recent_document_path = document_paths[0]
         self._recent_document_paths = document_paths
         self._save_runtime_context()
-        return "\n".join(
-            [
-                summary,
-                "可继续操作：读取第一份资料；给第一份资料打标签 标签；/ask 关键词",
-            ]
-        )
+        lines = [
+            summary,
+            "可继续操作：读取第一份资料；给第一份资料打标签 标签；/ask 关键词",
+        ]
+        tag_suggestions = self._knowledge_summary_tag_suggestions(index)
+        if tag_suggestions:
+            lines.append(f"按标签提问：{tag_suggestions}")
+        return "\n".join(lines)
+
+    def _knowledge_summary_tag_suggestions(self, index: KnowledgeIndex) -> str:
+        tags = sorted({tag for document in index.documents for tag in document.tags})
+        if not tags:
+            return ""
+        return "；".join(f"/ask {tag}" for tag in tags[:3])
 
     def _handle_natural_language_intent(self, intent) -> str:
         if intent.name == "capabilities":
