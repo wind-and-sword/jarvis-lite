@@ -229,6 +229,16 @@ class KnowledgeTests(unittest.TestCase):
         self.assertIn("知识库摘要", summary)
         self.assertIn("还没有可摘要资料", summary)
 
+    def test_summarize_knowledge_base_truncates_long_document_preview(self):
+        long_preview = "Jarvis Lite 摘要预览需要保持可读，" + "长文本" * 60
+        (self.paths.data_dir / "long.md").write_text(f"{long_preview}\n", encoding="utf-8")
+
+        summary = summarize_knowledge_base(self.paths)
+
+        self.assertIn("摘要：Jarvis Lite 摘要预览需要保持可读，", summary)
+        self.assertIn("...", summary)
+        self.assertNotIn("长文本" * 20, summary)
+
     def test_import_knowledge_file_copies_supported_text_into_data(self):
         source = Path(self.temp_dir.name) / "outside.md"
         source.write_text("# 外部资料\n\nJarvis Lite 可以导入 Markdown。\n", encoding="utf-8")

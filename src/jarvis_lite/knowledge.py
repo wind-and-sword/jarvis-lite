@@ -11,6 +11,7 @@ from .config import ProjectPaths
 SUPPORTED_TEXT_SUFFIXES = {".md", ".txt"}
 SUPPORTED_IMPORT_SUFFIXES = SUPPORTED_TEXT_SUFFIXES | {".json", ".pdf"}
 TAG_METADATA_FILENAME = ".knowledge-tags.json"
+SUMMARY_PREVIEW_MAX_CHARS = 80
 
 
 @dataclass(frozen=True)
@@ -184,7 +185,7 @@ def summarize_knowledge_base(paths: ProjectPaths) -> str:
         tag_text = f"，标签：{'、'.join(document.tags)}" if document.tags else ""
         lines.append(f"  {document_index}. data/{document.relative_path}（{document.searchable_line_count} 行{tag_text}）")
         preview_lines = _searchable_lines(paths.data_dir / document.relative_path)
-        preview = preview_lines[0] if preview_lines else "暂无可摘要文本。"
+        preview = _summary_preview(preview_lines[0]) if preview_lines else "暂无可摘要文本。"
         lines.append(f"     摘要：{preview}")
     return "\n".join(lines)
 
@@ -331,6 +332,12 @@ def _searchable_lines(file_path: Path) -> list[str]:
             continue
         lines.append(text)
     return lines
+
+
+def _summary_preview(text: str) -> str:
+    if len(text) <= SUMMARY_PREVIEW_MAX_CHARS:
+        return text
+    return text[: SUMMARY_PREVIEW_MAX_CHARS - 3].rstrip() + "..."
 
 
 def _target_suffix_for_source(source: Path) -> str:

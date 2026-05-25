@@ -2485,3 +2485,48 @@ git diff --check
 - 全量测试 270 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-25 知识库摘要长预览截断验证
+
+### RED：长预览完整输出
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_truncates_long_document_preview -v
+```
+
+结果：
+
+- 新增测试先失败，`/kb-summary` 底层摘要没有 `...` 省略标记。
+- 长文本尾部仍完整出现在摘要预览中。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_truncates_long_document_preview -v
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge -v
+```
+
+结果：
+
+- 长预览截断新增 1 个目标测试通过。
+- Knowledge 专项测试 27 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 271 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

@@ -787,6 +787,21 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：知识库摘要长预览截断
+
+- `/kb-summary` 中每份资料的摘要预览现在限制为 80 个字符。
+- 资料首条可检索文本超过限制时，会截断并追加 `...`。
+- 短预览保持原样，不改变 `/ask`、`/read` 和知识库索引。
+- RED 验证：
+  - 新增 1 个 Knowledge 测试先证明长预览会完整输出，没有省略标记。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_knowledge.KnowledgeTests.test_summarize_knowledge_base_truncates_long_document_preview -v`：1 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_knowledge -v`：27 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：271 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。
