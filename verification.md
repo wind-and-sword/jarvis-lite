@@ -2530,3 +2530,39 @@ git diff --check
 - 全量测试 271 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-25 文档进度同步收尾验证
+
+### 文档与代码对应核查
+
+命令：
+
+```powershell
+Get-Content -Raw -LiteralPath .\日志.txt
+git status --short --ignored
+git log --date=iso --pretty=format:"%h %ad %s" -25
+rg -n "summarize_knowledge_base|SUMMARY_PREVIEW_MAX_CHARS|import_numbered_recent_file|suggest_next_actions_from_context|recent-files|最近上下文|desktopPetWindow|kb-summary|knowledge-summary|读取第一份资料|给第一份资料打标签" src tests README.md word .codex
+```
+
+结果：
+
+- `日志.txt` 显示上次任务在写回验证和审查留痕前遇到 `503 Service Unavailable` 中断。
+- `word/` 已补齐 `2026-05-23-jarvis-lite-progress.md` 和 `2026-05-25-jarvis-lite-progress.md`，并更新 `word/文档索引.md`。
+- 源码和测试中存在对应实现与覆盖：`summarize_knowledge_base()`、`SUMMARY_PREVIEW_MAX_CHARS`、`import_numbered_recent_file`、`suggest_next_actions_from_context()`、`/recent-files`、`/kb-summary`、桌面 `desktopPetWindow` smoke 和最近上下文快捷入口。
+- `.codex/` 中存在对应扫描、计划、测试和审查留痕；该目录被 `.gitignore` 忽略，不进入普通 git 状态。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 271 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅提示 `word/文档索引.md` 后续会从 LF 转 CRLF。
