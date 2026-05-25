@@ -308,6 +308,13 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("按标签提问：/ask 助手；/ask 项目", response)
 
+    def test_knowledge_summary_command_suggests_tagged_read_followups(self):
+        self.agent.handle("/tag note.txt 项目 助手")
+
+        response = self.agent.handle("/kb-summary")
+
+        self.assertIn("按标签读取：读取助手标签资料；读取项目标签资料", response)
+
     def test_knowledge_summary_command_sets_recent_document_list_for_numbered_followups(self):
         (self.paths.data_dir / "zeta.md").write_text("第二份摘要资料。\n", encoding="utf-8")
         self.agent.handle("/kb-summary")

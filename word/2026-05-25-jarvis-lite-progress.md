@@ -44,6 +44,10 @@
   - `agent.py` 会按 `KnowledgeDocument.tags` 精确筛选资料，输出该标签下的编号资料列表、行数、标签和首条摘要预览。
   - 匹配资料会写入最近资料列表，后续可继续说“读取第二份资料”或“给第一份资料打标签 标签”。
   - 标签不存在时会明确提示“没有找到标签为...”并建议先查看 `/kb-summary`。
+- 知识库摘要按标签读取建议：
+  - `/kb-summary` 在已有“按标签提问”后，新增 `按标签读取：读取标签A标签资料`。
+  - 读取建议复用同一批标签，按名称排序并最多展示 3 个，避免提示过长。
+  - 该阶段只增强摘要后的后续动作提示，不改变摘要分组、资料编号或最近资料列表写入。
 - 文档与进度记录审计：
   - 发现 `word/` 独立日期文档停留在 2026-05-22，后续进度散落在 2026-05-21 和 2026-05-22 的长文档中。
   - 已补充 2026-05-23 与 2026-05-25 两份进度总账，并更新 `word/文档索引.md`。
@@ -88,6 +92,11 @@
   - `tests.test_agent`：126 个测试通过。
   - `tests.test_knowledge`：28 个测试通过。
   - 全量测试：275 个通过。
+- 知识库摘要按标签读取建议：
+  - 1 个 Agent 目标测试先失败后通过。
+  - 标签提问建议回归测试通过。
+  - `tests.test_agent`：127 个测试通过。
+  - `tests.test_knowledge`：28 个测试通过。
 - 收尾验证：
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
@@ -104,6 +113,7 @@
   - 知识库摘要按标签后续建议
   - 桌面知识库摘要快捷入口
   - 按标签读取知识库资料组
+  - 知识库摘要按标签读取建议
 - 对应 `.codex/` 留痕：
   - `.codex/context-scan-recent-file-import-suggestions.json`
   - `.codex/recent-file-import-suggestions-plan.md`
@@ -121,6 +131,8 @@
   - `.codex/desktop-kb-summary-quick-command-plan.md`
   - `.codex/context-scan-read-tagged-documents.json`
   - `.codex/read-tagged-documents-plan.md`
+  - `.codex/context-scan-kb-summary-tag-read-suggestions.json`
+  - `.codex/kb-summary-tag-read-suggestions-plan.md`
   - `.codex/testing.md`
   - `.codex/review-report.md`
 

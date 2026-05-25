@@ -2763,3 +2763,51 @@ git diff --check
 - 全量测试 275 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-25 知识库摘要按标签读取建议验证
+
+### RED：摘要没有按标签读取建议
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_knowledge_summary_command_suggests_tagged_read_followups -v
+```
+
+结果：
+
+- 新增测试先失败。
+- `/kb-summary` 已有标签分组和 `按标签提问：/ask 助手；/ask 项目`，但没有 `按标签读取：读取助手标签资料；读取项目标签资料`。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_knowledge_summary_command_suggests_tagged_read_followups tests.test_agent.AgentTests.test_knowledge_summary_command_suggests_tagged_ask_followups -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge -v
+```
+
+结果：
+
+- 按标签读取建议 1 个目标测试通过。
+- 标签提问建议回归测试通过。
+- Agent 专项测试 127 个通过。
+- Knowledge 专项测试 28 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 276 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

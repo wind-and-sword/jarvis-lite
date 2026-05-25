@@ -372,13 +372,19 @@ class JarvisAgent:
         tag_suggestions = self._knowledge_summary_tag_suggestions(index)
         if tag_suggestions:
             lines.append(f"按标签提问：{tag_suggestions}")
+        tag_read_suggestions = self._knowledge_summary_tag_read_suggestions(index)
+        if tag_read_suggestions:
+            lines.append(f"按标签读取：{tag_read_suggestions}")
         return "\n".join(lines)
 
     def _knowledge_summary_tag_suggestions(self, index: KnowledgeIndex) -> str:
-        tags = sorted({tag for document in index.documents for tag in document.tags})
-        if not tags:
-            return ""
-        return "；".join(f"/ask {tag}" for tag in tags[:3])
+        return "；".join(f"/ask {tag}" for tag in self._knowledge_summary_tags(index))
+
+    def _knowledge_summary_tag_read_suggestions(self, index: KnowledgeIndex) -> str:
+        return "；".join(f"读取{tag}标签资料" for tag in self._knowledge_summary_tags(index))
+
+    def _knowledge_summary_tags(self, index: KnowledgeIndex) -> tuple[str, ...]:
+        return tuple(sorted({tag for document in index.documents for tag in document.tags})[:3])
 
     def _handle_natural_language_intent(self, intent) -> str:
         if intent.name == "capabilities":
