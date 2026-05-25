@@ -2437,3 +2437,51 @@ git diff --check
 - 全量测试 267 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-25 知识库摘要联动最近资料上下文验证
+
+### RED：摘要后不能直接继续编号操作
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_knowledge_summary_command_suggests_numbered_followups tests.test_agent.AgentTests.test_knowledge_summary_command_sets_recent_document_list_for_numbered_followups tests.test_agent.AgentTests.test_knowledge_summary_document_list_survives_new_agent_instance -v
+```
+
+结果：
+
+- `/kb-summary` 先没有输出“可继续操作”提示。
+- `/kb-summary` 后继续说“读取第二份资料”先提示没有最近资料列表。
+- 新 Agent 实例也无法恢复摘要中的资料列表。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_knowledge_summary_command_suggests_numbered_followups tests.test_agent.AgentTests.test_knowledge_summary_command_sets_recent_document_list_for_numbered_followups tests.test_agent.AgentTests.test_knowledge_summary_document_list_survives_new_agent_instance -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent -v
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge -v
+```
+
+结果：
+
+- 知识库摘要上下文联动新增 3 个目标测试通过。
+- Agent 专项测试 123 个通过。
+- Knowledge 专项测试 26 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 270 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

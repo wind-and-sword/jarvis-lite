@@ -770,6 +770,23 @@
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
 
+## 追加进度：知识库摘要联动最近资料上下文
+
+- `/kb-summary` 和“总结知识库”现在会把摘要中的资料列表写入最近资料上下文。
+- 摘要结果末尾新增可继续操作提示：`读取第一份资料；给第一份资料打标签 标签；/ask 关键词`。
+- 查看摘要后，可以继续说“读取第二份资料”或“给第一份资料打标签 项目”，复用已有编号资料操作。
+- 最近资料列表会写入 `jarvis-lite-runtime/agent-context.json`，新 Agent 实例可恢复摘要后的编号资料列表。
+- RED 验证：
+  - 新增 3 个 Agent 测试先证明 `/kb-summary` 缺少后续提示、没有写入最近资料列表、重启后不能读取摘要中的第二份资料。
+- 专项验证：
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_knowledge_summary_command_suggests_numbered_followups tests.test_agent.AgentTests.test_knowledge_summary_command_sets_recent_document_list_for_numbered_followups tests.test_agent.AgentTests.test_knowledge_summary_document_list_survives_new_agent_instance -v`：3 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_agent -v`：123 个测试通过。
+  - `.venv\Scripts\python.exe -m unittest tests.test_knowledge -v`：26 个测试通过。
+- 收尾验证：
+  - `.venv\Scripts\python.exe -m unittest discover -s tests -v`：270 个测试通过。
+  - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke`：输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - `git diff --check`：退出码为 0，仅出现 CRLF 换行提示。
+
 ## 后续建议
 
 - 后续接入大模型时，应让大模型输出结构化意图建议，再由本地大脑决定是否执行。

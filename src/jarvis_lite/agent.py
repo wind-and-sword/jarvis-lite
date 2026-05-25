@@ -18,6 +18,7 @@ from .automation import (
 from .config import ProjectPaths, build_project_paths
 from .knowledge import (
     answer_from_matches,
+    build_knowledge_index,
     describe_knowledge_base,
     find_data_matches,
     import_knowledge_path,
@@ -90,7 +91,7 @@ class JarvisAgent:
             return describe_knowledge_base(self.paths)
         if prompt in {"/kb-summary", "kb-summary", "/knowledge-summary", "knowledge-summary"}:
             self.tools.run("record_log", message="查看知识库摘要")
-            return summarize_knowledge_base(self.paths)
+            return self._knowledge_summary()
         if prompt in {"/voice-status", "voice-status"}:
             self.tools.run("record_log", message="查看语音入口状态")
             return describe_voice(self.paths)
@@ -350,6 +351,22 @@ class JarvisAgent:
                 "/save-summary 文件名：保存当前命令行会话总结到 word/",
                 "/clear：清空当前命令行会话历史",
                 "/exit：退出命令行助手",
+            ]
+        )
+
+    def _knowledge_summary(self) -> str:
+        summary = summarize_knowledge_base(self.paths)
+        document_paths = tuple(document.relative_path for document in build_knowledge_index(self.paths).documents)
+        if not document_paths:
+            return summary
+
+        self._recent_document_path = document_paths[0]
+        self._recent_document_paths = document_paths
+        self._save_runtime_context()
+        return "\n".join(
+            [
+                summary,
+                "可继续操作：读取第一份资料；给第一份资料打标签 标签；/ask 关键词",
             ]
         )
 

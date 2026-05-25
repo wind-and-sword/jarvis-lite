@@ -296,6 +296,30 @@ class AgentTests(unittest.TestCase):
         self.assertIn("1. data/note.txt（1 行）", response)
         self.assertIn("摘要：资料内容", response)
 
+    def test_knowledge_summary_command_suggests_numbered_followups(self):
+        response = self.agent.handle("/kb-summary")
+
+        self.assertIn("可继续操作：读取第一份资料；给第一份资料打标签 标签；/ask 关键词", response)
+
+    def test_knowledge_summary_command_sets_recent_document_list_for_numbered_followups(self):
+        (self.paths.data_dir / "zeta.md").write_text("第二份摘要资料。\n", encoding="utf-8")
+        self.agent.handle("/kb-summary")
+
+        response = self.agent.handle("读取第二份资料")
+
+        self.assertIn("第 2 份资料：data/zeta.md", response)
+        self.assertIn("第二份摘要资料", response)
+
+    def test_knowledge_summary_document_list_survives_new_agent_instance(self):
+        (self.paths.data_dir / "zeta.md").write_text("第二份持久摘要资料。\n", encoding="utf-8")
+        self.agent.handle("/kb-summary")
+        restarted_agent = JarvisAgent(self.paths)
+
+        response = restarted_agent.handle("读取第二份资料")
+
+        self.assertIn("第 2 份资料：data/zeta.md", response)
+        self.assertIn("第二份持久摘要资料", response)
+
     def test_voice_status_command_reports_voice_entry(self):
         with patch.dict(os.environ, {"JARVIS_LITE_VOICE_ENGINE": "transcript"}):
             response = self.agent.handle("/voice-status")
