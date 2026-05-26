@@ -2811,3 +2811,51 @@ git diff --check
 - 全量测试 276 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-26 标签组批量打标签前预览验证
+
+### RED：标签组批量打标签落入普通文件名
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_preview_tagged_documents_tagging_sets_recent_document_list_without_mutation tests.test_agent.AgentTests.test_natural_language_preview_tagged_documents_tagging_reports_no_match -v
+```
+
+结果：
+
+- 2 个新增 Agent 测试先失败。
+- “给项目标签资料都打标签 归档”先落入普通 `/tag` 路径，把“项目标签资料”当成文件名并返回资料格式错误。
+- “给缺失标签资料都打标签 归档”同样落入普通 `/tag` 路径，没有输出标签组缺失提示。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_preview_tagged_documents_tagging_sets_recent_document_list_without_mutation tests.test_agent.AgentTests.test_natural_language_preview_tagged_documents_tagging_reports_no_match -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_tag_document_updates_document_tags tests.test_agent.AgentTests.test_natural_language_mark_document_as_tags_updates_document_tags tests.test_agent.AgentTests.test_natural_language_tag_numbered_recent_document_updates_selected_document_tags tests.test_agent.AgentTests.test_natural_language_read_tagged_documents_sets_recent_document_list tests.test_agent.AgentTests.test_knowledge_summary_command_suggests_tagged_read_followups -v
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge -v
+```
+
+结果：
+
+- 标签组批量打标签前预览 2 个目标测试通过。
+- 普通自然语言打标签、按编号给最近资料打标签、按标签读取资料组和摘要按标签读取建议回归通过。
+- Knowledge 专项测试 28 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 278 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

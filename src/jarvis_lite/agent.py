@@ -411,6 +411,8 @@ class JarvisAgent:
             return self._tag_numbered_recent_document(intent.result_index, intent.tags)
         if intent.name == "tag_numbered_search_result":
             return self._tag_numbered_search_result(intent.result_index, intent.tags)
+        if intent.name == "preview_tagged_documents_tagging":
+            return self._preview_tagged_documents_tagging(intent.alias, intent.tags)
         if intent.name == "read_tagged_documents":
             return self._read_tagged_documents(intent.alias)
         if intent.name == "read_recent_document":
@@ -699,9 +701,34 @@ class JarvisAgent:
         relative_path = self._recent_document_paths[document_index - 1]
         return self.handle(f'/tag "{relative_path}" {" ".join(tags)}')
 
+    def _preview_tagged_documents_tagging(self, tag: str, tags: tuple[str, ...]) -> str:
+        documents = self._tagged_documents(tag)
+        if not documents:
+            return f"没有找到标签为“{tag}”的资料。你可以先用 /kb-summary 查看标签分组，或给资料打标签。"
+
+        document_paths = tuple(document.relative_path for document in documents)
+        self._recent_document_path = document_paths[0]
+        self._recent_document_paths = document_paths
+        self._save_runtime_context()
+        self.tools.run("record_log", message=f"预览标签组批量打标签：{tag} -> {len(documents)} 份")
+
+        lines = [
+            f"批量打标签预览：{tag}标签资料",
+            f"拟追加标签：{'、'.join(tags)}",
+        ]
+        for document_index, document in enumerate(documents, start=1):
+            current_tags = "、".join(document.tags) if document.tags else "无"
+            preview_tags = "、".join(self._merged_tags(document.tags, tags))
+            lines.append(
+                f"{document_index}. data/{document.relative_path}"
+                f"（当前标签：{current_tags}；预览标签：{preview_tags}）"
+            )
+        lines.append("说明：这里只生成预览，不会修改资料标签。")
+        lines.append(f"可继续操作：{self._tagged_document_tagging_followups(documents, tags)}")
+        return "\n".join(lines)
+
     def _read_tagged_documents(self, tag: str) -> str:
-        index = build_knowledge_index(self.paths)
-        documents = tuple(document for document in index.documents if tag in document.tags)
+        documents = self._tagged_documents(tag)
         if not documents:
             return f"没有找到标签为“{tag}”的资料。你可以先用 /kb-summary 查看标签分组，或给资料打标签。"
 
@@ -723,6 +750,29 @@ class JarvisAgent:
                 lines.append(f"   摘要：{preview}")
         lines.append(f"可继续操作：读取第一份资料；给第一份资料打标签 标签；/ask {tag}")
         return "\n".join(lines)
+
+    def _tagged_documents(self, tag: str):
+        index = build_knowledge_index(self.paths)
+        return tuple(document for document in index.documents if tag in document.tags)
+
+    def _tagged_document_tagging_followups(self, documents, tags: tuple[str, ...]) -> str:
+        suggestions = []
+        for document_index, document in enumerate(documents[:2], start=1):
+            ordinal = self._document_ordinal_label(document_index)
+            preview_tags = " ".join(self._merged_tags(document.tags, tags))
+            suggestions.append(f"给{ordinal}份资料打标签 {preview_tags}")
+        return "；".join(suggestions)
+
+    def _merged_tags(self, current_tags: tuple[str, ...], new_tags: tuple[str, ...]) -> tuple[str, ...]:
+        merged = list(current_tags)
+        for tag in new_tags:
+            if tag not in merged:
+                merged.append(tag)
+        return tuple(merged)
+
+    def _document_ordinal_label(self, document_index: int) -> str:
+        labels = {1: "第一", 2: "第二", 3: "第三", 4: "第四", 5: "第五"}
+        return labels.get(document_index, f"第{document_index}")
 
     def _document_preview(self, relative_path: str) -> str:
         document_path = self.paths.data_dir / relative_path

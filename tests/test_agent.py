@@ -355,6 +355,33 @@ class AgentTests(unittest.TestCase):
         self.assertIn("没有找到标签为“缺失”的资料", response)
         self.assertIn("/kb-summary", response)
 
+    def test_natural_language_preview_tagged_documents_tagging_sets_recent_document_list_without_mutation(self):
+        (self.paths.data_dir / "zeta.md").write_text("第二份项目标签资料。\n", encoding="utf-8")
+        self.agent.handle("/tag note.txt 项目")
+        self.agent.handle("/tag zeta.md 项目")
+
+        response = self.agent.handle("给项目标签资料都打标签 归档")
+        followup = self.agent.handle("读取第二份资料")
+        knowledge_status = self.agent.handle("/kb")
+
+        self.assertIn("批量打标签预览：项目标签资料", response)
+        self.assertIn("拟追加标签：归档", response)
+        self.assertIn("1. data/note.txt（当前标签：项目；预览标签：项目、归档）", response)
+        self.assertIn("2. data/zeta.md（当前标签：项目；预览标签：项目、归档）", response)
+        self.assertIn("说明：这里只生成预览，不会修改资料标签。", response)
+        self.assertIn("可继续操作：给第一份资料打标签 项目 归档；给第二份资料打标签 项目 归档", response)
+        self.assertIn("第 2 份资料：data/zeta.md", followup)
+        self.assertIn("第二份项目标签资料", followup)
+        self.assertIn("data/note.txt（1 行，标签：项目）", knowledge_status)
+        self.assertIn("data/zeta.md（1 行，标签：项目）", knowledge_status)
+        self.assertNotIn("标签：项目、归档", knowledge_status)
+
+    def test_natural_language_preview_tagged_documents_tagging_reports_no_match(self):
+        response = self.agent.handle("给缺失标签资料都打标签 归档")
+
+        self.assertIn("没有找到标签为“缺失”的资料", response)
+        self.assertIn("/kb-summary", response)
+
     def test_voice_status_command_reports_voice_entry(self):
         with patch.dict(os.environ, {"JARVIS_LITE_VOICE_ENGINE": "transcript"}):
             response = self.agent.handle("/voice-status")
