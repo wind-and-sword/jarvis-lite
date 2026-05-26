@@ -20,6 +20,10 @@
   - 预览后说“取消执行”会清空待确认状态，不修改资料标签。
   - 确认或取消后再次“确认执行”不会重复写入。
   - 准备执行经验建议命令时会清空标签组待确认状态，避免两个待确认任务争用同一个确认入口。
+- 标签组待确认状态接入最近上下文：
+  - 批量打标签预览后，“查看最近上下文”会显示待确认批量打标签、追加标签和影响资料数量。
+  - 确认执行后再次查看最近上下文，会显示待确认批量打标签为无。
+  - 待确认建议命令展示保持独立，不会把批量标签任务误写成建议命令。
 
 ## 验证结果
 
@@ -31,8 +35,11 @@
   - 2 个 Agent 目标测试先失败后通过。
   - 经验建议确认、经验建议草稿确认、普通打标签和标签预览回归通过。
   - `tests.test_knowledge`：28 个测试通过。
+- 标签组待确认状态接入最近上下文：
+  - 1 个 Agent 目标测试先失败后通过。
+  - 最近上下文待确认建议、最近建议、空状态、标签组确认和取消回归通过。
 - 收尾验证：
-  - 全量测试：280 个通过。
+  - 全量测试：281 个通过。
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
 
@@ -41,11 +48,14 @@
 - 本轮新增：
   - 标签组批量打标签前预览
   - 标签组批量打标签确认闭环
+  - 标签组待确认状态接入最近上下文
 - 对应 `.codex/` 留痕：
   - `.codex/context-scan-tagged-documents-tag-preview.json`
   - `.codex/tagged-documents-tag-preview-plan.md`
   - `.codex/context-scan-confirm-tagged-documents-tagging.json`
   - `.codex/confirm-tagged-documents-tagging-plan.md`
+  - `.codex/context-scan-pending-tagged-documents-recent-context.json`
+  - `.codex/pending-tagged-documents-recent-context-plan.md`
   - `.codex/testing.md`
   - `.codex/review-report.md`
 

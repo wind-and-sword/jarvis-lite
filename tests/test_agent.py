@@ -1219,6 +1219,20 @@ class AgentTests(unittest.TestCase):
         self.assertIn("最近建议：3 条", response)
         self.assertIn("待确认建议命令：/kb", response)
 
+    def test_natural_language_recent_context_status_reports_pending_tagged_documents_tagging(self):
+        (self.paths.data_dir / "zeta.md").write_text("第二份项目标签资料。\n", encoding="utf-8")
+        self.agent.handle("/tag note.txt 项目")
+        self.agent.handle("/tag zeta.md 项目")
+        self.agent.handle("给项目标签资料都打标签 归档")
+
+        response = self.agent.handle("查看最近上下文")
+        self.agent.handle("确认执行")
+        after_confirm_response = self.agent.handle("查看最近上下文")
+
+        self.assertIn("待确认批量打标签：项目标签资料 -> 追加标签：归档，2 份", response)
+        self.assertIn("待确认建议命令：无", response)
+        self.assertIn("待确认批量打标签：无", after_confirm_response)
+
     def test_natural_language_recent_context_status_reports_restored_search_results(self):
         (self.paths.data_dir / "memory.md").write_text(
             "Jarvis Lite 使用 memory/profile.md 保存长期记忆。\n",

@@ -465,6 +465,7 @@ class JarvisAgent:
         has_search_results = bool(self._recent_search_result_paths)
         has_advice_suggestions = bool(self._recent_advice_suggestions)
         has_pending_advice_command = self._pending_advice_command is not None
+        has_pending_tagged_documents_tagging = bool(self._pending_tagged_documents_paths)
         if (
             not has_document
             and not has_document_list
@@ -473,6 +474,7 @@ class JarvisAgent:
             and not has_search_results
             and not has_advice_suggestions
             and not has_pending_advice_command
+            and not has_pending_tagged_documents_tagging
         ):
             return "\n".join(
                 [
@@ -524,6 +526,16 @@ class JarvisAgent:
             lines.append(f"- 待确认建议命令：{self._pending_advice_command}")
         else:
             lines.append("- 待确认建议命令：无")
+        if has_pending_tagged_documents_tagging:
+            group_tag = self._pending_tagged_documents_tag or ""
+            appended_tags = "、".join(self._pending_tagged_documents_tags)
+            document_count = len(self._pending_tagged_documents_paths)
+            lines.append(
+                f"- 待确认批量打标签：{group_tag}标签资料 -> "
+                f"追加标签：{appended_tags}，{document_count} 份"
+            )
+        else:
+            lines.append("- 待确认批量打标签：无")
         lines.append("下一步建议：")
         for suggestion in suggest_next_actions_from_context(self._runtime_context(), list_recent_experiences(self.paths)):
             lines.append(f"- {suggestion}")
