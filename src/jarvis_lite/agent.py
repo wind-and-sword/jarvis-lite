@@ -858,6 +858,10 @@ class JarvisAgent:
             f"第 {history_index} 条批量标签历史影响资料：{operation.tag}标签资料 -> 追加标签：{appended_tags}",
         ]
         for document_index, relative_path in enumerate(operation.document_paths, start=1):
+            document_path = self.paths.data_dir / relative_path
+            if not document_path.is_file():
+                lines.append(f"{document_index}. data/{relative_path}（资料缺失）")
+                continue
             lines.append(f"{document_index}. data/{relative_path}")
             preview = self._document_preview(relative_path)
             if preview:
