@@ -2859,3 +2859,51 @@ git diff --check
 - 全量测试 278 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-26 标签组批量打标签确认闭环验证
+
+### RED：确认执行不识别标签组预览
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_confirm_tagged_documents_tagging_applies_previewed_tags tests.test_agent.AgentTests.test_natural_language_cancel_tagged_documents_tagging_clears_preview -v
+```
+
+结果：
+
+- 2 个新增 Agent 测试先失败。
+- 预览后说“确认执行”仍返回“还没有待确认的建议命令”，没有写入标签。
+- 预览后说“取消执行”仍返回“还没有待取消的建议命令”，没有清空标签组待确认状态。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_confirm_tagged_documents_tagging_applies_previewed_tags tests.test_agent.AgentTests.test_natural_language_cancel_tagged_documents_tagging_clears_preview -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_prepare_and_confirm_executable_advice tests.test_agent.AgentTests.test_natural_language_prepare_advice_requires_completed_parameters tests.test_agent.AgentTests.test_completed_advice_command_draft_waits_for_confirmation tests.test_agent.AgentTests.test_natural_language_confirm_advice_requires_pending_command tests.test_agent.AgentTests.test_natural_language_preview_tagged_documents_tagging_sets_recent_document_list_without_mutation tests.test_agent.AgentTests.test_natural_language_tag_document_updates_document_tags -v
+.\.venv\Scripts\python.exe -m unittest tests.test_knowledge -v
+```
+
+结果：
+
+- 标签组批量打标签确认/取消 2 个目标测试通过。
+- 经验建议确认、经验建议草稿确认、普通打标签和标签组预览回归通过。
+- Knowledge 专项测试 28 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 280 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

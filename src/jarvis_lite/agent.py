@@ -66,6 +66,9 @@ class JarvisAgent:
         self._recent_files: tuple[RuntimeRecentFileContext, ...] = runtime_context.recent_files
         self._pending_advice_command: str | None = None
         self._pending_advice_command_draft_command: str | None = None
+        self._pending_tagged_documents_tag: str | None = None
+        self._pending_tagged_documents_tags: tuple[str, ...] = ()
+        self._pending_tagged_documents_paths: tuple[str, ...] = ()
         if self._recent_document_path is None and self._recent_search_result_paths:
             self._recent_document_path = self._recent_search_result_paths[0]
         if self._recent_document_path is not None and self._recent_document_path not in self._recent_document_paths:
@@ -710,6 +713,11 @@ class JarvisAgent:
         self._recent_document_path = document_paths[0]
         self._recent_document_paths = document_paths
         self._save_runtime_context()
+        self._pending_tagged_documents_tag = tag
+        self._pending_tagged_documents_tags = tags
+        self._pending_tagged_documents_paths = document_paths
+        self._pending_advice_command = None
+        self._pending_advice_command_draft_command = None
         self.tools.run("record_log", message=f"预览标签组批量打标签：{tag} -> {len(documents)} 份")
 
         lines = [
@@ -862,6 +870,7 @@ class JarvisAgent:
         if error:
             return error
         assert suggestion is not None
+        self._clear_pending_tagged_documents_tagging()
         command = self._executable_advice_command(suggestion)
         if command is None:
             self._pending_advice_command = None
@@ -892,6 +901,9 @@ class JarvisAgent:
         )
 
     def _confirm_pending_advice_suggestion_execution(self) -> str:
+        tagged_documents_result = self._confirm_pending_tagged_documents_tagging()
+        if tagged_documents_result is not None:
+            return tagged_documents_result
         if self._pending_advice_command is None:
             return "还没有待确认的建议命令。你可以先说“执行第一条建议”。"
         command = self._pending_advice_command
@@ -901,6 +913,9 @@ class JarvisAgent:
         return f"已确认执行建议命令：{command}\n{self.handle(command)}"
 
     def _cancel_pending_advice_suggestion_execution(self) -> str:
+        tagged_documents_result = self._cancel_pending_tagged_documents_tagging()
+        if tagged_documents_result is not None:
+            return tagged_documents_result
         if self._pending_advice_command is None:
             return "还没有待取消的建议命令。"
         command = self._pending_advice_command
@@ -908,6 +923,47 @@ class JarvisAgent:
         self._pending_advice_command_draft_command = None
         self.tools.run("record_log", message=f"取消执行最近建议命令：{command}")
         return f"已取消待执行建议：{command}"
+
+    def _confirm_pending_tagged_documents_tagging(self) -> str | None:
+        if not self._pending_tagged_documents_paths:
+            return None
+        group_tag = self._pending_tagged_documents_tag or ""
+        new_tags = self._pending_tagged_documents_tags
+        document_paths = self._pending_tagged_documents_paths
+        self._clear_pending_tagged_documents_tagging()
+
+        current_tags_by_path = self._knowledge_tags_by_path()
+        lines = [
+            f"已确认执行批量打标签：{group_tag}标签资料",
+            f"追加标签：{'、'.join(new_tags)}",
+        ]
+        for document_index, relative_path in enumerate(document_paths, start=1):
+            merged_tags = self._merged_tags(current_tags_by_path.get(relative_path, ()), new_tags)
+            try:
+                document = set_document_tags(self.paths, relative_path, merged_tags)
+            except (FileNotFoundError, ValueError) as exc:
+                lines.append(f"{document_index}. data/{relative_path}：失败，{exc}")
+                continue
+            lines.append(f"{document_index}. data/{document.relative_path}（{'、'.join(document.tags)}）")
+        self.tools.run("record_log", message=f"确认执行标签组批量打标签：{group_tag} -> {len(document_paths)} 份")
+        return "\n".join(lines)
+
+    def _cancel_pending_tagged_documents_tagging(self) -> str | None:
+        if not self._pending_tagged_documents_paths:
+            return None
+        group_tag = self._pending_tagged_documents_tag or ""
+        self._clear_pending_tagged_documents_tagging()
+        self.tools.run("record_log", message=f"取消标签组批量打标签：{group_tag}")
+        return f"已取消待执行批量打标签：{group_tag}标签资料"
+
+    def _clear_pending_tagged_documents_tagging(self) -> None:
+        self._pending_tagged_documents_tag = None
+        self._pending_tagged_documents_tags = ()
+        self._pending_tagged_documents_paths = ()
+
+    def _knowledge_tags_by_path(self) -> dict[str, tuple[str, ...]]:
+        index = build_knowledge_index(self.paths)
+        return {document.relative_path: document.tags for document in index.documents}
 
     def _recent_advice_suggestion(self, advice_index: int) -> tuple[str | None, str | None]:
         if not self._recent_advice_suggestions:

@@ -382,6 +382,37 @@ class AgentTests(unittest.TestCase):
         self.assertIn("没有找到标签为“缺失”的资料", response)
         self.assertIn("/kb-summary", response)
 
+    def test_natural_language_confirm_tagged_documents_tagging_applies_previewed_tags(self):
+        (self.paths.data_dir / "zeta.md").write_text("第二份项目标签资料。\n", encoding="utf-8")
+        self.agent.handle("/tag note.txt 项目")
+        self.agent.handle("/tag zeta.md 项目")
+        self.agent.handle("给项目标签资料都打标签 归档")
+
+        response = self.agent.handle("确认执行")
+        knowledge_status = self.agent.handle("/kb")
+        second_confirm = self.agent.handle("确认执行")
+
+        self.assertIn("已确认执行批量打标签：项目标签资料", response)
+        self.assertIn("追加标签：归档", response)
+        self.assertIn("1. data/note.txt（项目、归档）", response)
+        self.assertIn("2. data/zeta.md（项目、归档）", response)
+        self.assertIn("data/note.txt（1 行，标签：项目、归档）", knowledge_status)
+        self.assertIn("data/zeta.md（1 行，标签：项目、归档）", knowledge_status)
+        self.assertIn("还没有待确认的建议命令", second_confirm)
+
+    def test_natural_language_cancel_tagged_documents_tagging_clears_preview(self):
+        self.agent.handle("/tag note.txt 项目")
+        self.agent.handle("给项目标签资料都打标签 归档")
+
+        cancel_response = self.agent.handle("取消执行")
+        confirm_response = self.agent.handle("确认执行")
+        knowledge_status = self.agent.handle("/kb")
+
+        self.assertIn("已取消待执行批量打标签：项目标签资料", cancel_response)
+        self.assertIn("还没有待确认的建议命令", confirm_response)
+        self.assertIn("data/note.txt（1 行，标签：项目）", knowledge_status)
+        self.assertNotIn("标签：项目、归档", knowledge_status)
+
     def test_voice_status_command_reports_voice_entry(self):
         with patch.dict(os.environ, {"JARVIS_LITE_VOICE_ENGINE": "transcript"}):
             response = self.agent.handle("/voice-status")
