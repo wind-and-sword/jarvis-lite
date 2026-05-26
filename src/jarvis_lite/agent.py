@@ -43,6 +43,7 @@ from .runtime_context import (
     RuntimeContext,
     RuntimeDirectoryContext,
     RuntimeRecentFileContext,
+    RuntimeTaggedDocumentsOperationContext,
     load_runtime_context,
     save_runtime_context,
 )
@@ -69,10 +70,26 @@ class JarvisAgent:
         self._pending_tagged_documents_tag: str | None = None
         self._pending_tagged_documents_tags: tuple[str, ...] = ()
         self._pending_tagged_documents_paths: tuple[str, ...] = ()
-        self._recent_tagged_documents_operation_tag: str | None = None
-        self._recent_tagged_documents_operation_tags: tuple[str, ...] = ()
-        self._recent_tagged_documents_operation_updated_count = 0
-        self._recent_tagged_documents_operation_restore_commands: tuple[str, ...] = ()
+        self._recent_tagged_documents_operation_tag: str | None = (
+            runtime_context.recent_tagged_documents_operation.tag
+            if runtime_context.recent_tagged_documents_operation is not None
+            else None
+        )
+        self._recent_tagged_documents_operation_tags: tuple[str, ...] = (
+            runtime_context.recent_tagged_documents_operation.tags
+            if runtime_context.recent_tagged_documents_operation is not None
+            else ()
+        )
+        self._recent_tagged_documents_operation_updated_count = (
+            runtime_context.recent_tagged_documents_operation.updated_count
+            if runtime_context.recent_tagged_documents_operation is not None
+            else 0
+        )
+        self._recent_tagged_documents_operation_restore_commands: tuple[str, ...] = (
+            runtime_context.recent_tagged_documents_operation.restore_commands
+            if runtime_context.recent_tagged_documents_operation is not None
+            else ()
+        )
         if self._recent_document_path is None and self._recent_search_result_paths:
             self._recent_document_path = self._recent_search_result_paths[0]
         if self._recent_document_path is not None and self._recent_document_path not in self._recent_document_paths:
@@ -990,6 +1007,7 @@ class JarvisAgent:
         self._recent_tagged_documents_operation_tags = new_tags
         self._recent_tagged_documents_operation_updated_count = updated_count
         self._recent_tagged_documents_operation_restore_commands = tuple(restore_commands)
+        self._save_runtime_context()
         self.tools.run("record_log", message=f"确认执行标签组批量打标签：{group_tag} -> {len(document_paths)} 份")
         return "\n".join(lines)
 
@@ -1123,10 +1141,21 @@ class JarvisAgent:
             recent_search_result_paths=self._recent_search_result_paths,
             recent_advice_suggestions=self._recent_advice_suggestions,
             recent_files=self._recent_files,
+            recent_tagged_documents_operation=self._runtime_tagged_documents_operation(),
         )
 
     def _save_runtime_context(self) -> None:
         save_runtime_context(self.paths, self._runtime_context())
+
+    def _runtime_tagged_documents_operation(self) -> RuntimeTaggedDocumentsOperationContext | None:
+        if self._recent_tagged_documents_operation_tag is None:
+            return None
+        return RuntimeTaggedDocumentsOperationContext(
+            tag=self._recent_tagged_documents_operation_tag,
+            tags=self._recent_tagged_documents_operation_tags,
+            updated_count=self._recent_tagged_documents_operation_updated_count,
+            restore_commands=self._recent_tagged_documents_operation_restore_commands,
+        )
 
     def _directories(self) -> str:
         directories = list_common_directories(self.paths)

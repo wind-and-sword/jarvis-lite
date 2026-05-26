@@ -32,6 +32,10 @@
   - 确认执行后，“查看最近上下文”会显示最近一次批量打标签摘要。
   - 摘要包含标签组、追加标签、成功更新数量和恢复提示。
   - 本轮只保存当前 Agent 会话内最近一次操作，不新增持久化历史结构。
+- 最近批量标签操作摘要持久化：
+  - `RuntimeContext` 新增最近批量标签操作摘要字段。
+  - `agent-context.json` 会保存标签组、追加标签、成功更新数量和恢复命令。
+  - 新 `JarvisAgent` 实例执行“最近上下文状态”时可恢复最近批量打标签摘要。
 
 ## 验证结果
 
@@ -52,8 +56,11 @@
 - 标签组批量操作摘要接入最近上下文：
   - 1 个 Agent 目标测试先失败后通过。
   - 最近上下文待确认批量标签、空状态、标签组确认、恢复提示和取消回归通过。
+- 最近批量标签操作摘要持久化：
+  - 1 个 Agent 跨实例恢复目标测试先失败后通过。
+  - 最近资料列表、最近文件列表、最近建议、当前批量摘要、确认恢复提示和取消回归通过。
 - 收尾验证：
-  - 全量测试：283 个通过。
+  - 全量测试：284 个通过。
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
 
@@ -65,6 +72,7 @@
   - 标签组待确认状态接入最近上下文
   - 标签组批量操作恢复提示
   - 标签组批量操作摘要接入最近上下文
+  - 最近批量标签操作摘要持久化
 - 对应 `.codex/` 留痕：
   - `.codex/context-scan-tagged-documents-tag-preview.json`
   - `.codex/tagged-documents-tag-preview-plan.md`
@@ -76,10 +84,12 @@
   - `.codex/tagged-documents-undo-hints-plan.md`
   - `.codex/context-scan-tagged-documents-operation-summary.json`
   - `.codex/tagged-documents-operation-summary-plan.md`
+  - `.codex/context-scan-persistent-tagged-documents-operation.json`
+  - `.codex/persistent-tagged-documents-operation-plan.md`
   - `.codex/testing.md`
   - `.codex/review-report.md`
 
 ## 后续建议
 
-- 可以继续把标签组批量操作摘要持久化到运行态上下文，或做单独的批量操作历史命令。
+- 可以继续做单独的批量操作历史命令，把最近一次摘要扩展为多条历史记录。
 - 可以把标签组预览结果接入桌面摘要展示，让面板中更容易扫读多资料影响范围。

@@ -28,6 +28,16 @@ class RuntimeRecentFileContext:
 
 
 @dataclass(frozen=True)
+class RuntimeTaggedDocumentsOperationContext:
+    """保存最近一次批量标签操作的可序列化运行态信息。"""
+
+    tag: str
+    tags: tuple[str, ...]
+    updated_count: int
+    restore_commands: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class RuntimeContext:
     """保存可跨 Agent 实例恢复的轻量运行态上下文。"""
 
@@ -37,6 +47,7 @@ class RuntimeContext:
     recent_search_result_paths: tuple[str, ...] = ()
     recent_advice_suggestions: tuple[str, ...] = ()
     recent_files: tuple[RuntimeRecentFileContext, ...] = ()
+    recent_tagged_documents_operation: RuntimeTaggedDocumentsOperationContext | None = None
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -67,6 +78,9 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         recent_search_result_paths=_read_str_tuple(raw.get("recent_search_result_paths")),
         recent_advice_suggestions=_read_str_tuple(raw.get("recent_advice_suggestions")),
         recent_files=_read_recent_file_contexts(raw.get("recent_files")),
+        recent_tagged_documents_operation=_read_tagged_documents_operation_context(
+            raw.get("recent_tagged_documents_operation")
+        ),
     )
 
 
@@ -84,6 +98,9 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                 "recent_search_result_paths": list(context.recent_search_result_paths),
                 "recent_advice_suggestions": list(context.recent_advice_suggestions),
                 "recent_files": [_recent_file_context_to_json(recent_file) for recent_file in context.recent_files],
+                "recent_tagged_documents_operation": _tagged_documents_operation_context_to_json(
+                    context.recent_tagged_documents_operation
+                ),
             },
             ensure_ascii=False,
             indent=2,
@@ -138,6 +155,22 @@ def _read_recent_file_contexts(value: object) -> tuple[RuntimeRecentFileContext,
     return tuple(recent_files)
 
 
+def _read_tagged_documents_operation_context(value: object) -> RuntimeTaggedDocumentsOperationContext | None:
+    if not isinstance(value, dict):
+        return None
+    tag = _read_optional_str(value.get("tag"))
+    tags = _read_str_tuple(value.get("tags"))
+    updated_count = value.get("updated_count")
+    if tag is None or not tags or not isinstance(updated_count, int) or updated_count < 0:
+        return None
+    return RuntimeTaggedDocumentsOperationContext(
+        tag=tag,
+        tags=tags,
+        updated_count=updated_count,
+        restore_commands=_read_str_tuple(value.get("restore_commands")),
+    )
+
+
 def _directory_context_to_json(context: RuntimeDirectoryContext | None) -> dict[str, str] | None:
     if context is None:
         return None
@@ -146,3 +179,16 @@ def _directory_context_to_json(context: RuntimeDirectoryContext | None) -> dict[
 
 def _recent_file_context_to_json(context: RuntimeRecentFileContext) -> dict[str, str]:
     return {"alias": context.alias, "path": context.path}
+
+
+def _tagged_documents_operation_context_to_json(
+    context: RuntimeTaggedDocumentsOperationContext | None,
+) -> dict[str, object] | None:
+    if context is None:
+        return None
+    return {
+        "tag": context.tag,
+        "tags": list(context.tags),
+        "updated_count": context.updated_count,
+        "restore_commands": list(context.restore_commands),
+    }
