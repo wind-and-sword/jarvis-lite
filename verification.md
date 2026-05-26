@@ -2997,3 +2997,48 @@ git diff --check
 - 全量测试 282 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-26 标签组批量操作摘要接入最近上下文验证
+
+### RED：最近上下文缺少最近批量操作摘要
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_recent_tagged_documents_operation -v
+```
+
+结果：
+
+- 1 个新增 Agent 测试先失败。
+- 确认批量打标签后，“查看最近上下文”只显示最近资料列表和待确认批量打标签为无，没有最近批量操作摘要和恢复提示。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_recent_tagged_documents_operation -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_recent_tagged_documents_operation tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_pending_tagged_documents_tagging tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_empty_state tests.test_agent.AgentTests.test_natural_language_confirm_tagged_documents_tagging_applies_previewed_tags tests.test_agent.AgentTests.test_natural_language_confirm_tagged_documents_tagging_reports_restore_hints tests.test_agent.AgentTests.test_natural_language_cancel_tagged_documents_tagging_clears_preview -v
+```
+
+结果：
+
+- 最近批量标签操作摘要目标测试通过。
+- 最近上下文待确认批量标签、空状态、标签组确认、恢复提示和取消回归 6 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 283 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

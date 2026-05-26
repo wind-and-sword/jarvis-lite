@@ -69,6 +69,10 @@ class JarvisAgent:
         self._pending_tagged_documents_tag: str | None = None
         self._pending_tagged_documents_tags: tuple[str, ...] = ()
         self._pending_tagged_documents_paths: tuple[str, ...] = ()
+        self._recent_tagged_documents_operation_tag: str | None = None
+        self._recent_tagged_documents_operation_tags: tuple[str, ...] = ()
+        self._recent_tagged_documents_operation_updated_count = 0
+        self._recent_tagged_documents_operation_restore_commands: tuple[str, ...] = ()
         if self._recent_document_path is None and self._recent_search_result_paths:
             self._recent_document_path = self._recent_search_result_paths[0]
         if self._recent_document_path is not None and self._recent_document_path not in self._recent_document_paths:
@@ -466,6 +470,7 @@ class JarvisAgent:
         has_advice_suggestions = bool(self._recent_advice_suggestions)
         has_pending_advice_command = self._pending_advice_command is not None
         has_pending_tagged_documents_tagging = bool(self._pending_tagged_documents_paths)
+        has_recent_tagged_documents_operation = self._recent_tagged_documents_operation_tag is not None
         if (
             not has_document
             and not has_document_list
@@ -475,6 +480,7 @@ class JarvisAgent:
             and not has_advice_suggestions
             and not has_pending_advice_command
             and not has_pending_tagged_documents_tagging
+            and not has_recent_tagged_documents_operation
         ):
             return "\n".join(
                 [
@@ -536,6 +542,19 @@ class JarvisAgent:
             )
         else:
             lines.append("- 待确认批量打标签：无")
+        if has_recent_tagged_documents_operation:
+            group_tag = self._recent_tagged_documents_operation_tag or ""
+            appended_tags = "、".join(self._recent_tagged_documents_operation_tags)
+            lines.append(
+                f"- 最近批量打标签：{group_tag}标签资料 -> "
+                f"追加标签：{appended_tags}，已更新 {self._recent_tagged_documents_operation_updated_count} 份"
+            )
+            if self._recent_tagged_documents_operation_restore_commands:
+                lines.append(
+                    f"  恢复提示：{'；'.join(self._recent_tagged_documents_operation_restore_commands)}"
+                )
+        else:
+            lines.append("- 最近批量打标签：无")
         lines.append("下一步建议：")
         for suggestion in suggest_next_actions_from_context(self._runtime_context(), list_recent_experiences(self.paths)):
             lines.append(f"- {suggestion}")
@@ -967,6 +986,10 @@ class JarvisAgent:
         lines.append(f"操作记录：本次已更新 {updated_count} 份资料。")
         if restore_commands:
             lines.append(f"恢复提示：如需撤销本次追加，可逐份执行：{'；'.join(restore_commands)}")
+        self._recent_tagged_documents_operation_tag = group_tag
+        self._recent_tagged_documents_operation_tags = new_tags
+        self._recent_tagged_documents_operation_updated_count = updated_count
+        self._recent_tagged_documents_operation_restore_commands = tuple(restore_commands)
         self.tools.run("record_log", message=f"确认执行标签组批量打标签：{group_tag} -> {len(document_paths)} 份")
         return "\n".join(lines)
 
