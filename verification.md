@@ -3087,3 +3087,48 @@ git diff --check
 - 全量测试 284 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-26 批量标签操作历史命令验证
+
+### RED：批量标签历史命令不存在
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_tagged_documents_history_command_survives_new_agent_instance -v
+```
+
+结果：
+
+- 1 个新增 Agent 测试先失败。
+- `/tag-history` 返回未知命令，无法查看最近批量标签操作历史。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_tagged_documents_history_command_survives_new_agent_instance -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_tagged_documents_history_command_survives_new_agent_instance tests.test_agent.AgentTests.test_recent_tagged_documents_operation_survives_new_agent_instance tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_recent_tagged_documents_operation tests.test_agent.AgentTests.test_natural_language_confirm_tagged_documents_tagging_applies_previewed_tags tests.test_agent.AgentTests.test_natural_language_confirm_tagged_documents_tagging_reports_restore_hints tests.test_agent.AgentTests.test_natural_language_cancel_tagged_documents_tagging_clears_preview -v
+```
+
+结果：
+
+- 批量标签历史命令跨 Agent 恢复目标测试通过。
+- 最近批量摘要、标签组确认、恢复提示和取消回归 6 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 285 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

@@ -1275,6 +1275,31 @@ class AgentTests(unittest.TestCase):
         self.assertIn("最近批量打标签：项目标签资料 -> 追加标签：归档，已更新 2 份", response)
         self.assertIn("恢复提示：给第一份资料打标签 项目 助手；给第二份资料打标签 项目", response)
 
+    def test_tagged_documents_history_command_survives_new_agent_instance(self):
+        (self.paths.data_dir / "zeta.md").write_text("第二份项目标签资料。\n", encoding="utf-8")
+        self.agent.handle("/tag note.txt 项目 助手")
+        self.agent.handle("/tag zeta.md 项目")
+        self.agent.handle("给项目标签资料都打标签 归档")
+        self.agent.handle("确认执行")
+        self.agent.handle("给归档标签资料都打标签 已审")
+        self.agent.handle("确认执行")
+        restarted_agent = JarvisAgent(self.paths)
+
+        response = restarted_agent.handle("/tag-history")
+        natural_response = restarted_agent.handle("查看批量标签历史")
+        recent_context = restarted_agent.handle("查看最近上下文")
+
+        self.assertIn("批量打标签历史：", response)
+        self.assertIn("1. 归档标签资料 -> 追加标签：已审，已更新 2 份", response)
+        self.assertIn("2. 项目标签资料 -> 追加标签：归档，已更新 2 份", response)
+        self.assertLess(
+            response.find("1. 归档标签资料"),
+            response.find("2. 项目标签资料"),
+        )
+        self.assertIn("恢复提示：给第一份资料打标签 项目 助手 归档；给第二份资料打标签 项目 归档", response)
+        self.assertIn("批量打标签历史：", natural_response)
+        self.assertIn("最近批量打标签：归档标签资料 -> 追加标签：已审，已更新 2 份", recent_context)
+
     def test_natural_language_recent_context_status_reports_restored_search_results(self):
         (self.paths.data_dir / "memory.md").write_text(
             "Jarvis Lite 使用 memory/profile.md 保存长期记忆。\n",

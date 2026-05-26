@@ -70,6 +70,9 @@ class JarvisAgent:
         self._pending_tagged_documents_tag: str | None = None
         self._pending_tagged_documents_tags: tuple[str, ...] = ()
         self._pending_tagged_documents_paths: tuple[str, ...] = ()
+        self._recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = (
+            runtime_context.recent_tagged_documents_operations
+        )
         self._recent_tagged_documents_operation_tag: str | None = (
             runtime_context.recent_tagged_documents_operation.tag
             if runtime_context.recent_tagged_documents_operation is not None
@@ -125,6 +128,8 @@ class JarvisAgent:
             return describe_automation(self.paths)
         if prompt in {"/recent-files", "recent-files"}:
             return self._recent_files_status()
+        if prompt in {"/tag-history", "tag-history", "/batch-tag-history", "batch-tag-history"}:
+            return self._tagged_documents_history_status()
         if prompt in {"/update-status", "update-status"}:
             self.tools.run("record_log", message="检查更新状态")
             return describe_update_status()
@@ -353,6 +358,7 @@ class JarvisAgent:
                 "/voice 已识别的语音文本：按语音入口处理文本并播报回答",
                 "/automation-status：查看阶段 4 自动化状态",
                 "/recent-files：查看常用目录、项目目录、桌面和下载目录中的最近文件",
+                "/tag-history：查看最近批量打标签历史",
                 "/update-status [清单路径或URL]：检查 Jarvis Lite 新版本",
                 "/update-download [清单路径或URL]：下载新版本安装包到运行态目录",
                 "/dir-add 别名 目录路径：登记常用目录",
@@ -593,6 +599,27 @@ class JarvisAgent:
             lines.append(f"{index}. {recent_file.alias}：{recent_file.path.name}")
             lines.append(f"   路径：{recent_file.path}")
             lines.append(f"   修改时间：{modified_at}")
+        return "\n".join(lines)
+
+    def _tagged_documents_history_status(self) -> str:
+        self.tools.run("record_log", message="查看批量标签历史")
+        if not self._recent_tagged_documents_operations:
+            return "\n".join(
+                [
+                    "批量打标签历史：还没有记录。",
+                    "- 你可以先说“给项目标签资料都打标签 归档”，再说“确认执行”。",
+                ]
+            )
+
+        lines = ["批量打标签历史："]
+        for index, operation in enumerate(self._recent_tagged_documents_operations, start=1):
+            appended_tags = "、".join(operation.tags)
+            lines.append(
+                f"{index}. {operation.tag}标签资料 -> "
+                f"追加标签：{appended_tags}，已更新 {operation.updated_count} 份"
+            )
+            if operation.restore_commands:
+                lines.append(f"   恢复提示：{'；'.join(operation.restore_commands)}")
         return "\n".join(lines)
 
     def _sentence(self, text: str) -> str:
@@ -1003,11 +1030,14 @@ class JarvisAgent:
         lines.append(f"操作记录：本次已更新 {updated_count} 份资料。")
         if restore_commands:
             lines.append(f"恢复提示：如需撤销本次追加，可逐份执行：{'；'.join(restore_commands)}")
-        self._recent_tagged_documents_operation_tag = group_tag
-        self._recent_tagged_documents_operation_tags = new_tags
-        self._recent_tagged_documents_operation_updated_count = updated_count
-        self._recent_tagged_documents_operation_restore_commands = tuple(restore_commands)
-        self._save_runtime_context()
+        self._remember_tagged_documents_operation(
+            RuntimeTaggedDocumentsOperationContext(
+                tag=group_tag,
+                tags=new_tags,
+                updated_count=updated_count,
+                restore_commands=tuple(restore_commands),
+            )
+        )
         self.tools.run("record_log", message=f"确认执行标签组批量打标签：{group_tag} -> {len(document_paths)} 份")
         return "\n".join(lines)
 
@@ -1118,6 +1148,14 @@ class JarvisAgent:
         self._recent_files = recent_files
         self._save_runtime_context()
 
+    def _remember_tagged_documents_operation(self, operation: RuntimeTaggedDocumentsOperationContext) -> None:
+        self._recent_tagged_documents_operation_tag = operation.tag
+        self._recent_tagged_documents_operation_tags = operation.tags
+        self._recent_tagged_documents_operation_updated_count = operation.updated_count
+        self._recent_tagged_documents_operation_restore_commands = operation.restore_commands
+        self._recent_tagged_documents_operations = (operation, *self._recent_tagged_documents_operations)[:5]
+        self._save_runtime_context()
+
     def _remember_recent_directory(self, alias: str, directory_path: Path) -> None:
         self._recent_directory = CommonDirectory(alias, directory_path)
         self._save_runtime_context()
@@ -1142,6 +1180,7 @@ class JarvisAgent:
             recent_advice_suggestions=self._recent_advice_suggestions,
             recent_files=self._recent_files,
             recent_tagged_documents_operation=self._runtime_tagged_documents_operation(),
+            recent_tagged_documents_operations=self._recent_tagged_documents_operations,
         )
 
     def _save_runtime_context(self) -> None:
@@ -1298,6 +1337,7 @@ class JarvisAgent:
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",
                 "- 桌面能力：小助手窗口、面板、托盘、主题、开机启动、安装包、更新检查和下载",
                 "- 会话能力：/history、/save-summary、/clear",
+                "- 批量标签：标签组预览、确认、恢复提示和 /tag-history 历史记录",
                 "- 记忆写入：/remember、/experience、我叫...、我是...",
                 "- 本地验证：python -m unittest discover -s tests -v",
             ]

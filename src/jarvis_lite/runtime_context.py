@@ -48,6 +48,7 @@ class RuntimeContext:
     recent_advice_suggestions: tuple[str, ...] = ()
     recent_files: tuple[RuntimeRecentFileContext, ...] = ()
     recent_tagged_documents_operation: RuntimeTaggedDocumentsOperationContext | None = None
+    recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = ()
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -71,6 +72,18 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
     if not isinstance(raw, dict):
         return RuntimeContext()
     recent_document_path = _read_optional_str(raw.get("recent_document_path"))
+    recent_tagged_documents_operation = _read_tagged_documents_operation_context(
+        raw.get("recent_tagged_documents_operation")
+    )
+    recent_tagged_documents_operations = _read_tagged_documents_operation_contexts(
+        raw.get("recent_tagged_documents_operations")
+    )
+    recent_tagged_documents_operations = _tagged_documents_operation_history_with_latest(
+        recent_tagged_documents_operation,
+        recent_tagged_documents_operations,
+    )
+    if recent_tagged_documents_operation is None and recent_tagged_documents_operations:
+        recent_tagged_documents_operation = recent_tagged_documents_operations[0]
     return RuntimeContext(
         recent_document_path=recent_document_path,
         recent_document_paths=_read_recent_document_paths(raw.get("recent_document_paths"), recent_document_path),
@@ -78,9 +91,8 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         recent_search_result_paths=_read_str_tuple(raw.get("recent_search_result_paths")),
         recent_advice_suggestions=_read_str_tuple(raw.get("recent_advice_suggestions")),
         recent_files=_read_recent_file_contexts(raw.get("recent_files")),
-        recent_tagged_documents_operation=_read_tagged_documents_operation_context(
-            raw.get("recent_tagged_documents_operation")
-        ),
+        recent_tagged_documents_operation=recent_tagged_documents_operation,
+        recent_tagged_documents_operations=recent_tagged_documents_operations,
     )
 
 
@@ -89,6 +101,17 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
 
     context_path = runtime_context_path(paths)
     context_path.parent.mkdir(parents=True, exist_ok=True)
+    recent_tagged_documents_operations = _tagged_documents_operation_history_with_latest(
+        context.recent_tagged_documents_operation,
+        context.recent_tagged_documents_operations,
+    )
+    recent_tagged_documents_operation = (
+        context.recent_tagged_documents_operation
+        if context.recent_tagged_documents_operation is not None
+        else recent_tagged_documents_operations[0]
+        if recent_tagged_documents_operations
+        else None
+    )
     context_path.write_text(
         json.dumps(
             {
@@ -99,8 +122,12 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                 "recent_advice_suggestions": list(context.recent_advice_suggestions),
                 "recent_files": [_recent_file_context_to_json(recent_file) for recent_file in context.recent_files],
                 "recent_tagged_documents_operation": _tagged_documents_operation_context_to_json(
-                    context.recent_tagged_documents_operation
+                    recent_tagged_documents_operation
                 ),
+                "recent_tagged_documents_operations": [
+                    _tagged_documents_operation_context_to_json(operation)
+                    for operation in recent_tagged_documents_operations
+                ],
             },
             ensure_ascii=False,
             indent=2,
@@ -169,6 +196,35 @@ def _read_tagged_documents_operation_context(value: object) -> RuntimeTaggedDocu
         updated_count=updated_count,
         restore_commands=_read_str_tuple(value.get("restore_commands")),
     )
+
+
+def _read_tagged_documents_operation_contexts(value: object) -> tuple[RuntimeTaggedDocumentsOperationContext, ...]:
+    if not isinstance(value, list):
+        return ()
+    operations: list[RuntimeTaggedDocumentsOperationContext] = []
+    for item in value:
+        operation = _read_tagged_documents_operation_context(item)
+        if operation is not None:
+            operations.append(operation)
+        if len(operations) >= 5:
+            break
+    return tuple(operations)
+
+
+def _tagged_documents_operation_history_with_latest(
+    latest: RuntimeTaggedDocumentsOperationContext | None,
+    history: tuple[RuntimeTaggedDocumentsOperationContext, ...],
+) -> tuple[RuntimeTaggedDocumentsOperationContext, ...]:
+    operations: list[RuntimeTaggedDocumentsOperationContext] = []
+    if latest is not None:
+        operations.append(latest)
+    for operation in history:
+        if operation == latest and operations:
+            continue
+        operations.append(operation)
+        if len(operations) >= 5:
+            break
+    return tuple(operations[:5])
 
 
 def _directory_context_to_json(context: RuntimeDirectoryContext | None) -> dict[str, str] | None:
