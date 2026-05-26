@@ -3270,6 +3270,51 @@ git diff --check
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
 
+## 2026-05-26 编号最近资料缺失提示验证
+
+### RED：读取缺失编号资料只返回底层缺失信息
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_read_numbered_recent_document_marks_missing_document -v
+```
+
+结果：
+
+- 目标测试先失败。
+- “读取第二份资料”输出 `第 2 份资料：data/manual.md` 后接底层 `文件不存在：manual.md`，没有明确编号资料缺失提示。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_read_numbered_recent_document_marks_missing_document -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_read_numbered_recent_document_reads_selected_document tests.test_agent.AgentTests.test_natural_language_read_numbered_recent_document_requires_recent_list tests.test_agent.AgentTests.test_natural_language_read_numbered_recent_document_does_not_override_search_result tests.test_agent.AgentTests.test_read_tagged_documents_history_documents_marks_missing_documents tests.test_agent.AgentTests.test_read_tagged_documents_history_documents_sets_recent_document_list tests.test_agent.AgentTests.test_recent_document_list_survives_new_agent_instance -v
+```
+
+结果：
+
+- 编号最近资料缺失提示目标测试通过。
+- 编号读取、历史缺失、历史资料读取和最近资料持久化回归 6 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 289 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
 ## 2026-05-26 批量标签历史资料恢复提示验证
 
 ### RED：读取历史资料缺少恢复提示

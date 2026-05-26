@@ -643,6 +643,18 @@ class AgentTests(unittest.TestCase):
         self.assertIn("第 2 份资料：data/manual.md", response)
         self.assertIn("Second recent document payload", response)
 
+    def test_natural_language_read_numbered_recent_document_marks_missing_document(self):
+        manual_path = self.paths.data_dir / "manual.md"
+        manual_path.write_text("Second recent document payload.\n", encoding="utf-8")
+        self.agent.handle("/read manual.md")
+        self.agent.handle("/read note.txt")
+        manual_path.unlink()
+
+        response = self.agent.handle("读取第二份资料")
+
+        self.assertIn("第 2 份资料：data/manual.md（资料缺失）", response)
+        self.assertIn("你可以先查看 /kb，或重新导入资料。", response)
+
     def test_natural_language_read_numbered_recent_document_requires_recent_list(self):
         response = self.agent.handle("读取第二份资料")
 

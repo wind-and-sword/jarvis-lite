@@ -56,6 +56,10 @@
   - 读取历史影响资料时会逐项检查 `data/` 下的资料文件是否存在。
   - 已删除或移动的资料会显示为 `data/路径（资料缺失）`。
   - 最近资料列表仍恢复为历史中的完整路径，保留原始影响范围。
+- 编号最近资料缺失提示：
+  - “读取第二份资料”会在调用 `/read` 前检查对应 `data/` 文件是否存在。
+  - 已删除或移动的编号资料会显示为 `第 N 份资料：data/路径（资料缺失）`。
+  - 空最近资料列表、编号越界和正常读取逻辑保持不变。
 
 ## 验证结果
 
@@ -94,6 +98,9 @@
 - 批量标签历史资料缺失提示：
   - 1 个 Agent 目标测试先失败后通过。
   - 批量标签历史资料读取、历史列表、最近批量摘要、最近上下文和确认恢复提示回归通过。
+- 编号最近资料缺失提示：
+  - 1 个 Agent 目标测试先失败后通过。
+  - 编号读取、历史缺失、历史资料读取和最近资料持久化回归通过。
 - 收尾验证：
   - 全量测试：287 个通过。
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
@@ -113,6 +120,7 @@
   - 批量标签历史影响资料读取
   - 批量标签历史资料恢复提示
   - 批量标签历史资料缺失提示
+  - 编号最近资料缺失提示
 - 对应 `.codex/` 留痕：
   - `.codex/context-scan-tagged-documents-tag-preview.json`
   - `.codex/tagged-documents-tag-preview-plan.md`
@@ -136,6 +144,8 @@
   - `.codex/tag-history-restore-hints-plan.md`
   - `.codex/context-scan-tag-history-missing-documents.json`
   - `.codex/tag-history-missing-documents-plan.md`
+  - `.codex/context-scan-numbered-recent-document-missing.json`
+  - `.codex/numbered-recent-document-missing-plan.md`
   - `.codex/testing.md`
   - `.codex/review-report.md`
 
