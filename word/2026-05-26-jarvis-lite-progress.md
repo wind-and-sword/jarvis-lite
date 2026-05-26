@@ -40,6 +40,10 @@
   - `RuntimeContext` 新增最近批量标签操作历史列表，并兼容旧的单条摘要字段。
   - 确认执行批量打标签后会把本次操作插入历史首位，最多保留 5 条。
   - `/tag-history` 和“查看批量标签历史”会按新到旧列出标签组、追加标签、更新数量和恢复提示。
+- 桌面批量标签历史快捷入口：
+  - 桌面面板和托盘快捷命令新增“标签历史”入口。
+  - “标签历史”直接执行 `/tag-history`，复用 Agent 已有历史输出。
+  - 该入口加入无参数直接快捷命令集合，不影响仍需参数的“整理预览”。
 
 ## 验证结果
 
@@ -66,8 +70,11 @@
 - 批量标签操作历史命令：
   - 1 个 Agent 跨实例历史目标测试先失败后通过。
   - 最近批量摘要、标签组确认、恢复提示和取消回归通过。
+- 桌面批量标签历史快捷入口：
+  - 2 个桌面桥接测试和 2 个桌面面板测试先失败后通过。
+  - 桌面桥接、面板和托盘专项 32 个测试通过。
 - 收尾验证：
-  - 全量测试：285 个通过。
+  - 全量测试：286 个通过。
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
 
@@ -81,6 +88,7 @@
   - 标签组批量操作摘要接入最近上下文
   - 最近批量标签操作摘要持久化
   - 批量标签操作历史命令
+  - 桌面批量标签历史快捷入口
 - 对应 `.codex/` 留痕：
   - `.codex/context-scan-tagged-documents-tag-preview.json`
   - `.codex/tagged-documents-tag-preview-plan.md`
@@ -96,10 +104,12 @@
   - `.codex/persistent-tagged-documents-operation-plan.md`
   - `.codex/context-scan-batch-tag-history.json`
   - `.codex/batch-tag-history-plan.md`
+  - `.codex/context-scan-desktop-tag-history-entry.json`
+  - `.codex/desktop-tag-history-entry-plan.md`
   - `.codex/testing.md`
   - `.codex/review-report.md`
 
 ## 后续建议
 
-- 可以把标签组预览结果接入桌面摘要展示，让面板中更容易扫读多资料影响范围。
 - 可以继续给批量标签历史增加“读取第 N 条历史影响资料”的后续动作。
+- 可以继续把标签组预览结果接入桌面摘要展示，让面板中更容易扫读多资料影响范围。

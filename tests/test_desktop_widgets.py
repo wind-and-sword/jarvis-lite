@@ -73,7 +73,18 @@ class DesktopWidgetTests(unittest.TestCase):
     def test_panel_exposes_only_direct_quick_command_buttons(self):
         self.assertEqual(
             self.panel.quick_command_texts(),
-            ("状态", "知识库", "知识库摘要", "常用目录", "最近上下文", "最近文件", "生成日报", "检查更新", "下载更新"),
+            (
+                "状态",
+                "知识库",
+                "知识库摘要",
+                "常用目录",
+                "最近上下文",
+                "最近文件",
+                "标签历史",
+                "生成日报",
+                "检查更新",
+                "下载更新",
+            ),
         )
 
     def test_panel_quick_command_button_submits_prompt(self):
@@ -90,6 +101,14 @@ class DesktopWidgetTests(unittest.TestCase):
 
         self.assertIn("用户：查看最近上下文", self.panel.transcript_text())
         self.assertIn("最近上下文", self.panel.transcript_text())
+        self.assertIn("状态：success", self.panel.status_text())
+
+    def test_panel_tag_history_quick_command_submits_tag_history_command(self):
+        self.panel.quick_command_button("标签历史").click()
+        QApplication.processEvents()
+
+        self.assertIn("用户：/tag-history", self.panel.transcript_text())
+        self.assertIn("批量打标签历史：还没有记录。", self.panel.transcript_text())
         self.assertIn("状态：success", self.panel.status_text())
 
     def test_panel_tracks_last_result_after_submission(self):

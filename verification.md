@@ -3132,3 +3132,50 @@ git diff --check
 - 全量测试 285 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-26 桌面批量标签历史快捷入口验证
+
+### RED：桌面快捷入口缺少标签历史
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge.DesktopBridgeTests.test_quick_commands_include_current_assistant_capabilities tests.test_desktop_bridge.DesktopBridgeTests.test_direct_quick_commands_exclude_commands_that_need_arguments -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets.DesktopWidgetTests.test_panel_exposes_only_direct_quick_command_buttons tests.test_desktop_widgets.DesktopWidgetTests.test_panel_tag_history_quick_command_submits_tag_history_command -v
+```
+
+结果：
+
+- 桌面桥接层快捷命令先缺少 `/tag-history`。
+- 面板快捷按钮先缺少“标签历史”，点击测试出现 `KeyError`。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge.DesktopBridgeTests.test_quick_commands_include_current_assistant_capabilities tests.test_desktop_bridge.DesktopBridgeTests.test_direct_quick_commands_exclude_commands_that_need_arguments -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_widgets.DesktopWidgetTests.test_panel_exposes_only_direct_quick_command_buttons tests.test_desktop_widgets.DesktopWidgetTests.test_panel_tag_history_quick_command_submits_tag_history_command -v
+.\.venv\Scripts\python.exe -m unittest tests.test_desktop_bridge tests.test_desktop_widgets tests.test_desktop_tray -v
+```
+
+结果：
+
+- 桌面桥接和面板目标测试通过。
+- 桌面桥接、面板和托盘专项 32 个测试通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 286 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
