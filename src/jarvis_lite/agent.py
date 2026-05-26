@@ -445,6 +445,8 @@ class JarvisAgent:
             return self._preview_tagged_documents_tagging(intent.alias, intent.tags)
         if intent.name == "read_tagged_documents":
             return self._read_tagged_documents(intent.alias)
+        if intent.name == "read_tagged_documents_history_documents":
+            return self._read_tagged_documents_history_documents(intent.result_index)
         if intent.name == "read_recent_document":
             return self._read_recent_document()
         if intent.name == "read_numbered_recent_document":
@@ -620,6 +622,8 @@ class JarvisAgent:
             )
             if operation.restore_commands:
                 lines.append(f"   恢复提示：{'；'.join(operation.restore_commands)}")
+            if operation.document_paths:
+                lines.append(f"   影响资料：{len(operation.document_paths)} 份；可说“读取第{index}条标签历史资料”。")
         return "\n".join(lines)
 
     def _sentence(self, text: str) -> str:
@@ -834,6 +838,33 @@ class JarvisAgent:
         lines.append(f"可继续操作：读取第一份资料；给第一份资料打标签 标签；/ask {tag}")
         return "\n".join(lines)
 
+    def _read_tagged_documents_history_documents(self, history_index: int) -> str:
+        if not self._recent_tagged_documents_operations:
+            return "还没有批量标签历史。你可以先说“给项目标签资料都打标签 归档”，再说“确认执行”。"
+        if history_index < 1 or history_index > len(self._recent_tagged_documents_operations):
+            return f"批量标签历史只有 {len(self._recent_tagged_documents_operations)} 条，不能选择第 {history_index} 条。"
+
+        operation = self._recent_tagged_documents_operations[history_index - 1]
+        if not operation.document_paths:
+            return f"第 {history_index} 条批量标签历史没有保存影响资料列表。你可以查看 /tag-history。"
+
+        self._recent_document_path = operation.document_paths[0]
+        self._recent_document_paths = operation.document_paths
+        self._save_runtime_context()
+        self.tools.run("record_log", message=f"读取批量标签历史影响资料：第 {history_index} 条")
+
+        appended_tags = "、".join(operation.tags)
+        lines = [
+            f"第 {history_index} 条批量标签历史影响资料：{operation.tag}标签资料 -> 追加标签：{appended_tags}",
+        ]
+        for document_index, relative_path in enumerate(operation.document_paths, start=1):
+            lines.append(f"{document_index}. data/{relative_path}")
+            preview = self._document_preview(relative_path)
+            if preview:
+                lines.append(f"   摘要：{preview}")
+        lines.append("可继续操作：读取第一份资料；给第一份资料打标签 标签；/tag-history")
+        return "\n".join(lines)
+
     def _tagged_documents(self, tag: str):
         index = build_knowledge_index(self.paths)
         return tuple(document for document in index.documents if tag in document.tags)
@@ -1036,6 +1067,7 @@ class JarvisAgent:
                 tags=new_tags,
                 updated_count=updated_count,
                 restore_commands=tuple(restore_commands),
+                document_paths=document_paths,
             )
         )
         self.tools.run("record_log", message=f"确认执行标签组批量打标签：{group_tag} -> {len(document_paths)} 份")
@@ -1187,6 +1219,15 @@ class JarvisAgent:
         save_runtime_context(self.paths, self._runtime_context())
 
     def _runtime_tagged_documents_operation(self) -> RuntimeTaggedDocumentsOperationContext | None:
+        if self._recent_tagged_documents_operations:
+            operation = self._recent_tagged_documents_operations[0]
+            if (
+                operation.tag == self._recent_tagged_documents_operation_tag
+                and operation.tags == self._recent_tagged_documents_operation_tags
+                and operation.updated_count == self._recent_tagged_documents_operation_updated_count
+                and operation.restore_commands == self._recent_tagged_documents_operation_restore_commands
+            ):
+                return operation
         if self._recent_tagged_documents_operation_tag is None:
             return None
         return RuntimeTaggedDocumentsOperationContext(

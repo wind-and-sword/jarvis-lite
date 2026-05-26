@@ -35,6 +35,7 @@ class RuntimeTaggedDocumentsOperationContext:
     tags: tuple[str, ...]
     updated_count: int
     restore_commands: tuple[str, ...] = ()
+    document_paths: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -195,6 +196,7 @@ def _read_tagged_documents_operation_context(value: object) -> RuntimeTaggedDocu
         tags=tags,
         updated_count=updated_count,
         restore_commands=_read_str_tuple(value.get("restore_commands")),
+        document_paths=_read_str_tuple(value.get("document_paths")),
     )
 
 
@@ -217,14 +219,45 @@ def _tagged_documents_operation_history_with_latest(
 ) -> tuple[RuntimeTaggedDocumentsOperationContext, ...]:
     operations: list[RuntimeTaggedDocumentsOperationContext] = []
     if latest is not None:
+        latest = _tagged_documents_operation_with_history_paths(latest, history)
         operations.append(latest)
     for operation in history:
-        if operation == latest and operations:
+        if latest is not None and _same_tagged_documents_operation(operation, latest) and operations:
             continue
         operations.append(operation)
         if len(operations) >= 5:
             break
     return tuple(operations[:5])
+
+
+def _tagged_documents_operation_with_history_paths(
+    latest: RuntimeTaggedDocumentsOperationContext,
+    history: tuple[RuntimeTaggedDocumentsOperationContext, ...],
+) -> RuntimeTaggedDocumentsOperationContext:
+    if latest.document_paths:
+        return latest
+    for operation in history:
+        if _same_tagged_documents_operation(operation, latest) and operation.document_paths:
+            return RuntimeTaggedDocumentsOperationContext(
+                tag=latest.tag,
+                tags=latest.tags,
+                updated_count=latest.updated_count,
+                restore_commands=latest.restore_commands,
+                document_paths=operation.document_paths,
+            )
+    return latest
+
+
+def _same_tagged_documents_operation(
+    left: RuntimeTaggedDocumentsOperationContext,
+    right: RuntimeTaggedDocumentsOperationContext,
+) -> bool:
+    return (
+        left.tag == right.tag
+        and left.tags == right.tags
+        and left.updated_count == right.updated_count
+        and left.restore_commands == right.restore_commands
+    )
 
 
 def _directory_context_to_json(context: RuntimeDirectoryContext | None) -> dict[str, str] | None:
@@ -247,4 +280,5 @@ def _tagged_documents_operation_context_to_json(
         "tags": list(context.tags),
         "updated_count": context.updated_count,
         "restore_commands": list(context.restore_commands),
+        "document_paths": list(context.document_paths),
     }

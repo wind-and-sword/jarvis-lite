@@ -72,6 +72,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if import_intent is not None:
         return import_intent
 
+    read_tagged_documents_history_intent = _parse_read_tagged_documents_history_intent(prompt)
+    if read_tagged_documents_history_intent is not None:
+        return read_tagged_documents_history_intent
+
     read_tagged_documents_intent = _parse_read_tagged_documents_intent(readable_prompt)
     if read_tagged_documents_intent is not None:
         return read_tagged_documents_intent
@@ -208,6 +212,19 @@ def _parse_read_tagged_documents_intent(prompt: str) -> NaturalLanguageIntent | 
     if not tag:
         return None
     return NaturalLanguageIntent("read_tagged_documents", alias=tag)
+
+
+def _parse_read_tagged_documents_history_intent(prompt: str) -> NaturalLanguageIntent | None:
+    match = re.fullmatch(
+        r"(?:读取|查看|看看)第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个)?(?:批量标签历史|批量打标签历史|标签历史)(?:影响)?(?:资料|文档)",
+        prompt,
+    )
+    if not match:
+        return None
+    history_index = _parse_positive_number(match.group("number"))
+    if history_index <= 0:
+        return None
+    return NaturalLanguageIntent("read_tagged_documents_history_documents", result_index=history_index)
 
 
 def _parse_read_document_intent(prompt: str) -> NaturalLanguageIntent | None:
