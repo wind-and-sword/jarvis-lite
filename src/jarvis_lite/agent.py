@@ -862,6 +862,8 @@ class JarvisAgent:
             preview = self._document_preview(relative_path)
             if preview:
                 lines.append(f"   摘要：{preview}")
+        if operation.restore_commands:
+            lines.append(f"恢复提示：{'；'.join(operation.restore_commands)}")
         lines.append("可继续操作：读取第一份资料；给第一份资料打标签 标签；/tag-history")
         return "\n".join(lines)
 

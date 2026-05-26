@@ -1316,6 +1316,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("第 1 条批量标签历史影响资料：归档标签资料 -> 追加标签：已审", response)
         self.assertIn("1. data/note.txt", response)
         self.assertIn("2. data/zeta.md", response)
+        self.assertIn("恢复提示：给第一份资料打标签 项目 助手 归档；给第二份资料打标签 项目 归档", response)
         self.assertIn("可继续操作：读取第一份资料；给第一份资料打标签 标签；/tag-history", response)
         self.assertIn("第 2 份资料：data/zeta.md", followup)
         self.assertIn("第二份项目标签资料", followup)

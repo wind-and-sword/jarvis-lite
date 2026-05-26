@@ -48,6 +48,10 @@
   - `RuntimeTaggedDocumentsOperationContext` 新增受影响资料路径列表，旧历史缺少路径时仍可展示摘要。
   - 确认执行批量打标签后会把影响资料路径写入历史记录。
   - “读取第一条标签历史资料”会恢复该历史的资料列表，并支持继续“读取第二份资料”。
+- 批量标签历史资料恢复提示：
+  - “读取第一条标签历史资料”会直接显示该历史保存的逐份恢复命令。
+  - 恢复提示复用 `restore_commands`，不新增运行态字段或撤销栈。
+  - 输出仍保留影响资料编号列表和“可继续操作”建议。
 
 ## 验证结果
 
@@ -80,6 +84,9 @@
 - 批量标签历史影响资料读取：
   - 1 个 Agent 跨实例目标测试先失败后通过。
   - 批量标签历史、最近批量摘要、最近资料列表和恢复提示回归通过。
+- 批量标签历史资料恢复提示：
+  - 1 个 Agent 目标测试先失败后通过。
+  - 批量标签历史、最近批量摘要、最近资料列表和确认恢复提示回归通过。
 - 收尾验证：
   - 全量测试：287 个通过。
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
@@ -97,6 +104,7 @@
   - 批量标签操作历史命令
   - 桌面批量标签历史快捷入口
   - 批量标签历史影响资料读取
+  - 批量标签历史资料恢复提示
 - 对应 `.codex/` 留痕：
   - `.codex/context-scan-tagged-documents-tag-preview.json`
   - `.codex/tagged-documents-tag-preview-plan.md`
@@ -116,10 +124,12 @@
   - `.codex/desktop-tag-history-entry-plan.md`
   - `.codex/context-scan-tag-history-document-list.json`
   - `.codex/tag-history-document-list-plan.md`
+  - `.codex/context-scan-tag-history-restore-hints.json`
+  - `.codex/tag-history-restore-hints-plan.md`
   - `.codex/testing.md`
   - `.codex/review-report.md`
 
 ## 后续建议
 
 - 可以继续把标签组预览结果接入桌面摘要展示，让面板中更容易扫读多资料影响范围。
-- 可以继续给批量标签历史增加按编号恢复单份资料标签的辅助提示。
+- 可以继续给批量标签历史增加缺失资料提示，处理历史中的资料后来被删除或移动的情况。

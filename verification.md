@@ -3224,3 +3224,48 @@ git diff --check
 - 全量测试 287 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-26 批量标签历史资料恢复提示验证
+
+### RED：读取历史资料缺少恢复提示
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_read_tagged_documents_history_documents_sets_recent_document_list -v
+```
+
+结果：
+
+- 目标测试先失败。
+- “读取第一条标签历史资料”已能列出影响资料，但缺少该历史的逐份恢复提示。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_read_tagged_documents_history_documents_sets_recent_document_list -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_tagged_documents_history_command_survives_new_agent_instance tests.test_agent.AgentTests.test_recent_tagged_documents_operation_survives_new_agent_instance tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_recent_tagged_documents_operation tests.test_agent.AgentTests.test_recent_document_list_survives_new_agent_instance tests.test_agent.AgentTests.test_natural_language_confirm_tagged_documents_tagging_reports_restore_hints -v
+```
+
+结果：
+
+- 批量标签历史资料恢复提示目标测试通过。
+- 批量标签历史、最近批量摘要、最近资料列表和确认恢复提示回归 5 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 287 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
