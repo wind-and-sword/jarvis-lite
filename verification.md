@@ -2952,3 +2952,48 @@ git diff --check
 - 全量测试 281 个通过。
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
+## 2026-05-26 标签组批量操作恢复提示验证
+
+### RED：确认结果缺少恢复提示
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_confirm_tagged_documents_tagging_reports_restore_hints -v
+```
+
+结果：
+
+- 1 个新增 Agent 测试先失败。
+- 确认批量打标签后只输出更新后的标签列表，没有 `操作记录` 和 `恢复提示`。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_confirm_tagged_documents_tagging_reports_restore_hints -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_confirm_tagged_documents_tagging_applies_previewed_tags tests.test_agent.AgentTests.test_natural_language_confirm_tagged_documents_tagging_reports_restore_hints tests.test_agent.AgentTests.test_natural_language_cancel_tagged_documents_tagging_clears_preview tests.test_agent.AgentTests.test_natural_language_recent_context_status_reports_pending_tagged_documents_tagging tests.test_agent.AgentTests.test_natural_language_tag_document_updates_document_tags tests.test_agent.AgentTests.test_natural_language_tag_numbered_recent_document_updates_selected_document_tags -v
+```
+
+结果：
+
+- 标签组恢复提示目标测试通过。
+- 标签组确认、恢复提示、取消、最近上下文、普通打标签和编号资料打标签回归 6 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 282 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。

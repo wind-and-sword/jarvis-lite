@@ -400,6 +400,22 @@ class AgentTests(unittest.TestCase):
         self.assertIn("data/zeta.md（1 行，标签：项目、归档）", knowledge_status)
         self.assertIn("还没有待确认的建议命令", second_confirm)
 
+    def test_natural_language_confirm_tagged_documents_tagging_reports_restore_hints(self):
+        (self.paths.data_dir / "zeta.md").write_text("第二份项目标签资料。\n", encoding="utf-8")
+        self.agent.handle("/tag note.txt 项目 助手")
+        self.agent.handle("/tag zeta.md 项目")
+        self.agent.handle("给项目标签资料都打标签 归档")
+
+        response = self.agent.handle("确认执行")
+        restore_response = self.agent.handle("给第一份资料打标签 项目 助手")
+
+        self.assertIn("操作记录：本次已更新 2 份资料。", response)
+        self.assertIn(
+            "恢复提示：如需撤销本次追加，可逐份执行：给第一份资料打标签 项目 助手；给第二份资料打标签 项目",
+            response,
+        )
+        self.assertIn("已更新标签：data/note.txt（项目、助手）", restore_response)
+
     def test_natural_language_cancel_tagged_documents_tagging_clears_preview(self):
         self.agent.handle("/tag note.txt 项目")
         self.agent.handle("给项目标签资料都打标签 归档")

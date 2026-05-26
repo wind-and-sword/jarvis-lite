@@ -949,14 +949,24 @@ class JarvisAgent:
             f"已确认执行批量打标签：{group_tag}标签资料",
             f"追加标签：{'、'.join(new_tags)}",
         ]
+        restore_commands: list[str] = []
+        updated_count = 0
         for document_index, relative_path in enumerate(document_paths, start=1):
-            merged_tags = self._merged_tags(current_tags_by_path.get(relative_path, ()), new_tags)
+            current_tags = current_tags_by_path.get(relative_path, ())
+            merged_tags = self._merged_tags(current_tags, new_tags)
             try:
                 document = set_document_tags(self.paths, relative_path, merged_tags)
             except (FileNotFoundError, ValueError) as exc:
                 lines.append(f"{document_index}. data/{relative_path}：失败，{exc}")
                 continue
+            updated_count += 1
+            if current_tags:
+                ordinal = self._document_ordinal_label(document_index)
+                restore_commands.append(f"给{ordinal}份资料打标签 {' '.join(current_tags)}")
             lines.append(f"{document_index}. data/{document.relative_path}（{'、'.join(document.tags)}）")
+        lines.append(f"操作记录：本次已更新 {updated_count} 份资料。")
+        if restore_commands:
+            lines.append(f"恢复提示：如需撤销本次追加，可逐份执行：{'；'.join(restore_commands)}")
         self.tools.run("record_log", message=f"确认执行标签组批量打标签：{group_tag} -> {len(document_paths)} 份")
         return "\n".join(lines)
 

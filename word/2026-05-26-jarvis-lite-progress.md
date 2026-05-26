@@ -24,6 +24,10 @@
   - 批量打标签预览后，“查看最近上下文”会显示待确认批量打标签、追加标签和影响资料数量。
   - 确认执行后再次查看最近上下文，会显示待确认批量打标签为无。
   - 待确认建议命令展示保持独立，不会把批量标签任务误写成建议命令。
+- 标签组批量操作恢复提示：
+  - 确认执行后会追加 `操作记录：本次已更新 N 份资料。`
+  - 确认执行后会给出逐份恢复命令，例如“给第一份资料打标签 项目 助手”。
+  - 恢复提示只基于确认前标签生成，不新增持久化撤销栈。
 
 ## 验证结果
 
@@ -38,8 +42,11 @@
 - 标签组待确认状态接入最近上下文：
   - 1 个 Agent 目标测试先失败后通过。
   - 最近上下文待确认建议、最近建议、空状态、标签组确认和取消回归通过。
+- 标签组批量操作恢复提示：
+  - 1 个 Agent 目标测试先失败后通过。
+  - 标签组确认、取消、最近上下文、普通打标签和编号资料打标签回归通过。
 - 收尾验证：
-  - 全量测试：281 个通过。
+  - 全量测试：282 个通过。
   - `.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
   - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
 
@@ -49,6 +56,7 @@
   - 标签组批量打标签前预览
   - 标签组批量打标签确认闭环
   - 标签组待确认状态接入最近上下文
+  - 标签组批量操作恢复提示
 - 对应 `.codex/` 留痕：
   - `.codex/context-scan-tagged-documents-tag-preview.json`
   - `.codex/tagged-documents-tag-preview-plan.md`
@@ -56,10 +64,12 @@
   - `.codex/confirm-tagged-documents-tagging-plan.md`
   - `.codex/context-scan-pending-tagged-documents-recent-context.json`
   - `.codex/pending-tagged-documents-recent-context-plan.md`
+  - `.codex/context-scan-tagged-documents-undo-hints.json`
+  - `.codex/tagged-documents-undo-hints-plan.md`
   - `.codex/testing.md`
   - `.codex/review-report.md`
 
 ## 后续建议
 
-- 可以继续做标签组批量操作后的历史记录或撤销提示，降低误改后的恢复成本。
+- 可以继续做标签组批量操作历史列表，把最近一次批量操作摘要放进最近上下文或单独命令中。
 - 可以把标签组预览结果接入桌面摘要展示，让面板中更容易扫读多资料影响范围。
