@@ -5,7 +5,7 @@
 
 ## 今日恢复点
 
-根据 `日志.txt` 和 `word/2026-05-18-jarvis-lite-phase-2-progress.md`，昨日暂停点为：
+根据 `日志.txt` 和 `word/progress/details/2026-05-18-jarvis-lite-phase-2-progress.md`，昨日暂停点为：
 
 - 阶段 1 已推送到 GitHub：`998f67a`。
 - 阶段 2 第一批功能和暂停点文档本地领先远程 2 个提交。
