@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Mapping, Protocol
 
 
@@ -51,6 +51,17 @@ class LLMSettings:
 
 
 @dataclass(frozen=True)
+class LLMUsage:
+    """记录一次 provider 调用返回的 token 用量。"""
+
+    provider: str
+    model: str
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+
+
+@dataclass(frozen=True)
 class LLMIntent:
     """LLM 外脑返回给本地 Agent 的结构化意图。"""
 
@@ -59,6 +70,7 @@ class LLMIntent:
     answer: str = ""
     clarification: str = ""
     reason: str = ""
+    usage: LLMUsage | None = None
 
 
 class LLMProvider(Protocol):
@@ -85,7 +97,7 @@ class FakeLLMProvider:
 
 
 class OpenAIResponsesProvider:
-    """使用 OpenAI Responses API 的 provider 适配器。"""
+    """使用 OpenAI Responses API 或兼容端点的 provider 适配器。"""
 
     name = "openai"
 
@@ -97,6 +109,8 @@ class OpenAIResponsesProvider:
             return LLMIntent(type="no_action", reason="未配置 JARVIS_LITE_LLM_API_KEY")
         if not self.settings.model:
             return LLMIntent(type="no_action", reason="未配置 JARVIS_LITE_LLM_MODEL")
+        if self.settings.provider == "openai-compatible" and not self.settings.base_url:
+            return LLMIntent(type="no_action", reason="openai-compatible provider 未配置 JARVIS_LITE_LLM_BASE_URL")
 
         client_class = self._openai_client_class()
         if client_class is None:
@@ -127,7 +141,11 @@ class OpenAIResponsesProvider:
         raw_text = self._response_text(response)
         if not raw_text:
             return LLMIntent(type="no_action", reason="OpenAI Responses API 未返回文本内容")
-        return parse_llm_intent(raw_text)
+        intent = parse_llm_intent(raw_text)
+        usage = self._response_usage(response)
+        if usage is None:
+            return intent
+        return replace(intent, usage=usage)
 
     def _openai_client_class(self):
         try:
@@ -170,6 +188,38 @@ class OpenAIResponsesProvider:
                     text_parts.append(text.strip())
         return "\n".join(text_parts).strip()
 
+    def _response_usage(self, response) -> LLMUsage | None:
+        usage = self._item_value(response, "usage")
+        if usage is None:
+            return None
+
+        input_tokens = self._usage_int(usage, "input_tokens")
+        if input_tokens is None:
+            input_tokens = self._usage_int(usage, "prompt_tokens") or 0
+        output_tokens = self._usage_int(usage, "output_tokens")
+        if output_tokens is None:
+            output_tokens = self._usage_int(usage, "completion_tokens") or 0
+        total_tokens = self._usage_int(usage, "total_tokens")
+        if total_tokens is None:
+            total_tokens = input_tokens + output_tokens
+
+        return LLMUsage(
+            provider=self.settings.provider,
+            model=self.settings.model,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            total_tokens=total_tokens,
+        )
+
+    def _usage_int(self, usage, key: str) -> int | None:
+        value = self._item_value(usage, key)
+        if value is None:
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
     def _item_value(self, item, key: str):
         if isinstance(item, dict):
             return item.get(key)
@@ -197,6 +247,8 @@ class LLMRouter:
         ]
         if self.settings.model:
             lines.append(f"- Model：{self.settings.model}")
+        if self.settings.base_url:
+            lines.append(f"- Base URL：{self.settings.base_url}")
         return "\n".join(lines)
 
 
@@ -208,7 +260,7 @@ def build_llm_router(settings: LLMSettings | None = None) -> LLMRouter:
         return LLMRouter(resolved_settings)
     if resolved_settings.provider == "fake":
         return LLMRouter(resolved_settings, FakeLLMProvider(resolved_settings.fake_response))
-    if resolved_settings.provider == "openai":
+    if resolved_settings.provider in {"openai", "openai-compatible"}:
         return LLMRouter(resolved_settings, OpenAIResponsesProvider(resolved_settings))
     return LLMRouter(resolved_settings)
 

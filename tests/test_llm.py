@@ -7,7 +7,14 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from jarvis_lite.llm import FakeLLMProvider, LLMIntent, LLMSettings, OpenAIResponsesProvider, build_llm_router
+from jarvis_lite.llm import (
+    FakeLLMProvider,
+    LLMIntent,
+    LLMSettings,
+    LLMUsage,
+    OpenAIResponsesProvider,
+    build_llm_router,
+)
 
 
 class LLMTests(unittest.TestCase):
@@ -78,6 +85,16 @@ class LLMTests(unittest.TestCase):
         self.assertEqual(intent.type, "no_action")
         self.assertIn("JARVIS_LITE_LLM_API_KEY", intent.reason)
 
+    def test_openai_compatible_provider_requires_base_url(self):
+        provider = OpenAIResponsesProvider(
+            LLMSettings(provider="openai-compatible", model="compatible-model", api_key="test-key")
+        )
+
+        intent = provider.complete_intent("需要兼容端点处理的问题", context=())
+
+        self.assertEqual(intent.type, "no_action")
+        self.assertIn("JARVIS_LITE_LLM_BASE_URL", intent.reason)
+
     def test_openai_provider_without_sdk_returns_no_action(self):
         real_import = __import__
 
@@ -128,12 +145,54 @@ class LLMTests(unittest.TestCase):
         self.assertIn("input", calls["response_kwargs"])
         self.assertIn("text", calls["response_kwargs"])
 
+    def test_openai_provider_attaches_usage_from_response(self):
+        class FakeResponses:
+            def create(self, **kwargs):
+                return types.SimpleNamespace(
+                    output_text='{"type":"answer","answer":"带用量的回答"}',
+                    usage=types.SimpleNamespace(input_tokens=12, output_tokens=5, total_tokens=17),
+                )
+
+        class FakeOpenAI:
+            def __init__(self, **kwargs):
+                self.responses = FakeResponses()
+
+        fake_openai_module = types.ModuleType("openai")
+        fake_openai_module.OpenAI = FakeOpenAI
+        provider = OpenAIResponsesProvider(
+            LLMSettings(provider="openai", model="gpt-test", api_key="test-key")
+        )
+
+        with patch.dict(sys.modules, {"openai": fake_openai_module}):
+            intent = provider.complete_intent("需要外脑处理的问题", context=())
+
+        self.assertEqual(intent.answer, "带用量的回答")
+        self.assertEqual(
+            intent.usage,
+            LLMUsage(provider="openai", model="gpt-test", input_tokens=12, output_tokens=5, total_tokens=17),
+        )
+
     def test_router_uses_openai_provider_from_settings(self):
         router = build_llm_router(LLMSettings(provider="openai", model="gpt-test", api_key="test-key"))
 
         self.assertIsInstance(router.provider, OpenAIResponsesProvider)
         self.assertIn("Provider：openai", router.describe())
         self.assertIn("Model：gpt-test", router.describe())
+
+    def test_router_uses_openai_compatible_provider_from_settings(self):
+        router = build_llm_router(
+            LLMSettings(
+                provider="openai-compatible",
+                model="compatible-model",
+                base_url="https://compatible.example/v1",
+                api_key="test-key",
+            )
+        )
+
+        self.assertIsInstance(router.provider, OpenAIResponsesProvider)
+        self.assertIn("Provider：openai-compatible", router.describe())
+        self.assertIn("Model：compatible-model", router.describe())
+        self.assertIn("Base URL：https://compatible.example/v1", router.describe())
 
 
 if __name__ == "__main__":

@@ -784,6 +784,7 @@ class JarvisAgent:
         intent = self.llm_router.complete_intent(prompt, self._llm_context_lines())
         if intent is None:
             return ""
+        self._record_llm_usage(intent)
         return self._handle_llm_intent(intent)
 
     def _handle_llm_intent(self, intent: LLMIntent) -> str:
@@ -802,6 +803,22 @@ class JarvisAgent:
         if intent.type == "clarify" and intent.clarification:
             return f"LLM 外脑需要补充信息：{intent.clarification}"
         return ""
+
+    def _record_llm_usage(self, intent: LLMIntent) -> None:
+        if intent.usage is None:
+            return
+        usage = intent.usage
+        self.tools.run(
+            "record_log",
+            message=(
+                "LLM 外脑用量："
+                f"provider={usage.provider} "
+                f"model={usage.model} "
+                f"input_tokens={usage.input_tokens} "
+                f"output_tokens={usage.output_tokens} "
+                f"total_tokens={usage.total_tokens}"
+            ),
+        )
 
     def _llm_context_lines(self) -> tuple[str, ...]:
         lines = [f"记忆摘要：{summarize_profile(read_profile(self.paths))}"]

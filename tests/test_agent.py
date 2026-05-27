@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.agent import JarvisAgent
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.llm import FakeLLMProvider, LLMRouter, LLMSettings
+from jarvis_lite.llm import FakeLLMProvider, LLMIntent, LLMRouter, LLMSettings, LLMUsage
 
 
 class AgentTests(unittest.TestCase):
@@ -1520,6 +1520,37 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("LLM 外脑需要补充信息：你想整理哪个目录？", response)
         self.assertEqual(len(provider.calls), 1)
+
+    def test_llm_usage_is_recorded_when_provider_returns_usage(self):
+        class UsageProvider:
+            name = "fake"
+
+            def complete_intent(self, prompt, context):
+                return LLMIntent(
+                    type="answer",
+                    answer="带用量的回答",
+                    usage=LLMUsage(
+                        provider="fake",
+                        model="intent-test",
+                        input_tokens=10,
+                        output_tokens=3,
+                        total_tokens=13,
+                    ),
+                )
+
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake", model="intent-test"), UsageProvider()),
+        )
+
+        response = agent.handle("火星基地预算需要外部判断")
+
+        log_content = (self.paths.logs_dir / "jarvis.log").read_text(encoding="utf-8")
+        self.assertIn("LLM 外脑：带用量的回答", response)
+        self.assertIn(
+            "LLM 外脑用量：provider=fake model=intent-test input_tokens=10 output_tokens=3 total_tokens=13",
+            log_content,
+        )
 
     def test_ask_command_reports_no_match(self):
         response = self.agent.handle("/ask 今天晚饭吃什么？")
