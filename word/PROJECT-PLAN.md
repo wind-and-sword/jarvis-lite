@@ -40,7 +40,7 @@ PC Agent 稳定
 - 知识库问答、摘要、标签、按标签读取资料组。
 - 最近资料、最近文件、最近目录、最近搜索结果、最近建议和批量标签历史。
 - 本地自然语言意图层，可处理常见中文表达。
-- LLM 外脑 Router 第一版：provider-neutral 配置、fake provider 测试路径、OpenAI Responses API adapter、OpenAI-compatible 端点、token usage 日志、`/llm-status` 配置诊断和 `/llm-usage` 本地汇总。
+- LLM 外脑 Router 第一版：provider-neutral 配置、fake provider 测试路径、OpenAI Responses API adapter、OpenAI-compatible 端点、token usage 日志、`/llm-status` 配置诊断、`/llm-usage` 本地汇总和 `/llm-config-example` 配置模板。
 - 桌面小助手、助手面板、托盘、快捷命令、主题、尺寸、开机启动和更新入口。
 - 本地 `unittest` 验证体系。
 

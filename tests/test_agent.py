@@ -285,6 +285,7 @@ class AgentTests(unittest.TestCase):
         response = self.agent.handle("/help")
 
         self.assertIn("/llm-usage：查看 LLM token 用量汇总", response)
+        self.assertIn("/llm-config-example [provider]：查看 LLM 环境变量配置模板", response)
 
     def test_llm_status_command_reports_router_state(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"状态测试"}')
@@ -325,6 +326,27 @@ class AgentTests(unittest.TestCase):
         self.assertIn("总计：input_tokens=19 output_tokens=8 total_tokens=27", response)
         self.assertIn("openai / gpt-test：1 次", response)
         self.assertIn("openai-compatible / qwen-test：1 次", response)
+
+    def test_llm_config_example_command_reports_provider_templates(self):
+        response = self.agent.handle("/llm-config-example")
+
+        self.assertIn("LLM 配置模板", response)
+        self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "openai"', response)
+        self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "openai-compatible"', response)
+        self.assertIn("不会读取或保存真实 API key", response)
+
+    def test_llm_config_example_command_can_filter_provider(self):
+        response = self.agent.handle("/llm-config-example openai-compatible")
+
+        self.assertIn("OpenAI-compatible 端点", response)
+        self.assertIn("JARVIS_LITE_LLM_BASE_URL", response)
+        self.assertNotIn("Fake provider", response)
+
+    def test_llm_config_example_command_maps_model_hub_alias(self):
+        response = self.agent.handle("/llm-config-example qwen")
+
+        self.assertIn("qwen 可先使用 OpenAI-compatible 端点模板", response)
+        self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "openai-compatible"', response)
 
     def test_knowledge_status_command_reports_data_index(self):
         response = self.agent.handle("/kb")

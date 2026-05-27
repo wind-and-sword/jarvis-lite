@@ -8,6 +8,7 @@ from typing import Any, Iterable, Mapping, Protocol
 
 VALID_LLM_INTENT_TYPES = {"command", "answer", "clarify", "no_action"}
 VALID_LLM_PROVIDERS = {"off", "fake", "openai", "openai-compatible"}
+LLM_CONFIG_TEMPLATE_ALIASES = {"qwen": "openai-compatible", "gemini": "openai-compatible"}
 LLM_INTENT_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -336,6 +337,88 @@ def summarize_llm_usage(log_lines: Iterable[str]) -> str:
             f"total_tokens={bucket.total_tokens}"
         )
     return "\n".join(lines)
+
+
+def describe_llm_config_examples(provider: str = "") -> str:
+    """输出不会包含真实密钥的 LLM 环境变量配置模板。"""
+
+    normalized_provider = provider.strip().lower()
+    sections = _llm_config_template_sections()
+    if normalized_provider:
+        template_provider = LLM_CONFIG_TEMPLATE_ALIASES.get(normalized_provider, normalized_provider)
+        section = sections.get(template_provider)
+        if section is None:
+            return "\n".join(
+                [
+                    f"暂不支持配置模板 provider：{normalized_provider}",
+                    "可用 provider：off、fake、openai、openai-compatible",
+                    "如果厂商提供 OpenAI-compatible Responses 端点，可先使用 openai-compatible 模板。",
+                ]
+            )
+        if template_provider != normalized_provider:
+            section = "\n".join(
+                [
+                    f"# {normalized_provider} 可先使用 OpenAI-compatible 端点模板",
+                    "# 原生 adapter 后续接入；base_url 请以厂商官方控制台为准。",
+                    section,
+                ]
+            )
+        selected_sections = [section]
+    else:
+        selected_sections = list(sections.values())
+
+    lines = [
+        "LLM 配置模板",
+        "这些示例只使用占位符，不会读取或保存真实 API key。",
+        "PowerShell 示例：",
+        "",
+    ]
+    lines.extend("\n\n".join(selected_sections).splitlines())
+    lines.extend(
+        [
+            "",
+            "配置后可运行：",
+            'python src/app.py --once "/llm-status"',
+            'python src/app.py --once "/llm-usage"',
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _llm_config_template_sections() -> dict[str, str]:
+    return {
+        "off": "\n".join(
+            [
+                "# 关闭 LLM 外脑",
+                '$env:JARVIS_LITE_LLM_PROVIDER = "off"',
+            ]
+        ),
+        "fake": "\n".join(
+            [
+                "# Fake provider，本地测试固定响应",
+                '$env:JARVIS_LITE_LLM_PROVIDER = "fake"',
+                '$env:JARVIS_LITE_LLM_FAKE_RESPONSE = \'{"type":"answer","answer":"测试回答"}\'',
+            ]
+        ),
+        "openai": "\n".join(
+            [
+                "# OpenAI Responses API",
+                '$env:JARVIS_LITE_LLM_PROVIDER = "openai"',
+                '$env:JARVIS_LITE_LLM_MODEL = "<模型名>"',
+                '$env:JARVIS_LITE_LLM_API_KEY = "<你的 API key>"',
+                '$env:JARVIS_LITE_LLM_BASE_URL = ""',
+            ]
+        ),
+        "openai-compatible": "\n".join(
+            [
+                "# OpenAI-compatible 端点",
+                '$env:JARVIS_LITE_LLM_PROVIDER = "openai-compatible"',
+                '$env:JARVIS_LITE_LLM_MODEL = "<兼容端点模型名>"',
+                '$env:JARVIS_LITE_LLM_API_KEY = "<你的 API key>"',
+                '$env:JARVIS_LITE_LLM_BASE_URL = "<兼容端点 base_url>"',
+            ]
+        ),
+    }
 
 
 def _parse_llm_usage_line(line: str) -> LLMUsage | None:

@@ -14,6 +14,7 @@ from jarvis_lite.llm import (
     LLMUsage,
     OpenAIResponsesProvider,
     build_llm_router,
+    describe_llm_config_examples,
     summarize_llm_usage,
 )
 
@@ -244,6 +245,34 @@ class LLMTests(unittest.TestCase):
         summary = summarize_llm_usage(())
 
         self.assertIn("还没有 LLM 用量记录", summary)
+
+    def test_describe_llm_config_examples_lists_provider_templates(self):
+        description = describe_llm_config_examples()
+
+        self.assertIn("LLM 配置模板", description)
+        self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "openai"', description)
+        self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "openai-compatible"', description)
+        self.assertIn('$env:JARVIS_LITE_LLM_API_KEY = "<你的 API key>"', description)
+        self.assertIn("不会读取或保存真实 API key", description)
+
+    def test_describe_llm_config_examples_can_filter_provider(self):
+        description = describe_llm_config_examples("openai-compatible")
+
+        self.assertIn("OpenAI-compatible 端点", description)
+        self.assertIn("JARVIS_LITE_LLM_BASE_URL", description)
+        self.assertNotIn("Fake provider", description)
+
+    def test_describe_llm_config_examples_maps_model_hub_alias_to_compatible_template(self):
+        description = describe_llm_config_examples("qwen")
+
+        self.assertIn("qwen 可先使用 OpenAI-compatible 端点模板", description)
+        self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "openai-compatible"', description)
+
+    def test_describe_llm_config_examples_reports_unknown_provider(self):
+        description = describe_llm_config_examples("unknown-model-hub")
+
+        self.assertIn("暂不支持配置模板 provider：unknown-model-hub", description)
+        self.assertIn("openai-compatible", description)
 
 
 if __name__ == "__main__":

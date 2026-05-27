@@ -27,7 +27,7 @@ from .knowledge import (
     summarize_knowledge_base,
 )
 from .intent import parse_natural_language_intent
-from .llm import LLMIntent, LLMRouter, build_llm_router, summarize_llm_usage
+from .llm import LLMIntent, LLMRouter, build_llm_router, describe_llm_config_examples, summarize_llm_usage
 from .memory import (
     append_experience,
     append_memory,
@@ -201,6 +201,10 @@ class JarvisAgent:
                     ]
                 )
 
+        if command == "/llm-config-example":
+            self.tools.run("record_log", message="查看 LLM 配置模板")
+            return describe_llm_config_examples(args[0] if args else "")
+
         if command == "/list":
             result = self.tools.run("list_data", path=args[0] if args else ".")
             return result.output if result.success else result.message
@@ -365,6 +369,7 @@ class JarvisAgent:
                 "/status：查看阶段 1 当前状态",
                 "/llm-status：查看 LLM 外脑 provider 状态",
                 "/llm-usage：查看 LLM token 用量汇总",
+                "/llm-config-example [provider]：查看 LLM 环境变量配置模板",
                 "/kb：查看个人知识库状态",
                 "/kb-summary：查看知识库资料摘要",
                 "/voice-status：查看阶段 3 语音入口状态",
