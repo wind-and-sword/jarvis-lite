@@ -285,6 +285,7 @@ class AgentTests(unittest.TestCase):
         response = self.agent.handle("/help")
 
         self.assertIn("/llm-usage：查看 LLM token 用量汇总", response)
+        self.assertIn("/llm-smoke [prompt]：强制调用 LLM 做一次配置验证", response)
         self.assertIn("/llm-config-example [provider]：查看 LLM 环境变量配置模板", response)
 
     def test_llm_status_command_reports_router_state(self):
@@ -347,6 +348,68 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("qwen 可先使用 OpenAI-compatible 端点模板", response)
         self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "openai-compatible"', response)
+
+    def test_llm_smoke_command_reports_disabled_router(self):
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="off")))
+
+        response = agent.handle("/llm-smoke")
+
+        self.assertIn("LLM smoke：LLM 外脑未启用", response)
+        self.assertIn("/llm-status", response)
+        self.assertIn("/llm-config-example openai-compatible", response)
+
+    def test_llm_smoke_command_returns_answer_without_normal_fallback(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"smoke 正常"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider))
+
+        response = agent.handle("/llm-smoke 只测试连接")
+
+        self.assertIn("LLM smoke：type=answer", response)
+        self.assertIn("回答：smoke 正常", response)
+        self.assertEqual(provider.calls[0][0], "只测试连接")
+        self.assertIn("LLM smoke 配置验证", provider.calls[0][1][0])
+
+    def test_llm_smoke_command_does_not_execute_command_intent(self):
+        provider = FakeLLMProvider('{"type":"command","command":"/kb-summary","reason":"需要看摘要"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider))
+
+        response = agent.handle("/llm-smoke 测试命令建议")
+
+        self.assertIn("LLM smoke：type=command", response)
+        self.assertIn("命令建议：/kb-summary", response)
+        self.assertIn("smoke 不会自动执行命令建议", response)
+        self.assertNotIn("知识库摘要", response)
+
+    def test_llm_smoke_command_records_usage(self):
+        class UsageProvider:
+            name = "fake"
+
+            def complete_intent(self, prompt, context):
+                return LLMIntent(
+                    type="answer",
+                    answer="带用量的 smoke",
+                    usage=LLMUsage(
+                        provider="fake",
+                        model="intent-test",
+                        input_tokens=11,
+                        output_tokens=4,
+                        total_tokens=15,
+                    ),
+                )
+
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake", model="intent-test"), UsageProvider()),
+        )
+
+        response = agent.handle("/llm-smoke usage test")
+
+        log_content = (self.paths.logs_dir / "jarvis.log").read_text(encoding="utf-8")
+        self.assertIn("回答：带用量的 smoke", response)
+        self.assertIn(
+            "LLM 外脑用量：provider=fake model=intent-test input_tokens=11 output_tokens=4 total_tokens=15",
+            log_content,
+        )
 
     def test_knowledge_status_command_reports_data_index(self):
         response = self.agent.handle("/kb")

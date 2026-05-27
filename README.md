@@ -43,6 +43,7 @@ python src/app.py --once "/status"
 python src/app.py --once "/kb"
 python src/app.py --once "/kb-summary"
 python src/app.py --once "/llm-status"
+python src/app.py --once "/llm-smoke"
 python src/app.py --once "查看最近上下文"
 python src/app.py --once "总结知识库"
 ```
@@ -70,6 +71,7 @@ $env:JARVIS_LITE_LLM_API_KEY = "..."
 $env:JARVIS_LITE_LLM_BASE_URL = ""        # openai-compatible 必填，可填 /v1 或完整 /v1/responses URL
 $env:JARVIS_LITE_LLM_FAKE_RESPONSE = '{"type":"answer","answer":"测试回答"}'
 python src/app.py --once "/llm-status"
+python src/app.py --once "/llm-smoke 请用一句话确认连接可用"
 python src/app.py --once "/llm-usage"
 python src/app.py --once "/llm-config-example openai"
 ```
@@ -77,6 +79,8 @@ python src/app.py --once "/llm-config-example openai"
 `openai-compatible` 适用于提供 OpenAI Responses API 兼容端点的合法网关，使用 `base_url + api_key + model` 接入。`JARVIS_LITE_LLM_BASE_URL` 可以填写 SDK 需要的 base URL（通常到 `/v1`），也可以直接粘贴完整 Responses URL（例如完整路径到 `/v1/responses`），Jarvis Lite 调用 SDK 时会自动归一化为 base URL。provider 返回 usage 时，Jarvis Lite 会把 `input_tokens`、`output_tokens` 和 `total_tokens` 记录到 `logs/jarvis.log`。
 
 `/llm-status` 会做本地配置诊断：例如缺少 `JARVIS_LITE_LLM_MODEL`、`JARVIS_LITE_LLM_API_KEY`、`JARVIS_LITE_LLM_BASE_URL` 或 provider 名称不支持时，会直接列出配置问题，不会打印 API key 内容。配置了完整 `/v1/responses` URL 时，状态会同时显示原始 Base URL 和 SDK 实际使用的 Base URL。
+
+`/llm-smoke [prompt]` 会强制调用当前 LLM Router 做一次配置验证；它只展示模型返回的结构化意图，不会执行模型给出的命令建议。provider 返回 usage 时，仍会写入本地 `logs/jarvis.log`，之后可用 `/llm-usage` 汇总。
 
 `/llm-usage` 会从本地 `logs/jarvis.log` 汇总 provider/model 维度的 token 用量，不需要真实 API key，也不会触发网络请求。
 
@@ -90,6 +94,7 @@ python src/app.py --once "/llm-config-example openai"
 /help
 /status
 /llm-status
+/llm-smoke [prompt]
 /llm-usage
 /llm-config-example [provider]
 /memory

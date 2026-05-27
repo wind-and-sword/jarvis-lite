@@ -204,6 +204,10 @@ class JarvisAgent:
         if command == "/llm-config-example":
             self.tools.run("record_log", message="查看 LLM 配置模板")
             return describe_llm_config_examples(args[0] if args else "")
+        if command == "/llm-smoke":
+            smoke_prompt = " ".join(args)
+            self.tools.run("record_log", message="执行 LLM smoke 调用")
+            return self._llm_smoke(smoke_prompt)
 
         if command == "/list":
             result = self.tools.run("list_data", path=args[0] if args else ".")
@@ -369,6 +373,7 @@ class JarvisAgent:
                 "/status：查看阶段 1 当前状态",
                 "/llm-status：查看 LLM 外脑 provider 状态",
                 "/llm-usage：查看 LLM token 用量汇总",
+                "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
                 "/llm-config-example [provider]：查看 LLM 环境变量配置模板",
                 "/kb：查看个人知识库状态",
                 "/kb-summary：查看知识库资料摘要",
@@ -795,6 +800,47 @@ class JarvisAgent:
             return ""
         self._record_llm_usage(intent)
         return self._handle_llm_intent(intent)
+
+    def _llm_smoke(self, prompt: str) -> str:
+        smoke_prompt = prompt.strip() or "请用一句话确认 Jarvis Lite LLM smoke 可用。"
+        if not self.llm_router.settings.enabled or self.llm_router.provider is None:
+            return "\n".join(
+                [
+                    "LLM smoke：LLM 外脑未启用。",
+                    "可先运行：/llm-status",
+                    "配置模板：/llm-config-example openai-compatible",
+                ]
+            )
+
+        issues = self.llm_router.settings.configuration_issues()
+        if issues:
+            lines = ["LLM smoke：配置未完成。", *[f"- {issue}" for issue in issues]]
+            lines.extend(["可先运行：/llm-status", "配置模板：/llm-config-example openai-compatible"])
+            return "\n".join(lines)
+
+        intent = self.llm_router.complete_intent(
+            smoke_prompt,
+            ("LLM smoke 配置验证：只返回结构化意图，不要声称执行工具。",),
+        )
+        if intent is None:
+            return "LLM smoke：LLM 外脑未返回结果。"
+        self._record_llm_usage(intent)
+        return self._format_llm_smoke_intent(intent)
+
+    def _format_llm_smoke_intent(self, intent: LLMIntent) -> str:
+        lines = [f"LLM smoke：type={intent.type}"]
+        if intent.type == "command" and intent.command:
+            lines.append(f"命令建议：{intent.command.strip()}")
+            lines.append("说明：smoke 不会自动执行命令建议。")
+        elif intent.type == "answer" and intent.answer:
+            lines.append(f"回答：{intent.answer}")
+        elif intent.type == "clarify" and intent.clarification:
+            lines.append(f"澄清问题：{intent.clarification}")
+        elif intent.reason:
+            lines.append(f"原因：{intent.reason}")
+        if intent.reason and intent.type != "no_action":
+            lines.append(f"原因：{intent.reason}")
+        return "\n".join(lines)
 
     def _handle_llm_intent(self, intent: LLMIntent) -> str:
         if intent.type == "command" and intent.command:
