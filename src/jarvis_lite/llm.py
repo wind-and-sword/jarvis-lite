@@ -7,6 +7,7 @@ from typing import Any, Mapping, Protocol
 
 
 VALID_LLM_INTENT_TYPES = {"command", "answer", "clarify", "no_action"}
+VALID_LLM_PROVIDERS = {"off", "fake", "openai", "openai-compatible"}
 LLM_INTENT_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -37,6 +38,22 @@ class LLMSettings:
     @property
     def enabled(self) -> bool:
         return self.provider != "off"
+
+    def configuration_issues(self) -> tuple[str, ...]:
+        issues: list[str] = []
+        if self.provider not in VALID_LLM_PROVIDERS:
+            issues.append(f"未知 provider：{self.provider}")
+            return tuple(issues)
+        if not self.enabled or self.provider == "fake":
+            return ()
+        if self.provider in {"openai", "openai-compatible"}:
+            if not self.model:
+                issues.append("缺少 JARVIS_LITE_LLM_MODEL")
+            if not self.api_key:
+                issues.append("缺少 JARVIS_LITE_LLM_API_KEY")
+            if self.provider == "openai-compatible" and not self.base_url:
+                issues.append("缺少 JARVIS_LITE_LLM_BASE_URL")
+        return tuple(issues)
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "LLMSettings":
@@ -249,6 +266,13 @@ class LLMRouter:
             lines.append(f"- Model：{self.settings.model}")
         if self.settings.base_url:
             lines.append(f"- Base URL：{self.settings.base_url}")
+        issues = self.settings.configuration_issues()
+        if issues:
+            lines.append("- 配置问题：")
+            for issue in issues:
+                lines.append(f"  - {issue}")
+        else:
+            lines.append("- 配置：可调用")
         return "\n".join(lines)
 
 

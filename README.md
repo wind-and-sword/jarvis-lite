@@ -74,6 +74,8 @@ python src/app.py --once "/llm-status"
 
 `openai-compatible` 适用于提供 OpenAI Responses API 兼容端点的合法网关，使用 `base_url + api_key + model` 接入。provider 返回 usage 时，Jarvis Lite 会把 `input_tokens`、`output_tokens` 和 `total_tokens` 记录到 `logs/jarvis.log`。
 
+`/llm-status` 会做本地配置诊断：例如缺少 `JARVIS_LITE_LLM_MODEL`、`JARVIS_LITE_LLM_API_KEY`、`JARVIS_LITE_LLM_BASE_URL` 或 provider 名称不支持时，会直接列出配置问题，不会打印 API key 内容。
+
 当前真实 provider 先接入 OpenAI Responses API 和 OpenAI-compatible Responses 端点；Gemini、Qwen 会沿用同一 Router/Provider 接口继续扩展。
 
 ## 常用命令

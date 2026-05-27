@@ -81,7 +81,7 @@ LLM 不直接替代：
   -> 进入既有工具、上下文和反馈流程
 ```
 
-截至 2026-05-27，第一版已经落地 provider-neutral 的 `LLMRouter` / `LLMProvider` / `LLMIntent` 分层，并具备 `off`、`fake`、OpenAI Responses API provider、OpenAI-compatible Responses 端点和 token usage 日志。Gemini、Qwen provider 后续应作为 adapter 接入，不让 `JarvisAgent` 直接感知厂商细节。
+截至 2026-05-27，第一版已经落地 provider-neutral 的 `LLMRouter` / `LLMProvider` / `LLMIntent` 分层，并具备 `off`、`fake`、OpenAI Responses API provider、OpenAI-compatible Responses 端点、token usage 日志和 `/llm-status` 配置诊断。Gemini、Qwen provider 后续应作为 adapter 接入，不让 `JarvisAgent` 直接感知厂商细节。
 
 ## 5. 下一阶段建议
 
@@ -95,7 +95,7 @@ LLM 不直接替代：
 - 新增结构化意图返回格式。
 - 在本地命令、身份、本地自然语言意图和知识库问答之后调用 LLM。
 - 让 LLM 输出可被 `JarvisAgent` 接收的命令建议，而不是自由执行。
-- 增加 fake provider 测试路径、OpenAI Responses API adapter、OpenAI-compatible 端点、token usage 日志和 `/llm-status`。
+- 增加 fake provider 测试路径、OpenAI Responses API adapter、OpenAI-compatible 端点、token usage 日志和 `/llm-status` 配置诊断。
 
 后续继续完成：
 

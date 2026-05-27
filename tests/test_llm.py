@@ -194,6 +194,33 @@ class LLMTests(unittest.TestCase):
         self.assertIn("Model：compatible-model", router.describe())
         self.assertIn("Base URL：https://compatible.example/v1", router.describe())
 
+    def test_router_describes_openai_missing_configuration(self):
+        router = build_llm_router(LLMSettings(provider="openai"))
+
+        description = router.describe()
+
+        self.assertIn("配置问题：", description)
+        self.assertIn("缺少 JARVIS_LITE_LLM_MODEL", description)
+        self.assertIn("缺少 JARVIS_LITE_LLM_API_KEY", description)
+
+    def test_router_describes_openai_compatible_missing_base_url(self):
+        router = build_llm_router(
+            LLMSettings(provider="openai-compatible", model="compatible-model", api_key="test-key")
+        )
+
+        description = router.describe()
+
+        self.assertIn("配置问题：", description)
+        self.assertIn("缺少 JARVIS_LITE_LLM_BASE_URL", description)
+
+    def test_router_describes_unknown_provider(self):
+        router = build_llm_router(LLMSettings(provider="unknown-model-hub", model="test-model"))
+
+        description = router.describe()
+
+        self.assertIn("Provider：unknown-model-hub", description)
+        self.assertIn("未知 provider：unknown-model-hub", description)
+
 
 if __name__ == "__main__":
     unittest.main()

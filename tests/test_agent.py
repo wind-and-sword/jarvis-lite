@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.agent import JarvisAgent
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.llm import FakeLLMProvider, LLMIntent, LLMRouter, LLMSettings, LLMUsage
+from jarvis_lite.llm import FakeLLMProvider, LLMIntent, LLMRouter, LLMSettings, LLMUsage, build_llm_router
 
 
 class AgentTests(unittest.TestCase):
@@ -291,6 +291,15 @@ class AgentTests(unittest.TestCase):
         self.assertIn("LLM 外脑：已启用", response)
         self.assertIn("Provider：fake", response)
         self.assertIn("Model：intent-test", response)
+
+    def test_llm_status_command_reports_missing_configuration(self):
+        agent = JarvisAgent(self.paths, llm_router=build_llm_router(LLMSettings(provider="openai")))
+
+        response = agent.handle("/llm-status")
+
+        self.assertIn("配置问题：", response)
+        self.assertIn("缺少 JARVIS_LITE_LLM_MODEL", response)
+        self.assertIn("缺少 JARVIS_LITE_LLM_API_KEY", response)
 
     def test_knowledge_status_command_reports_data_index(self):
         response = self.agent.handle("/kb")
