@@ -147,6 +147,51 @@ class LLMTests(unittest.TestCase):
         self.assertIn("input", calls["response_kwargs"])
         self.assertIn("text", calls["response_kwargs"])
 
+    def test_openai_compatible_provider_normalizes_responses_endpoint_url(self):
+        calls = {}
+
+        class FakeResponses:
+            def create(self, **kwargs):
+                calls["response_kwargs"] = kwargs
+                return types.SimpleNamespace(output_text='{"type":"answer","answer":"兼容端点正常"}')
+
+        class FakeOpenAI:
+            def __init__(self, **kwargs):
+                calls["client_kwargs"] = kwargs
+                self.responses = FakeResponses()
+
+        fake_openai_module = types.ModuleType("openai")
+        fake_openai_module.OpenAI = FakeOpenAI
+        provider = OpenAIResponsesProvider(
+            LLMSettings(
+                provider="openai-compatible",
+                model="gpt-test",
+                base_url="https://compatible.example/v1/responses",
+                api_key="test-key",
+            )
+        )
+
+        with patch.dict(sys.modules, {"openai": fake_openai_module}):
+            intent = provider.complete_intent("需要兼容端点处理的问题", context=())
+
+        self.assertEqual(intent.answer, "兼容端点正常")
+        self.assertEqual(calls["client_kwargs"]["base_url"], "https://compatible.example/v1")
+
+    def test_router_describes_normalized_responses_endpoint_url(self):
+        router = build_llm_router(
+            LLMSettings(
+                provider="openai-compatible",
+                model="gpt-test",
+                base_url="https://compatible.example/v1/responses/",
+                api_key="test-key",
+            )
+        )
+
+        description = router.describe()
+
+        self.assertIn("Base URL：https://compatible.example/v1/responses/", description)
+        self.assertIn("SDK Base URL：https://compatible.example/v1", description)
+
     def test_openai_provider_attaches_usage_from_response(self):
         class FakeResponses:
             def create(self, **kwargs):
@@ -260,6 +305,7 @@ class LLMTests(unittest.TestCase):
 
         self.assertIn("OpenAI-compatible 端点", description)
         self.assertIn("JARVIS_LITE_LLM_BASE_URL", description)
+        self.assertIn("完整 /v1/responses URL", description)
         self.assertNotIn("Fake provider", description)
 
     def test_describe_llm_config_examples_maps_model_hub_alias_to_compatible_template(self):

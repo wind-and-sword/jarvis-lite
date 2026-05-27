@@ -6,10 +6,11 @@
 
 ## 最近摘要
 
+- 2026-05-27：LLM OpenAI-compatible 端点支持直接粘贴完整 `/v1/responses` URL，SDK 调用会自动归一化为 `/v1` base URL；本地 `unittest` 全量 326 项通过。
 - 2026-05-27：编号最近资料打标签缺失提示已完成专项验证，历史记录已迁入周归档。
 - 2026-05-27：项目文档整理第一阶段完成验证，`git diff --check` 退出 0，Markdown 本地链接检查通过。
 - 2026-05-27：项目文档整理第二阶段完成验证，验证记录已拆为日文件，自然语言大进度已拆为主题明细。
-- 2026-05-27：本地 `unittest` 全量 290 项通过，桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- 2026-05-27：早期文档整理收尾时本地 `unittest` 全量 290 项通过，桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 
 ## 详细记录
 

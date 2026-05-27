@@ -4,6 +4,7 @@ import json
 import os
 from dataclasses import dataclass, replace
 from typing import Any, Iterable, Mapping, Protocol
+from urllib.parse import urlsplit, urlunsplit
 
 
 VALID_LLM_INTENT_TYPES = {"command", "answer", "clarify", "no_action"}
@@ -55,6 +56,11 @@ class LLMSettings:
             if self.provider == "openai-compatible" and not self.base_url:
                 issues.append("缺少 JARVIS_LITE_LLM_BASE_URL")
         return tuple(issues)
+
+    def sdk_base_url(self) -> str:
+        """返回传给 OpenAI SDK 的 base_url，兼容用户粘贴完整 /responses URL。"""
+
+        return normalize_responses_base_url(self.base_url)
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "LLMSettings":
@@ -143,8 +149,9 @@ class OpenAIResponsesProvider:
             return LLMIntent(type="no_action", reason="OpenAI SDK 未安装，请先安装项目依赖")
 
         client_kwargs = {"api_key": self.settings.api_key}
-        if self.settings.base_url:
-            client_kwargs["base_url"] = self.settings.base_url
+        sdk_base_url = self.settings.sdk_base_url()
+        if sdk_base_url:
+            client_kwargs["base_url"] = sdk_base_url
 
         try:
             client = client_class(**client_kwargs)
@@ -275,6 +282,9 @@ class LLMRouter:
             lines.append(f"- Model：{self.settings.model}")
         if self.settings.base_url:
             lines.append(f"- Base URL：{self.settings.base_url}")
+            sdk_base_url = self.settings.sdk_base_url()
+            if sdk_base_url and sdk_base_url != self.settings.base_url.rstrip("/"):
+                lines.append(f"- SDK Base URL：{sdk_base_url}")
         issues = self.settings.configuration_issues()
         if issues:
             lines.append("- 配置问题：")
@@ -296,6 +306,20 @@ def build_llm_router(settings: LLMSettings | None = None) -> LLMRouter:
     if resolved_settings.provider in {"openai", "openai-compatible"}:
         return LLMRouter(resolved_settings, OpenAIResponsesProvider(resolved_settings))
     return LLMRouter(resolved_settings)
+
+
+def normalize_responses_base_url(base_url: str) -> str:
+    """把完整 Responses URL 归一化为 SDK 需要的 base_url。"""
+
+    value = base_url.strip()
+    if not value:
+        return ""
+    parts = urlsplit(value)
+    path = parts.path.rstrip("/")
+    if path.endswith("/responses"):
+        path = path[: -len("/responses")] or "/"
+        return urlunsplit((parts.scheme, parts.netloc, path, parts.query, parts.fragment)).rstrip("/")
+    return value.rstrip("/")
 
 
 def summarize_llm_usage(log_lines: Iterable[str]) -> str:
@@ -412,10 +436,11 @@ def _llm_config_template_sections() -> dict[str, str]:
         "openai-compatible": "\n".join(
             [
                 "# OpenAI-compatible 端点",
+                "# BASE_URL 可填 SDK base_url（通常到 /v1），也可直接粘贴完整 /v1/responses URL",
                 '$env:JARVIS_LITE_LLM_PROVIDER = "openai-compatible"',
                 '$env:JARVIS_LITE_LLM_MODEL = "<兼容端点模型名>"',
                 '$env:JARVIS_LITE_LLM_API_KEY = "<你的 API key>"',
-                '$env:JARVIS_LITE_LLM_BASE_URL = "<兼容端点 base_url>"',
+                '$env:JARVIS_LITE_LLM_BASE_URL = "<兼容端点 base_url 或完整 /v1/responses URL>"',
             ]
         ),
     }

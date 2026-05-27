@@ -67,20 +67,20 @@ python -m unittest discover -s tests -v
 $env:JARVIS_LITE_LLM_PROVIDER = "off"     # off | fake | openai | openai-compatible
 $env:JARVIS_LITE_LLM_MODEL = "按 provider 当前可用模型填写"
 $env:JARVIS_LITE_LLM_API_KEY = "..."
-$env:JARVIS_LITE_LLM_BASE_URL = ""        # openai-compatible 必填，openai 可留空
+$env:JARVIS_LITE_LLM_BASE_URL = ""        # openai-compatible 必填，可填 /v1 或完整 /v1/responses URL
 $env:JARVIS_LITE_LLM_FAKE_RESPONSE = '{"type":"answer","answer":"测试回答"}'
 python src/app.py --once "/llm-status"
 python src/app.py --once "/llm-usage"
 python src/app.py --once "/llm-config-example openai"
 ```
 
-`openai-compatible` 适用于提供 OpenAI Responses API 兼容端点的合法网关，使用 `base_url + api_key + model` 接入。provider 返回 usage 时，Jarvis Lite 会把 `input_tokens`、`output_tokens` 和 `total_tokens` 记录到 `logs/jarvis.log`。
+`openai-compatible` 适用于提供 OpenAI Responses API 兼容端点的合法网关，使用 `base_url + api_key + model` 接入。`JARVIS_LITE_LLM_BASE_URL` 可以填写 SDK 需要的 base URL（通常到 `/v1`），也可以直接粘贴完整 Responses URL（例如完整路径到 `/v1/responses`），Jarvis Lite 调用 SDK 时会自动归一化为 base URL。provider 返回 usage 时，Jarvis Lite 会把 `input_tokens`、`output_tokens` 和 `total_tokens` 记录到 `logs/jarvis.log`。
 
-`/llm-status` 会做本地配置诊断：例如缺少 `JARVIS_LITE_LLM_MODEL`、`JARVIS_LITE_LLM_API_KEY`、`JARVIS_LITE_LLM_BASE_URL` 或 provider 名称不支持时，会直接列出配置问题，不会打印 API key 内容。
+`/llm-status` 会做本地配置诊断：例如缺少 `JARVIS_LITE_LLM_MODEL`、`JARVIS_LITE_LLM_API_KEY`、`JARVIS_LITE_LLM_BASE_URL` 或 provider 名称不支持时，会直接列出配置问题，不会打印 API key 内容。配置了完整 `/v1/responses` URL 时，状态会同时显示原始 Base URL 和 SDK 实际使用的 Base URL。
 
 `/llm-usage` 会从本地 `logs/jarvis.log` 汇总 provider/model 维度的 token 用量，不需要真实 API key，也不会触发网络请求。
 
-`/llm-config-example [provider]` 会输出 PowerShell 环境变量配置模板，支持 `off`、`fake`、`openai` 和 `openai-compatible`，`qwen` / `gemini` 会先映射到兼容端点模板；模板只显示占位符，不读取或保存真实 API key。
+`/llm-config-example [provider]` 会输出 PowerShell 环境变量配置模板，支持 `off`、`fake`、`openai` 和 `openai-compatible`，`qwen` / `gemini` 会先映射到兼容端点模板；模板只显示占位符，不读取或保存真实 API key，并提示兼容端点可填写完整 `/v1/responses` URL。
 
 当前真实 provider 先接入 OpenAI Responses API 和 OpenAI-compatible Responses 端点；Gemini、Qwen 会沿用同一 Router/Provider 接口继续扩展。
 
