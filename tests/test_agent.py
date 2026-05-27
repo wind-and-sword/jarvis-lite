@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.agent import JarvisAgent
 from jarvis_lite.config import build_project_paths
+from jarvis_lite.llm import FakeLLMProvider, LLMRouter, LLMSettings
 
 
 class AgentTests(unittest.TestCase):
@@ -279,6 +280,17 @@ class AgentTests(unittest.TestCase):
         self.assertIn("自然语言", response)
         self.assertIn("桌面能力", response)
         self.assertIn("memory/profile.md", response)
+
+    def test_llm_status_command_reports_router_state(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"状态测试"}')
+        router = LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider)
+        agent = JarvisAgent(self.paths, llm_router=router)
+
+        response = agent.handle("/llm-status")
+
+        self.assertIn("LLM 外脑：已启用", response)
+        self.assertIn("Provider：fake", response)
+        self.assertIn("Model：intent-test", response)
 
     def test_knowledge_status_command_reports_data_index(self):
         response = self.agent.handle("/kb")
@@ -1466,6 +1478,48 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("根据 data/runtime.md:1", response)
         self.assertIn("Python 3.13", response)
+
+    def test_local_natural_language_intent_does_not_call_llm(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        response = agent.handle("总结知识库")
+
+        self.assertIn("知识库摘要", response)
+        self.assertEqual(provider.calls, [])
+        self.assertNotIn("不应使用外脑", response)
+
+    def test_data_answer_does_not_call_llm(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 推荐使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+
+        response = agent.handle("Jarvis Lite 推荐使用什么 Python 版本？")
+
+        self.assertIn("Python 3.13", response)
+        self.assertEqual(provider.calls, [])
+
+    def test_llm_command_intent_is_executed_by_agent(self):
+        provider = FakeLLMProvider('{"type":"command","command":"/kb-summary","reason":"用户想看资料摘要"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        response = agent.handle("请判断跨星际预算优先级")
+
+        self.assertIn("知识库摘要", response)
+        self.assertEqual(len(provider.calls), 1)
+        self.assertEqual(provider.calls[0][0], "请判断跨星际预算优先级")
+
+    def test_llm_clarification_intent_asks_without_execution(self):
+        provider = FakeLLMProvider('{"type":"clarify","clarification":"你想整理哪个目录？"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        response = agent.handle("火星基地预算需要外部判断")
+
+        self.assertIn("LLM 外脑需要补充信息：你想整理哪个目录？", response)
+        self.assertEqual(len(provider.calls), 1)
 
     def test_ask_command_reports_no_match(self):
         response = self.agent.handle("/ask 今天晚饭吃什么？")

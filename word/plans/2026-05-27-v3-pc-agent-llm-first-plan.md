@@ -76,25 +76,32 @@ LLM 不直接替代：
 用户输入
   -> 本地意图层优先判断
   -> 本地可处理：直接进入 JarvisAgent
-  -> 本地不确定：调用 LLM 生成结构化意图
-  -> JarvisAgent 解析结构化意图
+  -> 本地不确定：调用 LLMRouter 生成结构化 LLMIntent
+  -> JarvisAgent 解析 LLMIntent
   -> 进入既有工具、上下文和反馈流程
 ```
 
+截至 2026-05-27，第一版已经落地 provider-neutral 的 `LLMRouter` / `LLMProvider` / `LLMIntent` 分层，并具备 `off`、`fake` 和 OpenAI Responses API provider。Gemini、Qwen 和 OpenAI-compatible provider 后续应作为 adapter 接入，不让 `JarvisAgent` 直接感知厂商细节。
+
 ## 5. 下一阶段建议
 
-下一阶段主题建议定为：
+下一阶段主题建议继续围绕：
 
 > LLM 外脑接入第一版。
 
-第一版应优先完成：
+已完成：
 
 - 配置 LLM Provider 和模型参数。
 - 新增结构化意图返回格式。
-- 在本地意图无法确定时调用 LLM。
+- 在本地命令、身份、本地自然语言意图和知识库问答之后调用 LLM。
 - 让 LLM 输出可被 `JarvisAgent` 接收的命令建议，而不是自由执行。
+- 增加 fake provider 测试路径、OpenAI Responses API adapter 和 `/llm-status`。
+
+后续继续完成：
+
 - 对知识库摘要、资料问答、经验建议和复杂任务拆解做第一批增强。
 - 为 LLM 分支补充本地可重复测试，必要时用固定响应桩替代真实网络调用。
+- 扩展 Gemini、Qwen 和 OpenAI-compatible adapter，并保持同一 Router 接口。
 
 ## 6. 暂缓事项
 

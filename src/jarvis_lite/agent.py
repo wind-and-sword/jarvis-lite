@@ -27,6 +27,7 @@ from .knowledge import (
     summarize_knowledge_base,
 )
 from .intent import parse_natural_language_intent
+from .llm import LLMIntent, LLMRouter, build_llm_router
 from .memory import (
     append_experience,
     append_memory,
@@ -55,9 +56,10 @@ from .voice import describe_voice, speak_text
 class JarvisAgent:
     """负责解析命令并调度第一阶段本地能力。"""
 
-    def __init__(self, paths: ProjectPaths | None = None):
+    def __init__(self, paths: ProjectPaths | None = None, llm_router: LLMRouter | None = None):
         self.paths = paths or build_project_paths()
         self.tools = ToolRegistry(self.paths)
+        self.llm_router = llm_router or build_llm_router()
         runtime_context = load_runtime_context(self.paths)
         self._recent_document_path: str | None = runtime_context.recent_document_path
         self._recent_document_paths: tuple[str, ...] = runtime_context.recent_document_paths
@@ -114,6 +116,8 @@ class JarvisAgent:
             return "\n".join(sorted(self.tools.allowed_tool_names))
         if prompt in {"/status", "status"}:
             return self._status()
+        if prompt in {"/llm-status", "llm-status"}:
+            return self.llm_router.describe()
         if prompt in {"/kb", "kb", "/knowledge", "knowledge"}:
             self.tools.run("record_log", message="查看个人知识库状态")
             return describe_knowledge_base(self.paths)
@@ -161,6 +165,11 @@ class JarvisAgent:
         if data_answer:
             self.tools.run("record_log", message=f"基于 data 目录回答普通问题：{prompt}")
             return data_answer
+
+        llm_answer = self._answer_from_llm(prompt)
+        if llm_answer:
+            self.tools.run("record_log", message=f"LLM 外脑处理输入：{prompt}")
+            return llm_answer
 
         profile = read_profile(self.paths)
         summary = summarize_profile(profile)
@@ -351,6 +360,7 @@ class JarvisAgent:
                 "/memory：查看长期记忆",
                 "/experiences：查看经验记忆",
                 "/status：查看阶段 1 当前状态",
+                "/llm-status：查看 LLM 外脑 provider 状态",
                 "/kb：查看个人知识库状态",
                 "/kb-summary：查看知识库资料摘要",
                 "/voice-status：查看阶段 3 语音入口状态",
@@ -769,6 +779,39 @@ class JarvisAgent:
         self._remember_recent_search_results(tuple(match.relative_path for match in matches))
         self._remember_recent_document(matches[0].relative_path)
         return answer_from_matches(matches)
+
+    def _answer_from_llm(self, prompt: str) -> str:
+        intent = self.llm_router.complete_intent(prompt, self._llm_context_lines())
+        if intent is None:
+            return ""
+        return self._handle_llm_intent(intent)
+
+    def _handle_llm_intent(self, intent: LLMIntent) -> str:
+        if intent.type == "command" and intent.command:
+            command = intent.command.strip()
+            if not command.startswith("/"):
+                return f"LLM 外脑给出了非命令建议：{command}"
+            return "\n".join(
+                [
+                    f"LLM 外脑建议执行命令：{command}",
+                    self.handle(command),
+                ]
+            )
+        if intent.type == "answer" and intent.answer:
+            return f"LLM 外脑：{intent.answer}"
+        if intent.type == "clarify" and intent.clarification:
+            return f"LLM 外脑需要补充信息：{intent.clarification}"
+        return ""
+
+    def _llm_context_lines(self) -> tuple[str, ...]:
+        lines = [f"记忆摘要：{summarize_profile(read_profile(self.paths))}"]
+        if self._recent_document_path is not None:
+            lines.append(f"最近资料：data/{self._recent_document_path}")
+        if self._recent_directory is not None:
+            lines.append(f"最近目录：{self._recent_directory.alias} -> {self._recent_directory.path}")
+        if self._recent_advice_suggestions:
+            lines.append(f"最近建议数量：{len(self._recent_advice_suggestions)}")
+        return tuple(lines)
 
     def _tag_recent_document(self, tags: tuple[str, ...]) -> str:
         if self._recent_document_path is None:
@@ -1391,5 +1434,6 @@ class JarvisAgent:
                 "- 批量标签：标签组预览、确认、恢复提示和 /tag-history 历史记录",
                 "- 记忆写入：/remember、/experience、我叫...、我是...",
                 "- 本地验证：python -m unittest discover -s tests -v",
+                f"- LLM 外脑：{self.llm_router.settings.provider}",
             ]
         )
