@@ -781,6 +781,8 @@ class JarvisAgent:
         if document_index < 1 or document_index > len(self._recent_document_paths):
             return f"最近资料列表只有 {len(self._recent_document_paths)} 条，不能选择第 {document_index} 份。"
         relative_path = self._recent_document_paths[document_index - 1]
+        if not (self.paths.data_dir / relative_path).is_file():
+            return f"第 {document_index} 份资料：data/{relative_path}（资料缺失）\n你可以先查看 /kb，或重新导入资料。"
         return self.handle(f'/tag "{relative_path}" {" ".join(tags)}')
 
     def _preview_tagged_documents_tagging(self, tag: str, tags: tuple[str, ...]) -> str:

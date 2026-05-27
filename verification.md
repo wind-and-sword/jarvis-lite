@@ -3225,6 +3225,51 @@ git diff --check
 - 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
 - `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
 
+## 2026-05-27 编号最近资料打标签缺失提示验证
+
+### RED：给缺失编号资料打标签只返回底层缺失信息
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_tag_numbered_recent_document_marks_missing_document -v
+```
+
+结果：
+
+- 目标测试先失败。
+- “给第二份资料打标签 项目”对已删除资料只返回底层 `标签更新失败：资料不存在：data/manual.md`，缺少编号缺失提示。
+
+### 专项 GREEN
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_tag_numbered_recent_document_marks_missing_document -v
+.\.venv\Scripts\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_tag_numbered_recent_document_updates_selected_document_tags tests.test_agent.AgentTests.test_natural_language_tag_numbered_recent_document_requires_recent_list tests.test_agent.AgentTests.test_natural_language_tag_numbered_search_result_after_ask_command tests.test_agent.AgentTests.test_natural_language_read_numbered_recent_document_marks_missing_document tests.test_agent.AgentTests.test_read_tagged_documents_history_documents_marks_missing_documents tests.test_agent.AgentTests.test_natural_language_tag_document_updates_document_tags -v
+```
+
+结果：
+
+- 编号最近资料打标签缺失提示目标测试通过。
+- 编号打标签、编号读取缺失、历史缺失和普通标签更新回归 6 个通过。
+
+### 收尾验证
+
+命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke
+git diff --check
+```
+
+结果：
+
+- 全量测试 290 个通过。
+- 源码桌面 smoke 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- `git diff --check` 退出码为 0，仅出现 CRLF 换行提示。
+
 ## 2026-05-26 批量标签历史资料缺失提示验证
 
 ### RED：历史资料缺失会触发文件读取错误

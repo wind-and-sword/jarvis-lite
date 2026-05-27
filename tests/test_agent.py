@@ -578,6 +578,18 @@ class AgentTests(unittest.TestCase):
         self.assertIn("manual.md", self.agent.handle("/kb"))
         self.assertIn("标签：项目、Python", self.agent.handle("/kb"))
 
+    def test_natural_language_tag_numbered_recent_document_marks_missing_document(self):
+        manual_path = self.paths.data_dir / "manual.md"
+        manual_path.write_text("第二份最近资料可被打标签。\n", encoding="utf-8")
+        self.agent.handle("/read manual.md")
+        self.agent.handle("/read note.txt")
+        manual_path.unlink()
+
+        response = self.agent.handle("给第二份资料打标签 项目")
+
+        self.assertIn("第 2 份资料：data/manual.md（资料缺失）", response)
+        self.assertIn("你可以先查看 /kb，或重新导入资料。", response)
+
     def test_natural_language_tag_numbered_recent_document_requires_recent_list(self):
         response = self.agent.handle("给第二份资料打标签 项目")
 
