@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass, replace
-from typing import Any, Mapping, Protocol
+from typing import Any, Iterable, Mapping, Protocol
 
 
 VALID_LLM_INTENT_TYPES = {"command", "answer", "clarify", "no_action"}
@@ -73,6 +73,14 @@ class LLMUsage:
 
     provider: str
     model: str
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+
+
+@dataclass
+class _LLMUsageBucket:
+    count: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
     total_tokens: int = 0
@@ -287,6 +295,83 @@ def build_llm_router(settings: LLMSettings | None = None) -> LLMRouter:
     if resolved_settings.provider in {"openai", "openai-compatible"}:
         return LLMRouter(resolved_settings, OpenAIResponsesProvider(resolved_settings))
     return LLMRouter(resolved_settings)
+
+
+def summarize_llm_usage(log_lines: Iterable[str]) -> str:
+    """汇总本地日志中已经记录的 LLM token 用量。"""
+
+    buckets: dict[tuple[str, str], _LLMUsageBucket] = {}
+    total = _LLMUsageBucket()
+    for line in log_lines:
+        usage = _parse_llm_usage_line(line)
+        if usage is None:
+            continue
+        key = (usage.provider, usage.model)
+        bucket = buckets.setdefault(key, _LLMUsageBucket())
+        for target in (bucket, total):
+            target.count += 1
+            target.input_tokens += usage.input_tokens
+            target.output_tokens += usage.output_tokens
+            target.total_tokens += usage.total_tokens
+
+    if total.count == 0:
+        return "LLM 用量汇总：还没有 LLM 用量记录。"
+
+    lines = [
+        f"LLM 用量汇总：{total.count} 次调用",
+        (
+            "总计："
+            f"input_tokens={total.input_tokens} "
+            f"output_tokens={total.output_tokens} "
+            f"total_tokens={total.total_tokens}"
+        ),
+        "按 provider/model：",
+    ]
+    for provider, model in sorted(buckets):
+        bucket = buckets[(provider, model)]
+        lines.append(
+            f"- {provider} / {model}：{bucket.count} 次，"
+            f"input_tokens={bucket.input_tokens} "
+            f"output_tokens={bucket.output_tokens} "
+            f"total_tokens={bucket.total_tokens}"
+        )
+    return "\n".join(lines)
+
+
+def _parse_llm_usage_line(line: str) -> LLMUsage | None:
+    marker = "LLM 外脑用量："
+    if marker not in line:
+        return None
+    fields: dict[str, str] = {}
+    for item in line.split(marker, 1)[1].split():
+        if "=" not in item:
+            continue
+        key, value = item.split("=", 1)
+        fields[key] = value
+    provider = fields.get("provider", "").strip()
+    model = fields.get("model", "").strip()
+    if not provider or not model:
+        return None
+
+    input_tokens = _usage_field_int(fields, "input_tokens")
+    output_tokens = _usage_field_int(fields, "output_tokens")
+    total_tokens = _usage_field_int(fields, "total_tokens")
+    if total_tokens == 0:
+        total_tokens = input_tokens + output_tokens
+    return LLMUsage(
+        provider=provider,
+        model=model,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=total_tokens,
+    )
+
+
+def _usage_field_int(fields: Mapping[str, str], key: str) -> int:
+    try:
+        return int(fields.get(key, "0"))
+    except ValueError:
+        return 0
 
 
 def parse_llm_intent(raw_text: str) -> LLMIntent:

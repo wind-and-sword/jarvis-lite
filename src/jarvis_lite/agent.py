@@ -27,7 +27,7 @@ from .knowledge import (
     summarize_knowledge_base,
 )
 from .intent import parse_natural_language_intent
-from .llm import LLMIntent, LLMRouter, build_llm_router
+from .llm import LLMIntent, LLMRouter, build_llm_router, summarize_llm_usage
 from .memory import (
     append_experience,
     append_memory,
@@ -118,6 +118,9 @@ class JarvisAgent:
             return self._status()
         if prompt in {"/llm-status", "llm-status"}:
             return self.llm_router.describe()
+        if prompt in {"/llm-usage", "llm-usage"}:
+            self.tools.run("record_log", message="查看 LLM 用量汇总")
+            return summarize_llm_usage(self.paths.log_path.read_text(encoding="utf-8").splitlines())
         if prompt in {"/kb", "kb", "/knowledge", "knowledge"}:
             self.tools.run("record_log", message="查看个人知识库状态")
             return describe_knowledge_base(self.paths)
@@ -361,6 +364,7 @@ class JarvisAgent:
                 "/experiences：查看经验记忆",
                 "/status：查看阶段 1 当前状态",
                 "/llm-status：查看 LLM 外脑 provider 状态",
+                "/llm-usage：查看 LLM token 用量汇总",
                 "/kb：查看个人知识库状态",
                 "/kb-summary：查看知识库资料摘要",
                 "/voice-status：查看阶段 3 语音入口状态",

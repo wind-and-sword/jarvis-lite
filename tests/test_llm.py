@@ -14,6 +14,7 @@ from jarvis_lite.llm import (
     LLMUsage,
     OpenAIResponsesProvider,
     build_llm_router,
+    summarize_llm_usage,
 )
 
 
@@ -220,6 +221,29 @@ class LLMTests(unittest.TestCase):
 
         self.assertIn("Provider：unknown-model-hub", description)
         self.assertIn("未知 provider：unknown-model-hub", description)
+
+    def test_summarize_llm_usage_groups_local_log_records(self):
+        summary = summarize_llm_usage(
+            (
+                "2026-05-27T12:00:00\trecord_log\t"
+                "LLM 外脑用量：provider=openai model=gpt-4.1 input_tokens=10 output_tokens=4 total_tokens=14",
+                "2026-05-27T12:01:00\trecord_log\t"
+                "LLM 外脑用量：provider=openai model=gpt-4.1 input_tokens=6 output_tokens=2 total_tokens=8",
+                "2026-05-27T12:02:00\trecord_log\t"
+                "LLM 外脑用量：provider=openai-compatible model=qwen-test input_tokens=8 output_tokens=3 total_tokens=11",
+                "2026-05-27T12:03:00\trecord_log\t普通日志",
+            )
+        )
+
+        self.assertIn("LLM 用量汇总：3 次调用", summary)
+        self.assertIn("总计：input_tokens=24 output_tokens=9 total_tokens=33", summary)
+        self.assertIn("openai / gpt-4.1：2 次，input_tokens=16 output_tokens=6 total_tokens=22", summary)
+        self.assertIn("openai-compatible / qwen-test：1 次，input_tokens=8 output_tokens=3 total_tokens=11", summary)
+
+    def test_summarize_llm_usage_reports_empty_log(self):
+        summary = summarize_llm_usage(())
+
+        self.assertIn("还没有 LLM 用量记录", summary)
 
 
 if __name__ == "__main__":

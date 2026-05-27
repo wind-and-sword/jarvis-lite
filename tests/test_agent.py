@@ -281,6 +281,11 @@ class AgentTests(unittest.TestCase):
         self.assertIn("桌面能力", response)
         self.assertIn("memory/profile.md", response)
 
+    def test_help_command_lists_llm_usage_command(self):
+        response = self.agent.handle("/help")
+
+        self.assertIn("/llm-usage：查看 LLM token 用量汇总", response)
+
     def test_llm_status_command_reports_router_state(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"状态测试"}')
         router = LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider)
@@ -300,6 +305,26 @@ class AgentTests(unittest.TestCase):
         self.assertIn("配置问题：", response)
         self.assertIn("缺少 JARVIS_LITE_LLM_MODEL", response)
         self.assertIn("缺少 JARVIS_LITE_LLM_API_KEY", response)
+
+    def test_llm_usage_command_summarizes_local_usage_log(self):
+        self.paths.log_path.write_text(
+            "\n".join(
+                [
+                    "2026-05-27T12:00:00\trecord_log\t"
+                    "LLM 外脑用量：provider=openai model=gpt-test input_tokens=12 output_tokens=5 total_tokens=17",
+                    "2026-05-27T12:01:00\trecord_log\t"
+                    "LLM 外脑用量：provider=openai-compatible model=qwen-test input_tokens=7 output_tokens=3 total_tokens=10",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/llm-usage")
+
+        self.assertIn("LLM 用量汇总：2 次调用", response)
+        self.assertIn("总计：input_tokens=19 output_tokens=8 total_tokens=27", response)
+        self.assertIn("openai / gpt-test：1 次", response)
+        self.assertIn("openai-compatible / qwen-test：1 次", response)
 
     def test_knowledge_status_command_reports_data_index(self):
         response = self.agent.handle("/kb")
