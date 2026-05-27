@@ -40,7 +40,7 @@ PC Agent 稳定
 - 知识库问答、摘要、标签、按标签读取资料组。
 - 最近资料、最近文件、最近目录、最近搜索结果、最近建议和批量标签历史。
 - 本地自然语言意图层，可处理常见中文表达。
-- LLM 外脑 Router 第一版：provider-neutral 配置、fake provider 测试路径、OpenAI Responses API adapter、OpenAI-compatible 端点、完整 `/v1/responses` URL 归一化、`/llm-smoke` 配置验证、token usage 日志、`/llm-status` 配置诊断、`/llm-usage` 本地汇总和 `/llm-config-example` 配置模板。
+- LLM 外脑 Router 第一版：provider-neutral 配置、fake provider 测试路径、OpenAI Responses API adapter、OpenAI-compatible 端点、完整 `/v1/responses` URL 归一化、provider 命令白名单、`/llm-smoke` 配置验证、token usage 日志、`/llm-status` 配置诊断、`/llm-usage` 本地汇总和 `/llm-config-example` 配置模板。
 - 桌面小助手、助手面板、托盘、快捷命令、主题、尺寸、开机启动和更新入口。
 - 本地 `unittest` 验证体系。
 
@@ -54,7 +54,7 @@ PC Agent 稳定
 
 - 扩展 Gemini 和 Qwen provider adapter。
 - 继续打磨真实 provider 的兼容端点体验和用量观察能力。
-- 继续打磨 LLM 结构化意图提示词和失败兜底。
+- 继续打磨 LLM 结构化意图提示词、命令参数澄清和失败兜底。
 - 让 LLM 生成更稳定的命令建议、资料总结、任务拆解和澄清问题。
 - 继续由 `JarvisAgent` 承接工具调用、上下文更新和结果反馈。
 

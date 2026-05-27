@@ -147,6 +147,33 @@ class LLMTests(unittest.TestCase):
         self.assertIn("input", calls["response_kwargs"])
         self.assertIn("text", calls["response_kwargs"])
 
+    def test_openai_provider_instructions_list_supported_agent_commands(self):
+        calls = {}
+
+        class FakeResponses:
+            def create(self, **kwargs):
+                calls["response_kwargs"] = kwargs
+                return types.SimpleNamespace(output_text='{"type":"answer","answer":"来自 OpenAI provider"}')
+
+        class FakeOpenAI:
+            def __init__(self, **kwargs):
+                self.responses = FakeResponses()
+
+        fake_openai_module = types.ModuleType("openai")
+        fake_openai_module.OpenAI = FakeOpenAI
+        provider = OpenAIResponsesProvider(
+            LLMSettings(provider="openai", model="gpt-test", api_key="test-key")
+        )
+
+        with patch.dict(sys.modules, {"openai": fake_openai_module}):
+            provider.complete_intent("需要外脑处理的问题", context=())
+
+        instructions = calls["response_kwargs"]["instructions"]
+        self.assertIn("可返回的 Jarvis Lite 命令", instructions)
+        self.assertIn("/kb-summary", instructions)
+        self.assertIn("/ask 问题", instructions)
+        self.assertIn("不要返回列表之外的命令", instructions)
+
     def test_openai_compatible_provider_normalizes_responses_endpoint_url(self):
         calls = {}
 
@@ -299,6 +326,7 @@ class LLMTests(unittest.TestCase):
         self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "openai-compatible"', description)
         self.assertIn('$env:JARVIS_LITE_LLM_API_KEY = "<你的 API key>"', description)
         self.assertIn("不会读取或保存真实 API key", description)
+        self.assertIn('python src/app.py --once "/llm-smoke 请用一句话确认连接可用"', description)
 
     def test_describe_llm_config_examples_can_filter_provider(self):
         description = describe_llm_config_examples("openai-compatible")
