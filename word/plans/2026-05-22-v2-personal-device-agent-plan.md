@@ -4,6 +4,8 @@
 > 执行者：Codex
 > 说明：本文基于当前 Jarvis Lite 进度和本轮 Agent 技术讨论，重新整理项目后续方向。
 
+> 历史版本说明：本文是 v2 方案，保留“个人设备级 Agent”的长期设想。当前执行路线已调整为 PC Agent 稳定后优先接入 LLM，手机、手表、车机和 AR 眼镜等多端入口后置；当前方案以 [../PROJECT-PLAN.md](../PROJECT-PLAN.md) 和 [2026-05-27-v3-pc-agent-llm-first-plan.md](2026-05-27-v3-pc-agent-llm-first-plan.md) 为准。
+
 ## 1. 新定位
 
 Jarvis Lite 不只是本地聊天助手，而是个人设备级 Agent 的起点。

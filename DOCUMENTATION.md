@@ -22,7 +22,7 @@
 README.md                         项目介绍、当前定位、快速启动
 DOCUMENTATION.md                  文档整理约定
 verification.md                   验证记录短入口
-verification/YYYY-MM/             按月份和自然周归档的完整验证记录
+verification/YYYY-MM/             按月份、自然周索引和自然日归档的完整验证记录
 word/PROJECT-PLAN.md              当前项目方案
 word/plans/                       方案版本历史
 word/design/                      专题设计文档
@@ -84,19 +84,26 @@ word/progress/YYYY-MM-DD.md
 
 根目录 `verification.md` 只保留最近摘要和索引。
 
-完整验证明细进入：
+完整验证明细进入自然日文件：
+
+```text
+verification/YYYY-MM/YYYY-MM-DD.md
+```
+
+自然周文件只作为索引：
 
 ```text
 verification/YYYY-MM/week-YYYY-MM-DD.md
 ```
 
-其中 `YYYY-MM-DD` 是自然周周一。若某周记录明显过大，再拆成自然日文件，并更新月份索引。
+其中 `week-YYYY-MM-DD.md` 的日期是该自然周周一。若某日记录继续过大，再按主题拆到同月子目录，并在日文件中保留索引。
 
 每次新增验证记录时，需要同步更新：
 
 - `verification.md`
 - `verification/YYYY-MM/README.md`
-- 对应周文件或日文件
+- 对应日文件
+- 对应周索引
 
 ## 索引规则
 

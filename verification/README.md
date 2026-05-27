@@ -10,8 +10,9 @@
 ## 目录规则
 
 - `verification/YYYY-MM/README.md`：月份索引。
-- `verification/YYYY-MM/week-YYYY-MM-DD.md`：自然周验证明细，文件名日期为该周周一。
-- 如果某一周记录过大，再拆为 `YYYY-MM-DD.md` 日文件，并在月索引中标注。
+- `verification/YYYY-MM/week-YYYY-MM-DD.md`：自然周索引，文件名日期为该周周一。
+- `verification/YYYY-MM/YYYY-MM-DD.md`：自然日验证明细。
+- 如果某一日记录过大，再按主题拆分，并在日文件中保留索引。
 
 ## 当前月份
 

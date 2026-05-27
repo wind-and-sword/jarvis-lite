@@ -3,6 +3,8 @@
 > 日期：2026-05-18
 > 执行者：Codex
 
+> 历史版本说明：本文是 v1 初版方案，保留用于追溯。当前方案以 [../PROJECT-PLAN.md](../PROJECT-PLAN.md) 和 [2026-05-27-v3-pc-agent-llm-first-plan.md](2026-05-27-v3-pc-agent-llm-first-plan.md) 为准。
+
 ## 1. 项目起点
 
 本项目源于对“贾维斯式个人智能助手”的讨论。我们区分了两个目标：

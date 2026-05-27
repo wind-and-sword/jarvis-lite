@@ -36,7 +36,8 @@
 ## 2026-05-21
 
 - [2026-05-21-jarvis-lite-desktop-update-download-progress.md](2026-05-21-jarvis-lite-desktop-update-download-progress.md)
-- [2026-05-21-jarvis-lite-natural-language-brain-progress.md](2026-05-21-jarvis-lite-natural-language-brain-progress.md)
+- [2026-05-21-jarvis-lite-natural-language-brain-progress.md](2026-05-21-jarvis-lite-natural-language-brain-progress.md)：自然语言本地大脑进度索引。
+- [natural-language-brain/README.md](natural-language-brain/README.md)：自然语言本地大脑拆分后的明细索引。
 
 ## 2026-05-23 至 2026-05-27
 
