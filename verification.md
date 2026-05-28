@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-28：InnerBrain 本地内脑第一版落地，新增结构化结果、legacy 规则包装、seed/runtime JSONL 样本相似度识别和 Agent 接入；全量 `unittest` 354 项通过。
 - 2026-05-28：根据用户安装后的真实日志修复自然语言识别缺口，新增问候、助手身份询问和桌面 `.lnk` 快捷方式删除意图；项目版本提升到 `0.1.2`，安装完成弹窗显示版本号，全量 `unittest` 345 项通过，安装器生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe`。
 - 2026-05-28：LLM 调用收口与 `0.1.1` 打包完成，新增 `/llm-context-preview`、Agent 硬白名单、状态/错误诊断和覆盖安装提示；全量 `unittest` 339 项通过，安装器生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe`。
 - 2026-05-27：LLM provider instructions 增加 Jarvis Lite 命令白名单，`/llm-config-example` 补充 `/llm-smoke 请用一句话确认连接可用`，全量 `unittest` 331 项通过。

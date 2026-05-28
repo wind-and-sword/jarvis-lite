@@ -313,6 +313,48 @@ class AgentTests(unittest.TestCase):
         self.assertFalse(browser_shortcut.exists())
         self.assertTrue(protected_file.exists())
 
+    def test_inner_brain_seed_variant_executes_without_llm(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        response = agent.handle("麻烦看一下知识库摘要")
+
+        self.assertIn("知识库摘要", response)
+        self.assertEqual(provider.calls, [])
+        self.assertNotIn("不应使用外脑", response)
+
+    def test_inner_brain_runtime_sample_executes_without_llm(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请打开我的资料库",
+                    "intent": "knowledge.status",
+                    "slots": {"command": "/kb"},
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        response = agent.handle("请打开我的资料库")
+
+        self.assertIn("个人知识库状态", response)
+        self.assertEqual(provider.calls, [])
+
+    def test_inner_brain_low_confidence_still_uses_llm_fallback(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"外脑处理开放问题"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        response = agent.handle("火星基地预算需要外部判断")
+
+        self.assertIn("LLM 外脑：外脑处理开放问题", response)
+        self.assertEqual(len(provider.calls), 1)
+
     def test_natural_language_desktop_shortcut_delete_reports_missing_names(self):
         fake_home = Path(self.temp_dir.name) / "home"
         desktop = fake_home / "Desktop"

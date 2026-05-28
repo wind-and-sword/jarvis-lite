@@ -26,7 +26,7 @@ from .knowledge import (
     set_document_tags,
     summarize_knowledge_base,
 )
-from .intent import parse_natural_language_intent
+from .inner_brain import InnerBrain, InnerBrainPolicy, InnerBrainResult
 from .llm import (
     LLMIntent,
     LLMRouter,
@@ -63,10 +63,16 @@ from .voice import describe_voice, speak_text
 class JarvisAgent:
     """负责解析命令并调度第一阶段本地能力。"""
 
-    def __init__(self, paths: ProjectPaths | None = None, llm_router: LLMRouter | None = None):
+    def __init__(
+        self,
+        paths: ProjectPaths | None = None,
+        llm_router: LLMRouter | None = None,
+        inner_brain: InnerBrain | None = None,
+    ):
         self.paths = paths or build_project_paths()
         self.tools = ToolRegistry(self.paths)
         self.llm_router = llm_router or build_llm_router()
+        self.inner_brain = inner_brain or InnerBrain(self.paths)
         runtime_context = load_runtime_context(self.paths)
         self._recent_document_path: str | None = runtime_context.recent_document_path
         self._recent_document_paths: tuple[str, ...] = runtime_context.recent_document_paths
@@ -170,9 +176,20 @@ class JarvisAgent:
         if fact:
             return self._remember(fact)
 
-        intent = parse_natural_language_intent(prompt)
-        if intent is not None:
-            return self._handle_natural_language_intent(intent)
+        inner_brain_result = self.inner_brain.understand(prompt)
+        if inner_brain_result.policy == InnerBrainPolicy.EXECUTE and inner_brain_result.natural_language_intent is not None:
+            self.tools.run(
+                "record_log",
+                message=(
+                    "InnerBrain 命中："
+                    f"intent={inner_brain_result.intent} "
+                    f"source={inner_brain_result.source} "
+                    f"confidence={inner_brain_result.confidence:.2f}"
+                ),
+            )
+            return self._handle_natural_language_intent(inner_brain_result.natural_language_intent)
+        if inner_brain_result.policy == InnerBrainPolicy.CLARIFY:
+            return self._inner_brain_clarification(inner_brain_result)
 
         data_answer = self._answer_from_data(prompt)
         if data_answer:
@@ -507,6 +524,34 @@ class JarvisAgent:
         if intent.name == "cancel_pending_advice_suggestion_execution":
             return self._cancel_pending_advice_suggestion_execution()
         return "我还不能理解这个自然语言请求。你可以换一种说法，或输入 /help 查看当前能力。"
+
+    def _inner_brain_clarification(self, result: InnerBrainResult) -> str:
+        missing = "、".join(self._inner_brain_missing_label(item) for item in result.missing) or "更多信息"
+        self.tools.run(
+            "record_log",
+            message=(
+                "InnerBrain 需要澄清："
+                f"intent={result.intent} "
+                f"missing={','.join(result.missing) or 'unknown'} "
+                f"confidence={result.confidence:.2f}"
+            ),
+        )
+        return "\n".join(
+            [
+                "我理解到这个请求可能需要本地执行，但信息还不够。",
+                f"- 意图：{result.intent}",
+                f"- 需要补充：{missing}",
+            ]
+        )
+
+    def _inner_brain_missing_label(self, missing: str) -> str:
+        labels = {
+            "source": "要导入的文件或目录",
+            "items": "要处理的对象名称",
+            "path": "路径",
+            "tag": "标签",
+        }
+        return labels.get(missing, missing)
 
     def _capability_summary(self) -> str:
         lines = [
