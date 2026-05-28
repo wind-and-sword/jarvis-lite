@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-28：新增 `/inner-brain-label 文本 => intent [slot=value ...]`，可人工标注 unknown 或误识别样本，保存后当前 Agent 立即刷新 InnerBrain；全量 `unittest` 372 项通过。
 - 2026-05-28：新增 `/inner-brain-adopt 文本`，可将 InnerBrain 正确识别结果保存为运行态 JSONL 样本，重复样本不重复写入，保存时不执行命令；全量 `unittest` 366 项通过。
 - 2026-05-28：新增 `/inner-brain-status` 和 `/inner-brain-preview 文本`，可查看内脑样本、阈值和单句识别结果，preview 不执行本地动作；全量 `unittest` 359 项通过。
 - 2026-05-28：InnerBrain 本地内脑第一版落地，新增结构化结果、legacy 规则包装、seed/runtime JSONL 样本相似度识别和 Agent 接入；全量 `unittest` 354 项通过。

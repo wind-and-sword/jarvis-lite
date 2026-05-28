@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shlex
 from datetime import datetime
 from pathlib import Path
@@ -32,6 +33,7 @@ from .inner_brain import (
     InnerBrainResult,
     InnerBrainTrainingSaveResult,
     describe_inner_brain_result,
+    save_labeled_runtime_training_sample,
     save_runtime_training_sample,
 )
 from .llm import (
@@ -252,6 +254,8 @@ class JarvisAgent:
                 return "用法：/inner-brain-adopt 文本"
             sample_prompt = " ".join(args)
             return self._adopt_inner_brain_sample(sample_prompt)
+        if command == "/inner-brain-label":
+            return self._label_inner_brain_sample(prompt)
         if command == "/llm-smoke":
             smoke_prompt = " ".join(args)
             self.tools.run("record_log", message="执行 LLM smoke 调用")
@@ -423,6 +427,7 @@ class JarvisAgent:
                 "/inner-brain-status：查看 InnerBrain 本地内脑状态",
                 "/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作",
                 "/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本",
+                "/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本",
                 "/llm-usage：查看 LLM token 用量汇总",
                 "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
                 "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",
@@ -575,6 +580,88 @@ class JarvisAgent:
             ),
         )
         return self._describe_inner_brain_sample_save(save_result, result)
+
+    def _label_inner_brain_sample(self, prompt: str) -> str:
+        usage = "用法：/inner-brain-label 文本 => intent [slot=value ...]"
+        body = prompt[len("/inner-brain-label") :].strip()
+        if "=>" not in body:
+            return usage
+
+        sample_text, raw_label = (part.strip() for part in body.split("=>", 1))
+        if not sample_text or not raw_label:
+            return usage
+        try:
+            label_parts = shlex.split(raw_label, posix=True)
+        except ValueError as exc:
+            return f"标注参数错误：{exc}\n{usage}"
+        if not label_parts:
+            return usage
+
+        intent = label_parts[0]
+        try:
+            slots, missing = self._inner_brain_label_slots(label_parts[1:])
+            save_result = save_labeled_runtime_training_sample(self.paths, sample_text, intent, slots, missing)
+        except ValueError as exc:
+            self.tools.run("record_log", message=f"InnerBrain 人工标注失败：{sample_text} -> {exc}")
+            return f"标注参数错误：{exc}\n{usage}"
+
+        self.inner_brain = InnerBrain(self.paths)
+        self.tools.run(
+            "record_log",
+            message=(
+                "保存 InnerBrain 人工标注样本："
+                f"intent={save_result.sample.intent} "
+                f"created={save_result.created} "
+                f"text={save_result.sample.text}"
+            ),
+        )
+        return self._describe_inner_brain_labeled_sample_save(save_result, missing)
+
+    def _inner_brain_label_slots(self, raw_slots: list[str]) -> tuple[dict[str, object], tuple[str, ...]]:
+        slots: dict[str, object] = {}
+        missing: tuple[str, ...] = ()
+        for raw_slot in raw_slots:
+            if "=" not in raw_slot:
+                raise ValueError(f"slot 必须使用 key=value：{raw_slot}")
+            key, value = (part.strip() for part in raw_slot.split("=", 1))
+            if not key:
+                raise ValueError(f"slot 名称不能为空：{raw_slot}")
+            value = self._strip_quotes(value)
+            if key == "missing":
+                missing = tuple(self._split_inner_brain_label_values(value))
+            else:
+                slots[key] = self._inner_brain_label_value(key, value)
+        return slots, missing
+
+    def _inner_brain_label_value(self, key: str, value: str) -> object:
+        if key in {"items", "tags"}:
+            return self._split_inner_brain_label_values(value)
+        values = self._split_inner_brain_label_values(value)
+        if len(values) > 1:
+            return values
+        return value
+
+    def _split_inner_brain_label_values(self, value: str) -> list[str]:
+        return [item.strip() for item in re.split(r"\s*(?:,|，|、)\s*", value) if item.strip()]
+
+    def _describe_inner_brain_labeled_sample_save(
+        self,
+        save_result: InnerBrainTrainingSaveResult,
+        missing: tuple[str, ...],
+    ) -> str:
+        title = "已保存 InnerBrain 人工标注样本。" if save_result.created else "InnerBrain 人工标注样本已存在，未重复写入。"
+        lines = [
+            title,
+            f"样本文件：{save_result.relative_path}",
+            f"意图：{save_result.sample.intent}",
+        ]
+        slot_lines = self._inner_brain_sample_slot_lines(save_result.sample.slots)
+        if slot_lines:
+            lines.extend(slot_lines)
+        if missing:
+            lines.append(f"缺失：{'、'.join(missing)}")
+        lines.append("说明：这里只保存人工标注样本，不执行命令。")
+        return "\n".join(lines)
 
     def _describe_inner_brain_sample_save(
         self,

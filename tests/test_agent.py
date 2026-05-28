@@ -391,6 +391,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/inner-brain-status：查看 InnerBrain 本地内脑状态", response)
         self.assertIn("/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作", response)
         self.assertIn("/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本", response)
+        self.assertIn("/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本", response)
 
     def test_inner_brain_status_command_reports_samples_and_thresholds(self):
         response = self.agent.handle("/inner-brain-status")
@@ -470,6 +471,56 @@ class AgentTests(unittest.TestCase):
         )
         self.assertIn("已保存 InnerBrain runtime 样本", response)
         self.assertIn("意图：desktop.delete_shortcut", response)
+        self.assertEqual(saved_sample["slots"], {"items": ["比特浏览器"]})
+        self.assertTrue(shortcut.exists())
+
+    def test_inner_brain_label_command_saves_unknown_prompt_and_refreshes_current_agent(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        label_response = agent.handle("/inner-brain-label 可以看看资料库吗 => knowledge.status command=/kb")
+        status = agent.handle("/inner-brain-status")
+        followup = agent.handle("可以看看资料库吗")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertIn("已保存 InnerBrain 人工标注样本", label_response)
+        self.assertIn("意图：knowledge.status", label_response)
+        self.assertIn("槽位 command：/kb", label_response)
+        self.assertIn("runtime_sample：1 条", status)
+        self.assertEqual(saved_sample["text"], "可以看看资料库吗")
+        self.assertEqual(saved_sample["intent"], "knowledge.status")
+        self.assertEqual(saved_sample["slots"], {"command": "/kb"})
+        self.assertIn("个人知识库状态", followup)
+        self.assertEqual(provider.calls, [])
+
+    def test_inner_brain_label_command_requires_arrow_and_intent(self):
+        response = self.agent.handle("/inner-brain-label 可以看看资料库吗 knowledge.status command=/kb")
+
+        self.assertIn("用法：/inner-brain-label 文本 => intent [slot=value ...]", response)
+
+    def test_inner_brain_label_command_rejects_invalid_slot_assignment(self):
+        response = self.agent.handle("/inner-brain-label 可以看看资料库吗 => knowledge.status command")
+
+        self.assertIn("标注参数错误", response)
+        self.assertIn("slot 必须使用 key=value", response)
+
+    def test_inner_brain_label_does_not_delete_desktop_shortcut(self):
+        fake_home = Path(self.temp_dir.name) / "home"
+        desktop = fake_home / "Desktop"
+        desktop.mkdir(parents=True)
+        shortcut = desktop / "比特浏览器.lnk"
+        shortcut.write_text("shortcut", encoding="utf-8")
+
+        with patch("jarvis_lite.agent.Path.home", return_value=fake_home):
+            response = self.agent.handle(
+                "/inner-brain-label 随手删掉这个快捷方式 => desktop.delete_shortcut items=比特浏览器"
+            )
+
+        saved_sample = json.loads(
+            (self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").read_text(encoding="utf-8").strip()
+        )
+        self.assertIn("已保存 InnerBrain 人工标注样本", response)
         self.assertEqual(saved_sample["slots"], {"items": ["比特浏览器"]})
         self.assertTrue(shortcut.exists())
 

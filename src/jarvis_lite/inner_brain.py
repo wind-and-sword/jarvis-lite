@@ -228,6 +228,39 @@ def save_runtime_training_sample(
         missing=result.missing,
         source="runtime_sample",
     )
+    return _save_runtime_training_sample(paths, sample)
+
+
+def save_labeled_runtime_training_sample(
+    paths: ProjectPaths,
+    text: str,
+    intent: str,
+    slots: Mapping[str, Any],
+    missing: tuple[str, ...] = (),
+) -> InnerBrainTrainingSaveResult:
+    """保存人工标注的运行态样本，用于纠正 unknown 或误识别输入。"""
+
+    prompt = text.strip()
+    intent_label = intent.strip()
+    if not prompt:
+        raise ValueError("输入为空")
+    if not intent_label or re.search(r"\s", intent_label):
+        raise ValueError("intent 不能为空且不能包含空白")
+
+    sample = InnerBrainTrainingSample(
+        text=prompt,
+        intent=intent_label,
+        slots=_json_ready_mapping(slots),
+        missing=tuple(str(item).strip() for item in missing if str(item).strip()),
+        source="runtime_sample",
+    )
+    return _save_runtime_training_sample(paths, sample)
+
+
+def _save_runtime_training_sample(
+    paths: ProjectPaths,
+    sample: InnerBrainTrainingSample,
+) -> InnerBrainTrainingSaveResult:
     sample_file = _runtime_training_sample_file(paths)
     relative_path = _relative_training_sample_path(paths, sample_file)
     if _runtime_training_sample_exists(paths, sample):

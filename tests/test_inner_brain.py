@@ -11,6 +11,7 @@ from jarvis_lite.inner_brain import (
     InnerBrain,
     InnerBrainPolicy,
     describe_inner_brain_result,
+    save_labeled_runtime_training_sample,
     save_runtime_training_sample,
 )
 
@@ -131,6 +132,45 @@ class InnerBrainTests(unittest.TestCase):
 
         sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
         self.assertFalse(sample_file.exists())
+
+    def test_save_labeled_runtime_training_sample_writes_unknown_prompt_mapping(self):
+        prompt = "可以看看资料库吗"
+
+        save_result = save_labeled_runtime_training_sample(
+            self.paths,
+            prompt,
+            "knowledge.status",
+            {"command": "/kb"},
+        )
+        result = InnerBrain(self.paths).understand(prompt)
+
+        self.assertTrue(save_result.created)
+        self.assertEqual(save_result.sample.intent, "knowledge.status")
+        self.assertEqual(save_result.sample.slots, {"command": "/kb"})
+        self.assertEqual(result.intent, "knowledge.status")
+        self.assertEqual(result.source, "runtime_sample")
+        self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+        self.assertIsNotNone(result.natural_language_intent)
+        self.assertEqual(result.natural_language_intent.command, "/kb")
+
+    def test_save_labeled_runtime_training_sample_preserves_list_slots(self):
+        prompt = "随手删掉这个快捷方式"
+
+        save_labeled_runtime_training_sample(
+            self.paths,
+            prompt,
+            "desktop.delete_shortcut",
+            {"items": ["比特浏览器"]},
+        )
+        result = InnerBrain(self.paths).understand(prompt)
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+
+        self.assertEqual(saved_sample["slots"], {"items": ["比特浏览器"]})
+        self.assertEqual(result.intent, "desktop.delete_shortcut")
+        self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+        self.assertIsNotNone(result.natural_language_intent)
+        self.assertEqual(result.natural_language_intent.items, ("比特浏览器",))
 
     def test_missing_required_slot_returns_clarify_policy(self):
         training_dir = self.paths.data_dir / "inner-brain" / "training"
