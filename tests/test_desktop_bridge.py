@@ -31,6 +31,14 @@ class DesktopBridgeTests(unittest.TestCase):
         self.assertIn("用户偏好：中文回答", response.assistant_text)
         self.assertEqual(response.turn_count, 1)
 
+    def test_send_routes_greeting_through_local_natural_language_brain(self):
+        response = self.bridge.send("早上好")
+
+        self.assertEqual(response.state, DesktopState.SUCCESS)
+        self.assertEqual(response.user_input, "早上好")
+        self.assertIn("Jarvis Lite", response.assistant_text)
+        self.assertNotIn("已读取长期记忆", response.assistant_text)
+
     def test_send_marks_unknown_command_as_error(self):
         response = self.bridge.send("/not-found")
 

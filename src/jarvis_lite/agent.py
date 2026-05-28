@@ -452,12 +452,18 @@ class JarvisAgent:
         return tuple(sorted({tag for document in index.documents for tag in document.tags})[:3])
 
     def _handle_natural_language_intent(self, intent) -> str:
+        if intent.name == "greeting":
+            return self._greeting(intent.alias)
+        if intent.name == "assistant_identity":
+            return self._assistant_identity()
         if intent.name == "capabilities":
             return self._capability_summary()
         if intent.name == "recent_context_status":
             return self._recent_context_status()
         if intent.name == "recent_files_status":
             return self._recent_files_status()
+        if intent.name == "delete_desktop_shortcuts":
+            return self._delete_desktop_shortcuts(intent.items)
         if intent.name == "command":
             return self.handle(intent.command)
         if intent.name == "open_directory_path" and intent.path is not None:
@@ -509,7 +515,7 @@ class JarvisAgent:
             "- 经验：记录和查看可复用流程经验。",
             "- 知识库：导入 Markdown、txt、PDF、JSON 聊天记录，并基于资料回答。",
             "- 工作台：登记常用目录、查看目录、生成日报、做文件整理预览。",
-            "- 桌面：通过小助手面板和托盘触发常用能力。",
+            "- 桌面：通过小助手面板和托盘触发常用能力，也能删除明确点名的桌面 .lnk 快捷方式。",
             "- 更新：检查更新，也可以下载更新安装包到运行态目录。",
             "- 语音准备：/voice 会复用同一套文本理解流程。",
         ]
@@ -663,6 +669,36 @@ class JarvisAgent:
 
     def _sentence(self, text: str) -> str:
         return text if text.endswith(("。", "！", "？", ".", "!", "?")) else f"{text}。"
+
+    def _greeting(self, greeting: str) -> str:
+        user_name = self._user_name_from_profile()
+        salutation = self._salutation(greeting)
+        addressed_salutation = f"{salutation}，{user_name}" if user_name else salutation
+        self.tools.run("record_log", message=f"自然语言问候：{greeting}")
+        return f"{addressed_salutation}。我是 Jarvis Lite，可以继续帮你处理知识库、最近上下文、桌面目录和本地任务。"
+
+    def _assistant_identity(self) -> str:
+        self.tools.run("record_log", message="回答助手身份")
+        return "我叫 Jarvis Lite，是你的本地 PC 助手。当前优先处理记忆、知识库、最近上下文、桌面文件和本地任务。"
+
+    def _salutation(self, greeting: str) -> str:
+        normalized = greeting.strip().lower()
+        if normalized in {"早", "早安", "早上好", "上午好"}:
+            return "早上好"
+        if normalized == "中午好":
+            return "中午好"
+        if normalized == "下午好":
+            return "下午好"
+        if normalized == "晚上好":
+            return "晚上好"
+        return "你好"
+
+    def _user_name_from_profile(self) -> str:
+        for raw_line in read_profile(self.paths).splitlines():
+            line = raw_line.strip()
+            if line.startswith("- 用户姓名："):
+                return line.removeprefix("- 用户姓名：").strip()
+        return ""
 
     def _remember(self, fact: str) -> str:
         remembered = append_memory(self.paths, fact)
@@ -1469,6 +1505,56 @@ class JarvisAgent:
                 "- 当前不会启动外部应用。",
             ]
         )
+
+    def _delete_desktop_shortcuts(self, names: tuple[str, ...]) -> str:
+        if not names:
+            return "没有识别到要删除的桌面快捷方式名称。"
+
+        desktop = self._known_directory("桌面")
+        if desktop is None:
+            return "没有找到桌面目录，无法删除桌面快捷方式。"
+
+        deleted: list[str] = []
+        missing: list[str] = []
+        for raw_name in names:
+            shortcut_name = self._desktop_shortcut_filename(raw_name)
+            if not shortcut_name:
+                continue
+            target = desktop.path / shortcut_name
+            if target.is_file() and target.suffix.lower() == ".lnk":
+                target.unlink()
+                deleted.append(shortcut_name)
+            else:
+                missing.append(shortcut_name)
+
+        self.tools.run(
+            "record_log",
+            message=(
+                "删除桌面快捷方式："
+                f"deleted={','.join(deleted) or '无'} "
+                f"missing={','.join(missing) or '无'}"
+            ),
+        )
+
+        lines: list[str] = []
+        if deleted:
+            lines.append(f"已删除桌面快捷方式：{'、'.join(deleted)}")
+        if missing:
+            lines.append(f"未找到：{'、'.join(missing)}")
+        if not lines:
+            lines.append("没有识别到可处理的桌面快捷方式名称。")
+        lines.append("范围：只处理桌面目录下明确点名的 .lnk 快捷方式。")
+        return "\n".join(lines)
+
+    def _desktop_shortcut_filename(self, raw_name: str) -> str:
+        name = Path(raw_name.replace("\\", "/")).name.strip().strip("“”\"'").strip()
+        name = name.removeprefix("的").strip()
+        name = name.removesuffix("的").removesuffix("快捷方式").removesuffix("的").strip()
+        if not name:
+            return ""
+        if name.lower().endswith(".lnk"):
+            return name
+        return f"{name}.lnk"
 
     def _find_common_directory(self, alias: str) -> CommonDirectory | None:
         normalized_alias = alias.strip()

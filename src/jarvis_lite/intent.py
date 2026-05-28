@@ -14,6 +14,7 @@ class NaturalLanguageIntent:
     alias: str = ""
     path: Path | None = None
     tags: tuple[str, ...] = ()
+    items: tuple[str, ...] = ()
     result_index: int = 0
 
 
@@ -25,6 +26,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
     if not prompt:
         return None
 
+    if _is_greeting(prompt):
+        return NaturalLanguageIntent("greeting", alias=prompt)
+    if _is_assistant_identity_question(prompt):
+        return NaturalLanguageIntent("assistant_identity")
     if _is_capability_question(prompt):
         return NaturalLanguageIntent("capabilities")
     if _is_recent_context_status_question(prompt):
@@ -51,6 +56,10 @@ def parse_natural_language_intent(text: str) -> NaturalLanguageIntent | None:
         return NaturalLanguageIntent("confirm_pending_advice_suggestion_execution")
     if _matches_any(prompt, ("取消执行", "取消运行", "不执行了")):
         return NaturalLanguageIntent("cancel_pending_advice_suggestion_execution")
+
+    desktop_shortcut_delete_intent = _parse_delete_desktop_shortcuts_intent(readable_prompt)
+    if desktop_shortcut_delete_intent is not None:
+        return desktop_shortcut_delete_intent
 
     experience_search_intent = _parse_experience_search_intent(readable_prompt)
     if experience_search_intent is not None:
@@ -154,8 +163,68 @@ def _is_recent_context_status_question(prompt: str) -> bool:
     return "还记得" in prompt and any(word in prompt for word in ("刚才", "最近", "上次"))
 
 
+def _is_greeting(prompt: str) -> bool:
+    greetings = {
+        "早",
+        "早安",
+        "早上好",
+        "上午好",
+        "中午好",
+        "下午好",
+        "晚上好",
+        "你好",
+        "您好",
+        "哈喽",
+        "hello",
+        "hi",
+    }
+    return prompt.lower() in greetings
+
+
+def _is_assistant_identity_question(prompt: str) -> bool:
+    normalized_prompt = re.sub(r"[，,\s]", "", prompt)
+    questions = {
+        "你叫什么名字",
+        "你叫啥",
+        "你的名字是什么",
+        "你的名称是什么",
+        "你是谁",
+        "怎么称呼你",
+        "我该怎么叫你",
+    }
+    return normalized_prompt in questions
+
+
 def _matches_any(prompt: str, candidates: tuple[str, ...]) -> bool:
     return prompt in candidates
+
+
+def _parse_delete_desktop_shortcuts_intent(prompt: str) -> NaturalLanguageIntent | None:
+    patterns = (
+        r"(?:请)?(?:帮我)?(?:把)?(?:桌面上的|桌面上)\s*(?P<names>.+?)\s*(?:的)?快捷方式\s*(?:删掉|删除|移除)",
+        r"(?:请)?(?:帮我)?(?:删除|删掉|移除)\s*(?:桌面上的|桌面上)\s*(?P<names>.+?)\s*(?:的)?快捷方式",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, prompt)
+        if not match:
+            continue
+        names = _split_shortcut_names(match.group("names"))
+        if names:
+            return NaturalLanguageIntent("delete_desktop_shortcuts", items=names)
+    return None
+
+
+def _split_shortcut_names(text: str) -> tuple[str, ...]:
+    names: list[str] = []
+    for raw_name in re.split(r"\s*(?:和|及|与|、|，|,)\s*", text.strip()):
+        name = raw_name.strip().strip("“”\"'").strip()
+        name = name.removeprefix("的").strip()
+        name = name.removesuffix("的").removesuffix("快捷方式").removesuffix("的").strip()
+        if name.lower().endswith(".lnk"):
+            name = name[:-4].strip()
+        if name:
+            names.append(name)
+    return tuple(names)
 
 
 def _parse_open_drive(prompt: str) -> NaturalLanguageIntent | None:

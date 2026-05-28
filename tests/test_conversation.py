@@ -23,11 +23,11 @@ class ConversationSessionTests(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def test_session_records_user_and_assistant_turns(self):
-        response = self.session.handle("你好")
+        response = self.session.handle("随便聊聊")
 
         self.assertIn("Jarvis Lite", response)
         self.assertEqual(len(self.session.turns), 1)
-        self.assertEqual(self.session.turns[0].user, "你好")
+        self.assertEqual(self.session.turns[0].user, "随便聊聊")
         self.assertIn("用户偏好：中文简洁回答", self.session.turns[0].assistant)
 
     def test_history_command_outputs_recorded_turns_without_recording_itself(self):

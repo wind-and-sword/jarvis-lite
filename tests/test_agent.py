@@ -271,6 +271,63 @@ class AgentTests(unittest.TestCase):
         self.assertIn("经验记忆", response)
         self.assertIn("导入资料后先打标签", response)
 
+    def test_natural_language_morning_greeting_uses_user_name_without_memory_fallback(self):
+        (self.paths.memory_dir / "profile.md").write_text(
+            "# 长期记忆\n\n- 用户姓名：欧阳\n- 用户偏好：中文简洁回答\n",
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("早上好")
+
+        self.assertIn("早上好，欧阳", response)
+        self.assertIn("Jarvis Lite", response)
+        self.assertNotIn("已读取长期记忆", response)
+        self.assertNotIn("输入 /help", response)
+
+    def test_natural_language_assistant_name_question_answers_assistant_identity(self):
+        response = self.agent.handle("你叫什么名字")
+
+        self.assertIn("我叫 Jarvis Lite", response)
+        self.assertIn("本地 PC 助手", response)
+        self.assertNotIn("已读取长期记忆", response)
+        self.assertNotIn("输入 /help", response)
+
+    def test_natural_language_deletes_named_desktop_shortcuts_only(self):
+        fake_home = Path(self.temp_dir.name) / "home"
+        desktop = fake_home / "Desktop"
+        desktop.mkdir(parents=True)
+        cloud_shortcut = desktop / "比特云手机.lnk"
+        browser_shortcut = desktop / "比特浏览器.lnk"
+        protected_file = desktop / "比特浏览器.txt"
+        cloud_shortcut.write_text("shortcut", encoding="utf-8")
+        browser_shortcut.write_text("shortcut", encoding="utf-8")
+        protected_file.write_text("not a shortcut", encoding="utf-8")
+
+        with patch("jarvis_lite.agent.Path.home", return_value=fake_home):
+            response = self.agent.handle("帮我把桌面上的比特云手机和比特浏览器的快捷方式删掉")
+
+        self.assertIn("已删除桌面快捷方式", response)
+        self.assertIn("比特云手机.lnk", response)
+        self.assertIn("比特浏览器.lnk", response)
+        self.assertFalse(cloud_shortcut.exists())
+        self.assertFalse(browser_shortcut.exists())
+        self.assertTrue(protected_file.exists())
+
+    def test_natural_language_desktop_shortcut_delete_reports_missing_names(self):
+        fake_home = Path(self.temp_dir.name) / "home"
+        desktop = fake_home / "Desktop"
+        desktop.mkdir(parents=True)
+        existing_shortcut = desktop / "比特云手机.lnk"
+        existing_shortcut.write_text("shortcut", encoding="utf-8")
+
+        with patch("jarvis_lite.agent.Path.home", return_value=fake_home):
+            response = self.agent.handle("删除桌面上的比特云手机和不存在的快捷方式")
+
+        self.assertIn("已删除桌面快捷方式", response)
+        self.assertIn("比特云手机.lnk", response)
+        self.assertIn("未找到：不存在.lnk", response)
+        self.assertFalse(existing_shortcut.exists())
+
     def test_status_command_reports_current_capabilities(self):
         response = self.agent.handle("/status")
 
@@ -1597,10 +1654,17 @@ class AgentTests(unittest.TestCase):
         self.assertIn("list_data", (self.paths.logs_dir / "jarvis.log").read_text(encoding="utf-8"))
 
     def test_plain_message_mentions_loaded_memory_summary(self):
-        response = self.agent.handle("你好")
+        response = self.agent.handle("随便聊聊")
 
         self.assertIn("Jarvis Lite", response)
         self.assertIn("用户偏好：中文简洁回答", response)
+
+    def test_greeting_does_not_use_plain_memory_summary_fallback(self):
+        response = self.agent.handle("你好")
+
+        self.assertIn("Jarvis Lite", response)
+        self.assertNotIn("已读取长期记忆", response)
+        self.assertNotIn("用户偏好：中文简洁回答", response)
 
     def test_plain_message_does_not_duplicate_punctuation(self):
         (self.paths.memory_dir / "profile.md").write_text(

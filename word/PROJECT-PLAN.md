@@ -39,7 +39,7 @@ PC Agent 稳定
 - Markdown、txt、PDF、JSON 聊天记录和资料目录导入。
 - 知识库问答、摘要、标签、按标签读取资料组。
 - 最近资料、最近文件、最近目录、最近搜索结果、最近建议和批量标签历史。
-- 本地自然语言意图层，可处理常见中文表达。
+- 本地自然语言意图层，可处理常见中文表达，包括问候、助手身份询问、最近上下文、知识库、目录任务和明确点名的桌面 `.lnk` 快捷方式删除。
 - LLM 外脑 Router 第一版：provider-neutral 配置、fake provider 测试路径、OpenAI Responses API adapter、OpenAI-compatible 端点、完整 `/v1/responses` URL 归一化、provider 与 Agent 双层命令白名单、LLM fallback 近期上下文与最近搜索结果、`/llm-context-preview`、`/llm-smoke` 配置验证、token usage 日志、`/llm-status` API key/网络调用诊断、`/llm-usage` 本地汇总和 `/llm-config-example` 配置模板。
 - 桌面小助手、助手面板、托盘、快捷命令、主题、尺寸、开机启动和更新入口。
 - 本地 `unittest` 验证体系。
@@ -56,6 +56,7 @@ PC Agent 稳定
 - 继续打磨真实 provider 的兼容端点体验和用量观察能力。
 - 继续打磨 LLM 结构化意图提示词、命令参数澄清、provider 错误可读化和失败兜底。
 - 让 LLM 生成更稳定的命令建议、资料总结、任务拆解和澄清问题。
+- 持续把用户真实日志里的自然语言缺口沉淀为本地意图和回归测试，再交给 LLM 处理更开放的问题。
 - 继续由 `JarvisAgent` 承接工具调用、上下文更新和结果反馈。
 
 ## 暂缓方向

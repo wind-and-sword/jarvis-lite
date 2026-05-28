@@ -60,7 +60,7 @@ reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLi
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLite" /v InstallLocation /d "%INSTALL_DIR%" /f >nul
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLite" /v UninstallString /d "\\"%INSTALL_DIR%\\{UNINSTALL_SCRIPT_NAME}\\"" /f >nul
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLite" /v QuietUninstallString /d "\\"%INSTALL_DIR%\\{UNINSTALL_SCRIPT_NAME}\\"" /f >nul
-echo Jarvis Lite installed to "%INSTALL_DIR%".
+echo Jarvis Lite {version} installed to "%INSTALL_DIR%".
 echo Existing app files were replaced if present.
 echo User data kept at "%USER_DATA_DIR%".
 endlocal
@@ -107,7 +107,7 @@ CAB_ResvCodeSigning=0
 RebootMode=N
 InstallPrompt=
 DisplayLicense=
-FinishMessage=Jarvis Lite installation finished.
+FinishMessage=Jarvis Lite {__version__} installation finished. Start Jarvis Lite from desktop shortcut to use this version.
 TargetName={paths.installer_path}
 FriendlyName=Jarvis Lite
 AppLaunched={INSTALL_SCRIPT_NAME}

@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from jarvis_lite import __version__
 from jarvis_lite.desktop.windows_installer import (
     INSTALLER_EXE_NAME,
     render_iexpress_sed,
@@ -28,6 +29,7 @@ class WindowsInstallerTests(unittest.TestCase):
         script = render_install_script("JarvisLite.exe", version="9.8.7")
 
         self.assertIn('DisplayVersion /d "9.8.7"', script)
+        self.assertIn('Jarvis Lite 9.8.7 installed to "%INSTALL_DIR%"', script)
 
     def test_install_script_prepares_for_cover_install_and_complete_uninstall_metadata(self):
         script = render_install_script("JarvisLite.exe", version="9.8.7")
@@ -76,6 +78,8 @@ class WindowsInstallerTests(unittest.TestCase):
         self.assertEqual(paths.output_root, project_root.parent / "jarvis-lite-dist")
         self.assertEqual(paths.installer_path.name, INSTALLER_EXE_NAME)
         self.assertIn(f"TargetName={paths.installer_path}", sed)
+        self.assertIn(f"FinishMessage=Jarvis Lite {__version__} installation finished", sed)
+        self.assertIn("Start Jarvis Lite from desktop shortcut to use this version", sed)
         self.assertIn("AppLaunched=install.cmd", sed)
         self.assertIn("JarvisLite.exe=", sed)
         self.assertIn("install.cmd=", sed)
