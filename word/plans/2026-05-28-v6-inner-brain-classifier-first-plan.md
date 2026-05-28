@@ -35,6 +35,7 @@ InnerBrain 的主路径改为本地样本分类器优先：
 - LLM 外脑启用、联网搜索。
 - 桌面 `.lnk` 快捷方式删除。
 - 读取当前资料、读取编号资料、查看/导入编号最近文件、查看编号搜索结果、查看/执行编号经验建议。
+- 给当前资料/结果打标签、给编号资料/搜索结果打标签、读取标签资料、标签组批量打标签预览、读取编号标签历史影响资料。
 
 这些输入命中后返回 `source=seed_sample` 或 `source=runtime_sample`，不再显示 `legacy_rule`。
 
@@ -48,6 +49,19 @@ InnerBrain 的主路径改为本地样本分类器优先：
 - `JarvisAgent` 继续复用既有执行函数，例如 `read_numbered_recent_document`、`read_numbered_search_result` 和 `prepare_numbered_advice_suggestion_execution`。
 
 这一步保证“查看第二条结果”这类表达不再靠 legacy parser 判定自然语言主意图，同时保留编号这种结构化信息的可审计抽取。
+
+## 标签槽位迁移约定
+
+第二批复杂槽位动作已迁移为“样本签名 + 标签槽位抽取”：
+
+- `给这个资料打标签 项目 Python` -> `document.tag_recent`，抽取 `tags=("项目", "Python")`。
+- `给第二份资料打标签 项目 Python` -> `document.tag_numbered_recent`，抽取 `result_index=2` 和 `tags`。
+- `给第二条结果打标签 运行环境` -> `search_result.tag_numbered`，抽取 `result_index=2` 和 `tags`。
+- `给项目标签资料都打标签 归档` -> `tag_group.preview_tagging`，抽取 `alias="项目"` 和 `tags`。
+- `读取项目标签资料` -> `tag_group.read`，抽取 `alias="项目"`。
+- `读取第一条标签历史资料` -> `tag_history.read_numbered`，抽取 `result_index=1`。
+
+显式文件名或路径型标签命令，例如 `给 note.txt 打标签 项目`，本阶段仍保留为 `legacy_fallback`，因为它属于文件名/路径槽位迁移，不和标签组、最近上下文槽位混在一起处理。
 
 ## 当前 Agent 决策规则
 
@@ -69,6 +83,6 @@ InnerBrain 的主路径改为本地样本分类器优先：
 
 ## 后续迁移重点
 
-- 把标签、标签历史、路径/文件名导入、目录别名等剩余复杂槽位能力逐步迁移出 `legacy_fallback`。
+- 把显式文件名/路径导入、目录别名等剩余复杂槽位能力逐步迁移出 `legacy_fallback`。
 - 将搜索结果写入最近上下文，支持“查一下并总结”这类 SearchRouter + LLMRouter 组合流程。
 - 优化中置信澄清文案，使用户能通过自然语言补齐缺失槽位。

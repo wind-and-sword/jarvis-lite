@@ -197,6 +197,15 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
         InnerBrainTrainingSample("读取第{index}条建议", "advice.read_numbered", {}),
         InnerBrainTrainingSample("执行第{index}条建议", "advice.execute_numbered", {}),
         InnerBrainTrainingSample("运行第{index}条建议", "advice.execute_numbered", {}),
+        InnerBrainTrainingSample("给这个资料打标签{tags}", "document.tag_recent", {}),
+        InnerBrainTrainingSample("给这个结果打标签{tags}", "document.tag_recent", {}),
+        InnerBrainTrainingSample("给第{index}份资料打标签{tags}", "document.tag_numbered_recent", {}),
+        InnerBrainTrainingSample("给第{index}条结果打标签{tags}", "search_result.tag_numbered", {}),
+        InnerBrainTrainingSample("给{tag}标签资料都打标签{tags}", "tag_group.preview_tagging", {}),
+        InnerBrainTrainingSample("读取{tag}标签资料", "tag_group.read", {}),
+        InnerBrainTrainingSample("查看{tag}标签资料", "tag_group.read", {}),
+        InnerBrainTrainingSample("读取第{index}条标签历史资料", "tag_history.read_numbered", {}),
+        InnerBrainTrainingSample("查看第{index}条批量标签历史影响资料", "tag_history.read_numbered", {}),
         InnerBrainTrainingSample("查看批量标签历史", "tag.history", {"command": "/tag-history"}),
         InnerBrainTrainingSample("批量标签历史", "tag.history", {"command": "/tag-history"}),
         InnerBrainTrainingSample("总结知识库", "knowledge.summary", {"command": "/kb-summary"}),
@@ -458,6 +467,18 @@ def _similarity_text(text: str, intent: str) -> str:
         return _numbered_advice_signature(normalized)
     if intent == "advice.execute_numbered":
         return _execute_numbered_advice_signature(normalized)
+    if intent == "document.tag_recent":
+        return _tag_recent_document_signature(normalized)
+    if intent == "document.tag_numbered_recent":
+        return _tag_numbered_recent_document_signature(normalized)
+    if intent == "search_result.tag_numbered":
+        return _tag_numbered_search_result_signature(normalized)
+    if intent == "tag_group.preview_tagging":
+        return _tag_group_preview_tagging_signature(normalized)
+    if intent == "tag_group.read":
+        return _tag_group_read_signature(normalized)
+    if intent == "tag_history.read_numbered":
+        return _tag_history_read_numbered_signature(normalized)
     if intent == "desktop.delete_shortcut":
         return _desktop_shortcut_signature(normalized)
     if intent == "web.search":
@@ -538,6 +559,53 @@ def _execute_numbered_advice_signature(text: str) -> str:
     if not match:
         return text
     return f"{match.group('verb')}第{{index}}条建议"
+
+
+def _tag_recent_document_signature(text: str) -> str:
+    match = re.fullmatch(r"(?:给|把)(?P<target>这个|这份|刚才的|最近的|当前)(?P<kind>资料|文档|文件|结果)(?:打标签|标记为).+", text)
+    if not match:
+        return text
+    if match.group("kind") == "结果":
+        return "给这个结果打标签{tags}"
+    return "给这个资料打标签{tags}"
+
+
+def _tag_numbered_recent_document_signature(text: str) -> str:
+    if re.fullmatch(rf"(?:给|把)第(?:{_NUMBER_SLOT_PATTERN})(?:条|个|份)?(?:资料|文档|文件)(?:打标签|标记为).+", text):
+        return "给第{index}份资料打标签{tags}"
+    return text
+
+
+def _tag_numbered_search_result_signature(text: str) -> str:
+    if re.fullmatch(rf"(?:给|把)第(?:{_NUMBER_SLOT_PATTERN})(?:条|个)?结果(?:打标签|标记为).+", text):
+        return "给第{index}条结果打标签{tags}"
+    return text
+
+
+def _tag_group_preview_tagging_signature(text: str) -> str:
+    if re.fullmatch(r"(?:请|帮我)?(?:给|把).+?标签(?:资料|文档)(?:都|全部)?(?:打标签|标记为).+", text):
+        return "给{tag}标签资料都打标签{tags}"
+    return text
+
+
+def _tag_group_read_signature(text: str) -> str:
+    match = re.fullmatch(r"(?P<verb>请?帮?我?)?(?P<action>读取|查看|看看).+?标签(?:资料|文档)", text)
+    if not match:
+        return text
+    action = "读取" if match.group("action") == "读取" else "查看"
+    return f"{action}{{tag}}标签资料"
+
+
+def _tag_history_read_numbered_signature(text: str) -> str:
+    match = re.fullmatch(
+        rf"(?P<verb>读取|查看|看看)第(?:{_NUMBER_SLOT_PATTERN})(?:条|个)?(?:批量标签历史|批量打标签历史|标签历史)(?:影响)?(?:资料|文档)",
+        text,
+    )
+    if not match:
+        return text
+    if match.group("verb") == "查看" and "批量标签历史" in text:
+        return "查看第{index}条批量标签历史影响资料"
+    return "读取第{index}条标签历史资料"
 
 
 def _desktop_shortcut_signature(text: str) -> str:
@@ -634,6 +702,39 @@ def _sample_to_natural_language_intent(
         if result_index > 0:
             return NaturalLanguageIntent("prepare_numbered_advice_suggestion_execution", result_index=result_index)
         return None
+    if sample.intent == "document.tag_recent":
+        tags = _slot_tags(slots)
+        if tags:
+            return NaturalLanguageIntent("tag_recent_document", tags=tags)
+        return None
+    if sample.intent == "document.tag_numbered_recent":
+        result_index = _slot_result_index(slots)
+        tags = _slot_tags(slots)
+        if result_index > 0 and tags:
+            return NaturalLanguageIntent("tag_numbered_recent_document", tags=tags, result_index=result_index)
+        return None
+    if sample.intent == "search_result.tag_numbered":
+        result_index = _slot_result_index(slots)
+        tags = _slot_tags(slots)
+        if result_index > 0 and tags:
+            return NaturalLanguageIntent("tag_numbered_search_result", tags=tags, result_index=result_index)
+        return None
+    if sample.intent == "tag_group.preview_tagging":
+        alias = _slot_alias(slots)
+        tags = _slot_tags(slots)
+        if alias and tags:
+            return NaturalLanguageIntent("preview_tagged_documents_tagging", alias=alias, tags=tags)
+        return None
+    if sample.intent == "tag_group.read":
+        alias = _slot_alias(slots)
+        if alias:
+            return NaturalLanguageIntent("read_tagged_documents", alias=alias)
+        return None
+    if sample.intent == "tag_history.read_numbered":
+        result_index = _slot_result_index(slots)
+        if result_index > 0:
+            return NaturalLanguageIntent("read_tagged_documents_history_documents", result_index=result_index)
+        return None
     if sample.intent == "advice.confirm_execution":
         return NaturalLanguageIntent("confirm_pending_advice_suggestion_execution")
     if sample.intent == "advice.cancel_execution":
@@ -711,19 +812,23 @@ def _sample_slots(prompt: str, sample: InnerBrainTrainingSample) -> dict[str, An
     result_index = _extract_numbered_result_index(prompt, sample.intent)
     if result_index > 0:
         slots["result_index"] = result_index
+    tag_slots = _extract_tag_slots(prompt, sample.intent)
+    slots.update(tag_slots)
     return slots
 
 
 def _extract_numbered_result_index(text: str, intent: str) -> int:
     normalized = _normalize_text(text)
-    if intent == "document.read_numbered_recent":
+    if intent in {"document.read_numbered_recent", "document.tag_numbered_recent"}:
         return _extract_number(normalized, r"第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个|份)?(?:资料|文档|文件)")
     if intent in {"recent_file.read_numbered", "recent_file.import_numbered"}:
         return _extract_number(normalized, r"第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个|份)?(?:最近文件|系统最近文件)")
-    if intent == "search_result.read_numbered":
+    if intent in {"search_result.read_numbered", "search_result.tag_numbered"}:
         return _extract_number(normalized, r"第(?P<number>[0-9一二三四五六七八九十]+)(?:条|个)?结果")
     if intent in {"advice.read_numbered", "advice.execute_numbered"}:
         return _extract_number(normalized, r"第(?P<number>[0-9一二三四五六七八九十]+)(?:条|个)?建议")
+    if intent == "tag_history.read_numbered":
+        return _extract_number(normalized, r"第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个)?(?:批量标签历史|批量打标签历史|标签历史)(?:影响)?(?:资料|文档)")
     return 0
 
 
@@ -760,6 +865,83 @@ def _slot_result_index(slots: Mapping[str, Any]) -> int:
     if isinstance(raw_result_index, str) and raw_result_index.isdigit():
         return int(raw_result_index)
     return 0
+
+
+def _extract_tag_slots(text: str, intent: str) -> dict[str, Any]:
+    normalized = text.strip().strip("。！？!?.")
+    if intent == "document.tag_recent":
+        match = re.fullmatch(
+            r"(?:给|把)\s*(?:这个|这份|刚才的|最近的|当前)(?:资料|文档|文件|结果)\s*(?:打标签|标记为)\s*(?P<tags>.+)",
+            normalized,
+        )
+        return _tag_slots_from_match(match)
+    if intent == "document.tag_numbered_recent":
+        match = re.fullmatch(
+            r"(?:给|把)\s*第[0-9一二两三四五六七八九十]+(?:条|个|份)?(?:资料|文档|文件)\s*(?:打标签|标记为)\s*(?P<tags>.+)",
+            normalized,
+        )
+        return _tag_slots_from_match(match)
+    if intent == "search_result.tag_numbered":
+        match = re.fullmatch(
+            r"(?:给|把)\s*第[0-9一二三四五六七八九十]+(?:条|个)?结果\s*(?:打标签|标记为)\s*(?P<tags>.+)",
+            normalized,
+        )
+        return _tag_slots_from_match(match)
+    if intent == "tag_group.preview_tagging":
+        match = re.fullmatch(
+            r"(?:请)?(?:帮我)?(?:给|把)\s*(?P<alias>.+?)\s*标签(?:资料|文档)(?:都|全部)?\s*(?:打标签|标记为)\s*(?P<tags>.+)",
+            normalized,
+        )
+        if not match:
+            return {}
+        tags = _split_tag_text(match.group("tags"))
+        alias = match.group("alias").strip()
+        if alias and tags:
+            return {"alias": alias, "tags": tags}
+        return {}
+    if intent == "tag_group.read":
+        match = re.fullmatch(r"(?:请)?(?:帮我)?(?:读取|查看|看看)\s*(?P<alias>.+?)\s*标签(?:资料|文档)", normalized)
+        if not match:
+            return {}
+        alias = match.group("alias").strip()
+        if alias:
+            return {"alias": alias}
+        return {}
+    return {}
+
+
+def _tag_slots_from_match(match: re.Match[str] | None) -> dict[str, Any]:
+    if not match:
+        return {}
+    tags = _split_tag_text(match.group("tags"))
+    if tags:
+        return {"tags": tags}
+    return {}
+
+
+def _split_tag_text(text: str) -> tuple[str, ...]:
+    tags: list[str] = []
+    for raw_tag in re.split(r"[\s,，、]+", text.strip()):
+        tag = raw_tag.strip().lstrip("#").strip()
+        if tag:
+            tags.append(tag)
+    return tuple(tags)
+
+
+def _slot_tags(slots: Mapping[str, Any]) -> tuple[str, ...]:
+    raw_tags = slots.get("tags", ())
+    if isinstance(raw_tags, str):
+        return (raw_tags,) if raw_tags.strip() else ()
+    if isinstance(raw_tags, list | tuple):
+        return tuple(str(tag).strip() for tag in raw_tags if str(tag).strip())
+    return ()
+
+
+def _slot_alias(slots: Mapping[str, Any]) -> str:
+    raw_alias = slots.get("alias", "")
+    if isinstance(raw_alias, str):
+        return raw_alias.strip()
+    return ""
 
 
 def _normalized_slots(slots: Mapping[str, Any]) -> dict[str, Any]:

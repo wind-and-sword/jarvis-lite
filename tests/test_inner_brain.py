@@ -100,6 +100,71 @@ class InnerBrainTests(unittest.TestCase):
                     self.assertEqual(result.slots["result_index"], expected_index)
                     self.assertEqual(result.natural_language_intent.result_index, expected_index)
 
+    def test_tag_intents_use_sample_classifier_slots(self):
+        cases = (
+            (
+                "给这个资料打标签 项目 Python",
+                "document.tag_recent",
+                "tag_recent_document",
+                {"tags": ("项目", "Python")},
+            ),
+            (
+                "给这个结果打标签 运行环境",
+                "document.tag_recent",
+                "tag_recent_document",
+                {"tags": ("运行环境",)},
+            ),
+            (
+                "给第二份资料打标签 项目 Python",
+                "document.tag_numbered_recent",
+                "tag_numbered_recent_document",
+                {"tags": ("项目", "Python"), "result_index": 2},
+            ),
+            (
+                "给第二条结果打标签 运行环境",
+                "search_result.tag_numbered",
+                "tag_numbered_search_result",
+                {"tags": ("运行环境",), "result_index": 2},
+            ),
+            (
+                "给项目标签资料都打标签 归档",
+                "tag_group.preview_tagging",
+                "preview_tagged_documents_tagging",
+                {"alias": "项目", "tags": ("归档",)},
+            ),
+            (
+                "读取项目标签资料",
+                "tag_group.read",
+                "read_tagged_documents",
+                {"alias": "项目"},
+            ),
+            (
+                "读取第一条标签历史资料",
+                "tag_history.read_numbered",
+                "read_tagged_documents_history_documents",
+                {"result_index": 1},
+            ),
+        )
+
+        for prompt, expected_intent, expected_natural_name, expected_slots in cases:
+            with self.subTest(prompt=prompt):
+                result = InnerBrain(self.paths).understand(prompt)
+
+                self.assertEqual(result.intent, expected_intent)
+                self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+                self.assertEqual(result.source, "seed_sample")
+                self.assertGreaterEqual(result.confidence, 0.78)
+                self.assertIsNotNone(result.natural_language_intent)
+                self.assertEqual(result.natural_language_intent.name, expected_natural_name)
+                for slot_name, expected_value in expected_slots.items():
+                    self.assertEqual(result.slots[slot_name], expected_value)
+                if "tags" in expected_slots:
+                    self.assertEqual(result.natural_language_intent.tags, expected_slots["tags"])
+                if "alias" in expected_slots:
+                    self.assertEqual(result.natural_language_intent.alias, expected_slots["alias"])
+                if "result_index" in expected_slots:
+                    self.assertEqual(result.natural_language_intent.result_index, expected_slots["result_index"])
+
     def test_seed_variant_maps_to_knowledge_summary_command(self):
         result = InnerBrain(self.paths).understand("麻烦看一下知识库摘要")
 

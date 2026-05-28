@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-28：InnerBrain 标签槽位动作迁移为样本签名 + `tags/alias/result_index` 槽位抽取，当前资料/结果打标签、编号资料/结果打标签、标签组读取/预览和标签历史读取返回 `seed_sample`；全量 `unittest` 403 项通过。
 - 2026-05-28：InnerBrain 第一批编号槽位动作迁移为样本签名 + `result_index` 槽位抽取，`读取第二份资料`、`查看第二条结果`、`执行第二条建议` 等返回 `seed_sample`；全量 `unittest` 402 项通过。
 - 2026-05-28：InnerBrain 迁移为样本分类器优先，高频自然语言返回 `seed_sample`/`runtime_sample`，旧 parser 仅作为 `legacy_fallback` 迁移期兼容；全量 `unittest` 401 项通过。
 - 2026-05-28：联网搜索第一版落地，新增 SearchRouter、Tavily/fake provider、`config/search.local.json` 本地配置、`/search-status`、`/search-enable`、`/search 关键词` 和自然语言“联网查一下...”入口；全量 `unittest` 399 项通过，敏感信息扫描通过。
