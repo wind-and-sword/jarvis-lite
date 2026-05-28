@@ -197,6 +197,10 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
         InnerBrainTrainingSample("读取第{index}条建议", "advice.read_numbered", {}),
         InnerBrainTrainingSample("执行第{index}条建议", "advice.execute_numbered", {}),
         InnerBrainTrainingSample("运行第{index}条建议", "advice.execute_numbered", {}),
+        InnerBrainTrainingSample("读取{path}", "document.read_path", {}),
+        InnerBrainTrainingSample("查看{path}", "document.read_path", {}),
+        InnerBrainTrainingSample("导入{source}到知识库", "knowledge.import", {}),
+        InnerBrainTrainingSample("把{source}导入知识库", "knowledge.import", {}),
         InnerBrainTrainingSample("给这个资料打标签{tags}", "document.tag_recent", {}),
         InnerBrainTrainingSample("给这个结果打标签{tags}", "document.tag_recent", {}),
         InnerBrainTrainingSample("给第{index}份资料打标签{tags}", "document.tag_numbered_recent", {}),
@@ -219,6 +223,11 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
         InnerBrainTrainingSample("查看常用目录", "directory.list", {"command": "/dirs"}),
         InnerBrainTrainingSample("常用目录", "directory.list", {"command": "/dirs"}),
         InnerBrainTrainingSample("目录列表", "directory.list", {"command": "/dirs"}),
+        InnerBrainTrainingSample("打开{drive}盘", "directory.open_drive", {}),
+        InnerBrainTrainingSample("打开{alias}目录", "directory.open_alias", {}),
+        InnerBrainTrainingSample("整理{alias}目录", "directory.organize_alias", {}),
+        InnerBrainTrainingSample("打开这个目录", "directory.open_recent", {}),
+        InnerBrainTrainingSample("整理这个目录", "directory.organize_recent", {}),
         InnerBrainTrainingSample("生成日报", "report.daily", {"command": "/daily-report"}),
         InnerBrainTrainingSample("写日报", "report.daily", {"command": "/daily-report"}),
         InnerBrainTrainingSample("检查更新", "update.status", {"command": "/update-status"}),
@@ -228,6 +237,12 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
         InnerBrainTrainingSample("下载最新版", "update.download", {"command": "/update-download"}),
         InnerBrainTrainingSample("查看经验记忆", "experience.status", {"command": "/experiences"}),
         InnerBrainTrainingSample("看看经验记忆", "experience.status", {"command": "/experiences"}),
+        InnerBrainTrainingSample("记录经验{experience}", "experience.record", {}),
+        InnerBrainTrainingSample("记住这个经验{experience}", "experience.record", {}),
+        InnerBrainTrainingSample("搜索经验{query}", "experience.search", {}),
+        InnerBrainTrainingSample("经验查询{query}", "experience.search", {}),
+        InnerBrainTrainingSample("我该怎么{query}", "experience.advice", {}),
+        InnerBrainTrainingSample("{query}有什么建议", "experience.advice", {}),
         InnerBrainTrainingSample("确认执行", "advice.confirm_execution", {}),
         InnerBrainTrainingSample("确认运行", "advice.confirm_execution", {}),
         InnerBrainTrainingSample("取消执行", "advice.cancel_execution", {}),
@@ -467,6 +482,26 @@ def _similarity_text(text: str, intent: str) -> str:
         return _numbered_advice_signature(normalized)
     if intent == "advice.execute_numbered":
         return _execute_numbered_advice_signature(normalized)
+    if intent == "document.read_path":
+        return _read_document_path_signature(normalized)
+    if intent == "knowledge.import":
+        return _import_source_signature(normalized)
+    if intent == "directory.open_drive":
+        return _open_drive_signature(normalized)
+    if intent == "directory.open_alias":
+        return _open_directory_alias_signature(normalized)
+    if intent == "directory.organize_alias":
+        return _organize_directory_alias_signature(normalized)
+    if intent == "directory.open_recent":
+        return _open_recent_directory_signature(normalized)
+    if intent == "directory.organize_recent":
+        return _organize_recent_directory_signature(normalized)
+    if intent == "experience.record":
+        return _experience_record_signature(normalized)
+    if intent == "experience.search":
+        return _experience_search_signature(normalized)
+    if intent == "experience.advice":
+        return _experience_advice_signature(normalized)
     if intent == "document.tag_recent":
         return _tag_recent_document_signature(normalized)
     if intent == "document.tag_numbered_recent":
@@ -559,6 +594,86 @@ def _execute_numbered_advice_signature(text: str) -> str:
     if not match:
         return text
     return f"{match.group('verb')}第{{index}}条建议"
+
+
+def _read_document_path_signature(text: str) -> str:
+    if re.fullmatch(r"(?:请|帮我)?(?P<verb>读取|查看|看看)(?:\{path\}|.+(?:md|txt))", text):
+        verb = "读取" if text.startswith(("读取", "请读取", "帮我读取")) else "查看"
+        return f"{verb}{{path}}"
+    return text
+
+
+def _import_source_signature(text: str) -> str:
+    if "最近文件" in text or "系统最近文件" in text:
+        return text
+    source_pattern = r"(?:\{source\}|.+(?:md|txt|pdf|json)|.+[/\\].+)"
+    if re.fullmatch(rf"(?:请|帮我)?导入{source_pattern}(?:(?:到|进|加入)?(?:知识库|资料库))", text):
+        return "导入{source}到知识库"
+    if re.fullmatch(rf"(?:请|帮我)?把{source_pattern}(?:导入|加入|放进)(?:(?:到|进|加入|放进)?(?:知识库|资料库))", text):
+        return "把{source}导入知识库"
+    return text
+
+
+def _open_drive_signature(text: str) -> str:
+    if re.fullmatch(r"(?:帮我)?打开(?:\{drive\}|[a-z])(?:盘)?", text):
+        return "打开{drive}盘"
+    return text
+
+
+def _open_directory_alias_signature(text: str) -> str:
+    match = re.fullmatch(r"(?:帮我)?打开(?P<alias>.+?)(?:目录|文件夹)", text)
+    if not match:
+        return text
+    if _is_recent_directory_reference(match.group("alias")):
+        return text
+    return "打开{alias}目录"
+
+
+def _organize_directory_alias_signature(text: str) -> str:
+    match = re.fullmatch(r"(?:帮我)?(?:整理|整理预览|预览整理)(?P<alias>.+?)(?:目录|文件夹)", text)
+    if not match:
+        return text
+    if _is_recent_directory_reference(match.group("alias")):
+        return text
+    return "整理{alias}目录"
+
+
+def _open_recent_directory_signature(text: str) -> str:
+    if re.fullmatch(r"(?:帮我)?打开(?:这个|刚才的|最近的|当前)(?:目录|文件夹)", text):
+        return "打开这个目录"
+    return text
+
+
+def _organize_recent_directory_signature(text: str) -> str:
+    if re.fullmatch(r"(?:帮我)?(?:整理|整理预览|预览整理)(?:这个|刚才的|最近的|当前)(?:目录|文件夹)", text):
+        return "整理这个目录"
+    return text
+
+
+def _experience_record_signature(text: str) -> str:
+    if re.fullmatch(r"(?:请|帮我)?(?:记录|保存|沉淀)(?:一条)?经验.+", text):
+        return "记录经验{experience}"
+    if re.fullmatch(r"(?:请|帮我)?记住(?:这个|这条)?经验.+", text):
+        return "记住这个经验{experience}"
+    return text
+
+
+def _experience_search_signature(text: str) -> str:
+    if re.fullmatch(r"(?:请|帮我)?(?:搜索|查找|查询)经验.+", text):
+        return "搜索经验{query}"
+    if re.fullmatch(r"(?:请|帮我)?经验(?:搜索|查找|查询).+", text):
+        return "经验查询{query}"
+    return text
+
+
+def _experience_advice_signature(text: str) -> str:
+    if re.fullmatch(r"(?:我该怎么|我应该怎么|该怎么|如何|怎样).+", text):
+        return "我该怎么{query}"
+    if re.fullmatch(r".+(?:有什么|有哪些|有啥)(?:经验|建议)", text):
+        return "{query}有什么建议"
+    if re.fullmatch(r"(?:给我|请给我|帮我给).+?(?:的)?(?:经验建议|建议)", text):
+        return "{query}有什么建议"
+    return text
 
 
 def _tag_recent_document_signature(text: str) -> str:
@@ -702,6 +817,46 @@ def _sample_to_natural_language_intent(
         if result_index > 0:
             return NaturalLanguageIntent("prepare_numbered_advice_suggestion_execution", result_index=result_index)
         return None
+    if sample.intent == "document.read_path":
+        path = _slot_path(slots)
+        if path:
+            return NaturalLanguageIntent("command", command=f'/read "{path}"')
+        return None
+    if sample.intent == "directory.open_drive":
+        alias = _slot_alias(slots)
+        path = _slot_path(slots)
+        if alias and path:
+            return NaturalLanguageIntent("open_directory_path", alias=alias, path=Path(path))
+        return None
+    if sample.intent == "directory.open_alias":
+        alias = _slot_alias(slots)
+        if alias:
+            return NaturalLanguageIntent("open_directory_alias", alias=alias)
+        return None
+    if sample.intent == "directory.organize_alias":
+        alias = _slot_alias(slots)
+        if alias:
+            return NaturalLanguageIntent("organize_directory_alias", alias=alias)
+        return None
+    if sample.intent == "directory.open_recent":
+        return NaturalLanguageIntent("open_recent_directory")
+    if sample.intent == "directory.organize_recent":
+        return NaturalLanguageIntent("organize_recent_directory")
+    if sample.intent == "experience.record":
+        experience = _slot_text(slots, "experience")
+        if experience:
+            return NaturalLanguageIntent("command", command=f"/experience {experience}")
+        return None
+    if sample.intent == "experience.search":
+        query = _slot_text(slots, "query")
+        if query:
+            return NaturalLanguageIntent("command", command=f"/experience-search {query}")
+        return None
+    if sample.intent == "experience.advice":
+        query = _slot_text(slots, "query")
+        if query:
+            return NaturalLanguageIntent("command", command=f"/experience-advice {query}")
+        return None
     if sample.intent == "document.tag_recent":
         tags = _slot_tags(slots)
         if tags:
@@ -812,6 +967,12 @@ def _sample_slots(prompt: str, sample: InnerBrainTrainingSample) -> dict[str, An
     result_index = _extract_numbered_result_index(prompt, sample.intent)
     if result_index > 0:
         slots["result_index"] = result_index
+    file_path_slots = _extract_file_path_slots(prompt, sample.intent)
+    slots.update(file_path_slots)
+    directory_slots = _extract_directory_slots(prompt, sample.intent)
+    slots.update(directory_slots)
+    experience_slots = _extract_experience_slots(prompt, sample.intent)
+    slots.update(experience_slots)
     tag_slots = _extract_tag_slots(prompt, sample.intent)
     slots.update(tag_slots)
     return slots
@@ -865,6 +1026,163 @@ def _slot_result_index(slots: Mapping[str, Any]) -> int:
     if isinstance(raw_result_index, str) and raw_result_index.isdigit():
         return int(raw_result_index)
     return 0
+
+
+def _extract_file_path_slots(text: str, intent: str) -> dict[str, Any]:
+    if intent == "document.read_path":
+        path = _extract_read_document_path(text)
+        if path:
+            return {"path": path}
+        return {}
+    if intent == "knowledge.import":
+        source = _extract_import_source(text)
+        if source:
+            return {"source": source}
+        return {}
+    return {}
+
+
+def _extract_read_document_path(text: str) -> str:
+    normalized = text.strip().strip("。！？!?.")
+    match = re.fullmatch(r"(?:请)?(?:帮我)?(?:读取|查看|看看)\s*(?P<path>.+\.(?:md|txt))", normalized, flags=re.IGNORECASE)
+    if not match:
+        return ""
+    return _normalize_read_document_path(match.group("path"))
+
+
+def _normalize_read_document_path(path_text: str) -> str:
+    path = _strip_wrapping_quotes(path_text.strip())
+    path = path.replace("\\", "/").removeprefix("data/").lstrip("/")
+    return path.strip()
+
+
+def _extract_import_source(text: str) -> str:
+    normalized = text.strip().strip("。！？!?.")
+    patterns = (
+        r"(?:请)?(?:帮我)?导入\s*(?P<source>.+?)\s*(?:到|进|加入)?\s*(?:知识库|资料库)",
+        r"(?:请)?(?:帮我)?把\s*(?P<source>.+?)\s*(?:导入|加入|放进)\s*(?:到|进|加入|放进)?\s*(?:知识库|资料库)",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, normalized, flags=re.IGNORECASE)
+        if not match:
+            continue
+        source = _strip_wrapping_quotes(match.group("source").strip())
+        if source:
+            return source
+    return ""
+
+
+def _extract_directory_slots(text: str, intent: str) -> dict[str, Any]:
+    normalized = _normalize_text(text)
+    if intent == "directory.open_drive":
+        match = re.fullmatch(r"(?:帮我)?打开(?P<drive>[a-z])(?:盘)?", normalized)
+        if not match:
+            return {}
+        drive = match.group("drive").upper()
+        return {"alias": f"{drive}盘", "path": f"{drive}:/"}
+    if intent in {"directory.open_alias", "directory.organize_alias"}:
+        alias = _extract_directory_alias(text)
+        if alias and not _is_recent_directory_reference(alias):
+            return {"alias": alias}
+        return {}
+    return {}
+
+
+def _extract_directory_alias(text: str) -> str:
+    normalized = text.strip().strip("。！？!?.")
+    patterns = (
+        r"(?:帮我)?打开(?P<alias>.+?)(?:目录|文件夹)",
+        r"(?:帮我)?(?:整理|整理预览|预览整理)(?P<alias>.+?)(?:目录|文件夹)",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, normalized)
+        if not match:
+            continue
+        return _normalize_directory_alias(match.group("alias"))
+    return ""
+
+
+def _normalize_directory_alias(alias: str) -> str:
+    return alias.strip().removesuffix("目录").removesuffix("文件夹").strip()
+
+
+def _is_recent_directory_reference(alias: str) -> bool:
+    return alias in {"这个", "刚才的", "最近的", "当前"}
+
+
+def _extract_experience_slots(text: str, intent: str) -> dict[str, Any]:
+    if intent == "experience.record":
+        experience = _extract_experience_text(text)
+        if experience:
+            return {"experience": experience}
+        return {}
+    if intent == "experience.search":
+        query = _extract_experience_search_query(text)
+        if query:
+            return {"query": query}
+        return {}
+    if intent == "experience.advice":
+        query = _extract_experience_advice_query(text)
+        if query:
+            return {"query": query}
+        return {}
+    return {}
+
+
+def _extract_experience_text(text: str) -> str:
+    normalized = text.strip().strip("。！？!?.")
+    patterns = (
+        r"(?:请)?(?:帮我)?(?:记录|保存|沉淀)\s*(?:一条)?经验\s*[:：]?\s*(?P<experience>.+)",
+        r"(?:请)?(?:帮我)?记住\s*(?:这个|这条)?经验\s*[:：]?\s*(?P<experience>.+)",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, normalized)
+        if not match:
+            continue
+        experience = _strip_wrapping_quotes(match.group("experience").strip())
+        if experience:
+            return experience
+    return ""
+
+
+def _extract_experience_search_query(text: str) -> str:
+    normalized = text.strip().strip("。！？!?.")
+    patterns = (
+        r"(?:请)?(?:帮我)?(?:搜索|查找|查询)\s*经验\s*[:：]?\s*(?P<query>.+)",
+        r"(?:请)?(?:帮我)?经验\s*(?:搜索|查找|查询)\s*[:：]?\s*(?P<query>.+)",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, normalized)
+        if not match:
+            continue
+        query = _strip_wrapping_quotes(match.group("query").strip())
+        if query:
+            return query
+    return ""
+
+
+def _extract_experience_advice_query(text: str) -> str:
+    normalized = text.strip().strip("。！？!?.")
+    patterns = (
+        r"(?:我该怎么|我应该怎么|该怎么|如何|怎样)\s*(?P<query>.+)",
+        r"(?P<query>.+?)\s*(?:有什么|有哪些|有啥)\s*(?:经验|建议)",
+        r"(?:给我|请给我|帮我给)\s*(?P<query>.+?)\s*(?:的)?(?:经验建议|建议)",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, normalized)
+        if not match:
+            continue
+        query = _strip_wrapping_quotes(match.group("query").strip())
+        if query:
+            return query
+    return ""
+
+
+def _strip_wrapping_quotes(text: str) -> str:
+    stripped = text.strip().strip("“”")
+    if len(stripped) >= 2 and stripped[0] == stripped[-1] and stripped[0] in {"'", '"'}:
+        return stripped[1:-1].strip()
+    return stripped
 
 
 def _extract_tag_slots(text: str, intent: str) -> dict[str, Any]:
@@ -941,6 +1259,20 @@ def _slot_alias(slots: Mapping[str, Any]) -> str:
     raw_alias = slots.get("alias", "")
     if isinstance(raw_alias, str):
         return raw_alias.strip()
+    return ""
+
+
+def _slot_path(slots: Mapping[str, Any]) -> str:
+    raw_path = slots.get("path", "")
+    if isinstance(raw_path, str):
+        return raw_path.strip()
+    return ""
+
+
+def _slot_text(slots: Mapping[str, Any], key: str) -> str:
+    raw_text = slots.get(key, "")
+    if isinstance(raw_text, str):
+        return raw_text.strip()
     return ""
 
 

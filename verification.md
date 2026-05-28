@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-28：InnerBrain 文件路径、目录和经验槽位动作迁移为样本签名 + `path/source/alias/experience/query` 槽位抽取，显式文件读取/导入、目录打开/整理和经验记录/搜索/建议返回 `seed_sample`；全量 `unittest` 406 项通过。
 - 2026-05-28：InnerBrain 标签槽位动作迁移为样本签名 + `tags/alias/result_index` 槽位抽取，当前资料/结果打标签、编号资料/结果打标签、标签组读取/预览和标签历史读取返回 `seed_sample`；全量 `unittest` 403 项通过。
 - 2026-05-28：InnerBrain 第一批编号槽位动作迁移为样本签名 + `result_index` 槽位抽取，`读取第二份资料`、`查看第二条结果`、`执行第二条建议` 等返回 `seed_sample`；全量 `unittest` 402 项通过。
 - 2026-05-28：InnerBrain 迁移为样本分类器优先，高频自然语言返回 `seed_sample`/`runtime_sample`，旧 parser 仅作为 `legacy_fallback` 迁移期兼容；全量 `unittest` 401 项通过。

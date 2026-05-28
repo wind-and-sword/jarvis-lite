@@ -165,6 +165,151 @@ class InnerBrainTests(unittest.TestCase):
                 if "result_index" in expected_slots:
                     self.assertEqual(result.natural_language_intent.result_index, expected_slots["result_index"])
 
+    def test_file_path_intents_use_sample_classifier_slots(self):
+        cases = (
+            (
+                "读取 manual.md",
+                "document.read_path",
+                "command",
+                {"path": "manual.md"},
+                '/read "manual.md"',
+            ),
+            (
+                "查看 data/manual.txt",
+                "document.read_path",
+                "command",
+                {"path": "manual.txt"},
+                '/read "manual.txt"',
+            ),
+            (
+                '把 "C:/work/outside natural.md" 导入知识库',
+                "knowledge.import",
+                "command",
+                {"source": "C:/work/outside natural.md"},
+                '/import "C:/work/outside natural.md"',
+            ),
+            (
+                "导入 E:/docs/manual.pdf 到资料库",
+                "knowledge.import",
+                "command",
+                {"source": "E:/docs/manual.pdf"},
+                '/import "E:/docs/manual.pdf"',
+            ),
+        )
+
+        for prompt, expected_intent, expected_natural_name, expected_slots, expected_command in cases:
+            with self.subTest(prompt=prompt):
+                result = InnerBrain(self.paths).understand(prompt)
+
+                self.assertEqual(result.intent, expected_intent)
+                self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+                self.assertEqual(result.source, "seed_sample")
+                self.assertGreaterEqual(result.confidence, 0.78)
+                self.assertIsNotNone(result.natural_language_intent)
+                self.assertEqual(result.natural_language_intent.name, expected_natural_name)
+                self.assertEqual(result.natural_language_intent.command, expected_command)
+                for slot_name, expected_value in expected_slots.items():
+                    self.assertEqual(result.slots[slot_name], expected_value)
+
+    def test_directory_intents_use_sample_classifier_slots(self):
+        cases = (
+            (
+                "打开D盘",
+                "directory.open_drive",
+                "open_directory_path",
+                {"alias": "D盘", "path": "D:/"},
+            ),
+            (
+                "打开项目目录",
+                "directory.open_alias",
+                "open_directory_alias",
+                {"alias": "项目"},
+            ),
+            (
+                "整理项目目录",
+                "directory.organize_alias",
+                "organize_directory_alias",
+                {"alias": "项目"},
+            ),
+            (
+                "打开这个目录",
+                "directory.open_recent",
+                "open_recent_directory",
+                {},
+            ),
+            (
+                "整理这个目录",
+                "directory.organize_recent",
+                "organize_recent_directory",
+                {},
+            ),
+        )
+
+        for prompt, expected_intent, expected_natural_name, expected_slots in cases:
+            with self.subTest(prompt=prompt):
+                result = InnerBrain(self.paths).understand(prompt)
+
+                self.assertEqual(result.intent, expected_intent)
+                self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+                self.assertEqual(result.source, "seed_sample")
+                self.assertGreaterEqual(result.confidence, 0.78)
+                self.assertIsNotNone(result.natural_language_intent)
+                self.assertEqual(result.natural_language_intent.name, expected_natural_name)
+                for slot_name, expected_value in expected_slots.items():
+                    self.assertEqual(result.slots[slot_name], expected_value)
+                if "alias" in expected_slots:
+                    self.assertEqual(result.natural_language_intent.alias, expected_slots["alias"])
+                if "path" in expected_slots:
+                    self.assertEqual(result.natural_language_intent.path.as_posix(), expected_slots["path"])
+
+    def test_experience_intents_use_sample_classifier_slots(self):
+        cases = (
+            (
+                "记住这个经验：导入资料后先打标签",
+                "experience.record",
+                {"experience": "导入资料后先打标签"},
+                "/experience 导入资料后先打标签",
+            ),
+            (
+                "搜索经验 导入",
+                "experience.search",
+                {"query": "导入"},
+                "/experience-search 导入",
+            ),
+            (
+                "经验查询 日报",
+                "experience.search",
+                {"query": "日报"},
+                "/experience-search 日报",
+            ),
+            (
+                "我该怎么导入资料",
+                "experience.advice",
+                {"query": "导入资料"},
+                "/experience-advice 导入资料",
+            ),
+            (
+                "导入资料有什么建议",
+                "experience.advice",
+                {"query": "导入资料"},
+                "/experience-advice 导入资料",
+            ),
+        )
+
+        for prompt, expected_intent, expected_slots, expected_command in cases:
+            with self.subTest(prompt=prompt):
+                result = InnerBrain(self.paths).understand(prompt)
+
+                self.assertEqual(result.intent, expected_intent)
+                self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+                self.assertEqual(result.source, "seed_sample")
+                self.assertGreaterEqual(result.confidence, 0.78)
+                self.assertIsNotNone(result.natural_language_intent)
+                self.assertEqual(result.natural_language_intent.name, "command")
+                self.assertEqual(result.natural_language_intent.command, expected_command)
+                for slot_name, expected_value in expected_slots.items():
+                    self.assertEqual(result.slots[slot_name], expected_value)
+
     def test_seed_variant_maps_to_knowledge_summary_command(self):
         result = InnerBrain(self.paths).understand("麻烦看一下知识库摘要")
 
