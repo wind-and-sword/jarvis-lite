@@ -34,8 +34,20 @@ InnerBrain 的主路径改为本地样本分类器优先：
 - 经验记忆、确认执行、取消执行。
 - LLM 外脑启用、联网搜索。
 - 桌面 `.lnk` 快捷方式删除。
+- 读取当前资料、读取编号资料、查看/导入编号最近文件、查看编号搜索结果、查看/执行编号经验建议。
 
 这些输入命中后返回 `source=seed_sample` 或 `source=runtime_sample`，不再显示 `legacy_rule`。
+
+## 编号槽位迁移约定
+
+第一批复杂槽位动作已迁移为“样本签名 + 槽位抽取”：
+
+- 样本负责识别语义，例如 `读取第{index}份资料`、`查看第{index}条结果`、`执行第{index}条建议`。
+- 签名归一化只把编号位置标准化为 `{index}`，让 `第一`、`第二`、`2` 等表达命中同一个样本。
+- 槽位抽取只负责产出 `result_index`，不负责决定意图。
+- `JarvisAgent` 继续复用既有执行函数，例如 `read_numbered_recent_document`、`read_numbered_search_result` 和 `prepare_numbered_advice_suggestion_execution`。
+
+这一步保证“查看第二条结果”这类表达不再靠 legacy parser 判定自然语言主意图，同时保留编号这种结构化信息的可审计抽取。
 
 ## 当前 Agent 决策规则
 
@@ -57,6 +69,6 @@ InnerBrain 的主路径改为本地样本分类器优先：
 
 ## 后续迁移重点
 
-- 把标签、读取编号资料、读取编号最近文件、经验建议等复杂槽位能力逐步迁移出 `legacy_fallback`。
+- 把标签、标签历史、路径/文件名导入、目录别名等剩余复杂槽位能力逐步迁移出 `legacy_fallback`。
 - 将搜索结果写入最近上下文，支持“查一下并总结”这类 SearchRouter + LLMRouter 组合流程。
 - 优化中置信澄清文案，使用户能通过自然语言补齐缺失槽位。

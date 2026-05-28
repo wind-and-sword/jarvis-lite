@@ -74,6 +74,32 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIsNotNone(result.natural_language_intent)
         self.assertEqual(result.natural_language_intent.command, "/tag note.txt 项目")
 
+    def test_numbered_object_intents_use_sample_classifier_slots(self):
+        cases = (
+            ("读取这个资料", "document.read_recent", "read_recent_document", 0),
+            ("读取第二份资料", "document.read_numbered_recent", "read_numbered_recent_document", 2),
+            ("查看第一份最近文件", "recent_file.read_numbered", "read_numbered_recent_file", 1),
+            ("导入第一份最近文件到知识库", "recent_file.import_numbered", "import_numbered_recent_file", 1),
+            ("把第2份最近文件导入知识库", "recent_file.import_numbered", "import_numbered_recent_file", 2),
+            ("查看第二条结果", "search_result.read_numbered", "read_numbered_search_result", 2),
+            ("查看第一条建议", "advice.read_numbered", "read_numbered_advice_suggestion", 1),
+            ("执行第二条建议", "advice.execute_numbered", "prepare_numbered_advice_suggestion_execution", 2),
+        )
+
+        for prompt, expected_intent, expected_natural_name, expected_index in cases:
+            with self.subTest(prompt=prompt):
+                result = InnerBrain(self.paths).understand(prompt)
+
+                self.assertEqual(result.intent, expected_intent)
+                self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+                self.assertEqual(result.source, "seed_sample")
+                self.assertGreaterEqual(result.confidence, 0.78)
+                self.assertIsNotNone(result.natural_language_intent)
+                self.assertEqual(result.natural_language_intent.name, expected_natural_name)
+                if expected_index:
+                    self.assertEqual(result.slots["result_index"], expected_index)
+                    self.assertEqual(result.natural_language_intent.result_index, expected_index)
+
     def test_seed_variant_maps_to_knowledge_summary_command(self):
         result = InnerBrain(self.paths).understand("麻烦看一下知识库摘要")
 

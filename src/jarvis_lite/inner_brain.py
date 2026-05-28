@@ -138,7 +138,7 @@ class InnerBrain:
         return best_sample, best_score
 
     def _sample_result(self, prompt: str, sample: InnerBrainTrainingSample, confidence: float) -> InnerBrainResult:
-        slots = _normalized_slots(sample.slots)
+        slots = _sample_slots(prompt, sample)
         missing = sample.missing
         natural_language_intent = _sample_to_natural_language_intent(prompt, sample, slots)
         if sample.intent == "desktop.delete_shortcut" and natural_language_intent is None:
@@ -182,6 +182,21 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
         InnerBrainTrainingSample("查看最近文件", "context.recent_files", {}),
         InnerBrainTrainingSample("最近文件列表", "context.recent_files", {}),
         InnerBrainTrainingSample("查看系统最近文件", "context.recent_files", {}),
+        InnerBrainTrainingSample("读取这个资料", "document.read_recent", {}),
+        InnerBrainTrainingSample("查看这份资料", "document.read_recent", {}),
+        InnerBrainTrainingSample("看看当前文档", "document.read_recent", {}),
+        InnerBrainTrainingSample("读取第{index}份资料", "document.read_numbered_recent", {}),
+        InnerBrainTrainingSample("查看第{index}份资料", "document.read_numbered_recent", {}),
+        InnerBrainTrainingSample("查看第{index}份最近文件", "recent_file.read_numbered", {}),
+        InnerBrainTrainingSample("读取第{index}份最近文件", "recent_file.read_numbered", {}),
+        InnerBrainTrainingSample("导入第{index}份最近文件到知识库", "recent_file.import_numbered", {}),
+        InnerBrainTrainingSample("把第{index}份最近文件导入知识库", "recent_file.import_numbered", {}),
+        InnerBrainTrainingSample("查看第{index}条结果", "search_result.read_numbered", {}),
+        InnerBrainTrainingSample("读取第{index}条结果", "search_result.read_numbered", {}),
+        InnerBrainTrainingSample("查看第{index}条建议", "advice.read_numbered", {}),
+        InnerBrainTrainingSample("读取第{index}条建议", "advice.read_numbered", {}),
+        InnerBrainTrainingSample("执行第{index}条建议", "advice.execute_numbered", {}),
+        InnerBrainTrainingSample("运行第{index}条建议", "advice.execute_numbered", {}),
         InnerBrainTrainingSample("查看批量标签历史", "tag.history", {"command": "/tag-history"}),
         InnerBrainTrainingSample("批量标签历史", "tag.history", {"command": "/tag-history"}),
         InnerBrainTrainingSample("总结知识库", "knowledge.summary", {"command": "/kb-summary"}),
@@ -429,6 +444,20 @@ def _sample_similarity(prompt: str, sample: InnerBrainTrainingSample) -> float:
 
 def _similarity_text(text: str, intent: str) -> str:
     normalized = _normalize_text(text)
+    if intent == "document.read_recent":
+        return _recent_document_signature(normalized)
+    if intent == "document.read_numbered_recent":
+        return _numbered_recent_document_signature(normalized)
+    if intent == "recent_file.read_numbered":
+        return _numbered_recent_file_signature(normalized)
+    if intent == "recent_file.import_numbered":
+        return _import_numbered_recent_file_signature(normalized)
+    if intent == "search_result.read_numbered":
+        return _numbered_search_result_signature(normalized)
+    if intent == "advice.read_numbered":
+        return _numbered_advice_signature(normalized)
+    if intent == "advice.execute_numbered":
+        return _execute_numbered_advice_signature(normalized)
     if intent == "desktop.delete_shortcut":
         return _desktop_shortcut_signature(normalized)
     if intent == "web.search":
@@ -438,6 +467,77 @@ def _similarity_text(text: str, intent: str) -> str:
 
 def _normalize_text(text: str) -> str:
     return re.sub(r"[\s。！？!?.,，、：:；;“”\"'（）()]+", "", text.strip().lower())
+
+
+_NUMBER_SLOT_PATTERN = r"[0-9一二两三四五六七八九十]+|\{index\}"
+
+
+def _recent_document_signature(text: str) -> str:
+    if re.fullmatch(r"(?:读取|查看|看看)(?:这个|这份|刚才的|最近的|当前)(?:资料|文档|文件)", text):
+        return "读取这个资料"
+    return text
+
+
+def _numbered_recent_document_signature(text: str) -> str:
+    match = re.fullmatch(
+        rf"(?P<verb>读取|查看|看看)第(?:{_NUMBER_SLOT_PATTERN})(?:条|个|份)?(?:资料|文档|文件)",
+        text,
+    )
+    if not match:
+        return text
+    verb = "读取" if match.group("verb") == "读取" else "查看"
+    return f"{verb}第{{index}}份资料"
+
+
+def _numbered_recent_file_signature(text: str) -> str:
+    match = re.fullmatch(
+        rf"(?P<verb>读取|查看|看看)第(?:{_NUMBER_SLOT_PATTERN})(?:条|个|份)?(?:最近文件|系统最近文件)",
+        text,
+    )
+    if not match:
+        return text
+    verb = "读取" if match.group("verb") == "读取" else "查看"
+    return f"{verb}第{{index}}份最近文件"
+
+
+def _import_numbered_recent_file_signature(text: str) -> str:
+    import_match = re.fullmatch(
+        rf"(?:请|帮我)?导入第(?:{_NUMBER_SLOT_PATTERN})(?:条|个|份)?(?:最近文件|系统最近文件)(?:(?:到|进|加入|放进)?(?:知识库|资料库))?",
+        text,
+    )
+    if import_match:
+        return "导入第{index}份最近文件到知识库"
+
+    object_first_match = re.fullmatch(
+        rf"(?:请|帮我)?把第(?:{_NUMBER_SLOT_PATTERN})(?:条|个|份)?(?:最近文件|系统最近文件)(?:导入|加入|放进)(?:(?:到|进|加入|放进)?(?:知识库|资料库))?",
+        text,
+    )
+    if object_first_match:
+        return "把第{index}份最近文件导入知识库"
+    return text
+
+
+def _numbered_search_result_signature(text: str) -> str:
+    match = re.fullmatch(rf"(?P<verb>查看|看看|读取|打开)第(?:{_NUMBER_SLOT_PATTERN})(?:条|个)?结果", text)
+    if not match:
+        return text
+    verb = "读取" if match.group("verb") == "读取" else "查看"
+    return f"{verb}第{{index}}条结果"
+
+
+def _numbered_advice_signature(text: str) -> str:
+    match = re.fullmatch(rf"(?P<verb>查看|看看|读取)第(?:{_NUMBER_SLOT_PATTERN})(?:条|个)?建议", text)
+    if not match:
+        return text
+    verb = "读取" if match.group("verb") == "读取" else "查看"
+    return f"{verb}第{{index}}条建议"
+
+
+def _execute_numbered_advice_signature(text: str) -> str:
+    match = re.fullmatch(rf"(?P<verb>执行|运行)第(?:{_NUMBER_SLOT_PATTERN})(?:条|个)?建议", text)
+    if not match:
+        return text
+    return f"{match.group('verb')}第{{index}}条建议"
 
 
 def _desktop_shortcut_signature(text: str) -> str:
@@ -502,6 +602,38 @@ def _sample_to_natural_language_intent(
         return NaturalLanguageIntent("recent_context_status")
     if sample.intent == "context.recent_files":
         return NaturalLanguageIntent("recent_files_status")
+    if sample.intent == "document.read_recent":
+        return NaturalLanguageIntent("read_recent_document")
+    if sample.intent == "document.read_numbered_recent":
+        result_index = _slot_result_index(slots)
+        if result_index > 0:
+            return NaturalLanguageIntent("read_numbered_recent_document", result_index=result_index)
+        return None
+    if sample.intent == "recent_file.read_numbered":
+        result_index = _slot_result_index(slots)
+        if result_index > 0:
+            return NaturalLanguageIntent("read_numbered_recent_file", result_index=result_index)
+        return None
+    if sample.intent == "recent_file.import_numbered":
+        result_index = _slot_result_index(slots)
+        if result_index > 0:
+            return NaturalLanguageIntent("import_numbered_recent_file", result_index=result_index)
+        return None
+    if sample.intent == "search_result.read_numbered":
+        result_index = _slot_result_index(slots)
+        if result_index > 0:
+            return NaturalLanguageIntent("read_numbered_search_result", result_index=result_index)
+        return None
+    if sample.intent == "advice.read_numbered":
+        result_index = _slot_result_index(slots)
+        if result_index > 0:
+            return NaturalLanguageIntent("read_numbered_advice_suggestion", result_index=result_index)
+        return None
+    if sample.intent == "advice.execute_numbered":
+        result_index = _slot_result_index(slots)
+        if result_index > 0:
+            return NaturalLanguageIntent("prepare_numbered_advice_suggestion_execution", result_index=result_index)
+        return None
     if sample.intent == "advice.confirm_execution":
         return NaturalLanguageIntent("confirm_pending_advice_suggestion_execution")
     if sample.intent == "advice.cancel_execution":
@@ -572,6 +704,62 @@ def _split_shortcut_items(text: str) -> tuple[str, ...]:
         if item and item != "{item}":
             items.append(item)
     return tuple(items)
+
+
+def _sample_slots(prompt: str, sample: InnerBrainTrainingSample) -> dict[str, Any]:
+    slots = _normalized_slots(sample.slots)
+    result_index = _extract_numbered_result_index(prompt, sample.intent)
+    if result_index > 0:
+        slots["result_index"] = result_index
+    return slots
+
+
+def _extract_numbered_result_index(text: str, intent: str) -> int:
+    normalized = _normalize_text(text)
+    if intent == "document.read_numbered_recent":
+        return _extract_number(normalized, r"第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个|份)?(?:资料|文档|文件)")
+    if intent in {"recent_file.read_numbered", "recent_file.import_numbered"}:
+        return _extract_number(normalized, r"第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个|份)?(?:最近文件|系统最近文件)")
+    if intent == "search_result.read_numbered":
+        return _extract_number(normalized, r"第(?P<number>[0-9一二三四五六七八九十]+)(?:条|个)?结果")
+    if intent in {"advice.read_numbered", "advice.execute_numbered"}:
+        return _extract_number(normalized, r"第(?P<number>[0-9一二三四五六七八九十]+)(?:条|个)?建议")
+    return 0
+
+
+def _extract_number(text: str, pattern: str) -> int:
+    match = re.search(pattern, text)
+    if not match:
+        return 0
+    return _parse_positive_number(match.group("number"))
+
+
+def _parse_positive_number(text: str) -> int:
+    if text.isdigit():
+        return int(text)
+    mapping = {
+        "一": 1,
+        "二": 2,
+        "两": 2,
+        "三": 3,
+        "四": 4,
+        "五": 5,
+        "六": 6,
+        "七": 7,
+        "八": 8,
+        "九": 9,
+        "十": 10,
+    }
+    return mapping.get(text, 0)
+
+
+def _slot_result_index(slots: Mapping[str, Any]) -> int:
+    raw_result_index = slots.get("result_index", 0)
+    if isinstance(raw_result_index, int):
+        return raw_result_index
+    if isinstance(raw_result_index, str) and raw_result_index.isdigit():
+        return int(raw_result_index)
+    return 0
 
 
 def _normalized_slots(slots: Mapping[str, Any]) -> dict[str, Any]:
