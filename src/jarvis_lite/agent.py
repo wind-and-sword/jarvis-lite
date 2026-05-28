@@ -46,6 +46,13 @@ from .llm import (
     summarize_llm_usage,
     write_llm_example_config,
 )
+from .search import (
+    SearchRouter,
+    build_search_router,
+    describe_search_config_examples,
+    search_local_config_path,
+    write_search_example_config,
+)
 from .memory import (
     append_experience,
     append_memory,
@@ -80,6 +87,9 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/llm-enable": "llm.enable",
     "/llm-usage": "llm.usage",
     "/llm-context-preview": "llm.context_preview",
+    "/search-status": "web.search.status",
+    "/search-enable": "web.search.enable",
+    "/search": "web.search",
     "/kb": "knowledge.status",
     "/knowledge": "knowledge.status",
     "/kb-summary": "knowledge.summary",
@@ -102,12 +112,15 @@ class JarvisAgent:
         self,
         paths: ProjectPaths | None = None,
         llm_router: LLMRouter | None = None,
+        search_router: SearchRouter | None = None,
         inner_brain: InnerBrain | None = None,
     ):
         self.paths = paths or build_project_paths()
         self.tools = ToolRegistry(self.paths)
         self._llm_router_injected = llm_router is not None
         self.llm_router = llm_router or build_llm_router(paths=self.paths)
+        self._search_router_injected = search_router is not None
+        self.search_router = search_router or build_search_router(paths=self.paths)
         self.inner_brain = inner_brain or InnerBrain(self.paths)
         runtime_context = load_runtime_context(self.paths)
         self._recent_document_path: str | None = runtime_context.recent_document_path
@@ -167,6 +180,8 @@ class JarvisAgent:
             return self._status()
         if prompt in {"/llm-status", "llm-status"}:
             return self.llm_router.describe()
+        if prompt in {"/search-status", "search-status"}:
+            return self.search_router.describe()
         if prompt in {"/inner-brain-status", "inner-brain-status"}:
             self.tools.run("record_log", message="查看 InnerBrain 本地内脑状态")
             return self.inner_brain.describe_status()
@@ -276,6 +291,15 @@ class JarvisAgent:
             return describe_llm_config_examples(args[0] if args else "")
         if command == "/llm-enable":
             return self._llm_enable_guidance()
+        if command == "/search-config-example":
+            self.tools.run("record_log", message="查看联网搜索配置模板")
+            return describe_search_config_examples(args[0] if args else "")
+        if command == "/search-enable":
+            return self._search_enable_guidance()
+        if command == "/search":
+            if not args:
+                return "用法：/search 关键词"
+            return self._search_web(" ".join(args))
         if command == "/inner-brain-preview":
             if not args:
                 return "用法：/inner-brain-preview 文本"
@@ -469,6 +493,10 @@ class JarvisAgent:
                 "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
                 "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",
                 "/llm-config-example [provider]：查看 LLM 环境变量配置模板",
+                "/search-status：查看联网搜索 provider 状态",
+                "/search-enable：查看联网搜索启用状态和本地配置路径",
+                "/search-config-example [provider]：查看联网搜索环境变量配置模板",
+                "/search 关键词：联网搜索并返回来源",
                 "/kb：查看个人知识库状态",
                 "/kb-summary：查看知识库资料摘要",
                 "/voice-status：查看阶段 3 语音入口状态",
@@ -1081,6 +1109,34 @@ class JarvisAgent:
             lines.append(f"{index}. {experience}")
         return "\n".join(lines)
 
+    def _search_web(self, query: str) -> str:
+        normalized_query = self._strip_quotes(query)
+        if not normalized_query:
+            return "用法：/search 关键词"
+        response = self.search_router.search(normalized_query)
+        self.tools.run("record_log", message=f"联网搜索：{normalized_query}")
+        if response.error:
+            return "\n".join(
+                [
+                    response.error,
+                    "可先运行：/search-status",
+                    "启用入口：/search-enable",
+                ]
+            )
+        lines = [f"联网搜索：{response.query}"]
+        if not response.results:
+            lines.append("- 没有返回搜索结果。")
+            return "\n".join(lines)
+        for index, result in enumerate(response.results, start=1):
+            lines.append(f"{index}. {result.title}")
+            lines.append(f"   URL：{result.url}")
+            if result.snippet:
+                lines.append(f"   摘要：{result.snippet}")
+            if result.source:
+                lines.append(f"   来源：{result.source}")
+        lines.append("说明：搜索结果来自 provider 返回的网页来源；需要总结时后续可交给 LLM 外脑处理。")
+        return "\n".join(lines)
+
     def _experience_advice(self, query: str) -> str:
         normalized_query = self._strip_quotes(query)
         if not normalized_query:
@@ -1271,6 +1327,31 @@ class JarvisAgent:
             [
                 "状态检查：/llm-status",
                 "连通性测试：/llm-smoke 请用一句话确认连接可用",
+            ]
+        )
+        return "\n".join(lines)
+
+    def _search_enable_guidance(self) -> str:
+        example_path = write_search_example_config(self.paths)
+        local_path = search_local_config_path(self.paths)
+        if not self._search_router_injected:
+            self.search_router = build_search_router(paths=self.paths)
+        self.tools.run("record_log", message="查看联网搜索启用入口")
+
+        lines = [
+            "联网搜索启用入口：",
+            self.search_router.describe(),
+            f"配置文件：{self._project_path(local_path)}",
+            f"模板文件：{self._project_path(example_path)}",
+        ]
+        if not local_path.exists():
+            lines.append("下一步：复制模板为 config/search.local.json，填入 provider、api_key 后重启 Jarvis Lite。")
+        else:
+            lines.append("下一步：修改 config/search.local.json 后再次执行 /search-enable，即可重新加载当前会话。")
+        lines.extend(
+            [
+                "状态检查：/search-status",
+                "搜索测试：/search Python 版本",
             ]
         )
         return "\n".join(lines)
@@ -2007,5 +2088,6 @@ class JarvisAgent:
                 "- 记忆写入：/remember、/experience、我叫...、我是...",
                 "- 本地验证：python -m unittest discover -s tests -v",
                 f"- LLM 外脑：{self.llm_router.settings.provider}",
+                f"- 联网搜索：{self.search_router.settings.provider}",
             ]
         )

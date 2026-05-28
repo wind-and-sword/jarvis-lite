@@ -170,6 +170,9 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
         InnerBrainTrainingSample("你好", "assistant.greeting", {}),
         InnerBrainTrainingSample("开启外脑", "llm.enable", {"command": "/llm-enable"}),
         InnerBrainTrainingSample("连接外脑", "llm.enable", {"command": "/llm-enable"}),
+        InnerBrainTrainingSample("联网查一下{query}", "web.search", {}),
+        InnerBrainTrainingSample("搜索一下{query}", "web.search", {}),
+        InnerBrainTrainingSample("帮我看看网上{query}", "web.search", {}),
         InnerBrainTrainingSample("把桌面{item}快捷方式删除", "desktop.delete_shortcut", {}),
         InnerBrainTrainingSample("删除桌面{item}快捷方式", "desktop.delete_shortcut", {}),
     )
@@ -387,6 +390,8 @@ def _similarity_text(text: str, intent: str) -> str:
     normalized = _normalize_text(text)
     if intent == "desktop.delete_shortcut":
         return _desktop_shortcut_signature(normalized)
+    if intent == "web.search":
+        return _web_search_signature(normalized)
     return normalized
 
 
@@ -404,6 +409,22 @@ def _desktop_shortcut_signature(text: str) -> str:
             if text.startswith(("删除", "删掉", "移除")):
                 return "删除桌面{item}快捷方式"
             return "把桌面{item}快捷方式删除"
+    return text
+
+
+def _web_search_signature(text: str) -> str:
+    patterns = (
+        r"(?:请|帮我|麻烦)?(?:联网|上网|网上)?(?:查一下|查查|搜索一下|搜一下)(?P<query>.+)",
+        r"(?:请|帮我|麻烦)?(?:帮我)?看看网上(?P<query>.+)",
+    )
+    for pattern in patterns:
+        if not re.fullmatch(pattern, text):
+            continue
+        if "搜索一下" in text or "搜一下" in text:
+            return "搜索一下{query}"
+        if "网上" in text and "看看" in text:
+            return "帮我看看网上{query}"
+        return "联网查一下{query}"
     return text
 
 
@@ -434,6 +455,11 @@ def _sample_to_natural_language_intent(
         return NaturalLanguageIntent("assistant_identity")
     if sample.intent == "assistant.greeting":
         return NaturalLanguageIntent("greeting", alias=prompt.strip())
+    if sample.intent == "web.search":
+        query = _extract_web_search_query(prompt)
+        if query:
+            return NaturalLanguageIntent("command", command=f"/search {query}")
+        return None
     if sample.intent == "desktop.delete_shortcut":
         items = _extract_desktop_shortcut_items(prompt)
         if not items:
@@ -467,6 +493,22 @@ def _extract_desktop_shortcut_items(text: str) -> tuple[str, ...]:
             continue
         return _split_shortcut_items(match.group("items"))
     return ()
+
+
+def _extract_web_search_query(text: str) -> str:
+    normalized = text.strip().strip("。！？!?.")
+    patterns = (
+        r"(?:请|帮我|麻烦)?(?:联网|上网|网上)?(?:查一下|查查|搜索一下|搜一下)\s*(?P<query>.+)",
+        r"(?:请|帮我|麻烦)?(?:帮我)?看看网上\s*(?P<query>.+)",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, normalized)
+        if not match:
+            continue
+        query = match.group("query").strip()
+        if query:
+            return query
+    return ""
 
 
 def _split_shortcut_items(text: str) -> tuple[str, ...]:

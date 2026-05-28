@@ -8,3 +8,5 @@ logs/*.log
 /日志.txt
 /config/llm.local.json
 **/llm.local.json
+/config/search.local.json
+**/search.local.json

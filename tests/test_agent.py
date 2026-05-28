@@ -12,6 +12,7 @@ from jarvis_lite import __version__
 from jarvis_lite.agent import JarvisAgent
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.llm import FakeLLMProvider, LLMIntent, LLMRouter, LLMSettings, LLMUsage, build_llm_router
+from jarvis_lite.search import FakeSearchProvider, SearchResult, SearchRouter, SearchSettings
 
 
 class AgentTests(unittest.TestCase):
@@ -394,6 +395,84 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本", response)
         self.assertIn("/inner-brain-teach 文本 => /命令：把自然语言短句教学为已知命令", response)
         self.assertIn("/llm-enable：查看外脑启用状态和本地配置路径", response)
+        self.assertIn("/search-status：查看联网搜索 provider 状态", response)
+        self.assertIn("/search 关键词：联网搜索并返回来源", response)
+
+    def test_search_status_command_reports_default_disabled_state(self):
+        response = self.agent.handle("/search-status")
+
+        self.assertIn("联网搜索：未启用", response)
+        self.assertIn("Provider：off", response)
+        self.assertIn("网络调用：否（联网搜索未启用）", response)
+
+    def test_search_command_returns_fake_provider_results(self):
+        provider = FakeSearchProvider(
+            (
+                SearchResult("Python 3.13 release", "https://python.example/3-13", "Python 3.13 发布摘要。", "fake"),
+            )
+        )
+        agent = JarvisAgent(
+            self.paths,
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), provider),
+        )
+
+        response = agent.handle("/search Python 版本")
+
+        self.assertIn("联网搜索：Python 版本", response)
+        self.assertIn("1. Python 3.13 release", response)
+        self.assertIn("URL：https://python.example/3-13", response)
+        self.assertIn("摘要：Python 3.13 发布摘要。", response)
+        self.assertEqual(provider.calls, ["Python 版本"])
+
+    def test_search_command_reports_disabled_provider(self):
+        response = self.agent.handle("/search Python 版本")
+
+        self.assertIn("联网搜索未启用", response)
+        self.assertIn("/search-enable", response)
+
+    def test_natural_language_web_search_uses_inner_brain_entry_without_llm(self):
+        search_provider = FakeSearchProvider(
+            (
+                SearchResult("Python current release", "https://python.example/current", "当前版本摘要。", "fake"),
+            )
+        )
+        llm_provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake"), llm_provider),
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), search_provider),
+        )
+
+        response = agent.handle("联网查一下 Python 版本")
+
+        self.assertIn("联网搜索：Python 版本", response)
+        self.assertIn("Python current release", response)
+        self.assertEqual(search_provider.calls, ["Python 版本"])
+        self.assertEqual(llm_provider.calls, [])
+
+    def test_search_enable_command_reports_local_config_path_without_api_key(self):
+        local_config = self.paths.config_dir / "search.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "tavily",
+                    "api_key": "secret-search-key",
+                    "max_results": 3,
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        agent = JarvisAgent(self.paths)
+
+        response = agent.handle("/search-enable")
+
+        self.assertIn("联网搜索启用入口", response)
+        self.assertIn("联网搜索：已启用", response)
+        self.assertIn("配置文件：config/search.local.json", response)
+        self.assertIn("模板文件：config/search.example.json", response)
+        self.assertIn("API key：已配置", response)
+        self.assertNotIn("secret-search-key", response)
 
     def test_agent_reads_llm_local_config_file_on_startup(self):
         local_config = self.paths.config_dir / "llm.local.json"
@@ -472,7 +551,7 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("InnerBrain 状态", response)
         self.assertIn("legacy_rule：启用", response)
-        self.assertIn("seed_sample：11 条", response)
+        self.assertIn("seed_sample：14 条", response)
         self.assertIn("高置信阈值：0.78", response)
 
     def test_inner_brain_preview_command_reports_result_without_execution(self):

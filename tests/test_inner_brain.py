@@ -229,7 +229,7 @@ class InnerBrainTests(unittest.TestCase):
 
         self.assertIn("InnerBrain 状态", description)
         self.assertIn("legacy_rule：启用", description)
-        self.assertIn("seed_sample：11 条", description)
+        self.assertIn("seed_sample：14 条", description)
         self.assertIn("runtime_sample：1 条", description)
         self.assertIn("高置信阈值：0.78", description)
         self.assertIn("中置信阈值：0.58", description)
