@@ -21,6 +21,7 @@ class ConfigTests(unittest.TestCase):
             self.assertTrue(paths.data_dir.is_dir())
             self.assertTrue(paths.logs_dir.is_dir())
             self.assertTrue(paths.word_dir.is_dir())
+            self.assertTrue(paths.config_dir.is_dir())
 
     def test_frozen_app_uses_local_app_data_as_default_root(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -32,6 +33,7 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(paths.root, local_app_data / "Jarvis Lite")
             self.assertTrue(paths.memory_dir.is_dir())
             self.assertTrue(paths.data_dir.is_dir())
+            self.assertTrue(paths.config_dir.is_dir())
 
 
 if __name__ == "__main__":

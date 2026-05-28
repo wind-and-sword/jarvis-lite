@@ -42,7 +42,9 @@ from .llm import (
     build_llm_router,
     describe_llm_config_examples,
     is_llm_allowed_command,
+    llm_local_config_path,
     summarize_llm_usage,
+    write_llm_example_config,
 )
 from .memory import (
     append_experience,
@@ -75,6 +77,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/memory": "memory.status",
     "/experiences": "experience.status",
     "/llm-status": "llm.status",
+    "/llm-enable": "llm.enable",
     "/llm-usage": "llm.usage",
     "/llm-context-preview": "llm.context_preview",
     "/kb": "knowledge.status",
@@ -103,7 +106,8 @@ class JarvisAgent:
     ):
         self.paths = paths or build_project_paths()
         self.tools = ToolRegistry(self.paths)
-        self.llm_router = llm_router or build_llm_router()
+        self._llm_router_injected = llm_router is not None
+        self.llm_router = llm_router or build_llm_router(paths=self.paths)
         self.inner_brain = inner_brain or InnerBrain(self.paths)
         runtime_context = load_runtime_context(self.paths)
         self._recent_document_path: str | None = runtime_context.recent_document_path
@@ -270,6 +274,8 @@ class JarvisAgent:
         if command == "/llm-config-example":
             self.tools.run("record_log", message="查看 LLM 配置模板")
             return describe_llm_config_examples(args[0] if args else "")
+        if command == "/llm-enable":
+            return self._llm_enable_guidance()
         if command == "/inner-brain-preview":
             if not args:
                 return "用法：/inner-brain-preview 文本"
@@ -453,6 +459,7 @@ class JarvisAgent:
                 "/experiences：查看经验记忆",
                 "/status：查看阶段 1 当前状态",
                 "/llm-status：查看 LLM 外脑 provider 状态",
+                "/llm-enable：查看外脑启用状态和本地配置路径",
                 "/inner-brain-status：查看 InnerBrain 本地内脑状态",
                 "/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作",
                 "/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本",
@@ -1241,6 +1248,31 @@ class JarvisAgent:
         lines = ["LLM context preview（不会调用 provider）："]
         for context_line in self._llm_context_lines():
             lines.append(f"- {context_line}")
+        return "\n".join(lines)
+
+    def _llm_enable_guidance(self) -> str:
+        example_path = write_llm_example_config(self.paths)
+        local_path = llm_local_config_path(self.paths)
+        if not self._llm_router_injected:
+            self.llm_router = build_llm_router(paths=self.paths)
+        self.tools.run("record_log", message="查看 LLM 外脑启用入口")
+
+        lines = [
+            "外脑启用入口：",
+            self.llm_router.describe(),
+            f"配置文件：{self._project_path(local_path)}",
+            f"模板文件：{self._project_path(example_path)}",
+        ]
+        if not local_path.exists():
+            lines.append("下一步：复制模板为 config/llm.local.json，填入 provider、model、base_url、api_key 后重启 Jarvis Lite。")
+        else:
+            lines.append("下一步：修改 config/llm.local.json 后重启 Jarvis Lite，让新配置重新加载。")
+        lines.extend(
+            [
+                "状态检查：/llm-status",
+                "连通性测试：/llm-smoke 请用一句话确认连接可用",
+            ]
+        )
         return "\n".join(lines)
 
     def _handle_llm_intent(self, intent: LLMIntent) -> str:

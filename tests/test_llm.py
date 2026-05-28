@@ -1,5 +1,7 @@
+import json
 import os
 import sys
+import tempfile
 import types
 import unittest
 from pathlib import Path
@@ -7,11 +9,13 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from jarvis_lite.config import build_project_paths
 from jarvis_lite.llm import (
     FakeLLMProvider,
     LLMIntent,
     LLMSettings,
     LLMUsage,
+    llm_local_config_path,
     OpenAIResponsesProvider,
     build_llm_router,
     describe_llm_config_examples,
@@ -42,6 +46,83 @@ class LLMTests(unittest.TestCase):
         self.assertEqual(settings.base_url, "https://example.test/v1")
         self.assertEqual(settings.api_key, "test-key")
         self.assertEqual(settings.fake_response, '{"type":"answer","answer":"测试回答"}')
+
+    def test_settings_read_local_config_file(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            config_path = llm_local_config_path(paths)
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "provider": "openai-compatible",
+                        "model": "compatible-model",
+                        "base_url": "https://compatible.example/v1/responses",
+                        "api_key": "local-config-key",
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+            settings = LLMSettings.from_sources(paths, env={})
+
+        self.assertEqual(settings.provider, "openai-compatible")
+        self.assertEqual(settings.model, "compatible-model")
+        self.assertEqual(settings.base_url, "https://compatible.example/v1/responses")
+        self.assertEqual(settings.api_key, "local-config-key")
+        self.assertIn("config/llm.local.json", settings.config_source)
+
+    def test_environment_overrides_local_config_file(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            llm_local_config_path(paths).write_text(
+                json.dumps(
+                    {
+                        "provider": "openai-compatible",
+                        "model": "local-model",
+                        "base_url": "https://local.example/v1",
+                        "api_key": "local-key",
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            settings = LLMSettings.from_sources(
+                paths,
+                env={
+                    "JARVIS_LITE_LLM_PROVIDER": "fake",
+                    "JARVIS_LITE_LLM_MODEL": "env-model",
+                    "JARVIS_LITE_LLM_FAKE_RESPONSE": '{"type":"answer","answer":"env"}',
+                },
+            )
+
+        self.assertEqual(settings.provider, "fake")
+        self.assertEqual(settings.model, "env-model")
+        self.assertEqual(settings.base_url, "https://local.example/v1")
+        self.assertEqual(settings.api_key, "local-key")
+        self.assertEqual(settings.fake_response, '{"type":"answer","answer":"env"}')
+
+    def test_build_router_reads_local_config_file(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            llm_local_config_path(paths).write_text(
+                json.dumps(
+                    {
+                        "provider": "fake",
+                        "fake_response": '{"type":"answer","answer":"来自本地配置"}',
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+
+            router = build_llm_router(paths=paths, env={})
+            intent = router.complete_intent("随便聊聊", context=())
+
+        self.assertIsNotNone(intent)
+        self.assertEqual(intent.answer, "来自本地配置")
 
     def test_fake_provider_returns_command_intent_from_json(self):
         provider = FakeLLMProvider('{"type":"command","command":"/kb-summary","reason":"用户想总结资料"}')

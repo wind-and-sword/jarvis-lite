@@ -26,6 +26,10 @@ class ProjectPaths:
     def log_path(self) -> Path:
         return self.logs_dir / "jarvis.log"
 
+    @property
+    def config_dir(self) -> Path:
+        return self.root / "config"
+
 
 def build_project_paths(root: Path | None = None) -> ProjectPaths:
     """构建并确保第一阶段需要的项目目录存在。"""
@@ -40,7 +44,7 @@ def build_project_paths(root: Path | None = None) -> ProjectPaths:
         word_dir=project_root / "word",
     )
 
-    for directory in (paths.memory_dir, paths.notes_dir, paths.data_dir, paths.logs_dir, paths.word_dir):
+    for directory in (paths.memory_dir, paths.notes_dir, paths.data_dir, paths.logs_dir, paths.word_dir, paths.config_dir):
         directory.mkdir(parents=True, exist_ok=True)
 
     return paths

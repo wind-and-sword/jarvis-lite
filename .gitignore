@@ -6,3 +6,5 @@ __pycache__/
 .codex/
 logs/*.log
 /日志.txt
+/config/llm.local.json
+**/llm.local.json

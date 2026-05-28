@@ -1,0 +1,7 @@
+{
+  "provider": "openai-compatible",
+  "model": "<兼容端点模型名>",
+  "base_url": "<兼容端点 base_url 或完整 /v1/responses URL>",
+  "api_key": "<你的 API key>",
+  "fake_response": ""
+}

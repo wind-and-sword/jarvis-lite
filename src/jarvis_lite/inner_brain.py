@@ -168,6 +168,8 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
         InnerBrainTrainingSample("你叫什么名字", "assistant.identity", {}),
         InnerBrainTrainingSample("早上好", "assistant.greeting", {}),
         InnerBrainTrainingSample("你好", "assistant.greeting", {}),
+        InnerBrainTrainingSample("开启外脑", "llm.enable", {"command": "/llm-enable"}),
+        InnerBrainTrainingSample("连接外脑", "llm.enable", {"command": "/llm-enable"}),
         InnerBrainTrainingSample("把桌面{item}快捷方式删除", "desktop.delete_shortcut", {}),
         InnerBrainTrainingSample("删除桌面{item}快捷方式", "desktop.delete_shortcut", {}),
     )

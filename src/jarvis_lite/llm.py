@@ -4,13 +4,18 @@ import json
 import os
 import shlex
 from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import Any, Iterable, Mapping, Protocol
 from urllib.parse import urlsplit, urlunsplit
+
+from .config import ProjectPaths
 
 
 VALID_LLM_INTENT_TYPES = {"command", "answer", "clarify", "no_action"}
 VALID_LLM_PROVIDERS = {"off", "fake", "openai", "openai-compatible"}
 LLM_CONFIG_TEMPLATE_ALIASES = {"qwen": "openai-compatible", "gemini": "openai-compatible"}
+LLM_LOCAL_CONFIG_RELATIVE_PATH = Path("config") / "llm.local.json"
+LLM_EXAMPLE_CONFIG_RELATIVE_PATH = Path("config") / "llm.example.json"
 LLM_ALLOWED_COMMAND_SPECS = (
     "/kb",
     "/kb-summary",
@@ -55,6 +60,8 @@ class LLMSettings:
     base_url: str = ""
     api_key: str = ""
     fake_response: str = ""
+    config_source: str = ""
+    config_error: str = ""
 
     @property
     def enabled(self) -> bool:
@@ -62,6 +69,8 @@ class LLMSettings:
 
     def configuration_issues(self) -> tuple[str, ...]:
         issues: list[str] = []
+        if self.config_error:
+            issues.append(self.config_error)
         if self.provider not in VALID_LLM_PROVIDERS:
             issues.append(f"未知 provider：{self.provider}")
             return tuple(issues)
@@ -84,12 +93,46 @@ class LLMSettings:
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> "LLMSettings":
         values = env if env is not None else os.environ
+        source = "environment" if any(key in values for key in _llm_env_setting_keys()) else ""
         return cls(
             provider=values.get("JARVIS_LITE_LLM_PROVIDER", "off").strip().lower() or "off",
             model=values.get("JARVIS_LITE_LLM_MODEL", "").strip(),
             base_url=values.get("JARVIS_LITE_LLM_BASE_URL", "").strip(),
             api_key=values.get("JARVIS_LITE_LLM_API_KEY", "").strip(),
             fake_response=values.get("JARVIS_LITE_LLM_FAKE_RESPONSE", "").strip(),
+            config_source=source,
+        )
+
+    @classmethod
+    def from_sources(
+        cls,
+        paths: ProjectPaths | None = None,
+        env: Mapping[str, str] | None = None,
+    ) -> "LLMSettings":
+        """按本地配置文件 + 环境变量覆盖的顺序读取外脑配置。"""
+
+        config_values, config_source, config_error = _read_llm_local_config(paths)
+        env_values = env if env is not None else os.environ
+        values = dict(config_values)
+        env_used = False
+        for env_key, setting_key in _llm_env_setting_keys().items():
+            if env_key not in env_values:
+                continue
+            values[setting_key] = str(env_values.get(env_key, "")).strip()
+            env_used = True
+
+        provider = str(values.get("provider") or "off").strip().lower() or "off"
+        source = config_source
+        if env_used:
+            source = "environment" if not source else f"environment + {source}"
+        return cls(
+            provider=provider,
+            model=str(values.get("model") or "").strip(),
+            base_url=str(values.get("base_url") or "").strip(),
+            api_key=str(values.get("api_key") or "").strip(),
+            fake_response=str(values.get("fake_response") or "").strip(),
+            config_source=source,
+            config_error=config_error,
         )
 
 
@@ -338,18 +381,29 @@ class LLMRouter:
     def describe(self) -> str:
         issues = self.settings.configuration_issues()
         if not self.settings.enabled:
-            return "\n".join(
+            lines = [
+                "LLM 外脑：未启用",
+                f"- Provider：{self.settings.provider}",
+            ]
+            if self.settings.config_source:
+                lines.append(f"- 配置来源：{self.settings.config_source}")
+            lines.extend(
                 [
-                    "LLM 外脑：未启用",
-                    f"- Provider：{self.settings.provider}",
                     f"- API key：{self._api_key_status()}",
                     f"- 网络调用：{self._network_call_status(issues)}",
                 ]
             )
+            if issues:
+                lines.append("- 配置问题：")
+                for issue in issues:
+                    lines.append(f"  - {issue}")
+            return "\n".join(lines)
         lines = [
             "LLM 外脑：已启用",
             f"- Provider：{self.settings.provider}",
         ]
+        if self.settings.config_source:
+            lines.append(f"- 配置来源：{self.settings.config_source}")
         if self.settings.model:
             lines.append(f"- Model：{self.settings.model}")
         if self.settings.base_url:
@@ -382,10 +436,14 @@ class LLMRouter:
         return "否（provider 不支持）"
 
 
-def build_llm_router(settings: LLMSettings | None = None) -> LLMRouter:
+def build_llm_router(
+    settings: LLMSettings | None = None,
+    paths: ProjectPaths | None = None,
+    env: Mapping[str, str] | None = None,
+) -> LLMRouter:
     """根据通用配置构建 LLM Router。"""
 
-    resolved_settings = settings or LLMSettings.from_env()
+    resolved_settings = settings or LLMSettings.from_sources(paths, env)
     if not resolved_settings.enabled:
         return LLMRouter(resolved_settings)
     if resolved_settings.provider == "fake":
@@ -419,6 +477,41 @@ def normalize_responses_base_url(base_url: str) -> str:
         path = path[: -len("/responses")] or "/"
         return urlunsplit((parts.scheme, parts.netloc, path, parts.query, parts.fragment)).rstrip("/")
     return value.rstrip("/")
+
+
+def llm_local_config_path(paths: ProjectPaths) -> Path:
+    """返回真实 LLM 本地配置文件路径。"""
+
+    return paths.config_dir / LLM_LOCAL_CONFIG_RELATIVE_PATH.name
+
+
+def llm_example_config_path(paths: ProjectPaths) -> Path:
+    """返回本地配置模板文件路径。"""
+
+    return paths.config_dir / LLM_EXAMPLE_CONFIG_RELATIVE_PATH.name
+
+
+def write_llm_example_config(paths: ProjectPaths) -> Path:
+    """确保运行态目录里有一份不会包含真实密钥的 LLM 配置模板。"""
+
+    target = llm_example_config_path(paths)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if not target.exists():
+        target.write_text(llm_example_config_text(), encoding="utf-8")
+    return target
+
+
+def llm_example_config_text() -> str:
+    """返回 JSON 模板文本；真实配置应复制到 llm.local.json。"""
+
+    payload = {
+        "provider": "openai-compatible",
+        "model": "<兼容端点模型名>",
+        "base_url": "<兼容端点 base_url 或完整 /v1/responses URL>",
+        "api_key": "<你的 API key>",
+        "fake_response": "",
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
 
 
 def summarize_llm_usage(log_lines: Iterable[str]) -> str:
@@ -573,6 +666,56 @@ def _parse_llm_usage_line(line: str) -> LLMUsage | None:
         output_tokens=output_tokens,
         total_tokens=total_tokens,
     )
+
+
+def _llm_env_setting_keys() -> dict[str, str]:
+    return {
+        "JARVIS_LITE_LLM_PROVIDER": "provider",
+        "JARVIS_LITE_LLM_MODEL": "model",
+        "JARVIS_LITE_LLM_BASE_URL": "base_url",
+        "JARVIS_LITE_LLM_API_KEY": "api_key",
+        "JARVIS_LITE_LLM_FAKE_RESPONSE": "fake_response",
+    }
+
+
+def _read_llm_local_config(paths: ProjectPaths | None) -> tuple[dict[str, str], str, str]:
+    if paths is None:
+        return {}, "", ""
+
+    config_path = llm_local_config_path(paths)
+    if not config_path.exists():
+        return {}, "", ""
+
+    source = _llm_config_source_label(paths, config_path)
+    try:
+        raw_payload = json.loads(config_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return {}, source, f"{source} 不是有效 JSON：{exc.msg}"
+    except OSError as exc:
+        return {}, source, f"{source} 读取失败：{exc}"
+
+    if not isinstance(raw_payload, dict):
+        return {}, source, f"{source} 必须是 JSON 对象"
+
+    values: dict[str, str] = {}
+    for key in ("provider", "model", "base_url", "api_key", "fake_response"):
+        if key not in raw_payload or raw_payload[key] is None:
+            continue
+        value = raw_payload[key]
+        if key == "fake_response" and not isinstance(value, str):
+            values[key] = json.dumps(value, ensure_ascii=False)
+        else:
+            values[key] = str(value).strip()
+    if "provider" in values:
+        values["provider"] = values["provider"].lower() or "off"
+    return values, source, ""
+
+
+def _llm_config_source_label(paths: ProjectPaths, config_path: Path) -> str:
+    try:
+        return config_path.relative_to(paths.root).as_posix()
+    except ValueError:
+        return config_path.as_posix()
 
 
 def _usage_field_int(fields: Mapping[str, str], key: str) -> int:

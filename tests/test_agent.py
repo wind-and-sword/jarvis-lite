@@ -393,13 +393,85 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本", response)
         self.assertIn("/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本", response)
         self.assertIn("/inner-brain-teach 文本 => /命令：把自然语言短句教学为已知命令", response)
+        self.assertIn("/llm-enable：查看外脑启用状态和本地配置路径", response)
+
+    def test_agent_reads_llm_local_config_file_on_startup(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_response": "{\"type\":\"answer\",\"answer\":\"本地配置外脑已接入\"}",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        agent = JarvisAgent(self.paths)
+        response = agent.handle("这句话需要外脑理解")
+
+        self.assertIn("LLM 外脑：本地配置外脑已接入", response)
+
+    def test_llm_enable_command_reports_local_config_path_without_api_key(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "openai-compatible",
+                    "model": "compatible-model",
+                    "base_url": "https://compatible.example/v1/responses",
+                    "api_key": "secret-local-key",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        agent = JarvisAgent(self.paths)
+
+        response = agent.handle("/llm-enable")
+
+        self.assertIn("LLM 外脑：已启用", response)
+        self.assertIn("配置文件：config/llm.local.json", response)
+        self.assertIn("API key：已配置", response)
+        self.assertIn("/llm-smoke", response)
+        self.assertNotIn("secret-local-key", response)
+
+    def test_natural_language_enable_llm_uses_inner_brain_entry(self):
+        response = self.agent.handle("开启外脑")
+
+        self.assertIn("外脑启用入口", response)
+        self.assertIn("配置文件：config/llm.local.json", response)
+        self.assertIn("模板文件：config/llm.example.json", response)
+        self.assertIn("/llm-status", response)
+        self.assertNotIn("已读取长期记忆", response)
+
+    def test_enable_llm_reloads_local_config_during_running_session(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_response": "{\"type\":\"answer\",\"answer\":\"运行中已重新接入外脑\"}",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        enable_response = self.agent.handle("开启外脑")
+        llm_response = self.agent.handle("这句话需要外脑判断")
+
+        self.assertIn("LLM 外脑：已启用", enable_response)
+        self.assertIn("Provider：fake", enable_response)
+        self.assertIn("LLM 外脑：运行中已重新接入外脑", llm_response)
 
     def test_inner_brain_status_command_reports_samples_and_thresholds(self):
         response = self.agent.handle("/inner-brain-status")
 
         self.assertIn("InnerBrain 状态", response)
         self.assertIn("legacy_rule：启用", response)
-        self.assertIn("seed_sample：9 条", response)
+        self.assertIn("seed_sample：11 条", response)
         self.assertIn("高置信阈值：0.78", response)
 
     def test_inner_brain_preview_command_reports_result_without_execution(self):
