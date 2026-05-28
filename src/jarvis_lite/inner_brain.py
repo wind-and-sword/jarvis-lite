@@ -73,6 +73,32 @@ class InnerBrain:
 
         return self._sample_result(prompt, sample, confidence)
 
+    def describe_status(self) -> str:
+        source_counts: dict[str, int] = {}
+        for sample in self.samples:
+            source_counts[sample.source] = source_counts.get(sample.source, 0) + 1
+        training_dir = self._training_dir_label()
+        return "\n".join(
+            [
+                "InnerBrain 状态：",
+                "- legacy_rule：启用",
+                f"- seed_sample：{source_counts.get('seed_sample', 0)} 条",
+                f"- runtime_sample：{source_counts.get('runtime_sample', 0)} 条",
+                f"- 高置信阈值：{HIGH_CONFIDENCE:.2f}",
+                f"- 中置信阈值：{MEDIUM_CONFIDENCE:.2f}",
+                f"- 训练目录：{training_dir}",
+            ]
+        )
+
+    def _training_dir_label(self) -> str:
+        if self.paths is None:
+            return "未绑定项目路径"
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        try:
+            return training_dir.relative_to(self.paths.root).as_posix()
+        except ValueError:
+            return training_dir.as_posix()
+
     def _legacy_result(self, intent: NaturalLanguageIntent) -> InnerBrainResult:
         slots = _slots_from_natural_language_intent(intent)
         return InnerBrainResult(
@@ -134,6 +160,26 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
         InnerBrainTrainingSample("把桌面{item}快捷方式删除", "desktop.delete_shortcut", {}),
         InnerBrainTrainingSample("删除桌面{item}快捷方式", "desktop.delete_shortcut", {}),
     )
+
+
+def describe_inner_brain_result(result: InnerBrainResult) -> str:
+    """格式化内脑识别结果，供预览命令使用，不能触发执行。"""
+
+    lines = [
+        "InnerBrain 预览：",
+        f"- 策略：{result.policy.value}",
+        f"- 意图：{result.intent}",
+        f"- 来源：{result.source}",
+        f"- 置信度：{result.confidence:.2f}",
+    ]
+    if result.missing:
+        lines.append(f"- 缺失：{'、'.join(result.missing)}")
+    slot_lines = _inner_brain_result_slot_lines(result)
+    if slot_lines:
+        lines.extend(slot_lines)
+    lines.append(f"- 原因：{result.reason}")
+    lines.append("说明：这里只预览识别结果，不执行命令。")
+    return "\n".join(lines)
 
 
 def load_training_samples(paths: ProjectPaths | None) -> tuple[InnerBrainTrainingSample, ...]:
@@ -304,6 +350,46 @@ def _normalized_slots(slots: Mapping[str, Any]) -> dict[str, Any]:
         else:
             normalized[key] = value
     return normalized
+
+
+def _inner_brain_result_slot_lines(result: InnerBrainResult) -> list[str]:
+    lines: list[str] = []
+    command = result.slots.get("command")
+    if not command and result.natural_language_intent is not None:
+        command = result.natural_language_intent.command
+    if command:
+        lines.append(f"- 命令：{command}")
+
+    items = result.slots.get("items", ())
+    if not items and result.natural_language_intent is not None:
+        items = result.natural_language_intent.items
+    if isinstance(items, str):
+        items = (items,)
+    if isinstance(items, tuple):
+        item_text = "、".join(str(item) for item in items if str(item).strip())
+        if item_text:
+            lines.append(f"- 对象：{item_text}")
+
+    tags = result.slots.get("tags", ())
+    if not tags and result.natural_language_intent is not None:
+        tags = result.natural_language_intent.tags
+    if isinstance(tags, str):
+        tags = (tags,)
+    if isinstance(tags, tuple):
+        tag_text = "、".join(str(tag) for tag in tags if str(tag).strip())
+        if tag_text:
+            lines.append(f"- 标签：{tag_text}")
+
+    alias = result.slots.get("alias")
+    if alias:
+        lines.append(f"- 别名：{alias}")
+    path = result.slots.get("path")
+    if path:
+        lines.append(f"- 路径：{path}")
+    result_index = result.slots.get("result_index")
+    if result_index:
+        lines.append(f"- 编号：{result_index}")
+    return lines
 
 
 def _slots_from_natural_language_intent(intent: NaturalLanguageIntent) -> dict[str, Any]:

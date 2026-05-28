@@ -7,7 +7,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.inner_brain import InnerBrain, InnerBrainPolicy
+from jarvis_lite.inner_brain import InnerBrain, InnerBrainPolicy, describe_inner_brain_result
 
 
 class InnerBrainTests(unittest.TestCase):
@@ -106,6 +106,45 @@ class InnerBrainTests(unittest.TestCase):
         self.assertEqual(result.policy, InnerBrainPolicy.CLARIFY)
         self.assertEqual(result.missing, ("source",))
         self.assertIsNone(result.natural_language_intent)
+
+    def test_describe_inner_brain_result_formats_non_executing_preview(self):
+        result = InnerBrain(self.paths).understand("麻烦看一下知识库摘要")
+
+        description = describe_inner_brain_result(result)
+
+        self.assertIn("InnerBrain 预览", description)
+        self.assertIn("策略：execute", description)
+        self.assertIn("意图：knowledge.summary", description)
+        self.assertIn("来源：seed_sample", description)
+        self.assertIn("置信度：1.00", description)
+        self.assertIn("命令：/kb-summary", description)
+        self.assertIn("说明：这里只预览识别结果，不执行命令。", description)
+
+    def test_describe_status_reports_sample_counts_and_thresholds(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请打开我的资料库",
+                    "intent": "knowledge.status",
+                    "slots": {"command": "/kb"},
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        description = InnerBrain(self.paths).describe_status()
+
+        self.assertIn("InnerBrain 状态", description)
+        self.assertIn("legacy_rule：启用", description)
+        self.assertIn("seed_sample：9 条", description)
+        self.assertIn("runtime_sample：1 条", description)
+        self.assertIn("高置信阈值：0.78", description)
+        self.assertIn("中置信阈值：0.58", description)
+        self.assertIn("data/inner-brain/training", description)
 
 
 if __name__ == "__main__":

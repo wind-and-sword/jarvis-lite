@@ -26,7 +26,7 @@ from .knowledge import (
     set_document_tags,
     summarize_knowledge_base,
 )
-from .inner_brain import InnerBrain, InnerBrainPolicy, InnerBrainResult
+from .inner_brain import InnerBrain, InnerBrainPolicy, InnerBrainResult, describe_inner_brain_result
 from .llm import (
     LLMIntent,
     LLMRouter,
@@ -131,6 +131,9 @@ class JarvisAgent:
             return self._status()
         if prompt in {"/llm-status", "llm-status"}:
             return self.llm_router.describe()
+        if prompt in {"/inner-brain-status", "inner-brain-status"}:
+            self.tools.run("record_log", message="查看 InnerBrain 本地内脑状态")
+            return self.inner_brain.describe_status()
         if prompt in {"/llm-usage", "llm-usage"}:
             self.tools.run("record_log", message="查看 LLM 用量汇总")
             return summarize_llm_usage(self.paths.log_path.read_text(encoding="utf-8").splitlines())
@@ -231,6 +234,12 @@ class JarvisAgent:
         if command == "/llm-config-example":
             self.tools.run("record_log", message="查看 LLM 配置模板")
             return describe_llm_config_examples(args[0] if args else "")
+        if command == "/inner-brain-preview":
+            if not args:
+                return "用法：/inner-brain-preview 文本"
+            preview_prompt = " ".join(args)
+            self.tools.run("record_log", message=f"预览 InnerBrain 识别结果：{preview_prompt}")
+            return describe_inner_brain_result(self.inner_brain.understand(preview_prompt))
         if command == "/llm-smoke":
             smoke_prompt = " ".join(args)
             self.tools.run("record_log", message="执行 LLM smoke 调用")
@@ -399,6 +408,8 @@ class JarvisAgent:
                 "/experiences：查看经验记忆",
                 "/status：查看阶段 1 当前状态",
                 "/llm-status：查看 LLM 外脑 provider 状态",
+                "/inner-brain-status：查看 InnerBrain 本地内脑状态",
+                "/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作",
                 "/llm-usage：查看 LLM token 用量汇总",
                 "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
                 "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",

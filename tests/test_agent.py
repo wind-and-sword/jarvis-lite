@@ -388,6 +388,40 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/llm-smoke [prompt]：强制调用 LLM 做一次配置验证", response)
         self.assertIn("/llm-context-preview：预览 LLM fallback 上下文，不调用 provider", response)
         self.assertIn("/llm-config-example [provider]：查看 LLM 环境变量配置模板", response)
+        self.assertIn("/inner-brain-status：查看 InnerBrain 本地内脑状态", response)
+        self.assertIn("/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作", response)
+
+    def test_inner_brain_status_command_reports_samples_and_thresholds(self):
+        response = self.agent.handle("/inner-brain-status")
+
+        self.assertIn("InnerBrain 状态", response)
+        self.assertIn("legacy_rule：启用", response)
+        self.assertIn("seed_sample：9 条", response)
+        self.assertIn("高置信阈值：0.78", response)
+
+    def test_inner_brain_preview_command_reports_result_without_execution(self):
+        response = self.agent.handle("/inner-brain-preview 麻烦看一下知识库摘要")
+
+        self.assertIn("InnerBrain 预览", response)
+        self.assertIn("意图：knowledge.summary", response)
+        self.assertIn("命令：/kb-summary", response)
+        self.assertIn("说明：这里只预览识别结果，不执行命令。", response)
+        self.assertNotIn("资料文件：", response)
+
+    def test_inner_brain_preview_does_not_delete_desktop_shortcut(self):
+        fake_home = Path(self.temp_dir.name) / "home"
+        desktop = fake_home / "Desktop"
+        desktop.mkdir(parents=True)
+        shortcut = desktop / "比特浏览器.lnk"
+        shortcut.write_text("shortcut", encoding="utf-8")
+
+        with patch("jarvis_lite.agent.Path.home", return_value=fake_home):
+            response = self.agent.handle("/inner-brain-preview 把桌面比特浏览器快捷方式删除")
+
+        self.assertIn("InnerBrain 预览", response)
+        self.assertIn("意图：desktop.delete_shortcut", response)
+        self.assertIn("对象：比特浏览器", response)
+        self.assertTrue(shortcut.exists())
 
     def test_llm_status_command_reports_router_state(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"状态测试"}')
