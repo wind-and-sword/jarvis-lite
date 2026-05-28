@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-28：InnerBrain 迁移为样本分类器优先，高频自然语言返回 `seed_sample`/`runtime_sample`，旧 parser 仅作为 `legacy_fallback` 迁移期兼容；全量 `unittest` 401 项通过。
 - 2026-05-28：联网搜索第一版落地，新增 SearchRouter、Tavily/fake provider、`config/search.local.json` 本地配置、`/search-status`、`/search-enable`、`/search 关键词` 和自然语言“联网查一下...”入口；全量 `unittest` 399 项通过，敏感信息扫描通过。
 - 2026-05-28：LLM 外脑新增本地 `config/llm.local.json` 配置读取、`/llm-enable` 和“开启外脑”运行中重载入口；全量 `unittest` 384 项通过，敏感信息扫描未命中真实 API key。
 - 2026-05-28：`0.1.3` 可安装测试版完成，包含 InnerBrain v1、preview/status、runtime 样本采纳、人工标注和口语教学入口；全量 `unittest` 377 项通过，安装器生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup.exe`。

@@ -24,16 +24,55 @@ class InnerBrainTests(unittest.TestCase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
-    def test_legacy_rule_returns_structured_execute_result(self):
+    def test_greeting_uses_sample_classifier_before_legacy_fallback(self):
         result = InnerBrain(self.paths).understand("早上好")
 
         self.assertEqual(result.intent, "assistant.greeting")
         self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
-        self.assertEqual(result.source, "legacy_rule")
+        self.assertEqual(result.source, "seed_sample")
         self.assertEqual(result.confidence, 1.0)
         self.assertEqual(result.missing, ())
         self.assertIsNotNone(result.natural_language_intent)
         self.assertEqual(result.natural_language_intent.name, "greeting")
+
+    def test_high_frequency_intents_use_sample_classifier(self):
+        cases = (
+            ("总结知识库", "knowledge.summary", "command", "/kb-summary"),
+            ("查看最近上下文", "context.recent_status", "recent_context_status", ""),
+            ("查看最近文件", "context.recent_files", "recent_files_status", ""),
+            ("有什么功能", "assistant.capabilities", "capabilities", ""),
+            ("查看常用目录", "directory.list", "command", "/dirs"),
+            ("目录列表", "directory.list", "command", "/dirs"),
+            ("检查更新", "update.status", "command", "/update-status"),
+            ("下载最新版", "update.download", "command", "/update-download"),
+            ("查看经验记忆", "experience.status", "command", "/experiences"),
+            ("确认执行", "advice.confirm_execution", "confirm_pending_advice_suggestion_execution", ""),
+            ("执行确认", "advice.confirm_execution", "confirm_pending_advice_suggestion_execution", ""),
+            ("取消执行", "advice.cancel_execution", "cancel_pending_advice_suggestion_execution", ""),
+            ("取消运行", "advice.cancel_execution", "cancel_pending_advice_suggestion_execution", ""),
+        )
+
+        for prompt, expected_intent, expected_natural_name, expected_command in cases:
+            with self.subTest(prompt=prompt):
+                result = InnerBrain(self.paths).understand(prompt)
+
+                self.assertEqual(result.intent, expected_intent)
+                self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+                self.assertEqual(result.source, "seed_sample")
+                self.assertGreaterEqual(result.confidence, 0.78)
+                self.assertIsNotNone(result.natural_language_intent)
+                self.assertEqual(result.natural_language_intent.name, expected_natural_name)
+                if expected_command:
+                    self.assertEqual(result.natural_language_intent.command, expected_command)
+
+    def test_unmigrated_slot_heavy_rule_is_marked_as_legacy_fallback(self):
+        result = InnerBrain(self.paths).understand("给 note.txt 打标签 项目")
+
+        self.assertEqual(result.intent, "command")
+        self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+        self.assertEqual(result.source, "legacy_fallback")
+        self.assertIsNotNone(result.natural_language_intent)
+        self.assertEqual(result.natural_language_intent.command, "/tag note.txt 项目")
 
     def test_seed_variant_maps_to_knowledge_summary_command(self):
         result = InnerBrain(self.paths).understand("麻烦看一下知识库摘要")
@@ -228,8 +267,10 @@ class InnerBrainTests(unittest.TestCase):
         description = InnerBrain(self.paths).describe_status()
 
         self.assertIn("InnerBrain 状态", description)
-        self.assertIn("legacy_rule：启用", description)
-        self.assertIn("seed_sample：14 条", description)
+        self.assertIn("样本分类器：启用（优先）", description)
+        self.assertIn("legacy_fallback：启用（仅迁移期兼容）", description)
+        self.assertNotIn("legacy_rule：启用", description)
+        self.assertRegex(description, r"seed_sample：\d+ 条")
         self.assertIn("runtime_sample：1 条", description)
         self.assertIn("高置信阈值：0.78", description)
         self.assertIn("中置信阈值：0.58", description)

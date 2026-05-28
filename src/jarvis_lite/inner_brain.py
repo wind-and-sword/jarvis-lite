@@ -71,18 +71,21 @@ class InnerBrain:
         if not prompt:
             return _no_match("输入为空")
 
+        sample, confidence = self._best_sample(prompt)
+        if sample is not None and confidence >= HIGH_CONFIDENCE:
+            return self._sample_result(prompt, sample, confidence)
+
         legacy_intent = parse_natural_language_intent(prompt)
         if legacy_intent is not None:
-            return self._legacy_result(legacy_intent)
+            return self._legacy_fallback_result(legacy_intent)
 
-        sample, confidence = self._best_sample(prompt)
-        if sample is None or confidence < MEDIUM_CONFIDENCE:
-            reason = "没有命中 legacy 规则或训练样本"
-            if sample is not None:
-                reason = f"最高相似样本 {sample.intent} 置信度 {confidence:.2f} 低于阈值"
-            return _no_match(reason, confidence)
+        if sample is not None and confidence >= MEDIUM_CONFIDENCE:
+            return self._sample_result(prompt, sample, confidence)
 
-        return self._sample_result(prompt, sample, confidence)
+        reason = "没有命中样本分类器或 legacy fallback"
+        if sample is not None:
+            reason = f"最高相似样本 {sample.intent} 置信度 {confidence:.2f} 低于阈值"
+        return _no_match(reason, confidence)
 
     def describe_status(self) -> str:
         source_counts: dict[str, int] = {}
@@ -92,7 +95,8 @@ class InnerBrain:
         return "\n".join(
             [
                 "InnerBrain 状态：",
-                "- legacy_rule：启用",
+                "- 样本分类器：启用（优先）",
+                "- legacy_fallback：启用（仅迁移期兼容）",
                 f"- seed_sample：{source_counts.get('seed_sample', 0)} 条",
                 f"- runtime_sample：{source_counts.get('runtime_sample', 0)} 条",
                 f"- 高置信阈值：{HIGH_CONFIDENCE:.2f}",
@@ -110,15 +114,15 @@ class InnerBrain:
         except ValueError:
             return training_dir.as_posix()
 
-    def _legacy_result(self, intent: NaturalLanguageIntent) -> InnerBrainResult:
+    def _legacy_fallback_result(self, intent: NaturalLanguageIntent) -> InnerBrainResult:
         slots = _slots_from_natural_language_intent(intent)
         return InnerBrainResult(
             intent=_legacy_intent_label(intent),
             slots=slots,
             confidence=1.0,
             missing=(),
-            source="legacy_rule",
-            reason=f"现有自然语言规则命中：{intent.name}",
+            source="legacy_fallback",
+            reason=f"迁移期兼容 fallback 命中：{intent.name}",
             policy=InnerBrainPolicy.EXECUTE,
             natural_language_intent=intent,
         )
@@ -161,13 +165,50 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
     """内置第一批高频任务样本，运行态 JSONL 后续可继续扩展。"""
 
     return (
+        InnerBrainTrainingSample("早上好", "assistant.greeting", {}),
+        InnerBrainTrainingSample("你好", "assistant.greeting", {}),
+        InnerBrainTrainingSample("您好", "assistant.greeting", {}),
+        InnerBrainTrainingSample("晚上好", "assistant.greeting", {}),
+        InnerBrainTrainingSample("你叫什么名字", "assistant.identity", {}),
+        InnerBrainTrainingSample("你是谁", "assistant.identity", {}),
+        InnerBrainTrainingSample("你能做什么", "assistant.capabilities", {}),
+        InnerBrainTrainingSample("你现在能做什么事", "assistant.capabilities", {}),
+        InnerBrainTrainingSample("你可以做什么", "assistant.capabilities", {}),
+        InnerBrainTrainingSample("有什么功能", "assistant.capabilities", {}),
+        InnerBrainTrainingSample("能帮我做什么", "assistant.capabilities", {}),
+        InnerBrainTrainingSample("查看最近上下文", "context.recent_status", {}),
+        InnerBrainTrainingSample("最近上下文状态", "context.recent_status", {}),
+        InnerBrainTrainingSample("你还记得刚才什么", "context.recent_status", {}),
+        InnerBrainTrainingSample("查看最近文件", "context.recent_files", {}),
+        InnerBrainTrainingSample("最近文件列表", "context.recent_files", {}),
+        InnerBrainTrainingSample("查看系统最近文件", "context.recent_files", {}),
+        InnerBrainTrainingSample("查看批量标签历史", "tag.history", {"command": "/tag-history"}),
+        InnerBrainTrainingSample("批量标签历史", "tag.history", {"command": "/tag-history"}),
+        InnerBrainTrainingSample("总结知识库", "knowledge.summary", {"command": "/kb-summary"}),
+        InnerBrainTrainingSample("总结资料库", "knowledge.summary", {"command": "/kb-summary"}),
         InnerBrainTrainingSample("麻烦看一下知识库摘要", "knowledge.summary", {"command": "/kb-summary"}),
         InnerBrainTrainingSample("知识库摘要", "knowledge.summary", {"command": "/kb-summary"}),
         InnerBrainTrainingSample("查看知识库", "knowledge.status", {"command": "/kb"}),
+        InnerBrainTrainingSample("看看知识库", "knowledge.status", {"command": "/kb"}),
+        InnerBrainTrainingSample("我的知识库", "knowledge.status", {"command": "/kb"}),
         InnerBrainTrainingSample("请看看资料库状态", "knowledge.status", {"command": "/kb"}),
-        InnerBrainTrainingSample("你叫什么名字", "assistant.identity", {}),
-        InnerBrainTrainingSample("早上好", "assistant.greeting", {}),
-        InnerBrainTrainingSample("你好", "assistant.greeting", {}),
+        InnerBrainTrainingSample("查看常用目录", "directory.list", {"command": "/dirs"}),
+        InnerBrainTrainingSample("常用目录", "directory.list", {"command": "/dirs"}),
+        InnerBrainTrainingSample("目录列表", "directory.list", {"command": "/dirs"}),
+        InnerBrainTrainingSample("生成日报", "report.daily", {"command": "/daily-report"}),
+        InnerBrainTrainingSample("写日报", "report.daily", {"command": "/daily-report"}),
+        InnerBrainTrainingSample("检查更新", "update.status", {"command": "/update-status"}),
+        InnerBrainTrainingSample("查看更新", "update.status", {"command": "/update-status"}),
+        InnerBrainTrainingSample("下载更新", "update.download", {"command": "/update-download"}),
+        InnerBrainTrainingSample("下载新版本", "update.download", {"command": "/update-download"}),
+        InnerBrainTrainingSample("下载最新版", "update.download", {"command": "/update-download"}),
+        InnerBrainTrainingSample("查看经验记忆", "experience.status", {"command": "/experiences"}),
+        InnerBrainTrainingSample("看看经验记忆", "experience.status", {"command": "/experiences"}),
+        InnerBrainTrainingSample("确认执行", "advice.confirm_execution", {}),
+        InnerBrainTrainingSample("确认运行", "advice.confirm_execution", {}),
+        InnerBrainTrainingSample("取消执行", "advice.cancel_execution", {}),
+        InnerBrainTrainingSample("取消运行", "advice.cancel_execution", {}),
+        InnerBrainTrainingSample("不执行了", "advice.cancel_execution", {}),
         InnerBrainTrainingSample("开启外脑", "llm.enable", {"command": "/llm-enable"}),
         InnerBrainTrainingSample("连接外脑", "llm.enable", {"command": "/llm-enable"}),
         InnerBrainTrainingSample("联网查一下{query}", "web.search", {}),
@@ -455,6 +496,16 @@ def _sample_to_natural_language_intent(
         return NaturalLanguageIntent("assistant_identity")
     if sample.intent == "assistant.greeting":
         return NaturalLanguageIntent("greeting", alias=prompt.strip())
+    if sample.intent == "assistant.capabilities":
+        return NaturalLanguageIntent("capabilities")
+    if sample.intent == "context.recent_status":
+        return NaturalLanguageIntent("recent_context_status")
+    if sample.intent == "context.recent_files":
+        return NaturalLanguageIntent("recent_files_status")
+    if sample.intent == "advice.confirm_execution":
+        return NaturalLanguageIntent("confirm_pending_advice_suggestion_execution")
+    if sample.intent == "advice.cancel_execution":
+        return NaturalLanguageIntent("cancel_pending_advice_suggestion_execution")
     if sample.intent == "web.search":
         query = _extract_web_search_query(prompt)
         if query:

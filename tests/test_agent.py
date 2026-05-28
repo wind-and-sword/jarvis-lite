@@ -550,8 +550,10 @@ class AgentTests(unittest.TestCase):
         response = self.agent.handle("/inner-brain-status")
 
         self.assertIn("InnerBrain 状态", response)
-        self.assertIn("legacy_rule：启用", response)
-        self.assertIn("seed_sample：14 条", response)
+        self.assertIn("样本分类器：启用（优先）", response)
+        self.assertIn("legacy_fallback：启用（仅迁移期兼容）", response)
+        self.assertNotIn("legacy_rule：启用", response)
+        self.assertRegex(response, r"seed_sample：\d+ 条")
         self.assertIn("高置信阈值：0.78", response)
 
     def test_inner_brain_preview_command_reports_result_without_execution(self):
