@@ -1,11 +1,12 @@
 # 验证记录
 
-> 日期：2026-05-27
+> 日期：2026-05-28
 > 执行者：Codex
 > 说明：根目录只作为验证记录入口，不再长期追加完整命令和输出。
 
 ## 最近摘要
 
+- 2026-05-28：LLM fallback 会携带近期上下文下一步建议，目标测试先失败后通过；全量 `unittest` 332 项通过。
 - 2026-05-27：LLM provider instructions 增加 Jarvis Lite 命令白名单，`/llm-config-example` 补充 `/llm-smoke 请用一句话确认连接可用`，全量 `unittest` 331 项通过。
 - 2026-05-27：新增 `/llm-smoke [prompt]`，可强制调用当前 LLM Router 做配置验证，且不会执行模型返回的命令建议。
 - 2026-05-27：LLM OpenAI-compatible 端点支持直接粘贴完整 `/v1/responses` URL，SDK 调用会自动归一化为 `/v1` base URL；本地 `unittest` 全量 326 项通过。
@@ -21,7 +22,7 @@
 - [verification/2026-05/README.md](verification/2026-05/README.md)：2026-05 验证记录索引。
 - [2026-05-18 周索引](verification/2026-05/week-2026-05-18.md)：2026-05-18 至 2026-05-24。
 - [2026-05-25 周索引](verification/2026-05/week-2026-05-25.md)：2026-05-25 至 2026-05-31。
-- [2026-05-27 验证记录](verification/2026-05/2026-05-27.md)：最近一次验证明细。
+- [2026-05-28 验证记录](verification/2026-05/2026-05-28.md)：最近一次验证明细。
 
 ## 记录规则
 

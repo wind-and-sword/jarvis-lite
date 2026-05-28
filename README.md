@@ -62,7 +62,7 @@ python -m unittest discover -s tests -v
 
 ## LLM 外脑配置
 
-默认不开启 LLM 外脑，本地命令、身份、本地自然语言意图和知识库问答仍然优先处理。只有本地无法处理的普通输入，才会进入 LLM Router；LLM 返回的是结构化意图，实际命令仍由 `JarvisAgent` 执行。
+默认不开启 LLM 外脑，本地命令、身份、本地自然语言意图和知识库问答仍然优先处理。只有本地无法处理的普通输入，才会进入 LLM Router；LLM 返回的是结构化意图，实际命令仍由 `JarvisAgent` 执行。进入 LLM fallback 时，Jarvis Lite 会带上记忆摘要、最近资料/目录和可执行的下一步建议，帮助模型稳定生成本地命令建议。
 
 真实 provider 的 instructions 会列出可返回的 Jarvis Lite 命令白名单，例如 `/kb-summary`、`/ask 问题`、`/read 文件名` 和 `/tag 文件名 标签...`。模型不得返回列表之外的命令；参数不确定时应返回澄清问题。
 

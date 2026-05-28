@@ -883,6 +883,17 @@ class JarvisAgent:
             lines.append(f"最近目录：{self._recent_directory.alias} -> {self._recent_directory.path}")
         if self._recent_advice_suggestions:
             lines.append(f"最近建议数量：{len(self._recent_advice_suggestions)}")
+        recent_experiences = list_recent_experiences(self.paths)
+        if (
+            self._recent_document_path is not None
+            or self._recent_directory is not None
+            or self._recent_files
+            or self._recent_advice_suggestions
+            or recent_experiences
+        ):
+            next_actions = suggest_next_actions_from_context(self._runtime_context(), recent_experiences)
+            if next_actions:
+                lines.append(f"下一步建议：{'；'.join(next_actions[:3])}")
         return tuple(lines)
 
     def _tag_recent_document(self, tags: tuple[str, ...]) -> str:

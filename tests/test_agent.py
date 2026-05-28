@@ -1631,6 +1631,19 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(len(provider.calls), 1)
         self.assertEqual(provider.calls[0][0], "请判断跨星际预算优先级")
 
+    def test_llm_fallback_context_includes_recent_next_actions(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"可以继续处理最近资料"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        agent.handle("/read note.txt")
+        response = agent.handle("请规划一个外部判断任务")
+
+        self.assertIn("LLM 外脑：可以继续处理最近资料", response)
+        self.assertEqual(len(provider.calls), 1)
+        context = provider.calls[0][1]
+        self.assertIn("最近资料：data/note.txt", context)
+        self.assertIn("下一步建议：继续处理最近资料：/read note.txt；/tag note.txt 标签...", context)
+
     def test_llm_clarification_intent_asks_without_execution(self):
         provider = FakeLLMProvider('{"type":"clarify","clarification":"你想整理哪个目录？"}')
         agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
