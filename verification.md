@@ -6,7 +6,7 @@
 
 ## 最近摘要
 
-- 2026-05-28：LLM fallback 会携带近期上下文下一步建议，目标测试先失败后通过；全量 `unittest` 332 项通过。
+- 2026-05-28：LLM fallback 会携带近期上下文下一步建议和最近搜索结果，目标测试先失败后通过；全量 `unittest` 333 项通过。
 - 2026-05-27：LLM provider instructions 增加 Jarvis Lite 命令白名单，`/llm-config-example` 补充 `/llm-smoke 请用一句话确认连接可用`，全量 `unittest` 331 项通过。
 - 2026-05-27：新增 `/llm-smoke [prompt]`，可强制调用当前 LLM Router 做配置验证，且不会执行模型返回的命令建议。
 - 2026-05-27：LLM OpenAI-compatible 端点支持直接粘贴完整 `/v1/responses` URL，SDK 调用会自动归一化为 `/v1` base URL；本地 `unittest` 全量 326 项通过。

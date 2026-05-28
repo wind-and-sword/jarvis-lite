@@ -879,6 +879,10 @@ class JarvisAgent:
         lines = [f"记忆摘要：{summarize_profile(read_profile(self.paths))}"]
         if self._recent_document_path is not None:
             lines.append(f"最近资料：data/{self._recent_document_path}")
+        if self._recent_search_result_paths:
+            lines.append(f"最近搜索结果：{len(self._recent_search_result_paths)} 条")
+            for index, relative_path in enumerate(self._recent_search_result_paths[:3], start=1):
+                lines.append(f"{index}. data/{relative_path}")
         if self._recent_directory is not None:
             lines.append(f"最近目录：{self._recent_directory.alias} -> {self._recent_directory.path}")
         if self._recent_advice_suggestions:
