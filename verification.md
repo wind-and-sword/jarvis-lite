@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-28：v6 收尾与 `0.1.5` 可安装测试包完成，新增最近联网搜索来源编号查看、来源比较、摘要保存、摘要导入知识库、桌面快捷方式宾语前置表达迁移和 InnerBrain 缺槽澄清提示；全量 `unittest` 419 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.1.5.exe`。
 - 2026-05-28：InnerBrain 显式文件名标签槽位迁移为 `document.tag_path`，`给 note.txt 打标签 项目` 和 `把 data/note.txt 标记为 项目 Python` 返回 `seed_sample`；全量 `unittest` 411 项通过。
 - 2026-05-28：发布 `0.1.4` 可安装测试包，包含 SearchRouter + LLMRouter 搜索总结组合流程；版本一致性测试已按 TDD 先失败后通过。
 - 2026-05-28：SearchRouter + LLMRouter 组合入口完成，`/search` 写入最近联网搜索上下文，`/search-summary` 和“联网查一下...并总结”会先搜索再把来源交给 LLM 外脑总结；全量 `unittest` 411 项通过。

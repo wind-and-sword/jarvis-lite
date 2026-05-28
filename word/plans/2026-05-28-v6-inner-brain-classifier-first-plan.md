@@ -111,6 +111,17 @@ InnerBrain 的主路径改为本地样本分类器优先：
 
 教学样本仍使用同一个 intent：`/inner-brain-teach 查版本 => /search-summary Python 版本` 会保存为 `web.search_summarize`，并通过 `command=/search-summary Python 版本` 复现用户指定命令；这避免 seed 样本和 runtime 样本出现 `web.search_summary`/`web.search_summarize` 两套名称。
 
+## 联网搜索后续槽位迁移约定
+
+第七批搜索后续动作将“最近联网搜索结果”的处理迁移为样本分类：
+
+- `打开第一条联网搜索结果`、`查看第二条联网来源` -> `web_search.open_numbered`，抽取 `result_index`，映射为 `/search-open 编号`。当前只返回 URL 和来源信息，不启动浏览器。
+- `比较一下这些联网来源` -> `web_search.compare_recent`，映射为 `/search-compare`，由 Agent 把最近来源交给 LLM 外脑比较。
+- `保存这个搜索摘要` -> `web_search.save_summary`，映射为 `/search-save-summary`，把最近联网搜索来源和 LLM 摘要写入 `word/`。
+- `导入这个搜索摘要到知识库` -> `web_search.import_summary`，映射为 `/search-import-summary`，把同一摘要写入 `data/` 并更新最近资料上下文。
+
+这些动作只处理 Agent 已经保存的最近联网搜索上下文。LLM 仍然只能基于 Agent 提供的来源总结或比较，不自由浏览网页。
+
 ## 当前 Agent 决策规则
 
 - `confidence >= 0.78`：样本分类器高置信，生成 `NaturalLanguageIntent` 后由 `JarvisAgent` 执行。
@@ -118,6 +129,8 @@ InnerBrain 的主路径改为本地样本分类器优先：
 - `< 0.58`：本地内脑低置信，交给本地知识库问答或 LLM fallback。
 
 这个规则避免“查看最近文件”这类泛化样本误吞“查看第一份最近文件”这种更具体的编号槽位动作。
+
+澄清时，Agent 会同时返回缺失槽位、可直接执行的补全命令，以及 `/inner-brain-label` 和 `/inner-brain-teach` 的纠错入口，避免用户只看到“信息不够”。
 
 ## 样本闭环
 
@@ -131,6 +144,6 @@ InnerBrain 的主路径改为本地样本分类器优先：
 
 ## 后续迁移重点
 
-- 继续把更多桌面快捷方式表达等剩余复杂槽位能力逐步迁移出 `legacy_fallback`。
-- 扩展联网搜索后的来源处理，例如按编号打开来源、保存摘要或导入知识库。
-- 优化中置信澄清文案，使用户能通过自然语言补齐缺失槽位。
+- 继续从真实使用日志里补充 seed/runtime 样本，尤其是用户自己的高频口语表达。
+- 进一步实现多轮澄清状态，让用户能直接用自然语言补齐缺失槽位，而不仅是看到补全命令。
+- 评估字符 n-gram、embedding 或小型分类器替换当前轻量相似度实现。

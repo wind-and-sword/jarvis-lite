@@ -356,6 +356,34 @@ class AgentTests(unittest.TestCase):
         self.assertIn("LLM 外脑：外脑处理开放问题", response)
         self.assertEqual(len(provider.calls), 1)
 
+    def test_inner_brain_clarification_includes_completion_and_training_hints(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "帮我导入这份资料",
+                    "intent": "knowledge.import",
+                    "slots": {},
+                    "missing": ["source"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        response = agent.handle("帮我导入这份资料")
+
+        self.assertIn("意图：knowledge.import", response)
+        self.assertIn("需要补充：要导入的文件或目录", response)
+        self.assertIn("可直接补充：/import 源文件或目录路径 [目标文件名]", response)
+        self.assertIn("/inner-brain-label 原话 => knowledge.import source=文件或目录路径", response)
+        self.assertIn("/inner-brain-teach 原话 => /命令", response)
+        self.assertEqual(provider.calls, [])
+
     def test_natural_language_desktop_shortcut_delete_reports_missing_names(self):
         fake_home = Path(self.temp_dir.name) / "home"
         desktop = fake_home / "Desktop"
@@ -370,6 +398,23 @@ class AgentTests(unittest.TestCase):
         self.assertIn("比特云手机.lnk", response)
         self.assertIn("未找到：不存在.lnk", response)
         self.assertFalse(existing_shortcut.exists())
+
+    def test_natural_language_deletes_object_first_desktop_shortcut_expression(self):
+        fake_home = Path(self.temp_dir.name) / "home"
+        desktop = fake_home / "Desktop"
+        desktop.mkdir(parents=True)
+        shortcut = desktop / "比特浏览器.lnk"
+        shortcut.write_text("shortcut", encoding="utf-8")
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        with patch("jarvis_lite.agent.Path.home", return_value=fake_home):
+            response = agent.handle("把桌面快捷方式比特浏览器删掉")
+
+        self.assertIn("已删除桌面快捷方式", response)
+        self.assertIn("比特浏览器.lnk", response)
+        self.assertFalse(shortcut.exists())
+        self.assertEqual(provider.calls, [])
 
     def test_status_command_reports_current_capabilities(self):
         response = self.agent.handle("/status")
@@ -521,6 +566,93 @@ class AgentTests(unittest.TestCase):
         self.assertIn("LLM 外脑未返回总结", response)
         self.assertIn("/llm-status", response)
         self.assertEqual(search_provider.calls, ["Python 版本"])
+
+    def test_natural_language_opens_numbered_recent_web_search_source_without_browser_launch(self):
+        search_provider = FakeSearchProvider(
+            (
+                SearchResult("Python 3.13 release", "https://python.example/3-13", "Python 3.13 发布摘要。", "fake"),
+                SearchResult("Python downloads", "https://python.example/downloads", "Python 下载页。", "fake"),
+            )
+        )
+        agent = JarvisAgent(
+            self.paths,
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), search_provider),
+        )
+
+        agent.handle("/search Python 版本")
+        response = agent.handle("打开第二条联网搜索结果")
+
+        self.assertIn("联网搜索来源 2：Python downloads", response)
+        self.assertIn("URL：https://python.example/downloads", response)
+        self.assertIn("当前不会启动浏览器", response)
+
+    def test_search_compare_recent_sources_uses_llm_context(self):
+        search_provider = FakeSearchProvider(
+            (
+                SearchResult("Python 3.13 release", "https://python.example/3-13", "Python 3.13 发布摘要。", "fake"),
+                SearchResult("Python downloads", "https://python.example/downloads", "Python 下载页。", "fake"),
+            )
+        )
+        llm_provider = FakeLLMProvider('{"type":"answer","answer":"第一个来源偏发布信息，第二个来源偏下载入口。"}')
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake"), llm_provider),
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), search_provider),
+        )
+
+        agent.handle("/search Python 版本")
+        response = agent.handle("比较一下这些联网来源")
+
+        self.assertIn("LLM 外脑比较：第一个来源偏发布信息，第二个来源偏下载入口。", response)
+        self.assertEqual(len(llm_provider.calls), 1)
+        llm_prompt, llm_context = llm_provider.calls[0]
+        self.assertIn("比较", llm_prompt)
+        self.assertIn("最近联网搜索：Python 版本", "\n".join(llm_context))
+
+    def test_search_save_summary_writes_word_summary_from_recent_web_search(self):
+        search_provider = FakeSearchProvider(
+            (
+                SearchResult("Python 3.13 release", "https://python.example/3-13", "Python 3.13 发布摘要。", "fake"),
+            )
+        )
+        llm_provider = FakeLLMProvider('{"type":"answer","answer":"Python 3.13 是当前发布线。"}')
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake"), llm_provider),
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), search_provider),
+        )
+
+        agent.handle("/search Python 版本")
+        response = agent.handle("/search-save-summary python-version")
+
+        summary_path = self.paths.word_dir / "python-version.md"
+        self.assertIn("已保存联网搜索摘要：word/python-version.md", response)
+        self.assertTrue(summary_path.is_file())
+        content = summary_path.read_text(encoding="utf-8")
+        self.assertIn("Python 3.13 是当前发布线。", content)
+        self.assertIn("https://python.example/3-13", content)
+
+    def test_search_import_summary_writes_data_document_and_updates_recent_document(self):
+        search_provider = FakeSearchProvider(
+            (
+                SearchResult("Python 3.13 release", "https://python.example/3-13", "Python 3.13 发布摘要。", "fake"),
+            )
+        )
+        llm_provider = FakeLLMProvider('{"type":"answer","answer":"Python 3.13 是当前发布线。"}')
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake"), llm_provider),
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), search_provider),
+        )
+
+        agent.handle("/search Python 版本")
+        response = agent.handle("导入这个搜索摘要到知识库")
+        read_response = agent.handle("读取这个资料")
+
+        self.assertIn("已导入联网搜索摘要：data/web-search-python-版本.md", response)
+        self.assertTrue((self.paths.data_dir / "web-search-python-版本.md").is_file())
+        self.assertIn("联网搜索摘要：Python 版本", read_response)
+        self.assertIn("Python 3.13 是当前发布线。", read_response)
 
     def test_search_enable_command_reports_local_config_path_without_api_key(self):
         local_config = self.paths.config_dir / "search.local.json"

@@ -94,6 +94,10 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/search-enable": "web.search.enable",
     "/search": "web.search",
     "/search-summary": "web.search_summarize",
+    "/search-open": "web_search.open_numbered",
+    "/search-compare": "web_search.compare_recent",
+    "/search-save-summary": "web_search.save_summary",
+    "/search-import-summary": "web_search.import_summary",
     "/kb": "knowledge.status",
     "/knowledge": "knowledge.status",
     "/kb-summary": "knowledge.summary",
@@ -309,6 +313,16 @@ class JarvisAgent:
             if not args:
                 return "用法：/search-summary 关键词"
             return self._search_web_and_summarize(" ".join(args))
+        if command == "/search-open":
+            if not args:
+                return "用法：/search-open 编号"
+            return self._open_recent_web_search_source(args[0])
+        if command == "/search-compare":
+            return self._compare_recent_web_search_sources()
+        if command == "/search-save-summary":
+            return self._save_recent_web_search_summary(" ".join(args))
+        if command == "/search-import-summary":
+            return self._import_recent_web_search_summary(" ".join(args))
         if command == "/inner-brain-preview":
             if not args:
                 return "用法：/inner-brain-preview 文本"
@@ -507,6 +521,10 @@ class JarvisAgent:
                 "/search-config-example [provider]：查看联网搜索环境变量配置模板",
                 "/search 关键词：联网搜索并返回来源",
                 "/search-summary 关键词：联网搜索并交给 LLM 外脑总结",
+                "/search-open 编号：查看最近联网搜索的编号来源 URL",
+                "/search-compare：让 LLM 外脑比较最近联网搜索来源",
+                "/search-save-summary [文件名]：保存最近联网搜索摘要到 word/",
+                "/search-import-summary [文件名]：导入最近联网搜索摘要到 data/",
                 "/kb：查看个人知识库状态",
                 "/kb-summary：查看知识库资料摘要",
                 "/voice-status：查看阶段 3 语音入口状态",
@@ -884,13 +902,43 @@ class JarvisAgent:
                 f"confidence={result.confidence:.2f}"
             ),
         )
-        return "\n".join(
-            [
-                "我理解到这个请求可能需要本地执行，但信息还不够。",
-                f"- 意图：{result.intent}",
-                f"- 需要补充：{missing}",
-            ]
-        )
+        lines = [
+            "我理解到这个请求可能需要本地执行，但信息还不够。",
+            f"- 意图：{result.intent}",
+            f"- 需要补充：{missing}",
+        ]
+        action_hint = self._inner_brain_clarification_action_hint(result)
+        if action_hint:
+            lines.append(f"- 可直接补充：{action_hint}")
+        label_hint = self._inner_brain_clarification_label_hint(result)
+        if label_hint:
+            lines.append(f"- 如果这次理解错了：{label_hint}")
+        lines.append("- 想固定一种说法：/inner-brain-teach 原话 => /命令")
+        return "\n".join(lines)
+
+    def _inner_brain_clarification_action_hint(self, result: InnerBrainResult) -> str:
+        if result.intent == "knowledge.import" and "source" in result.missing:
+            return "/import 源文件或目录路径 [目标文件名]"
+        if result.intent == "document.read_path" and "path" in result.missing:
+            return "/read 文件名"
+        if result.intent == "desktop.delete_shortcut" and "items" in result.missing:
+            return "/inner-brain-label 原话 => desktop.delete_shortcut items=快捷方式名称"
+        if "tags" in result.missing:
+            return "/tag 文件名 标签..."
+        if "result_index" in result.missing:
+            return "请补充编号，例如“查看第一条结果”"
+        return ""
+
+    def _inner_brain_clarification_label_hint(self, result: InnerBrainResult) -> str:
+        if result.intent == "knowledge.import" and "source" in result.missing:
+            return "/inner-brain-label 原话 => knowledge.import source=文件或目录路径"
+        if result.intent == "document.read_path" and "path" in result.missing:
+            return "/inner-brain-label 原话 => document.read_path path=文件名"
+        if result.intent == "desktop.delete_shortcut" and "items" in result.missing:
+            return "/inner-brain-label 原话 => desktop.delete_shortcut items=快捷方式名称"
+        if result.intent != "unknown":
+            return f"/inner-brain-label 原话 => {result.intent} slot=value"
+        return ""
 
     def _inner_brain_missing_label(self, missing: str) -> str:
         labels = {
@@ -1205,6 +1253,161 @@ class JarvisAgent:
         if include_summary_hint:
             lines.append("说明：搜索结果来自 provider 返回的网页来源；需要总结时可使用 /search-summary 关键词。")
         return "\n".join(lines)
+
+    def _open_recent_web_search_source(self, raw_index: str) -> str:
+        result_index = self._parse_command_index(raw_index)
+        if result_index <= 0:
+            return "用法：/search-open 编号"
+        result, error = self._recent_web_search_result(result_index)
+        if error:
+            return error
+        assert result is not None
+        self.tools.run("record_log", message=f"查看联网搜索来源：index={result_index} url={result.url}")
+        lines = [
+            f"联网搜索来源 {result_index}：{result.title}",
+            f"URL：{result.url}",
+        ]
+        if result.snippet:
+            lines.append(f"摘要：{result.snippet}")
+        if result.source:
+            lines.append(f"来源：{result.source}")
+        lines.append("说明：当前不会启动浏览器；请复制 URL 到浏览器打开。")
+        return "\n".join(lines)
+
+    def _compare_recent_web_search_sources(self) -> str:
+        if self._recent_web_search is None or not self._recent_web_search.results:
+            return self._missing_recent_web_search_message()
+        lines = self._recent_web_search_source_lines("联网搜索来源比较：")
+        intent = self.llm_router.complete_intent(
+            f"请比较最近联网搜索来源：{self._recent_web_search.query}",
+            self._llm_context_lines(),
+        )
+        if intent is None:
+            lines.append("LLM 外脑未返回比较：LLM 外脑未启用或未返回结果")
+            lines.append("可先运行：/llm-status 或 /llm-enable")
+            return "\n".join(lines)
+        self._record_llm_usage(intent)
+        if intent.type == "answer" and intent.answer:
+            lines.append(f"LLM 外脑比较：{intent.answer}")
+        elif intent.type == "clarify" and intent.clarification:
+            lines.append(f"LLM 外脑需要补充信息：{intent.clarification}")
+        elif intent.type == "command" and intent.command:
+            lines.append(f"LLM 外脑返回了命令建议，本次来源比较不会执行命令：{intent.command}")
+        else:
+            reason = intent.reason or "LLM 外脑未返回可用比较"
+            lines.append(f"LLM 外脑未返回比较：{reason}")
+            lines.append("可先运行：/llm-status 或 /llm-enable")
+        return "\n".join(lines)
+
+    def _save_recent_web_search_summary(self, filename: str = "") -> str:
+        if self._recent_web_search is None or not self._recent_web_search.results:
+            return self._missing_recent_web_search_message()
+        markdown = self._recent_web_search_summary_markdown("保存最近联网搜索摘要")
+        target_name = self._web_search_summary_filename(filename)
+        result = self.tools.run("write_summary", filename=target_name, content=markdown)
+        self.tools.run("record_log", message=f"保存联网搜索摘要：{target_name}")
+        if not result.success:
+            return result.message
+        relative_path = result.message.removeprefix("已写入总结：").replace("\\", "/")
+        return f"已保存联网搜索摘要：{relative_path}"
+
+    def _import_recent_web_search_summary(self, filename: str = "") -> str:
+        if self._recent_web_search is None or not self._recent_web_search.results:
+            return self._missing_recent_web_search_message()
+        markdown = self._recent_web_search_summary_markdown("导入最近联网搜索摘要到知识库")
+        target_name = self._web_search_summary_filename(filename)
+        target = self.paths.data_dir / target_name
+        if target.exists():
+            return f"导入失败：目标文件已存在：data/{target_name}"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(markdown, encoding="utf-8")
+        relative_path = target.relative_to(self.paths.data_dir).as_posix()
+        self._remember_recent_document(relative_path)
+        self.tools.run("record_log", message=f"导入联网搜索摘要：data/{relative_path}")
+        return f"已导入联网搜索摘要：data/{relative_path}"
+
+    def _recent_web_search_summary_markdown(self, task: str) -> str:
+        assert self._recent_web_search is not None
+        answer = ""
+        intent = self.llm_router.complete_intent(
+            f"{task}：{self._recent_web_search.query}",
+            self._llm_context_lines(),
+        )
+        if intent is not None:
+            self._record_llm_usage(intent)
+            if intent.type == "answer" and intent.answer:
+                answer = intent.answer.strip()
+            elif intent.type == "clarify" and intent.clarification:
+                answer = f"LLM 外脑需要补充信息：{intent.clarification}"
+            elif intent.type == "command" and intent.command:
+                answer = f"LLM 外脑返回命令建议，本次未执行：{intent.command}"
+            elif intent.reason:
+                answer = f"LLM 外脑未返回摘要：{intent.reason}"
+        if not answer:
+            answer = "LLM 外脑未启用或未返回摘要；以下保留联网搜索来源。"
+
+        lines = [
+            f"# 联网搜索摘要：{self._recent_web_search.query}",
+            "",
+            f"生成时间：{datetime.now().isoformat(timespec='seconds')}",
+            f"查询：{self._recent_web_search.query}",
+            "",
+            "## LLM 外脑摘要",
+            "",
+            answer,
+            "",
+            "## 联网来源",
+            "",
+        ]
+        for index, result in enumerate(self._recent_web_search.results, start=1):
+            lines.append(f"{index}. {result.title}")
+            lines.append(f"   - URL：{result.url}")
+            if result.snippet:
+                lines.append(f"   - 摘要：{result.snippet}")
+            if result.source:
+                lines.append(f"   - 来源：{result.source}")
+        lines.append("")
+        return "\n".join(lines)
+
+    def _recent_web_search_source_lines(self, title: str) -> list[str]:
+        assert self._recent_web_search is not None
+        lines = [title, f"查询：{self._recent_web_search.query}"]
+        for index, result in enumerate(self._recent_web_search.results, start=1):
+            lines.append(f"{index}. {result.title}")
+            lines.append(f"   URL：{result.url}")
+            if result.snippet:
+                lines.append(f"   摘要：{result.snippet}")
+        return lines
+
+    def _recent_web_search_result(self, result_index: int) -> tuple[RuntimeWebSearchResultContext | None, str | None]:
+        if self._recent_web_search is None or not self._recent_web_search.results:
+            return None, self._missing_recent_web_search_message()
+        if result_index < 1 or result_index > len(self._recent_web_search.results):
+            return None, f"最近联网搜索结果只有 {len(self._recent_web_search.results)} 条，不能选择第 {result_index} 条。"
+        return self._recent_web_search.results[result_index - 1], None
+
+    def _missing_recent_web_search_message(self) -> str:
+        return "还没有最近联网搜索。你可以先运行 /search 关键词，或说“联网查一下 Python 版本”。"
+
+    def _web_search_summary_filename(self, filename: str) -> str:
+        raw_name = self._strip_quotes(filename.strip())
+        if not raw_name:
+            assert self._recent_web_search is not None
+            raw_name = f"web-search-{self._recent_web_search.query}"
+        name = Path(raw_name).name.strip()
+        path_name = Path(name)
+        stem = path_name.stem if path_name.suffix else name
+        suffix = path_name.suffix if path_name.suffix else ".md"
+        safe_stem = re.sub(r"[^0-9A-Za-z\u4e00-\u9fff._-]+", "-", stem.strip().lower()).strip("-._")
+        if not safe_stem:
+            safe_stem = "web-search-summary"
+        return f"{safe_stem}{suffix if suffix.lower() == '.md' else '.md'}"
+
+    def _parse_command_index(self, value: str) -> int:
+        normalized = self._strip_quotes(value)
+        if not normalized.isdigit():
+            return 0
+        return int(normalized)
 
     def _experience_advice(self, query: str) -> str:
         normalized_query = self._strip_quotes(query)

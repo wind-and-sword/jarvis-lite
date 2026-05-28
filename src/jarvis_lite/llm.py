@@ -34,6 +34,10 @@ LLM_ALLOWED_COMMAND_SPECS = (
     "/update-download [清单路径或URL]",
     "/search 关键词",
     "/search-summary 关键词",
+    "/search-open 编号",
+    "/search-compare",
+    "/search-save-summary [文件名]",
+    "/search-import-summary [文件名]",
 )
 LLM_ALLOWED_COMMAND_NAMES = tuple(spec.split(maxsplit=1)[0] for spec in LLM_ALLOWED_COMMAND_SPECS)
 LLM_INTENT_SCHEMA: dict[str, Any] = {

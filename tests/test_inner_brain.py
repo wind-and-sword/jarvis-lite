@@ -337,6 +337,29 @@ class InnerBrainTests(unittest.TestCase):
         self.assertEqual(result.natural_language_intent.command, "/search-summary Python 版本")
         self.assertEqual(result.slots["query"], "Python 版本")
 
+    def test_web_search_followup_intents_use_sample_classifier_slots(self):
+        cases = (
+            ("打开第一条联网搜索结果", "web_search.open_numbered", "/search-open 1", {"result_index": 1}),
+            ("查看第二条联网来源", "web_search.open_numbered", "/search-open 2", {"result_index": 2}),
+            ("比较一下这些联网来源", "web_search.compare_recent", "/search-compare", {}),
+            ("保存这个搜索摘要", "web_search.save_summary", "/search-save-summary", {}),
+            ("导入这个搜索摘要到知识库", "web_search.import_summary", "/search-import-summary", {}),
+        )
+
+        for prompt, expected_intent, expected_command, expected_slots in cases:
+            with self.subTest(prompt=prompt):
+                result = InnerBrain(self.paths).understand(prompt)
+
+                self.assertEqual(result.intent, expected_intent)
+                self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+                self.assertEqual(result.source, "seed_sample")
+                self.assertGreaterEqual(result.confidence, 0.78)
+                self.assertIsNotNone(result.natural_language_intent)
+                self.assertEqual(result.natural_language_intent.name, "command")
+                self.assertEqual(result.natural_language_intent.command, expected_command)
+                for slot_name, expected_value in expected_slots.items():
+                    self.assertEqual(result.slots[slot_name], expected_value)
+
     def test_seed_variant_maps_to_knowledge_summary_command(self):
         result = InnerBrain(self.paths).understand("麻烦看一下知识库摘要")
 
@@ -357,6 +380,24 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIsNotNone(result.natural_language_intent)
         self.assertEqual(result.natural_language_intent.name, "delete_desktop_shortcuts")
         self.assertEqual(result.natural_language_intent.items, ("比特浏览器",))
+
+    def test_desktop_shortcut_object_first_variants_use_sample_classifier_slots(self):
+        cases = (
+            ("把桌面快捷方式比特浏览器删掉", ("比特浏览器",)),
+            ("桌面快捷方式比特云手机和比特浏览器删除", ("比特云手机", "比特浏览器")),
+        )
+
+        for prompt, expected_items in cases:
+            with self.subTest(prompt=prompt):
+                result = InnerBrain(self.paths).understand(prompt)
+
+                self.assertEqual(result.intent, "desktop.delete_shortcut")
+                self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+                self.assertEqual(result.source, "seed_sample")
+                self.assertGreaterEqual(result.confidence, 0.78)
+                self.assertIsNotNone(result.natural_language_intent)
+                self.assertEqual(result.natural_language_intent.name, "delete_desktop_shortcuts")
+                self.assertEqual(result.natural_language_intent.items, expected_items)
 
     def test_low_confidence_prompt_falls_back_to_llm_policy(self):
         result = InnerBrain(self.paths).understand("火星基地预算需要外部判断")

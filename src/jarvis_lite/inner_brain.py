@@ -257,8 +257,14 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
         InnerBrainTrainingSample("联网查一下{query}", "web.search", {}),
         InnerBrainTrainingSample("搜索一下{query}", "web.search", {}),
         InnerBrainTrainingSample("帮我看看网上{query}", "web.search", {}),
+        InnerBrainTrainingSample("打开第{index}条联网搜索结果", "web_search.open_numbered", {}),
+        InnerBrainTrainingSample("查看第{index}条联网来源", "web_search.open_numbered", {}),
+        InnerBrainTrainingSample("比较这些联网来源", "web_search.compare_recent", {"command": "/search-compare"}),
+        InnerBrainTrainingSample("保存这个搜索摘要", "web_search.save_summary", {"command": "/search-save-summary"}),
+        InnerBrainTrainingSample("导入这个搜索摘要到知识库", "web_search.import_summary", {"command": "/search-import-summary"}),
         InnerBrainTrainingSample("把桌面{item}快捷方式删除", "desktop.delete_shortcut", {}),
         InnerBrainTrainingSample("删除桌面{item}快捷方式", "desktop.delete_shortcut", {}),
+        InnerBrainTrainingSample("桌面快捷方式{item}删除", "desktop.delete_shortcut", {}),
     )
 
 
@@ -526,6 +532,14 @@ def _similarity_text(text: str, intent: str) -> str:
         return _web_search_summary_signature(normalized)
     if intent == "web.search":
         return _web_search_signature(normalized)
+    if intent == "web_search.open_numbered":
+        return _numbered_web_search_source_signature(normalized)
+    if intent == "web_search.compare_recent":
+        return _web_search_compare_recent_signature(normalized)
+    if intent == "web_search.save_summary":
+        return _web_search_save_summary_signature(normalized)
+    if intent == "web_search.import_summary":
+        return _web_search_import_summary_signature(normalized)
     return normalized
 
 
@@ -587,6 +601,18 @@ def _numbered_search_result_signature(text: str) -> str:
         return text
     verb = "读取" if match.group("verb") == "读取" else "查看"
     return f"{verb}第{{index}}条结果"
+
+
+def _numbered_web_search_source_signature(text: str) -> str:
+    match = re.fullmatch(
+        rf"(?P<verb>查看|看看|读取|打开)第(?:{_NUMBER_SLOT_PATTERN})(?:条|个)?(?:联网搜索结果|联网来源|搜索来源|来源)",
+        text,
+    )
+    if not match:
+        return text
+    if match.group("verb") == "打开":
+        return "打开第{index}条联网搜索结果"
+    return "查看第{index}条联网来源"
 
 
 def _numbered_advice_signature(text: str) -> str:
@@ -744,11 +770,14 @@ def _desktop_shortcut_signature(text: str) -> str:
     patterns = (
         r"(?:请|帮我|麻烦)?(?:把)?桌面(?:上|上的)?(?P<item>.+?)快捷方式(?:删除|删掉|移除)",
         r"(?:请|帮我|麻烦)?(?:删除|删掉|移除)桌面(?:上|上的)?(?P<item>.+?)快捷方式",
+        r"(?:请|帮我|麻烦)?(?:把)?桌面(?:上|上的)?快捷方式(?P<item>.+?)(?:删除|删掉|移除)",
     )
     for pattern in patterns:
         if re.fullmatch(pattern, text):
             if text.startswith(("删除", "删掉", "移除")):
                 return "删除桌面{item}快捷方式"
+            if "桌面快捷方式" in text or "桌面上快捷方式" in text or "桌面上的快捷方式" in text:
+                return "桌面快捷方式{item}删除"
             return "把桌面{item}快捷方式删除"
     return text
 
@@ -780,6 +809,27 @@ def _web_search_summary_signature(text: str) -> str:
         if "搜索一下" in text or "搜一下" in text:
             return "搜索一下{query}并总结"
         return "联网查一下{query}并总结"
+    return text
+
+
+def _web_search_compare_recent_signature(text: str) -> str:
+    if re.fullmatch(r"(?:请|帮我|麻烦)?(?:比较|对比)(?:一下)?(?:这些|这几个|当前|最近)?(?:联网)?(?:搜索)?(?:来源|结果)", text):
+        return "比较这些联网来源"
+    return text
+
+
+def _web_search_save_summary_signature(text: str) -> str:
+    if re.fullmatch(r"(?:请|帮我|麻烦)?(?:保存|写入)(?:这个|当前|最近)?(?:联网)?搜索摘要", text):
+        return "保存这个搜索摘要"
+    return text
+
+
+def _web_search_import_summary_signature(text: str) -> str:
+    if re.fullmatch(
+        r"(?:请|帮我|麻烦)?(?:导入|加入|保存)(?:这个|当前|最近)?(?:联网)?搜索摘要(?:到|进|加入)?(?:知识库|资料库)",
+        text,
+    ):
+        return "导入这个搜索摘要到知识库"
     return text
 
 
@@ -944,6 +994,17 @@ def _sample_to_natural_language_intent(
         if query:
             return NaturalLanguageIntent("command", command=f"/search-summary {query}")
         return None
+    if sample.intent == "web_search.open_numbered":
+        result_index = _slot_result_index(slots)
+        if result_index > 0:
+            return NaturalLanguageIntent("command", command=f"/search-open {result_index}")
+        return None
+    if sample.intent == "web_search.compare_recent":
+        return NaturalLanguageIntent("command", command="/search-compare")
+    if sample.intent == "web_search.save_summary":
+        return NaturalLanguageIntent("command", command="/search-save-summary")
+    if sample.intent == "web_search.import_summary":
+        return NaturalLanguageIntent("command", command="/search-import-summary")
     if sample.intent == "desktop.delete_shortcut":
         items = _extract_desktop_shortcut_items(prompt)
         if not items:
@@ -967,6 +1028,7 @@ def _extract_desktop_shortcut_items(text: str) -> tuple[str, ...]:
     patterns = (
         r"(?:请|帮我|麻烦)?(?:把)?桌面(?:上|上的)?(?P<items>.+?)快捷方式(?:删除|删掉|移除)",
         r"(?:请|帮我|麻烦)?(?:删除|删掉|移除)桌面(?:上|上的)?(?P<items>.+?)快捷方式",
+        r"(?:请|帮我|麻烦)?(?:把)?桌面(?:上|上的)?快捷方式(?P<items>.+?)(?:删除|删掉|移除)",
     )
     for pattern in patterns:
         match = re.fullmatch(pattern, normalized)
@@ -1046,6 +1108,11 @@ def _extract_numbered_result_index(text: str, intent: str) -> int:
         return _extract_number(normalized, r"第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个|份)?(?:最近文件|系统最近文件)")
     if intent in {"search_result.read_numbered", "search_result.tag_numbered"}:
         return _extract_number(normalized, r"第(?P<number>[0-9一二三四五六七八九十]+)(?:条|个)?结果")
+    if intent == "web_search.open_numbered":
+        return _extract_number(
+            normalized,
+            r"第(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个)?(?:联网搜索结果|联网来源|搜索来源|来源)",
+        )
     if intent in {"advice.read_numbered", "advice.execute_numbered"}:
         return _extract_number(normalized, r"第(?P<number>[0-9一二三四五六七八九十]+)(?:条|个)?建议")
     if intent == "tag_history.read_numbered":
