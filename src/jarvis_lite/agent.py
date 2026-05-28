@@ -1266,7 +1266,7 @@ class JarvisAgent:
         if not local_path.exists():
             lines.append("下一步：复制模板为 config/llm.local.json，填入 provider、model、base_url、api_key 后重启 Jarvis Lite。")
         else:
-            lines.append("下一步：修改 config/llm.local.json 后重启 Jarvis Lite，让新配置重新加载。")
+            lines.append("下一步：修改 config/llm.local.json 后再次执行 /llm-enable，即可重新加载当前会话。")
         lines.extend(
             [
                 "状态检查：/llm-status",

@@ -464,6 +464,7 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("LLM 外脑：已启用", enable_response)
         self.assertIn("Provider：fake", enable_response)
+        self.assertIn("再次执行 /llm-enable", enable_response)
         self.assertIn("LLM 外脑：运行中已重新接入外脑", llm_response)
 
     def test_inner_brain_status_command_reports_samples_and_thresholds(self):
