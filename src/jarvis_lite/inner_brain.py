@@ -250,6 +250,8 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
         InnerBrainTrainingSample("不执行了", "advice.cancel_execution", {}),
         InnerBrainTrainingSample("开启外脑", "llm.enable", {"command": "/llm-enable"}),
         InnerBrainTrainingSample("连接外脑", "llm.enable", {"command": "/llm-enable"}),
+        InnerBrainTrainingSample("联网查一下{query}并总结", "web.search_summarize", {}),
+        InnerBrainTrainingSample("搜索一下{query}并总结", "web.search_summarize", {}),
         InnerBrainTrainingSample("联网查一下{query}", "web.search", {}),
         InnerBrainTrainingSample("搜索一下{query}", "web.search", {}),
         InnerBrainTrainingSample("帮我看看网上{query}", "web.search", {}),
@@ -516,6 +518,8 @@ def _similarity_text(text: str, intent: str) -> str:
         return _tag_history_read_numbered_signature(normalized)
     if intent == "desktop.delete_shortcut":
         return _desktop_shortcut_signature(normalized)
+    if intent == "web.search_summarize":
+        return _web_search_summary_signature(normalized)
     if intent == "web.search":
         return _web_search_signature(normalized)
     return normalized
@@ -752,6 +756,20 @@ def _web_search_signature(text: str) -> str:
     return text
 
 
+def _web_search_summary_signature(text: str) -> str:
+    patterns = (
+        r"(?:请|帮我|麻烦)?(?:联网|上网|网上)?(?:查一下|查查)(?P<query>.+?)(?:并|然后)?(?:总结|总结一下)",
+        r"(?:请|帮我|麻烦)?(?:搜索一下|搜一下)(?P<query>.+?)(?:并|然后)?(?:总结|总结一下)",
+    )
+    for pattern in patterns:
+        if not re.fullmatch(pattern, text):
+            continue
+        if "搜索一下" in text or "搜一下" in text:
+            return "搜索一下{query}并总结"
+        return "联网查一下{query}并总结"
+    return text
+
+
 def _features(text: str) -> set[str]:
     if not text:
         return set()
@@ -771,10 +789,13 @@ def _sample_to_natural_language_intent(
     sample: InnerBrainTrainingSample,
     slots: Mapping[str, Any],
 ) -> NaturalLanguageIntent | None:
+    command = slots.get("command")
+    if isinstance(command, str) and command.strip().startswith("/"):
+        return NaturalLanguageIntent("command", command=command.strip())
     if sample.intent == "knowledge.summary":
-        return NaturalLanguageIntent("command", command=str(slots.get("command") or "/kb-summary"))
+        return NaturalLanguageIntent("command", command="/kb-summary")
     if sample.intent == "knowledge.status":
-        return NaturalLanguageIntent("command", command=str(slots.get("command") or "/kb"))
+        return NaturalLanguageIntent("command", command="/kb")
     if sample.intent == "assistant.identity":
         return NaturalLanguageIntent("assistant_identity")
     if sample.intent == "assistant.greeting":
@@ -899,6 +920,11 @@ def _sample_to_natural_language_intent(
         if query:
             return NaturalLanguageIntent("command", command=f"/search {query}")
         return None
+    if sample.intent == "web.search_summarize":
+        query = _extract_web_search_summary_query(prompt)
+        if query:
+            return NaturalLanguageIntent("command", command=f"/search-summary {query}")
+        return None
     if sample.intent == "desktop.delete_shortcut":
         items = _extract_desktop_shortcut_items(prompt)
         if not items:
@@ -914,9 +940,6 @@ def _sample_to_natural_language_intent(
         source = str(slots["source"]).strip()
         if source:
             return NaturalLanguageIntent("command", command=f'/import "{source}"')
-    command = slots.get("command")
-    if isinstance(command, str) and command.strip().startswith("/"):
-        return NaturalLanguageIntent("command", command=command.strip())
     return None
 
 
@@ -939,6 +962,22 @@ def _extract_web_search_query(text: str) -> str:
     patterns = (
         r"(?:请|帮我|麻烦)?(?:联网|上网|网上)?(?:查一下|查查|搜索一下|搜一下)\s*(?P<query>.+)",
         r"(?:请|帮我|麻烦)?(?:帮我)?看看网上\s*(?P<query>.+)",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, normalized)
+        if not match:
+            continue
+        query = match.group("query").strip()
+        if query:
+            return query
+    return ""
+
+
+def _extract_web_search_summary_query(text: str) -> str:
+    normalized = text.strip().strip("。！？!?.")
+    patterns = (
+        r"(?:请|帮我|麻烦)?(?:联网|上网|网上)?(?:查一下|查查)\s*(?P<query>.+?)\s*(?:并|然后)?(?:总结|总结一下)",
+        r"(?:请|帮我|麻烦)?(?:搜索一下|搜一下)\s*(?P<query>.+?)\s*(?:并|然后)?(?:总结|总结一下)",
     )
     for pattern in patterns:
         match = re.fullmatch(pattern, normalized)
@@ -973,6 +1012,8 @@ def _sample_slots(prompt: str, sample: InnerBrainTrainingSample) -> dict[str, An
     slots.update(directory_slots)
     experience_slots = _extract_experience_slots(prompt, sample.intent)
     slots.update(experience_slots)
+    web_search_slots = _extract_web_search_slots(prompt, sample.intent)
+    slots.update(web_search_slots)
     tag_slots = _extract_tag_slots(prompt, sample.intent)
     slots.update(tag_slots)
     return slots
@@ -1176,6 +1217,20 @@ def _extract_experience_advice_query(text: str) -> str:
         if query:
             return query
     return ""
+
+
+def _extract_web_search_slots(text: str, intent: str) -> dict[str, Any]:
+    if intent == "web.search":
+        query = _extract_web_search_query(text)
+        if query:
+            return {"query": query}
+        return {}
+    if intent == "web.search_summarize":
+        query = _extract_web_search_summary_query(text)
+        if query:
+            return {"query": query}
+        return {}
+    return {}
 
 
 def _strip_wrapping_quotes(text: str) -> str:

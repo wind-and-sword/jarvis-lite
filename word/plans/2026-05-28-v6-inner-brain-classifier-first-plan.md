@@ -39,6 +39,7 @@ InnerBrain 的主路径改为本地样本分类器优先：
 - 显式文件读取、显式文件/目录导入知识库。
 - 打开盘符、打开/整理常用目录、打开/整理最近目录。
 - 经验记录、经验搜索、经验建议。
+- 联网搜索并总结组合入口。
 
 这些输入命中后返回 `source=seed_sample` 或 `source=runtime_sample`，不再显示 `legacy_rule`。
 
@@ -99,6 +100,17 @@ InnerBrain 的主路径改为本地样本分类器优先：
 
 这些动作仍由现有经验记忆模块执行；InnerBrain 只负责把用户自然语言变成结构化 intent/slot。
 
+## 联网搜索总结槽位迁移约定
+
+第六批组合动作将“查一下并总结”迁移为样本分类：
+
+- `联网查一下 Python 版本并总结` -> `web.search_summarize`，抽取 `query="Python 版本"`，映射为 `/search-summary Python 版本`。
+- 普通 `联网查一下 Python 版本` 仍然是 `web.search`，只执行搜索并展示来源，不自动调用 LLM。
+
+`/search-summary` 由 `JarvisAgent` 先调用 SearchRouter，把来源、URL 和摘要写入最近联网搜索上下文，再把该上下文交给 LLMRouter 总结。LLM 只基于 Agent 提供的来源表达总结，不自由浏览。
+
+教学样本仍使用同一个 intent：`/inner-brain-teach 查版本 => /search-summary Python 版本` 会保存为 `web.search_summarize`，并通过 `command=/search-summary Python 版本` 复现用户指定命令；这避免 seed 样本和 runtime 样本出现 `web.search_summary`/`web.search_summarize` 两套名称。
+
 ## 当前 Agent 决策规则
 
 - `confidence >= 0.78`：样本分类器高置信，生成 `NaturalLanguageIntent` 后由 `JarvisAgent` 执行。
@@ -120,5 +132,5 @@ InnerBrain 的主路径改为本地样本分类器优先：
 ## 后续迁移重点
 
 - 继续把显式文件名标签、更多桌面快捷方式表达等剩余复杂槽位能力逐步迁移出 `legacy_fallback`。
-- 将搜索结果写入最近上下文，支持“查一下并总结”这类 SearchRouter + LLMRouter 组合流程。
+- 扩展联网搜索后的来源处理，例如按编号打开来源、保存摘要或导入知识库。
 - 优化中置信澄清文案，使用户能通过自然语言补齐缺失槽位。

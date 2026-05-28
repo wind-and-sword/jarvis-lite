@@ -28,6 +28,24 @@ class RuntimeRecentFileContext:
 
 
 @dataclass(frozen=True)
+class RuntimeWebSearchResultContext:
+    """保存联网搜索结果的可序列化运行态信息。"""
+
+    title: str
+    url: str
+    snippet: str = ""
+    source: str = ""
+
+
+@dataclass(frozen=True)
+class RuntimeWebSearchContext:
+    """保存最近一次联网搜索的可序列化上下文。"""
+
+    query: str
+    results: tuple[RuntimeWebSearchResultContext, ...] = ()
+
+
+@dataclass(frozen=True)
 class RuntimeTaggedDocumentsOperationContext:
     """保存最近一次批量标签操作的可序列化运行态信息。"""
 
@@ -46,6 +64,7 @@ class RuntimeContext:
     recent_document_paths: tuple[str, ...] = ()
     recent_directory: RuntimeDirectoryContext | None = None
     recent_search_result_paths: tuple[str, ...] = ()
+    recent_web_search: RuntimeWebSearchContext | None = None
     recent_advice_suggestions: tuple[str, ...] = ()
     recent_files: tuple[RuntimeRecentFileContext, ...] = ()
     recent_tagged_documents_operation: RuntimeTaggedDocumentsOperationContext | None = None
@@ -90,6 +109,7 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         recent_document_paths=_read_recent_document_paths(raw.get("recent_document_paths"), recent_document_path),
         recent_directory=_read_directory_context(raw.get("recent_directory")),
         recent_search_result_paths=_read_str_tuple(raw.get("recent_search_result_paths")),
+        recent_web_search=_read_web_search_context(raw.get("recent_web_search")),
         recent_advice_suggestions=_read_str_tuple(raw.get("recent_advice_suggestions")),
         recent_files=_read_recent_file_contexts(raw.get("recent_files")),
         recent_tagged_documents_operation=recent_tagged_documents_operation,
@@ -120,6 +140,7 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                 "recent_document_paths": list(context.recent_document_paths),
                 "recent_directory": _directory_context_to_json(context.recent_directory),
                 "recent_search_result_paths": list(context.recent_search_result_paths),
+                "recent_web_search": _web_search_context_to_json(context.recent_web_search),
                 "recent_advice_suggestions": list(context.recent_advice_suggestions),
                 "recent_files": [_recent_file_context_to_json(recent_file) for recent_file in context.recent_files],
                 "recent_tagged_documents_operation": _tagged_documents_operation_context_to_json(
@@ -181,6 +202,40 @@ def _read_recent_file_contexts(value: object) -> tuple[RuntimeRecentFileContext,
             continue
         recent_files.append(RuntimeRecentFileContext(alias=alias, path=path))
     return tuple(recent_files)
+
+
+def _read_web_search_context(value: object) -> RuntimeWebSearchContext | None:
+    if not isinstance(value, dict):
+        return None
+    query = _read_optional_str(value.get("query"))
+    if query is None:
+        return None
+    results = _read_web_search_result_contexts(value.get("results"))
+    return RuntimeWebSearchContext(query=query, results=results)
+
+
+def _read_web_search_result_contexts(value: object) -> tuple[RuntimeWebSearchResultContext, ...]:
+    if not isinstance(value, list):
+        return ()
+    results: list[RuntimeWebSearchResultContext] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        title = _read_optional_str(item.get("title"))
+        url = _read_optional_str(item.get("url"))
+        if title is None or url is None:
+            continue
+        results.append(
+            RuntimeWebSearchResultContext(
+                title=title,
+                url=url,
+                snippet=_read_optional_str(item.get("snippet")) or "",
+                source=_read_optional_str(item.get("source")) or "",
+            )
+        )
+        if len(results) >= 5:
+            break
+    return tuple(results)
 
 
 def _read_tagged_documents_operation_context(value: object) -> RuntimeTaggedDocumentsOperationContext | None:
@@ -268,6 +323,24 @@ def _directory_context_to_json(context: RuntimeDirectoryContext | None) -> dict[
 
 def _recent_file_context_to_json(context: RuntimeRecentFileContext) -> dict[str, str]:
     return {"alias": context.alias, "path": context.path}
+
+
+def _web_search_context_to_json(context: RuntimeWebSearchContext | None) -> dict[str, object] | None:
+    if context is None:
+        return None
+    return {
+        "query": context.query,
+        "results": [_web_search_result_context_to_json(result) for result in context.results],
+    }
+
+
+def _web_search_result_context_to_json(context: RuntimeWebSearchResultContext) -> dict[str, str]:
+    return {
+        "title": context.title,
+        "url": context.url,
+        "snippet": context.snippet,
+        "source": context.source,
+    }
 
 
 def _tagged_documents_operation_context_to_json(

@@ -310,6 +310,18 @@ class InnerBrainTests(unittest.TestCase):
                 for slot_name, expected_value in expected_slots.items():
                     self.assertEqual(result.slots[slot_name], expected_value)
 
+    def test_web_search_summary_uses_sample_classifier_slot(self):
+        result = InnerBrain(self.paths).understand("联网查一下 Python 版本并总结")
+
+        self.assertEqual(result.intent, "web.search_summarize")
+        self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+        self.assertEqual(result.source, "seed_sample")
+        self.assertGreaterEqual(result.confidence, 0.78)
+        self.assertIsNotNone(result.natural_language_intent)
+        self.assertEqual(result.natural_language_intent.name, "command")
+        self.assertEqual(result.natural_language_intent.command, "/search-summary Python 版本")
+        self.assertEqual(result.slots["query"], "Python 版本")
+
     def test_seed_variant_maps_to_knowledge_summary_command(self):
         result = InnerBrain(self.paths).understand("麻烦看一下知识库摘要")
 

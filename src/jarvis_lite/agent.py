@@ -47,6 +47,7 @@ from .llm import (
     write_llm_example_config,
 )
 from .search import (
+    SearchResult,
     SearchRouter,
     build_search_router,
     describe_search_config_examples,
@@ -70,6 +71,8 @@ from .runtime_context import (
     RuntimeDirectoryContext,
     RuntimeRecentFileContext,
     RuntimeTaggedDocumentsOperationContext,
+    RuntimeWebSearchContext,
+    RuntimeWebSearchResultContext,
     load_runtime_context,
     save_runtime_context,
 )
@@ -90,6 +93,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/search-status": "web.search.status",
     "/search-enable": "web.search.enable",
     "/search": "web.search",
+    "/search-summary": "web.search_summarize",
     "/kb": "knowledge.status",
     "/knowledge": "knowledge.status",
     "/kb-summary": "knowledge.summary",
@@ -127,6 +131,7 @@ class JarvisAgent:
         self._recent_document_paths: tuple[str, ...] = runtime_context.recent_document_paths
         self._recent_directory: CommonDirectory | None = self._restore_recent_directory(runtime_context.recent_directory)
         self._recent_search_result_paths: tuple[str, ...] = runtime_context.recent_search_result_paths
+        self._recent_web_search: RuntimeWebSearchContext | None = runtime_context.recent_web_search
         self._recent_advice_suggestions: tuple[str, ...] = runtime_context.recent_advice_suggestions
         self._recent_files: tuple[RuntimeRecentFileContext, ...] = runtime_context.recent_files
         self._pending_advice_command: str | None = None
@@ -300,6 +305,10 @@ class JarvisAgent:
             if not args:
                 return "用法：/search 关键词"
             return self._search_web(" ".join(args))
+        if command == "/search-summary":
+            if not args:
+                return "用法：/search-summary 关键词"
+            return self._search_web_and_summarize(" ".join(args))
         if command == "/inner-brain-preview":
             if not args:
                 return "用法：/inner-brain-preview 文本"
@@ -497,6 +506,7 @@ class JarvisAgent:
                 "/search-enable：查看联网搜索启用状态和本地配置路径",
                 "/search-config-example [provider]：查看联网搜索环境变量配置模板",
                 "/search 关键词：联网搜索并返回来源",
+                "/search-summary 关键词：联网搜索并交给 LLM 外脑总结",
                 "/kb：查看个人知识库状态",
                 "/kb-summary：查看知识库资料摘要",
                 "/voice-status：查看阶段 3 语音入口状态",
@@ -916,6 +926,7 @@ class JarvisAgent:
         has_directory = self._recent_directory is not None
         has_recent_files = bool(self._recent_files)
         has_search_results = bool(self._recent_search_result_paths)
+        has_web_search = self._recent_web_search is not None and bool(self._recent_web_search.results)
         has_advice_suggestions = bool(self._recent_advice_suggestions)
         has_pending_advice_command = self._pending_advice_command is not None
         has_pending_tagged_documents_tagging = bool(self._pending_tagged_documents_paths)
@@ -926,6 +937,7 @@ class JarvisAgent:
             and not has_directory
             and not has_recent_files
             and not has_search_results
+            and not has_web_search
             and not has_advice_suggestions
             and not has_pending_advice_command
             and not has_pending_tagged_documents_tagging
@@ -969,6 +981,16 @@ class JarvisAgent:
                 lines.append(f"  {index}. data/{relative_path}")
         else:
             lines.append("- 最近搜索结果：无")
+
+        if has_web_search and self._recent_web_search is not None:
+            lines.append(f"- 最近联网搜索：{self._recent_web_search.query}")
+            for index, result in enumerate(self._recent_web_search.results, start=1):
+                lines.append(f"  {index}. {result.title}")
+                lines.append(f"     URL：{result.url}")
+                if result.snippet:
+                    lines.append(f"     摘要：{result.snippet}")
+        else:
+            lines.append("- 最近联网搜索：无")
 
         if has_advice_suggestions:
             lines.append(f"- 最近建议：{len(self._recent_advice_suggestions)} 条")
@@ -1123,6 +1145,52 @@ class JarvisAgent:
                     "启用入口：/search-enable",
                 ]
             )
+        if response.results:
+            self._remember_recent_web_search(response.query, response.results)
+        return self._format_search_web_response(response, include_summary_hint=True)
+
+    def _search_web_and_summarize(self, query: str) -> str:
+        normalized_query = self._strip_quotes(query)
+        if not normalized_query:
+            return "用法：/search-summary 关键词"
+        response = self.search_router.search(normalized_query)
+        self.tools.run("record_log", message=f"联网搜索并总结：{normalized_query}")
+        if response.error:
+            return "\n".join(
+                [
+                    response.error,
+                    "可先运行：/search-status",
+                    "启用入口：/search-enable",
+                ]
+            )
+        if response.results:
+            self._remember_recent_web_search(response.query, response.results)
+        lines = self._format_search_web_response(response, include_summary_hint=False).splitlines()
+        if not response.results:
+            return "\n".join(lines)
+
+        intent = self.llm_router.complete_intent(
+            f"请基于联网搜索结果总结：{response.query}",
+            self._llm_context_lines(),
+        )
+        if intent is None:
+            lines.append("LLM 外脑未返回总结：LLM 外脑未启用或未返回结果")
+            lines.append("可先运行：/llm-status 或 /llm-enable")
+            return "\n".join(lines)
+        self._record_llm_usage(intent)
+        if intent.type == "answer" and intent.answer:
+            lines.append(f"LLM 外脑总结：{intent.answer}")
+        elif intent.type == "clarify" and intent.clarification:
+            lines.append(f"LLM 外脑需要补充信息：{intent.clarification}")
+        elif intent.type == "command" and intent.command:
+            lines.append(f"LLM 外脑返回了命令建议，本次搜索总结不会执行命令：{intent.command}")
+        else:
+            reason = intent.reason or "LLM 外脑未返回可用总结"
+            lines.append(f"LLM 外脑未返回总结：{reason}")
+            lines.append("可先运行：/llm-status 或 /llm-enable")
+        return "\n".join(lines)
+
+    def _format_search_web_response(self, response, include_summary_hint: bool) -> str:
         lines = [f"联网搜索：{response.query}"]
         if not response.results:
             lines.append("- 没有返回搜索结果。")
@@ -1134,7 +1202,8 @@ class JarvisAgent:
                 lines.append(f"   摘要：{result.snippet}")
             if result.source:
                 lines.append(f"   来源：{result.source}")
-        lines.append("说明：搜索结果来自 provider 返回的网页来源；需要总结时后续可交给 LLM 外脑处理。")
+        if include_summary_hint:
+            lines.append("说明：搜索结果来自 provider 返回的网页来源；需要总结时可使用 /search-summary 关键词。")
         return "\n".join(lines)
 
     def _experience_advice(self, query: str) -> str:
@@ -1399,6 +1468,15 @@ class JarvisAgent:
             lines.append(f"最近搜索结果：{len(self._recent_search_result_paths)} 条")
             for index, relative_path in enumerate(self._recent_search_result_paths[:3], start=1):
                 lines.append(f"{index}. data/{relative_path}")
+        if self._recent_web_search is not None and self._recent_web_search.results:
+            lines.append(f"最近联网搜索：{self._recent_web_search.query}")
+            for index, result in enumerate(self._recent_web_search.results[:3], start=1):
+                result_line = f"{index}. {result.title} | URL：{result.url}"
+                if result.snippet:
+                    result_line += f" | 摘要：{result.snippet}"
+                if result.source:
+                    result_line += f" | 来源：{result.source}"
+                lines.append(result_line)
         if self._recent_directory is not None:
             lines.append(f"最近目录：{self._recent_directory.alias} -> {self._recent_directory.path}")
         if self._recent_advice_suggestions:
@@ -1826,6 +1904,21 @@ class JarvisAgent:
         self._recent_search_result_paths = relative_paths
         self._save_runtime_context()
 
+    def _remember_recent_web_search(self, query: str, results: tuple[SearchResult, ...]) -> None:
+        self._recent_web_search = RuntimeWebSearchContext(
+            query=query,
+            results=tuple(
+                RuntimeWebSearchResultContext(
+                    title=result.title,
+                    url=result.url,
+                    snippet=result.snippet,
+                    source=result.source,
+                )
+                for result in results[:5]
+            ),
+        )
+        self._save_runtime_context()
+
     def _remember_recent_advice_suggestions(self, suggestions: tuple[str, ...]) -> None:
         self._recent_advice_suggestions = suggestions
         self._pending_advice_command = None
@@ -1865,6 +1958,7 @@ class JarvisAgent:
             recent_document_paths=self._recent_document_paths,
             recent_directory=recent_directory,
             recent_search_result_paths=self._recent_search_result_paths,
+            recent_web_search=self._recent_web_search,
             recent_advice_suggestions=self._recent_advice_suggestions,
             recent_files=self._recent_files,
             recent_tagged_documents_operation=self._runtime_tagged_documents_operation(),

@@ -450,6 +450,78 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(search_provider.calls, ["Python 版本"])
         self.assertEqual(llm_provider.calls, [])
 
+    def test_search_command_records_web_results_in_recent_context_and_llm_context(self):
+        search_provider = FakeSearchProvider(
+            (
+                SearchResult("Python 3.13 release", "https://python.example/3-13", "Python 3.13 发布摘要。", "fake"),
+                SearchResult("Python downloads", "https://python.example/downloads", "Python 下载页。", "fake"),
+            )
+        )
+        agent = JarvisAgent(
+            self.paths,
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), search_provider),
+        )
+
+        search_response = agent.handle("/search Python 版本")
+        recent_response = agent.handle("查看最近上下文")
+        llm_context = agent.handle("/llm-context-preview")
+        restarted_agent = JarvisAgent(self.paths)
+        restarted_context = restarted_agent.handle("/llm-context-preview")
+
+        self.assertIn("联网搜索：Python 版本", search_response)
+        self.assertIn("最近联网搜索：Python 版本", recent_response)
+        self.assertIn("Python 3.13 release", recent_response)
+        self.assertIn("https://python.example/3-13", recent_response)
+        self.assertIn("最近联网搜索：Python 版本", llm_context)
+        self.assertIn("Python 3.13 发布摘要。", llm_context)
+        self.assertIn("最近联网搜索：Python 版本", restarted_context)
+        self.assertIn("https://python.example/downloads", restarted_context)
+
+    def test_natural_language_web_search_summary_uses_search_results_as_llm_context(self):
+        search_provider = FakeSearchProvider(
+            (
+                SearchResult("Python 3.13 release", "https://python.example/3-13", "Python 3.13 发布摘要。", "fake"),
+            )
+        )
+        llm_provider = FakeLLMProvider('{"type":"answer","answer":"Python 3.13 是当前发布线。"}')
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake"), llm_provider),
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), search_provider),
+        )
+
+        response = agent.handle("联网查一下 Python 版本并总结")
+
+        self.assertIn("联网搜索：Python 版本", response)
+        self.assertIn("Python 3.13 release", response)
+        self.assertIn("LLM 外脑总结：Python 3.13 是当前发布线。", response)
+        self.assertEqual(search_provider.calls, ["Python 版本"])
+        self.assertEqual(len(llm_provider.calls), 1)
+        llm_prompt, llm_context = llm_provider.calls[0]
+        self.assertIn("总结", llm_prompt)
+        self.assertIn("最近联网搜索：Python 版本", "\n".join(llm_context))
+        self.assertIn("https://python.example/3-13", "\n".join(llm_context))
+
+    def test_search_summary_reports_llm_disabled_without_crashing(self):
+        search_provider = FakeSearchProvider(
+            (
+                SearchResult("Python 3.13 release", "https://python.example/3-13", "Python 3.13 发布摘要。", "fake"),
+            )
+        )
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="off")),
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), search_provider),
+        )
+
+        response = agent.handle("/search-summary Python 版本")
+
+        self.assertIn("联网搜索：Python 版本", response)
+        self.assertIn("Python 3.13 release", response)
+        self.assertIn("LLM 外脑未返回总结", response)
+        self.assertIn("/llm-status", response)
+        self.assertEqual(search_provider.calls, ["Python 版本"])
+
     def test_search_enable_command_reports_local_config_path_without_api_key(self):
         local_config = self.paths.config_dir / "search.local.json"
         local_config.write_text(
@@ -726,6 +798,30 @@ class AgentTests(unittest.TestCase):
         self.assertIn("教学目标不是已知命令", response)
         self.assertIn("/unknown-command", response)
         self.assertFalse(sample_file.exists())
+
+    def test_inner_brain_teach_search_summary_uses_search_summary_intent(self):
+        search_provider = FakeSearchProvider(
+            (
+                SearchResult("Python 3.13 release", "https://python.example/3-13", "Python 3.13 发布摘要。", "fake"),
+            )
+        )
+        llm_provider = FakeLLMProvider('{"type":"answer","answer":"教学后的搜索总结。"}')
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake"), llm_provider),
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), search_provider),
+        )
+
+        teach_response = agent.handle("/inner-brain-teach 查版本 => /search-summary Python 版本")
+        followup = agent.handle("查版本")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertIn("已保存 InnerBrain 教学样本", teach_response)
+        self.assertEqual(saved_sample["intent"], "web.search_summarize")
+        self.assertEqual(saved_sample["slots"], {"command": "/search-summary Python 版本"})
+        self.assertIn("LLM 外脑总结：教学后的搜索总结。", followup)
+        self.assertEqual(search_provider.calls, ["Python 版本"])
 
     def test_llm_status_command_reports_router_state(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"状态测试"}')

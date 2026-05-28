@@ -33,6 +33,7 @@ LLM_ALLOWED_COMMAND_SPECS = (
     "/update-status [清单路径或URL]",
     "/update-download [清单路径或URL]",
     "/search 关键词",
+    "/search-summary 关键词",
 )
 LLM_ALLOWED_COMMAND_NAMES = tuple(spec.split(maxsplit=1)[0] for spec in LLM_ALLOWED_COMMAND_SPECS)
 LLM_INTENT_SCHEMA: dict[str, Any] = {
