@@ -35,6 +35,17 @@ class InnerBrainTrainingSample:
 
 
 @dataclass(frozen=True)
+class InnerBrainTrainingSaveResult:
+    """运行态样本写入结果，供 Agent 返回可审计反馈。"""
+
+    sample: InnerBrainTrainingSample
+    path: Path
+    relative_path: str
+    created: bool
+    duplicate: bool
+
+
+@dataclass(frozen=True)
 class InnerBrainResult:
     """InnerBrain 对一次用户输入的结构化理解结果。"""
 
@@ -197,6 +208,49 @@ def load_training_samples(paths: ProjectPaths | None) -> tuple[InnerBrainTrainin
     return tuple(samples)
 
 
+def save_runtime_training_sample(
+    paths: ProjectPaths,
+    text: str,
+    result: InnerBrainResult,
+) -> InnerBrainTrainingSaveResult:
+    """把一次 InnerBrain 识别结果保存为运行态 JSONL 样本。"""
+
+    prompt = text.strip()
+    if not prompt:
+        raise ValueError("输入为空")
+    if result.intent == "unknown" or result.policy == InnerBrainPolicy.FALLBACK_TO_LLM:
+        raise ValueError(f"当前识别结果为 {result.intent}，不能保存为训练样本")
+
+    sample = InnerBrainTrainingSample(
+        text=prompt,
+        intent=result.intent,
+        slots=_training_slots_from_result(result),
+        missing=result.missing,
+        source="runtime_sample",
+    )
+    sample_file = _runtime_training_sample_file(paths)
+    relative_path = _relative_training_sample_path(paths, sample_file)
+    if _runtime_training_sample_exists(paths, sample):
+        return InnerBrainTrainingSaveResult(
+            sample=sample,
+            path=sample_file,
+            relative_path=relative_path,
+            created=False,
+            duplicate=True,
+        )
+
+    sample_file.parent.mkdir(parents=True, exist_ok=True)
+    with sample_file.open("a", encoding="utf-8", newline="\n") as file:
+        file.write(json.dumps(_training_sample_payload(sample), ensure_ascii=False, sort_keys=True) + "\n")
+    return InnerBrainTrainingSaveResult(
+        sample=sample,
+        path=sample_file,
+        relative_path=relative_path,
+        created=True,
+        duplicate=False,
+    )
+
+
 def _load_training_sample_file(sample_file: Path) -> tuple[InnerBrainTrainingSample, ...]:
     samples: list[InnerBrainTrainingSample] = []
     for line in sample_file.read_text(encoding="utf-8").splitlines():
@@ -210,6 +264,56 @@ def _load_training_sample_file(sample_file: Path) -> tuple[InnerBrainTrainingSam
         if sample is not None:
             samples.append(sample)
     return tuple(samples)
+
+
+def _runtime_training_sample_file(paths: ProjectPaths) -> Path:
+    return paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+
+
+def _relative_training_sample_path(paths: ProjectPaths, sample_file: Path) -> str:
+    try:
+        return sample_file.relative_to(paths.root).as_posix()
+    except ValueError:
+        return sample_file.as_posix()
+
+
+def _runtime_training_sample_exists(paths: ProjectPaths, sample: InnerBrainTrainingSample) -> bool:
+    sample_key = _training_sample_key(sample)
+    return any(_training_sample_key(existing_sample) == sample_key for existing_sample in load_training_samples(paths))
+
+
+def _training_sample_key(sample: InnerBrainTrainingSample) -> str:
+    return json.dumps(_training_sample_payload(sample), ensure_ascii=False, sort_keys=True)
+
+
+def _training_sample_payload(sample: InnerBrainTrainingSample) -> dict[str, Any]:
+    return {
+        "intent": sample.intent,
+        "missing": list(sample.missing),
+        "slots": _json_ready_mapping(sample.slots),
+        "text": sample.text,
+    }
+
+
+def _training_slots_from_result(result: InnerBrainResult) -> dict[str, Any]:
+    slots = dict(result.slots)
+    if result.natural_language_intent is not None:
+        slots.update(_slots_from_natural_language_intent(result.natural_language_intent))
+    return _json_ready_mapping(slots)
+
+
+def _json_ready_mapping(values: Mapping[str, Any]) -> dict[str, Any]:
+    return {key: _json_ready_value(value) for key, value in values.items()}
+
+
+def _json_ready_value(value: Any) -> Any:
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, tuple | list):
+        return [_json_ready_value(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _json_ready_value(item) for key, item in value.items()}
+    return value
 
 
 def _training_sample_from_json(raw_sample: object) -> InnerBrainTrainingSample | None:

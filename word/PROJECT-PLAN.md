@@ -42,7 +42,7 @@ PC Agent 稳定
 - 知识库问答、摘要、标签、按标签读取资料组。
 - 最近资料、最近文件、最近目录、最近搜索结果、最近建议和批量标签历史。
 - InnerBrain 本地内脑第一版：新增结构化 `InnerBrainResult`，包含 `intent`、`slots`、`confidence`、`missing`、`source`、`reason` 和策略；当前先包装既有自然语言规则为 `legacy_rule`，再用 seed 样本和运行态 JSONL 样本做轻量相似度泛化。
-- InnerBrain 可观察入口：`/inner-brain-status` 查看样本数量、阈值和训练目录；`/inner-brain-preview 文本` 只预览识别结果，不执行命令或本地动作。
+- InnerBrain 可观察与样本闭环：`/inner-brain-status` 查看样本数量、阈值和训练目录；`/inner-brain-preview 文本` 只预览识别结果，不执行命令或本地动作；`/inner-brain-adopt 文本` 将正确识别结果保存为运行态 JSONL 样本，重复样本不重复写入。
 - 本地自然语言意图层，可处理常见中文表达，包括问候、助手身份询问、最近上下文、知识库、目录任务和明确点名的桌面 `.lnk` 快捷方式删除；InnerBrain 高置信度命中后仍由 `JarvisAgent` 执行。
 - LLM 外脑 Router 第一版：provider-neutral 配置、fake provider 测试路径、OpenAI Responses API adapter、OpenAI-compatible 端点、完整 `/v1/responses` URL 归一化、provider 与 Agent 双层命令白名单、LLM fallback 近期上下文与最近搜索结果、`/llm-context-preview`、`/llm-smoke` 配置验证、token usage 日志、`/llm-status` API key/网络调用诊断、`/llm-usage` 本地汇总和 `/llm-config-example` 配置模板。
 - 桌面小助手、助手面板、托盘、快捷命令、主题、尺寸、开机启动和更新入口。
@@ -58,8 +58,7 @@ PC Agent 稳定
 
 - 扩展 InnerBrain seed 样本，把用户真实日志和现有命令能力持续沉淀为 `text -> intent -> slots` 数据。
 - 继续评估字符 n-gram、轻量 embedding 相似度或小型分类器，不从零训练通用 LLM。
-- 打磨 InnerBrain 中置信度澄清文案、缺失槽位补全和用户纠错样本沉淀。
-- 后续可在 preview 基础上增加“采纳为训练样本”的人工确认闭环。
+- 打磨 InnerBrain 中置信度澄清文案、缺失槽位补全和更细的用户纠错样本沉淀。
 - 扩展 Gemini 和 Qwen provider adapter。
 - 继续打磨真实 provider 的兼容端点体验和用量观察能力。
 - 继续打磨 LLM 结构化意图提示词、命令参数澄清、provider 错误可读化和失败兜底。

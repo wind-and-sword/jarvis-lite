@@ -390,6 +390,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/llm-config-example [provider]：查看 LLM 环境变量配置模板", response)
         self.assertIn("/inner-brain-status：查看 InnerBrain 本地内脑状态", response)
         self.assertIn("/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作", response)
+        self.assertIn("/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本", response)
 
     def test_inner_brain_status_command_reports_samples_and_thresholds(self):
         response = self.agent.handle("/inner-brain-status")
@@ -421,6 +422,55 @@ class AgentTests(unittest.TestCase):
         self.assertIn("InnerBrain 预览", response)
         self.assertIn("意图：desktop.delete_shortcut", response)
         self.assertIn("对象：比特浏览器", response)
+        self.assertTrue(shortcut.exists())
+
+    def test_inner_brain_adopt_command_saves_runtime_sample_and_refreshes_status(self):
+        response = self.agent.handle("/inner-brain-adopt 帮我看看资料库状态")
+        status = self.agent.handle("/inner-brain-status")
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+
+        self.assertIn("已保存 InnerBrain runtime 样本", response)
+        self.assertIn("意图：knowledge.status", response)
+        self.assertIn("样本文件：data/inner-brain/training/runtime.jsonl", response)
+        self.assertIn("runtime_sample：1 条", status)
+        self.assertEqual(saved_sample["text"], "帮我看看资料库状态")
+        self.assertEqual(saved_sample["intent"], "knowledge.status")
+        self.assertEqual(saved_sample["slots"], {"command": "/kb"})
+
+    def test_inner_brain_adopt_command_skips_duplicate_sample(self):
+        self.agent.handle("/inner-brain-adopt 帮我看看资料库状态")
+
+        response = self.agent.handle("/inner-brain-adopt 帮我看看资料库状态")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        self.assertIn("样本已存在", response)
+        self.assertEqual(len(sample_file.read_text(encoding="utf-8").splitlines()), 1)
+
+    def test_inner_brain_adopt_command_rejects_unknown_result(self):
+        response = self.agent.handle("/inner-brain-adopt 火星基地预算需要外部判断")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        self.assertIn("无法保存 InnerBrain 样本", response)
+        self.assertIn("unknown", response)
+        self.assertFalse(sample_file.exists())
+
+    def test_inner_brain_adopt_does_not_delete_desktop_shortcut(self):
+        fake_home = Path(self.temp_dir.name) / "home"
+        desktop = fake_home / "Desktop"
+        desktop.mkdir(parents=True)
+        shortcut = desktop / "比特浏览器.lnk"
+        shortcut.write_text("shortcut", encoding="utf-8")
+
+        with patch("jarvis_lite.agent.Path.home", return_value=fake_home):
+            response = self.agent.handle("/inner-brain-adopt 把桌面比特浏览器快捷方式删除")
+
+        saved_sample = json.loads(
+            (self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").read_text(encoding="utf-8").strip()
+        )
+        self.assertIn("已保存 InnerBrain runtime 样本", response)
+        self.assertIn("意图：desktop.delete_shortcut", response)
+        self.assertEqual(saved_sample["slots"], {"items": ["比特浏览器"]})
         self.assertTrue(shortcut.exists())
 
     def test_llm_status_command_reports_router_state(self):

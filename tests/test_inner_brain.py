@@ -7,7 +7,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.inner_brain import InnerBrain, InnerBrainPolicy, describe_inner_brain_result
+from jarvis_lite.inner_brain import (
+    InnerBrain,
+    InnerBrainPolicy,
+    describe_inner_brain_result,
+    save_runtime_training_sample,
+)
 
 
 class InnerBrainTests(unittest.TestCase):
@@ -82,6 +87,50 @@ class InnerBrainTests(unittest.TestCase):
         self.assertEqual(result.source, "runtime_sample")
         self.assertIsNotNone(result.natural_language_intent)
         self.assertEqual(result.natural_language_intent.command, "/kb")
+
+    def test_save_runtime_training_sample_writes_reloadable_jsonl(self):
+        prompt = "帮我看看资料库状态"
+        result = InnerBrain(self.paths).understand(prompt)
+
+        save_result = save_runtime_training_sample(self.paths, prompt, result)
+        reloaded_result = InnerBrain(self.paths).understand(prompt)
+
+        self.assertTrue(save_result.created)
+        self.assertFalse(save_result.duplicate)
+        self.assertEqual(save_result.relative_path, "data/inner-brain/training/runtime.jsonl")
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertEqual(saved_sample["text"], prompt)
+        self.assertEqual(saved_sample["intent"], "knowledge.status")
+        self.assertEqual(saved_sample["slots"], {"command": "/kb"})
+        self.assertEqual(saved_sample["missing"], [])
+        self.assertEqual(reloaded_result.intent, "knowledge.status")
+        self.assertEqual(reloaded_result.source, "runtime_sample")
+        self.assertEqual(reloaded_result.policy, InnerBrainPolicy.EXECUTE)
+
+    def test_save_runtime_training_sample_skips_duplicate(self):
+        prompt = "帮我看看资料库状态"
+        result = InnerBrain(self.paths).understand(prompt)
+
+        first_result = save_runtime_training_sample(self.paths, prompt, result)
+        second_result = save_runtime_training_sample(self.paths, prompt, result)
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        lines = sample_file.read_text(encoding="utf-8").splitlines()
+        self.assertTrue(first_result.created)
+        self.assertFalse(second_result.created)
+        self.assertTrue(second_result.duplicate)
+        self.assertEqual(len(lines), 1)
+
+    def test_save_runtime_training_sample_rejects_unknown_result(self):
+        prompt = "火星基地预算需要外部判断"
+        result = InnerBrain(self.paths).understand(prompt)
+
+        with self.assertRaises(ValueError):
+            save_runtime_training_sample(self.paths, prompt, result)
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        self.assertFalse(sample_file.exists())
 
     def test_missing_required_slot_returns_clarify_policy(self):
         training_dir = self.paths.data_dir / "inner-brain" / "training"

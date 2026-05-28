@@ -26,7 +26,14 @@ from .knowledge import (
     set_document_tags,
     summarize_knowledge_base,
 )
-from .inner_brain import InnerBrain, InnerBrainPolicy, InnerBrainResult, describe_inner_brain_result
+from .inner_brain import (
+    InnerBrain,
+    InnerBrainPolicy,
+    InnerBrainResult,
+    InnerBrainTrainingSaveResult,
+    describe_inner_brain_result,
+    save_runtime_training_sample,
+)
 from .llm import (
     LLMIntent,
     LLMRouter,
@@ -240,6 +247,11 @@ class JarvisAgent:
             preview_prompt = " ".join(args)
             self.tools.run("record_log", message=f"预览 InnerBrain 识别结果：{preview_prompt}")
             return describe_inner_brain_result(self.inner_brain.understand(preview_prompt))
+        if command == "/inner-brain-adopt":
+            if not args:
+                return "用法：/inner-brain-adopt 文本"
+            sample_prompt = " ".join(args)
+            return self._adopt_inner_brain_sample(sample_prompt)
         if command == "/llm-smoke":
             smoke_prompt = " ".join(args)
             self.tools.run("record_log", message="执行 LLM smoke 调用")
@@ -410,6 +422,7 @@ class JarvisAgent:
                 "/llm-status：查看 LLM 外脑 provider 状态",
                 "/inner-brain-status：查看 InnerBrain 本地内脑状态",
                 "/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作",
+                "/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本",
                 "/llm-usage：查看 LLM token 用量汇总",
                 "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
                 "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",
@@ -535,6 +548,64 @@ class JarvisAgent:
         if intent.name == "cancel_pending_advice_suggestion_execution":
             return self._cancel_pending_advice_suggestion_execution()
         return "我还不能理解这个自然语言请求。你可以换一种说法，或输入 /help 查看当前能力。"
+
+    def _adopt_inner_brain_sample(self, sample_prompt: str) -> str:
+        result = self.inner_brain.understand(sample_prompt)
+        try:
+            save_result = save_runtime_training_sample(self.paths, sample_prompt, result)
+        except ValueError as exc:
+            self.tools.run("record_log", message=f"InnerBrain 样本保存失败：{sample_prompt} -> {exc}")
+            return "\n".join(
+                [
+                    f"无法保存 InnerBrain 样本：{exc}",
+                    f"- 意图：{result.intent}",
+                    f"- 策略：{result.policy.value}",
+                    f"- 原因：{result.reason}",
+                ]
+            )
+
+        self.inner_brain = InnerBrain(self.paths)
+        self.tools.run(
+            "record_log",
+            message=(
+                "采纳 InnerBrain runtime 样本："
+                f"intent={save_result.sample.intent} "
+                f"created={save_result.created} "
+                f"text={save_result.sample.text}"
+            ),
+        )
+        return self._describe_inner_brain_sample_save(save_result, result)
+
+    def _describe_inner_brain_sample_save(
+        self,
+        save_result: InnerBrainTrainingSaveResult,
+        result: InnerBrainResult,
+    ) -> str:
+        title = "已保存 InnerBrain runtime 样本。" if save_result.created else "InnerBrain runtime 样本已存在，未重复写入。"
+        lines = [
+            title,
+            f"样本文件：{save_result.relative_path}",
+            f"意图：{save_result.sample.intent}",
+            f"策略：{result.policy.value}",
+        ]
+        if save_result.duplicate:
+            lines.append("说明：样本已存在，未重复写入。")
+        slot_lines = self._inner_brain_sample_slot_lines(save_result.sample.slots)
+        if slot_lines:
+            lines.extend(slot_lines)
+        lines.append("说明：这里只保存识别样本，不执行命令。")
+        return "\n".join(lines)
+
+    def _inner_brain_sample_slot_lines(self, slots: dict[str, object]) -> list[str]:
+        lines: list[str] = []
+        for key, value in slots.items():
+            if isinstance(value, list | tuple):
+                value_text = "、".join(str(item) for item in value if str(item).strip())
+            else:
+                value_text = str(value).strip()
+            if value_text:
+                lines.append(f"槽位 {key}：{value_text}")
+        return lines
 
     def _inner_brain_clarification(self, result: InnerBrainResult) -> str:
         missing = "、".join(self._inner_brain_missing_label(item) for item in result.missing) or "更多信息"
