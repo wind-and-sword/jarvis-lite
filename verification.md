@@ -6,6 +6,8 @@
 
 ## 最近摘要
 
+- 2026-05-28：发布 `0.1.6` 可安装测试包，包含 v6 高频 legacy 别名迁移；版本一致性测试按 TDD 先失败后通过，全量 `unittest` 420 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.1.6.exe`。
+- 2026-05-28：v6 高频 legacy 别名迁移完成，问候、身份/能力、上下文、知识库、最近文件、日报、更新、经验和礼貌前缀编号最近文件导入等 30 个代表表达返回 `seed_sample`；代表句复扫 `legacy=0 unknown=0`。
 - 2026-05-28：v6 收尾与 `0.1.5` 可安装测试包完成，新增最近联网搜索来源编号查看、来源比较、摘要保存、摘要导入知识库、桌面快捷方式宾语前置表达迁移和 InnerBrain 缺槽澄清提示；全量 `unittest` 419 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.1.5.exe`。
 - 2026-05-28：InnerBrain 显式文件名标签槽位迁移为 `document.tag_path`，`给 note.txt 打标签 项目` 和 `把 data/note.txt 标记为 项目 Python` 返回 `seed_sample`；全量 `unittest` 411 项通过。
 - 2026-05-28：发布 `0.1.4` 可安装测试包，包含 SearchRouter + LLMRouter 搜索总结组合流程；版本一致性测试已按 TDD 先失败后通过。

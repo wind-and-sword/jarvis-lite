@@ -65,6 +65,52 @@ class InnerBrainTests(unittest.TestCase):
                 if expected_command:
                     self.assertEqual(result.natural_language_intent.command, expected_command)
 
+    def test_legacy_high_frequency_aliases_use_seed_samples(self):
+        cases = (
+            ("早", "assistant.greeting", "greeting", ""),
+            ("早安", "assistant.greeting", "greeting", ""),
+            ("上午好", "assistant.greeting", "greeting", ""),
+            ("下午好", "assistant.greeting", "greeting", ""),
+            ("中午好", "assistant.greeting", "greeting", ""),
+            ("哈喽", "assistant.greeting", "greeting", ""),
+            ("hello", "assistant.greeting", "greeting", ""),
+            ("hi", "assistant.greeting", "greeting", ""),
+            ("你叫啥", "assistant.identity", "assistant_identity", ""),
+            ("你的名字是什么", "assistant.identity", "assistant_identity", ""),
+            ("你的名称是什么", "assistant.identity", "assistant_identity", ""),
+            ("怎么称呼你", "assistant.identity", "assistant_identity", ""),
+            ("会做什么", "assistant.capabilities", "capabilities", ""),
+            ("能干什么", "assistant.capabilities", "capabilities", ""),
+            ("查看上下文", "context.recent_status", "recent_context_status", ""),
+            ("看看上下文", "context.recent_status", "recent_context_status", ""),
+            ("你还记得上次什么", "context.recent_status", "recent_context_status", ""),
+            ("资料库摘要", "knowledge.summary", "command", "/kb-summary"),
+            ("知识库状态", "knowledge.status", "command", "/kb"),
+            ("最近文件", "context.recent_files", "recent_files_status", ""),
+            ("创建日报", "report.daily", "command", "/daily-report"),
+            ("今天日报", "report.daily", "command", "/daily-report"),
+            ("生成今天日报", "report.daily", "command", "/daily-report"),
+            ("帮我生成日报", "report.daily", "command", "/daily-report"),
+            ("有没有更新", "update.status", "command", "/update-status"),
+            ("看看更新", "update.status", "command", "/update-status"),
+            ("下载更新安装包", "update.download", "command", "/update-download"),
+            ("查看经验", "experience.status", "command", "/experiences"),
+            ("看看经验", "experience.status", "command", "/experiences"),
+        )
+
+        for prompt, expected_intent, expected_natural_name, expected_command in cases:
+            with self.subTest(prompt=prompt):
+                result = InnerBrain(self.paths).understand(prompt)
+
+                self.assertEqual(result.intent, expected_intent)
+                self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+                self.assertEqual(result.source, "seed_sample")
+                self.assertGreaterEqual(result.confidence, 0.78)
+                self.assertIsNotNone(result.natural_language_intent)
+                self.assertEqual(result.natural_language_intent.name, expected_natural_name)
+                if expected_command:
+                    self.assertEqual(result.natural_language_intent.command, expected_command)
+
     def test_explicit_file_tag_intents_use_sample_classifier_slots(self):
         cases = (
             ("给 note.txt 打标签 项目", {"path": "note.txt", "tags": ("项目",)}, '/tag "note.txt" 项目'),
@@ -96,6 +142,7 @@ class InnerBrainTests(unittest.TestCase):
             ("查看第一份最近文件", "recent_file.read_numbered", "read_numbered_recent_file", 1),
             ("导入第一份最近文件到知识库", "recent_file.import_numbered", "import_numbered_recent_file", 1),
             ("把第2份最近文件导入知识库", "recent_file.import_numbered", "import_numbered_recent_file", 2),
+            ("请帮我导入第二份最近文件到资料库", "recent_file.import_numbered", "import_numbered_recent_file", 2),
             ("查看第二条结果", "search_result.read_numbered", "read_numbered_search_result", 2),
             ("查看第一条建议", "advice.read_numbered", "read_numbered_advice_suggestion", 1),
             ("执行第二条建议", "advice.execute_numbered", "prepare_numbered_advice_suggestion_execution", 2),
