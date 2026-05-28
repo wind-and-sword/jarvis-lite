@@ -203,6 +203,8 @@ def seed_training_samples() -> tuple[InnerBrainTrainingSample, ...]:
         InnerBrainTrainingSample("把{source}导入知识库", "knowledge.import", {}),
         InnerBrainTrainingSample("给这个资料打标签{tags}", "document.tag_recent", {}),
         InnerBrainTrainingSample("给这个结果打标签{tags}", "document.tag_recent", {}),
+        InnerBrainTrainingSample("给{path}打标签{tags}", "document.tag_path", {}),
+        InnerBrainTrainingSample("把{path}标记为{tags}", "document.tag_path", {}),
         InnerBrainTrainingSample("给第{index}份资料打标签{tags}", "document.tag_numbered_recent", {}),
         InnerBrainTrainingSample("给第{index}条结果打标签{tags}", "search_result.tag_numbered", {}),
         InnerBrainTrainingSample("给{tag}标签资料都打标签{tags}", "tag_group.preview_tagging", {}),
@@ -504,6 +506,8 @@ def _similarity_text(text: str, intent: str) -> str:
         return _experience_search_signature(normalized)
     if intent == "experience.advice":
         return _experience_advice_signature(normalized)
+    if intent == "document.tag_path":
+        return _tag_path_signature(normalized)
     if intent == "document.tag_recent":
         return _tag_recent_document_signature(normalized)
     if intent == "document.tag_numbered_recent":
@@ -687,6 +691,15 @@ def _tag_recent_document_signature(text: str) -> str:
     if match.group("kind") == "结果":
         return "给这个结果打标签{tags}"
     return "给这个资料打标签{tags}"
+
+
+def _tag_path_signature(text: str) -> str:
+    path_pattern = r"(?:\{path\}|.+(?:md|txt))"
+    if re.fullmatch(rf"(?:给){path_pattern}(?:打标签|标记为).+", text):
+        return "给{path}打标签{tags}"
+    if re.fullmatch(rf"(?:把){path_pattern}(?:打标签|标记为).+", text):
+        return "把{path}标记为{tags}"
+    return text
 
 
 def _tag_numbered_recent_document_signature(text: str) -> str:
@@ -877,6 +890,12 @@ def _sample_to_natural_language_intent(
         query = _slot_text(slots, "query")
         if query:
             return NaturalLanguageIntent("command", command=f"/experience-advice {query}")
+        return None
+    if sample.intent == "document.tag_path":
+        path = _slot_path(slots)
+        tags = _slot_tags(slots)
+        if path and tags:
+            return NaturalLanguageIntent("command", command=f'/tag "{path}" {" ".join(tags)}')
         return None
     if sample.intent == "document.tag_recent":
         tags = _slot_tags(slots)
@@ -1242,6 +1261,19 @@ def _strip_wrapping_quotes(text: str) -> str:
 
 def _extract_tag_slots(text: str, intent: str) -> dict[str, Any]:
     normalized = text.strip().strip("。！？!?.")
+    if intent == "document.tag_path":
+        match = re.fullmatch(
+            r"(?:给|把)\s*(?P<path>.+?\.(?:md|txt))\s*(?:打标签|标记为)\s*(?P<tags>.+)",
+            normalized,
+            flags=re.IGNORECASE,
+        )
+        if not match:
+            return {}
+        path = _normalize_read_document_path(match.group("path"))
+        tags = _split_tag_text(match.group("tags"))
+        if path and tags:
+            return {"path": path, "tags": tags}
+        return {}
     if intent == "document.tag_recent":
         match = re.fullmatch(
             r"(?:给|把)\s*(?:这个|这份|刚才的|最近的|当前)(?:资料|文档|文件|结果)\s*(?:打标签|标记为)\s*(?P<tags>.+)",

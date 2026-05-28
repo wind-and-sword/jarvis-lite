@@ -65,14 +65,29 @@ class InnerBrainTests(unittest.TestCase):
                 if expected_command:
                     self.assertEqual(result.natural_language_intent.command, expected_command)
 
-    def test_unmigrated_slot_heavy_rule_is_marked_as_legacy_fallback(self):
-        result = InnerBrain(self.paths).understand("给 note.txt 打标签 项目")
+    def test_explicit_file_tag_intents_use_sample_classifier_slots(self):
+        cases = (
+            ("给 note.txt 打标签 项目", {"path": "note.txt", "tags": ("项目",)}, '/tag "note.txt" 项目'),
+            (
+                "把 data/note.txt 标记为 项目 Python",
+                {"path": "note.txt", "tags": ("项目", "Python")},
+                '/tag "note.txt" 项目 Python',
+            ),
+        )
 
-        self.assertEqual(result.intent, "command")
-        self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
-        self.assertEqual(result.source, "legacy_fallback")
-        self.assertIsNotNone(result.natural_language_intent)
-        self.assertEqual(result.natural_language_intent.command, "/tag note.txt 项目")
+        for prompt, expected_slots, expected_command in cases:
+            with self.subTest(prompt=prompt):
+                result = InnerBrain(self.paths).understand(prompt)
+
+                self.assertEqual(result.intent, "document.tag_path")
+                self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+                self.assertEqual(result.source, "seed_sample")
+                self.assertGreaterEqual(result.confidence, 0.78)
+                self.assertIsNotNone(result.natural_language_intent)
+                self.assertEqual(result.natural_language_intent.name, "command")
+                self.assertEqual(result.natural_language_intent.command, expected_command)
+                self.assertEqual(result.slots["path"], expected_slots["path"])
+                self.assertEqual(result.slots["tags"], expected_slots["tags"])
 
     def test_numbered_object_intents_use_sample_classifier_slots(self):
         cases = (

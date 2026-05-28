@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-28：InnerBrain 显式文件名标签槽位迁移为 `document.tag_path`，`给 note.txt 打标签 项目` 和 `把 data/note.txt 标记为 项目 Python` 返回 `seed_sample`；全量 `unittest` 411 项通过。
 - 2026-05-28：发布 `0.1.4` 可安装测试包，包含 SearchRouter + LLMRouter 搜索总结组合流程；版本一致性测试已按 TDD 先失败后通过。
 - 2026-05-28：SearchRouter + LLMRouter 组合入口完成，`/search` 写入最近联网搜索上下文，`/search-summary` 和“联网查一下...并总结”会先搜索再把来源交给 LLM 外脑总结；全量 `unittest` 411 项通过。
 - 2026-05-28：InnerBrain 文件路径、目录和经验槽位动作迁移为样本签名 + `path/source/alias/experience/query` 槽位抽取，显式文件读取/导入、目录打开/整理和经验记录/搜索/建议返回 `seed_sample`；全量 `unittest` 406 项通过。
