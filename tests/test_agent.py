@@ -392,6 +392,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作", response)
         self.assertIn("/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本", response)
         self.assertIn("/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本", response)
+        self.assertIn("/inner-brain-teach 文本 => /命令：把自然语言短句教学为已知命令", response)
 
     def test_inner_brain_status_command_reports_samples_and_thresholds(self):
         response = self.agent.handle("/inner-brain-status")
@@ -523,6 +524,54 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已保存 InnerBrain 人工标注样本", response)
         self.assertEqual(saved_sample["slots"], {"items": ["比特浏览器"]})
         self.assertTrue(shortcut.exists())
+
+    def test_inner_brain_teach_command_saves_command_sample_and_refreshes_current_agent(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        teach_response = agent.handle("/inner-brain-teach 可以看看资料库吗 => /kb")
+        status = agent.handle("/inner-brain-status")
+        followup = agent.handle("可以看看资料库吗")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertIn("已保存 InnerBrain 教学样本", teach_response)
+        self.assertIn("目标命令：/kb", teach_response)
+        self.assertIn("说明：这里只保存教学样本，不执行命令。", teach_response)
+        self.assertIn("runtime_sample：1 条", status)
+        self.assertEqual(saved_sample["text"], "可以看看资料库吗")
+        self.assertEqual(saved_sample["intent"], "knowledge.status")
+        self.assertEqual(saved_sample["slots"], {"command": "/kb"})
+        self.assertIn("个人知识库状态", followup)
+        self.assertEqual(provider.calls, [])
+
+    def test_inner_brain_teach_natural_sentence_saves_command_sample(self):
+        response = self.agent.handle("以后我说“看看资料库”就是 /kb")
+        followup = self.agent.handle("看看资料库")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertIn("已保存 InnerBrain 教学样本", response)
+        self.assertEqual(saved_sample["text"], "看看资料库")
+        self.assertEqual(saved_sample["intent"], "knowledge.status")
+        self.assertEqual(saved_sample["slots"], {"command": "/kb"})
+        self.assertIn("个人知识库状态", followup)
+
+    def test_inner_brain_teach_does_not_execute_target_command_when_saving(self):
+        response = self.agent.handle("/inner-brain-teach 每天收尾 => /daily-report")
+
+        self.assertIn("已保存 InnerBrain 教学样本", response)
+        self.assertIn("目标命令：/daily-report", response)
+        self.assertNotIn("已生成日报", response)
+        self.assertEqual(list(self.paths.word_dir.glob("*.md")), [])
+
+    def test_inner_brain_teach_rejects_unknown_target_command(self):
+        response = self.agent.handle("/inner-brain-teach 打开未知工具 => /unknown-command")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        self.assertIn("教学目标不是已知命令", response)
+        self.assertIn("/unknown-command", response)
+        self.assertFalse(sample_file.exists())
 
     def test_llm_status_command_reports_router_state(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"状态测试"}')

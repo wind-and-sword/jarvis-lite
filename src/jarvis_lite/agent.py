@@ -69,6 +69,29 @@ from .update import describe_update_download, describe_update_status, update_dow
 from .voice import describe_voice, speak_text
 
 
+TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
+    "/help": "assistant.help",
+    "/status": "assistant.status",
+    "/memory": "memory.status",
+    "/experiences": "experience.status",
+    "/llm-status": "llm.status",
+    "/llm-usage": "llm.usage",
+    "/llm-context-preview": "llm.context_preview",
+    "/kb": "knowledge.status",
+    "/knowledge": "knowledge.status",
+    "/kb-summary": "knowledge.summary",
+    "/knowledge-summary": "knowledge.summary",
+    "/voice-status": "voice.status",
+    "/automation-status": "automation.status",
+    "/recent-files": "context.recent_files",
+    "/tag-history": "tag.history",
+    "/batch-tag-history": "tag.history",
+    "/update-status": "update.status",
+    "/dirs": "directory.list",
+    "/daily-report": "report.daily",
+}
+
+
 class JarvisAgent:
     """负责解析命令并调度第一阶段本地能力。"""
 
@@ -188,6 +211,10 @@ class JarvisAgent:
         if fact:
             return self._remember(fact)
 
+        teach_response = self._teach_inner_brain_sample_from_natural_language(prompt)
+        if teach_response is not None:
+            return teach_response
+
         inner_brain_result = self.inner_brain.understand(prompt)
         if inner_brain_result.policy == InnerBrainPolicy.EXECUTE and inner_brain_result.natural_language_intent is not None:
             self.tools.run(
@@ -256,6 +283,8 @@ class JarvisAgent:
             return self._adopt_inner_brain_sample(sample_prompt)
         if command == "/inner-brain-label":
             return self._label_inner_brain_sample(prompt)
+        if command in {"/inner-brain-teach", "/teach"}:
+            return self._teach_inner_brain_sample(prompt, command)
         if command == "/llm-smoke":
             smoke_prompt = " ".join(args)
             self.tools.run("record_log", message="执行 LLM smoke 调用")
@@ -428,6 +457,7 @@ class JarvisAgent:
                 "/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作",
                 "/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本",
                 "/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本",
+                "/inner-brain-teach 文本 => /命令：把自然语言短句教学为已知命令",
                 "/llm-usage：查看 LLM token 用量汇总",
                 "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
                 "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",
@@ -662,6 +692,110 @@ class JarvisAgent:
             lines.append(f"缺失：{'、'.join(missing)}")
         lines.append("说明：这里只保存人工标注样本，不执行命令。")
         return "\n".join(lines)
+
+    def _teach_inner_brain_sample(self, prompt: str, command: str) -> str:
+        usage = "用法：/inner-brain-teach 文本 => /命令"
+        body = prompt[len(command) :].strip()
+        parsed = self._parse_inner_brain_teach_body(body)
+        if parsed is None:
+            return usage
+        sample_text, target_command = parsed
+        return self._save_inner_brain_teach_command(sample_text, target_command, usage)
+
+    def _teach_inner_brain_sample_from_natural_language(self, prompt: str) -> str | None:
+        parsed = self._parse_inner_brain_teach_sentence(prompt)
+        if parsed is None:
+            return None
+        sample_text, target_command = parsed
+        usage = "你可以这样教我：以后我说“可以看看资料库吗”就是 /kb"
+        return self._save_inner_brain_teach_command(sample_text, target_command, usage)
+
+    def _parse_inner_brain_teach_body(self, body: str) -> tuple[str, str] | None:
+        if "=>" not in body:
+            return None
+        sample_text, target_command = (part.strip() for part in body.split("=>", 1))
+        sample_text = self._strip_quotes(sample_text).strip("“”")
+        target_command = target_command.strip().rstrip("。")
+        if not sample_text or not target_command:
+            return None
+        return sample_text, target_command
+
+    def _parse_inner_brain_teach_sentence(self, prompt: str) -> tuple[str, str] | None:
+        patterns = (
+            r"^以后我说\s*[“\"'](?P<text>.+?)[”\"']\s*(?:就是|等于|对应)\s*(?P<command>/\S.*)$",
+            r"^以后我说\s*(?P<text>.+?)\s*(?:就是|等于|对应)\s*(?P<command>/\S.*)$",
+            r"^把\s*[“\"'](?P<text>.+?)[”\"']\s*(?:记成|教成|设为)\s*(?P<command>/\S.*)$",
+            r"^把\s*(?P<text>.+?)\s*(?:记成|教成|设为)\s*(?P<command>/\S.*)$",
+        )
+        normalized_prompt = prompt.strip().rstrip("。")
+        for pattern in patterns:
+            match = re.fullmatch(pattern, normalized_prompt)
+            if not match:
+                continue
+            sample_text = match.group("text").strip()
+            target_command = match.group("command").strip()
+            if sample_text and target_command:
+                return sample_text, target_command
+        return None
+
+    def _save_inner_brain_teach_command(self, sample_text: str, target_command: str, usage: str) -> str:
+        try:
+            command_text, intent = self._inner_brain_teach_target(target_command)
+            save_result = save_labeled_runtime_training_sample(
+                self.paths,
+                sample_text,
+                intent,
+                {"command": command_text},
+            )
+        except ValueError as exc:
+            self.tools.run("record_log", message=f"InnerBrain 教学样本保存失败：{sample_text} -> {exc}")
+            return f"{exc}\n{usage}"
+
+        self.inner_brain = InnerBrain(self.paths)
+        self.tools.run(
+            "record_log",
+            message=(
+                "保存 InnerBrain 教学样本："
+                f"intent={save_result.sample.intent} "
+                f"created={save_result.created} "
+                f"text={save_result.sample.text} "
+                f"command={command_text}"
+            ),
+        )
+        return self._describe_inner_brain_teach_sample_save(save_result, command_text)
+
+    def _inner_brain_teach_target(self, target_command: str) -> tuple[str, str]:
+        command_text = target_command.strip().rstrip("。")
+        if not command_text.startswith("/"):
+            raise ValueError("教学目标必须是 / 开头的已知命令")
+        try:
+            parts = shlex.split(command_text, posix=False)
+        except ValueError as exc:
+            raise ValueError(f"教学目标命令解析失败：{exc}") from exc
+        if not parts:
+            raise ValueError("教学目标不能为空")
+        command_name = parts[0]
+        intent = TEACHABLE_INNER_BRAIN_COMMAND_INTENTS.get(command_name)
+        if intent is None:
+            raise ValueError(f"教学目标不是已知命令：{command_name}")
+        return command_text, intent
+
+    def _describe_inner_brain_teach_sample_save(
+        self,
+        save_result: InnerBrainTrainingSaveResult,
+        target_command: str,
+    ) -> str:
+        title = "已保存 InnerBrain 教学样本。" if save_result.created else "InnerBrain 教学样本已存在，未重复写入。"
+        return "\n".join(
+            [
+                title,
+                f"样本文件：{save_result.relative_path}",
+                f"用户说法：{save_result.sample.text}",
+                f"目标命令：{target_command}",
+                f"意图：{save_result.sample.intent}",
+                "说明：这里只保存教学样本，不执行命令。",
+            ]
+        )
 
     def _describe_inner_brain_sample_save(
         self,
