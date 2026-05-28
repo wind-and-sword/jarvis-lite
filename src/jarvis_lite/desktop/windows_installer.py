@@ -45,6 +45,7 @@ def render_install_script(exe_name: str = f"{DESKTOP_EXE_NAME}.exe", version: st
     return f"""@echo off
 setlocal
 set "INSTALL_DIR=%LOCALAPPDATA%\\Programs\\Jarvis Lite"
+set "USER_DATA_DIR=%LOCALAPPDATA%\\Jarvis Lite"
 set "START_MENU_DIR=%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Jarvis Lite"
 set "DESKTOP_DIR=%USERPROFILE%\\Desktop"
 taskkill /IM {exe_name} /F >nul 2>nul
@@ -60,6 +61,8 @@ reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLi
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLite" /v UninstallString /d "\\"%INSTALL_DIR%\\{UNINSTALL_SCRIPT_NAME}\\"" /f >nul
 reg add "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\JarvisLite" /v QuietUninstallString /d "\\"%INSTALL_DIR%\\{UNINSTALL_SCRIPT_NAME}\\"" /f >nul
 echo Jarvis Lite installed to "%INSTALL_DIR%".
+echo Existing app files were replaced if present.
+echo User data kept at "%USER_DATA_DIR%".
 endlocal
 """
 

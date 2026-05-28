@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 from dataclasses import dataclass, replace
 from typing import Any, Iterable, Mapping, Protocol
 from urllib.parse import urlsplit, urlunsplit
@@ -10,6 +11,24 @@ from urllib.parse import urlsplit, urlunsplit
 VALID_LLM_INTENT_TYPES = {"command", "answer", "clarify", "no_action"}
 VALID_LLM_PROVIDERS = {"off", "fake", "openai", "openai-compatible"}
 LLM_CONFIG_TEMPLATE_ALIASES = {"qwen": "openai-compatible", "gemini": "openai-compatible"}
+LLM_ALLOWED_COMMAND_SPECS = (
+    "/kb",
+    "/kb-summary",
+    "/ask 问题",
+    "/read 文件名",
+    "/tag 文件名 标签...",
+    "/memory",
+    "/experiences",
+    "/experience-advice 关键词",
+    "/recent-files",
+    "/tag-history",
+    "/daily-report [文件名]",
+    "/automation-status",
+    "/voice-status",
+    "/update-status [清单路径或URL]",
+    "/update-download [清单路径或URL]",
+)
+LLM_ALLOWED_COMMAND_NAMES = tuple(spec.split(maxsplit=1)[0] for spec in LLM_ALLOWED_COMMAND_SPECS)
 LLM_INTENT_SCHEMA: dict[str, Any] = {
     "type": "object",
     "additionalProperties": False,
@@ -169,7 +188,7 @@ class OpenAIResponsesProvider:
                 },
             )
         except Exception as exc:
-            return LLMIntent(type="no_action", reason=f"OpenAI provider 调用失败：{exc}")
+            return LLMIntent(type="no_action", reason=self._format_call_error(exc))
 
         raw_text = self._response_text(response)
         if not raw_text:
@@ -188,27 +207,14 @@ class OpenAIResponsesProvider:
         return OpenAI
 
     def _instructions(self) -> str:
+        command_lines = [f"- {command}" for command in LLM_ALLOWED_COMMAND_SPECS]
         return "\n".join(
             [
                 "你是 Jarvis Lite 的 LLM 外脑，只能返回结构化意图。",
                 "本地 Agent 会先处理命令、身份、本地自然语言意图和知识库问答。",
                 "当适合调用本地能力时返回 command，command 必须是一个以 / 开头的 Jarvis Lite 命令。",
                 "可返回的 Jarvis Lite 命令：",
-                "- /kb",
-                "- /kb-summary",
-                "- /ask 问题",
-                "- /read 文件名",
-                "- /tag 文件名 标签...",
-                "- /memory",
-                "- /experiences",
-                "- /experience-advice 关键词",
-                "- /recent-files",
-                "- /tag-history",
-                "- /daily-report [文件名]",
-                "- /automation-status",
-                "- /voice-status",
-                "- /update-status [清单路径或URL]",
-                "- /update-download [清单路径或URL]",
+                *command_lines,
                 "不要返回列表之外的命令；不确定具体参数时返回 clarify。",
                 "当可以直接回答时返回 answer；需要补充信息时返回 clarify；不应处理时返回 no_action。",
                 "不要声称已经执行命令；命令只由本地 Agent 执行。",
@@ -275,6 +281,47 @@ class OpenAIResponsesProvider:
             return item.get(key)
         return getattr(item, key, None)
 
+    def _format_call_error(self, exc: Exception) -> str:
+        status_code = self._exception_status_code(exc)
+        if self._exception_is_timeout(exc):
+            return "OpenAI provider 调用失败：请求超时，请检查网络、Base URL 或稍后重试。"
+        if status_code == 401:
+            return "OpenAI provider 调用失败：认证失败（HTTP 401），请检查 JARVIS_LITE_LLM_API_KEY。"
+        if status_code == 403:
+            return "OpenAI provider 调用失败：权限不足（HTTP 403），请检查 provider 账号权限或模型访问权限。"
+        if status_code == 429:
+            return "OpenAI provider 调用失败：频率或额度受限（HTTP 429），请稍后重试或检查 provider 额度。"
+        if status_code is not None and status_code >= 500:
+            return f"OpenAI provider 调用失败：provider 服务端错误（HTTP {status_code}），请稍后重试。"
+        if status_code is not None:
+            safe_message = self._safe_error_message(exc)
+            suffix = f"：{safe_message}" if safe_message else ""
+            return f"OpenAI provider 调用失败：HTTP {status_code}{suffix}"
+
+        safe_message = self._safe_error_message(exc)
+        if safe_message:
+            return f"OpenAI provider 调用失败：{safe_message}"
+        return "OpenAI provider 调用失败：未知错误。"
+
+    def _exception_status_code(self, exc: Exception) -> int | None:
+        for value in (getattr(exc, "status_code", None), getattr(getattr(exc, "response", None), "status_code", None)):
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                continue
+        return None
+
+    def _exception_is_timeout(self, exc: Exception) -> bool:
+        name = type(exc).__name__.lower()
+        message = str(exc).lower()
+        return "timeout" in name or "timed out" in message or "timeout" in message
+
+    def _safe_error_message(self, exc: Exception) -> str:
+        message = str(exc).strip()
+        if self.settings.api_key:
+            message = message.replace(self.settings.api_key, "<redacted>")
+        return message
+
 
 class LLMRouter:
     """负责选择 provider，并向 JarvisAgent 暴露稳定接口。"""
@@ -289,8 +336,16 @@ class LLMRouter:
         return self.provider.complete_intent(prompt, context)
 
     def describe(self) -> str:
+        issues = self.settings.configuration_issues()
         if not self.settings.enabled:
-            return "LLM 外脑：未启用"
+            return "\n".join(
+                [
+                    "LLM 外脑：未启用",
+                    f"- Provider：{self.settings.provider}",
+                    f"- API key：{self._api_key_status()}",
+                    f"- 网络调用：{self._network_call_status(issues)}",
+                ]
+            )
         lines = [
             "LLM 外脑：已启用",
             f"- Provider：{self.settings.provider}",
@@ -302,7 +357,8 @@ class LLMRouter:
             sdk_base_url = self.settings.sdk_base_url()
             if sdk_base_url and sdk_base_url != self.settings.base_url.rstrip("/"):
                 lines.append(f"- SDK Base URL：{sdk_base_url}")
-        issues = self.settings.configuration_issues()
+        lines.append(f"- API key：{self._api_key_status()}")
+        lines.append(f"- 网络调用：{self._network_call_status(issues)}")
         if issues:
             lines.append("- 配置问题：")
             for issue in issues:
@@ -310,6 +366,20 @@ class LLMRouter:
         else:
             lines.append("- 配置：可调用")
         return "\n".join(lines)
+
+    def _api_key_status(self) -> str:
+        return "已配置" if self.settings.api_key else "未配置"
+
+    def _network_call_status(self, issues: tuple[str, ...]) -> str:
+        if not self.settings.enabled:
+            return "否（LLM 未启用）"
+        if self.settings.provider == "fake":
+            return "否（fake provider 本地响应）"
+        if self.settings.provider in {"openai", "openai-compatible"}:
+            if issues:
+                return "否（配置未完成）"
+            return "是（/llm-smoke 或 fallback 会调用 provider）"
+        return "否（provider 不支持）"
 
 
 def build_llm_router(settings: LLMSettings | None = None) -> LLMRouter:
@@ -323,6 +393,18 @@ def build_llm_router(settings: LLMSettings | None = None) -> LLMRouter:
     if resolved_settings.provider in {"openai", "openai-compatible"}:
         return LLMRouter(resolved_settings, OpenAIResponsesProvider(resolved_settings))
     return LLMRouter(resolved_settings)
+
+
+def is_llm_allowed_command(command: str) -> bool:
+    """校验 LLM command intent 是否属于本地 Agent 允许执行的命令集合。"""
+
+    try:
+        parts = shlex.split(command.strip(), posix=False)
+    except ValueError:
+        return False
+    if not parts:
+        return False
+    return parts[0] in LLM_ALLOWED_COMMAND_NAMES
 
 
 def normalize_responses_base_url(base_url: str) -> str:

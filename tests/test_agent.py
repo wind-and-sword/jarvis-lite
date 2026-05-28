@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from jarvis_lite import __version__
 from jarvis_lite.agent import JarvisAgent
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.llm import FakeLLMProvider, LLMIntent, LLMRouter, LLMSettings, LLMUsage, build_llm_router
@@ -286,6 +287,7 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("/llm-usage：查看 LLM token 用量汇总", response)
         self.assertIn("/llm-smoke [prompt]：强制调用 LLM 做一次配置验证", response)
+        self.assertIn("/llm-context-preview：预览 LLM fallback 上下文，不调用 provider", response)
         self.assertIn("/llm-config-example [provider]：查看 LLM 环境变量配置模板", response)
 
     def test_llm_status_command_reports_router_state(self):
@@ -410,6 +412,29 @@ class AgentTests(unittest.TestCase):
             "LLM 外脑用量：provider=fake model=intent-test input_tokens=11 output_tokens=4 total_tokens=15",
             log_content,
         )
+
+    def test_llm_context_preview_reports_context_without_calling_provider(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应调用 provider"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "memory.md").write_text(
+            "Jarvis Lite 使用 memory/profile.md 保存长期记忆。\n",
+            encoding="utf-8",
+        )
+
+        agent.handle("/ask Jarvis Lite 使用什么？")
+        response = agent.handle("/llm-context-preview")
+
+        self.assertIn("LLM context preview", response)
+        self.assertIn("不会调用 provider", response)
+        self.assertIn("记忆摘要：", response)
+        self.assertIn("最近搜索结果：2 条", response)
+        self.assertIn("1. data/memory.md", response)
+        self.assertIn("2. data/runtime.md", response)
+        self.assertEqual(provider.calls, [])
 
     def test_knowledge_status_command_reports_data_index(self):
         response = self.agent.handle("/kb")
@@ -590,7 +615,7 @@ class AgentTests(unittest.TestCase):
         response = self.agent.handle(f"/update-status {manifest}")
 
         self.assertIn("发现新版本：0.2.0", response)
-        self.assertIn("当前版本：0.1.0", response)
+        self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
     def test_update_download_command_downloads_package_to_runtime_directory(self):
@@ -1630,6 +1655,16 @@ class AgentTests(unittest.TestCase):
         self.assertIn("知识库摘要", response)
         self.assertEqual(len(provider.calls), 1)
         self.assertEqual(provider.calls[0][0], "请判断跨星际预算优先级")
+
+    def test_llm_command_intent_rejects_unknown_command_before_agent_execution(self):
+        provider = FakeLLMProvider('{"type":"command","command":"/unknown","reason":"错误命令"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        response = agent.handle("请判断跨星际预算优先级")
+
+        self.assertIn("LLM 外脑拒绝执行未列入白名单的命令：/unknown", response)
+        self.assertNotIn("未知命令：/unknown", response)
+        self.assertEqual(len(provider.calls), 1)
 
     def test_llm_fallback_context_includes_recent_next_actions(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"可以继续处理最近资料"}')

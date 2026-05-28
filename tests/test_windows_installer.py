@@ -36,6 +36,14 @@ class WindowsInstallerTests(unittest.TestCase):
         self.assertIn('DisplayIcon /d "%INSTALL_DIR%\\JarvisLite.exe"', script)
         self.assertIn('QuietUninstallString /d "\\"%INSTALL_DIR%\\uninstall.cmd\\""', script)
 
+    def test_install_script_explains_cover_install_and_keeps_user_data(self):
+        script = render_install_script("JarvisLite.exe", version="9.8.7")
+
+        self.assertIn(r"%LOCALAPPDATA%\Jarvis Lite", script)
+        self.assertIn("Existing app files were replaced if present", script)
+        self.assertIn("User data kept", script)
+        self.assertNotIn(r'rmdir /S /Q "%USER_DATA_DIR%"', script)
+
     def test_uninstall_script_removes_shortcuts_install_dir_and_registry(self):
         script = render_uninstall_script()
 

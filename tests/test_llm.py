@@ -174,6 +174,58 @@ class LLMTests(unittest.TestCase):
         self.assertIn("/ask 问题", instructions)
         self.assertIn("不要返回列表之外的命令", instructions)
 
+    def test_openai_provider_formats_401_error_without_leaking_api_key(self):
+        class FakeAuthenticationError(Exception):
+            status_code = 401
+
+        class FakeResponses:
+            def create(self, **kwargs):
+                raise FakeAuthenticationError("bad key secret-test-key")
+
+        class FakeOpenAI:
+            def __init__(self, **kwargs):
+                self.responses = FakeResponses()
+
+        fake_openai_module = types.ModuleType("openai")
+        fake_openai_module.OpenAI = FakeOpenAI
+        provider = OpenAIResponsesProvider(
+            LLMSettings(provider="openai", model="gpt-test", api_key="secret-test-key")
+        )
+
+        with patch.dict(sys.modules, {"openai": fake_openai_module}):
+            intent = provider.complete_intent("需要外脑处理的问题", context=())
+
+        self.assertEqual(intent.type, "no_action")
+        self.assertIn("认证失败", intent.reason)
+        self.assertIn("HTTP 401", intent.reason)
+        self.assertIn("JARVIS_LITE_LLM_API_KEY", intent.reason)
+        self.assertNotIn("secret-test-key", intent.reason)
+
+    def test_openai_provider_formats_429_error_as_rate_or_quota_issue(self):
+        class FakeRateLimitError(Exception):
+            status_code = 429
+
+        class FakeResponses:
+            def create(self, **kwargs):
+                raise FakeRateLimitError("rate limit")
+
+        class FakeOpenAI:
+            def __init__(self, **kwargs):
+                self.responses = FakeResponses()
+
+        fake_openai_module = types.ModuleType("openai")
+        fake_openai_module.OpenAI = FakeOpenAI
+        provider = OpenAIResponsesProvider(
+            LLMSettings(provider="openai", model="gpt-test", api_key="test-key")
+        )
+
+        with patch.dict(sys.modules, {"openai": fake_openai_module}):
+            intent = provider.complete_intent("需要外脑处理的问题", context=())
+
+        self.assertEqual(intent.type, "no_action")
+        self.assertIn("频率或额度", intent.reason)
+        self.assertIn("HTTP 429", intent.reason)
+
     def test_openai_compatible_provider_normalizes_responses_endpoint_url(self):
         calls = {}
 
@@ -252,6 +304,8 @@ class LLMTests(unittest.TestCase):
         self.assertIsInstance(router.provider, OpenAIResponsesProvider)
         self.assertIn("Provider：openai", router.describe())
         self.assertIn("Model：gpt-test", router.describe())
+        self.assertIn("API key：已配置", router.describe())
+        self.assertIn("网络调用：是", router.describe())
 
     def test_router_uses_openai_compatible_provider_from_settings(self):
         router = build_llm_router(
@@ -267,15 +321,30 @@ class LLMTests(unittest.TestCase):
         self.assertIn("Provider：openai-compatible", router.describe())
         self.assertIn("Model：compatible-model", router.describe())
         self.assertIn("Base URL：https://compatible.example/v1", router.describe())
+        self.assertIn("API key：已配置", router.describe())
+        self.assertIn("网络调用：是", router.describe())
 
     def test_router_describes_openai_missing_configuration(self):
         router = build_llm_router(LLMSettings(provider="openai"))
 
         description = router.describe()
 
+        self.assertIn("API key：未配置", description)
+        self.assertIn("网络调用：否（配置未完成）", description)
         self.assertIn("配置问题：", description)
         self.assertIn("缺少 JARVIS_LITE_LLM_MODEL", description)
         self.assertIn("缺少 JARVIS_LITE_LLM_API_KEY", description)
+
+    def test_router_describes_fake_provider_as_local_no_network(self):
+        router = build_llm_router(
+            LLMSettings(provider="fake", fake_response='{"type":"answer","answer":"本地 fake"}')
+        )
+
+        description = router.describe()
+
+        self.assertIn("Provider：fake", description)
+        self.assertIn("API key：未配置", description)
+        self.assertIn("网络调用：否（fake provider 本地响应）", description)
 
     def test_router_describes_openai_compatible_missing_base_url(self):
         router = build_llm_router(

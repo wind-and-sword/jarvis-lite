@@ -27,7 +27,14 @@ from .knowledge import (
     summarize_knowledge_base,
 )
 from .intent import parse_natural_language_intent
-from .llm import LLMIntent, LLMRouter, build_llm_router, describe_llm_config_examples, summarize_llm_usage
+from .llm import (
+    LLMIntent,
+    LLMRouter,
+    build_llm_router,
+    describe_llm_config_examples,
+    is_llm_allowed_command,
+    summarize_llm_usage,
+)
 from .memory import (
     append_experience,
     append_memory,
@@ -121,6 +128,9 @@ class JarvisAgent:
         if prompt in {"/llm-usage", "llm-usage"}:
             self.tools.run("record_log", message="查看 LLM 用量汇总")
             return summarize_llm_usage(self.paths.log_path.read_text(encoding="utf-8").splitlines())
+        if prompt in {"/llm-context-preview", "llm-context-preview"}:
+            self.tools.run("record_log", message="预览 LLM fallback 上下文")
+            return self._llm_context_preview()
         if prompt in {"/kb", "kb", "/knowledge", "knowledge"}:
             self.tools.run("record_log", message="查看个人知识库状态")
             return describe_knowledge_base(self.paths)
@@ -374,6 +384,7 @@ class JarvisAgent:
                 "/llm-status：查看 LLM 外脑 provider 状态",
                 "/llm-usage：查看 LLM token 用量汇总",
                 "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
+                "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",
                 "/llm-config-example [provider]：查看 LLM 环境变量配置模板",
                 "/kb：查看个人知识库状态",
                 "/kb-summary：查看知识库资料摘要",
@@ -842,11 +853,19 @@ class JarvisAgent:
             lines.append(f"原因：{intent.reason}")
         return "\n".join(lines)
 
+    def _llm_context_preview(self) -> str:
+        lines = ["LLM context preview（不会调用 provider）："]
+        for context_line in self._llm_context_lines():
+            lines.append(f"- {context_line}")
+        return "\n".join(lines)
+
     def _handle_llm_intent(self, intent: LLMIntent) -> str:
         if intent.type == "command" and intent.command:
             command = intent.command.strip()
             if not command.startswith("/"):
                 return f"LLM 外脑给出了非命令建议：{command}"
+            if not is_llm_allowed_command(command):
+                return f"LLM 外脑拒绝执行未列入白名单的命令：{command}"
             return "\n".join(
                 [
                     f"LLM 外脑建议执行命令：{command}",
