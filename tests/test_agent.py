@@ -508,6 +508,41 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(search_provider.calls, ["Python 版本"])
         self.assertEqual(len(llm_provider.calls), 1)
 
+    def test_inner_brain_clarification_accepts_followup_numbered_tags_without_polluting_tags(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "给那份资料打标签",
+                    "intent": "document.tag_numbered_recent",
+                    "slots": {},
+                    "missing": ["result_index", "tags"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "manual.md").write_text(
+            "第二份最近资料可被打标签。\n",
+            encoding="utf-8",
+        )
+        agent = JarvisAgent(self.paths)
+        agent.handle("/read manual.md")
+        agent.handle("/read note.txt")
+
+        clarify_response = agent.handle("给那份资料打标签")
+        followup_response = agent.handle("第二份 项目 Python")
+        kb_response = agent.handle("/kb")
+
+        self.assertIn("需要补充：编号、标签", clarify_response)
+        self.assertIn("可直接补充：请直接回复编号和标签，例如“第二份 项目 Python”", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("已更新标签：data/manual.md（项目、Python）", followup_response)
+        self.assertIn("标签：项目、Python", kb_response)
+        self.assertNotIn("标签：第二份", kb_response)
+
     def test_inner_brain_clarification_can_be_cancelled(self):
         fake_home = Path(self.temp_dir.name) / "home"
         desktop = fake_home / "Desktop"

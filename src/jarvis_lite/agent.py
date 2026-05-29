@@ -963,8 +963,10 @@ class JarvisAgent:
             return "/search 关键词"
         if result.intent == "web.search_summarize" and "query" in result.missing:
             return "/search-summary 关键词"
+        if {"result_index", "tags"}.issubset(set(result.missing)):
+            return "请直接回复编号和标签，例如“第二份 项目 Python”"
         if "tags" in result.missing:
-            return "/tag 文件名 标签..."
+            return "请直接回复标签，例如“项目 Python”"
         if "result_index" in result.missing:
             return "请补充编号，例如“查看第一条结果”"
         return ""
@@ -988,6 +990,8 @@ class JarvisAgent:
             "items": "要处理的对象名称",
             "path": "路径",
             "tag": "标签",
+            "tags": "标签",
+            "result_index": "编号",
             "query": "查询关键词",
         }
         return labels.get(missing, missing)

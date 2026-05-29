@@ -1185,7 +1185,7 @@ def _clarification_slots_from_reply(reply: str, intent: str, missing: tuple[str,
             if items:
                 slots["items"] = items
         elif slot == "tags":
-            tags = _split_tag_text(value)
+            tags = _split_tag_text(_clarification_tag_text(value, missing))
             if tags:
                 slots["tags"] = tags
         elif slot == "result_index":
@@ -1209,6 +1209,18 @@ def _normalize_clarification_value(reply: str) -> str:
             value = match.group("value").strip()
             break
     return _strip_wrapping_quotes(value)
+
+
+def _clarification_tag_text(value: str, missing: tuple[str, ...]) -> str:
+    tag_text = value.strip()
+    if "result_index" in missing:
+        tag_text = re.sub(
+            r"^\s*(?:第)?[0-9一二两三四五六七八九十]+(?:条|个|份)?(?:资料|文档|文件|结果)?\s*[:：,，、]?\s*",
+            "",
+            tag_text,
+        )
+    tag_text = re.sub(r"^(?:标签是|标签为|打标签|标记为)\s*[:：]?\s*", "", tag_text)
+    return tag_text.strip()
 
 
 def _looks_like_path_or_file(value: str) -> bool:
