@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-05-29-v18-route-decision-status-plan.md](2026-05-29-v18-route-decision-status-plan.md)：当前方案版本，明确最近路由决策状态固定展示。
+- [2026-05-29-v19-route-decision-explanation-plan.md](2026-05-29-v19-route-decision-explanation-plan.md)：当前方案版本，明确最近路由决策解释详情固定展示。
 
 ## 历史版本
 
@@ -27,6 +27,7 @@
 - [2026-05-29-v15-llm-clarification-guard-plan.md](2026-05-29-v15-llm-clarification-guard-plan.md)：明确 LLM 外脑澄清轮数与过期策略。
 - [2026-05-29-v16-desktop-llm-pending-status-plan.md](2026-05-29-v16-desktop-llm-pending-status-plan.md)：明确桌面外脑待补充状态固定展示。
 - [2026-05-29-v17-desktop-llm-activity-status-plan.md](2026-05-29-v17-desktop-llm-activity-status-plan.md)：明确桌面外脑运行状态和最近调用结果固定展示。
+- [2026-05-29-v18-route-decision-status-plan.md](2026-05-29-v18-route-decision-status-plan.md)：明确最近路由决策状态固定展示。
 
 ## 维护规则
 

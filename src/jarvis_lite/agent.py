@@ -273,9 +273,21 @@ class JarvisAgent:
         if is_identity_question(prompt):
             identity = find_identity(read_profile(self.paths))
             if identity:
-                self._remember_route_decision("memory-fallback", "identity", prompt, "长期记忆命中")
+                self._remember_route_decision(
+                    "memory-fallback",
+                    "identity",
+                    prompt,
+                    "长期记忆命中",
+                    "source=memory/profile.md action=read",
+                )
                 return identity
-            self._remember_route_decision("memory-fallback", "identity", prompt, "长期记忆未命中")
+            self._remember_route_decision(
+                "memory-fallback",
+                "identity",
+                prompt,
+                "长期记忆未命中",
+                "source=memory/profile.md action=read",
+            )
             return "我还不知道你是谁。你可以说“我叫张三”或使用 /remember 用户姓名：张三。"
 
         if prompt.startswith("/"):
@@ -284,7 +296,13 @@ class JarvisAgent:
         fact = parse_identity_fact(prompt)
         if fact:
             response = self._remember(fact)
-            self._remember_route_decision("memory-fallback", "remember", prompt, "长期记忆写入")
+            self._remember_route_decision(
+                "memory-fallback",
+                "remember",
+                prompt,
+                "长期记忆写入",
+                "source=memory/profile.md action=write",
+            )
             return response
 
         teach_response = self._teach_inner_brain_sample_from_natural_language(prompt)
@@ -311,29 +329,59 @@ class JarvisAgent:
                 ),
             )
             response = self._handle_natural_language_intent(inner_brain_result.natural_language_intent)
-            self._remember_route_decision("inner-brain", inner_brain_result.intent, prompt, "本地内脑命中")
+            self._remember_route_decision(
+                "inner-brain",
+                inner_brain_result.intent,
+                prompt,
+                "本地内脑命中",
+                self._inner_brain_route_explanation(inner_brain_result),
+            )
             return response
         if inner_brain_result.policy == InnerBrainPolicy.CLARIFY:
             response = self._inner_brain_clarification(inner_brain_result)
-            self._remember_route_decision("inner-brain-clarify", inner_brain_result.intent, prompt, "本地内脑需要补充槽位")
+            self._remember_route_decision(
+                "inner-brain-clarify",
+                inner_brain_result.intent,
+                prompt,
+                "本地内脑需要补充槽位",
+                self._inner_brain_route_explanation(inner_brain_result),
+            )
             return response
 
         data_answer = self._answer_from_data(prompt)
         if data_answer:
             self.tools.run("record_log", message=f"基于 data 目录回答普通问题：{prompt}")
-            self._remember_route_decision("knowledge", "data-answer", prompt, "本地知识库命中")
+            self._remember_route_decision(
+                "knowledge",
+                "data-answer",
+                prompt,
+                "本地知识库命中",
+                "source=data action=local-answer",
+            )
             return data_answer
 
         llm_answer = self._answer_from_llm(prompt)
         if llm_answer:
             self.tools.run("record_log", message=f"LLM 外脑处理输入：{prompt}")
             detail = self._recent_llm_call.intent_type if self._recent_llm_call is not None else "unknown"
-            self._remember_route_decision("llm-fallback", detail, prompt, "LLM 外脑处理")
+            self._remember_route_decision(
+                "llm-fallback",
+                detail,
+                prompt,
+                "LLM 外脑处理",
+                self._llm_route_explanation(),
+            )
             return llm_answer
 
         profile = read_profile(self.paths)
         summary = summarize_profile(profile)
-        self._remember_route_decision("memory-fallback", "profile", prompt, "长期记忆兜底")
+        self._remember_route_decision(
+            "memory-fallback",
+            "profile",
+            prompt,
+            "长期记忆兜底",
+            "source=memory/profile.md action=fallback",
+        )
         return f"Jarvis Lite 已读取长期记忆。当前记忆摘要：{self._sentence(summary)}你可以输入 /help 查看我现在能做的事。"
 
     def llm_clarification_status_text(self) -> str:
@@ -397,6 +445,8 @@ class JarvisAgent:
         lines.append(f"输入：{decision.prompt}")
         if decision.summary:
             lines.append(f"结果：{decision.summary}")
+        if decision.explanation:
+            lines.append(f"依据：{decision.explanation}")
         return "\n".join(lines)
 
     def _handle_command(self, prompt: str) -> str:
@@ -1090,6 +1140,13 @@ class JarvisAgent:
                 ),
             )
             response = self._handle_natural_language_intent(completed.natural_language_intent)
+            self._remember_route_decision(
+                "inner-brain",
+                completed.intent,
+                prompt,
+                "本地内脑澄清补槽完成",
+                self._inner_brain_route_explanation(completed),
+            )
             return "\n".join(["已补齐缺失信息，继续执行。", response])
 
         return self._inner_brain_clarification(completed)
@@ -2752,24 +2809,39 @@ class JarvisAgent:
             prompt=self._compact_status_text(prompt),
             intent_type=intent.type,
             summary=self._compact_status_text(summary),
+            reason=self._compact_status_text(intent.reason),
             provider=settings.provider,
             model=settings.model,
             created_at=self._now_iso(),
         )
         self._save_runtime_context()
 
-    def _remember_route_decision(self, route: str, detail: str, prompt: str, summary: str) -> None:
+    def _remember_route_decision(
+        self,
+        route: str,
+        detail: str,
+        prompt: str,
+        summary: str,
+        explanation: str = "",
+    ) -> None:
         self._recent_route_decision = RuntimeRouteDecisionContext(
             route=route,
             detail=detail,
             prompt=self._compact_status_text(prompt),
             summary=self._compact_status_text(summary),
+            explanation=self._compact_status_text(explanation, max_length=220),
             created_at=self._now_iso(),
         )
         self._save_runtime_context()
 
     def _remember_command_route(self, prompt: str) -> None:
-        self._remember_route_decision("command", self._route_command_detail(prompt), prompt, "显式命令")
+        self._remember_route_decision(
+            "command",
+            self._route_command_detail(prompt),
+            prompt,
+            "显式命令",
+            "source=explicit-command action=direct-dispatch",
+        )
 
     def _route_command_detail(self, prompt: str) -> str:
         try:
@@ -2779,6 +2851,38 @@ class JarvisAgent:
         if not parts:
             return "unknown"
         return parts[0]
+
+    def _inner_brain_route_explanation(self, result: InnerBrainResult) -> str:
+        parts = [
+            f"source={result.source}",
+            f"confidence={result.confidence:.2f}",
+        ]
+        if result.missing:
+            parts.append(f"missing={','.join(result.missing)}")
+        if result.reason:
+            parts.append(f"reason={result.reason}")
+        return " ".join(parts)
+
+    def _llm_route_explanation(self) -> str:
+        call = self._recent_llm_call
+        if call is None:
+            return "source=llm-fallback type=unknown"
+        parts = [
+            f"provider={call.provider or self.llm_router.settings.provider}",
+        ]
+        if call.model or self.llm_router.settings.model:
+            parts.append(f"model={call.model or self.llm_router.settings.model}")
+        parts.extend(
+            [
+                f"source={call.source}",
+                f"type={call.intent_type}",
+            ]
+        )
+        if call.summary:
+            parts.append(f"summary={call.summary}")
+        if call.reason:
+            parts.append(f"reason={call.reason}")
+        return " ".join(parts)
 
     def _is_explicit_command_prompt(self, prompt: str) -> bool:
         if prompt.startswith("/"):

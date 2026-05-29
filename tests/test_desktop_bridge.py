@@ -121,6 +121,8 @@ class DesktopBridgeTests(unittest.TestCase):
 
         self.assertIn("Jarvis Lite", response.assistant_text)
         self.assertIn("最近路由：inner-brain / assistant.greeting", response.route_status_text)
+        self.assertIn("依据：", response.route_status_text)
+        self.assertIn("source=seed_sample", response.route_status_text)
         self.assertEqual(response.route_status_text, self.bridge.route_status_text())
 
     def test_quick_commands_include_current_assistant_capabilities(self):

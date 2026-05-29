@@ -166,6 +166,8 @@ class DesktopWidgetTests(unittest.TestCase):
 
         self.assertIn("最近路由：inner-brain / assistant.greeting", route_text)
         self.assertIn("输入：早上好", route_text)
+        self.assertIn("依据：", route_text)
+        self.assertIn("source=seed_sample", route_text)
 
     def test_panel_exposes_only_direct_quick_command_buttons(self):
         self.assertEqual(

@@ -75,6 +75,7 @@ class RuntimeLLMCallContext:
     prompt: str
     intent_type: str
     summary: str = ""
+    reason: str = ""
     provider: str = ""
     model: str = ""
     created_at: str = ""
@@ -88,6 +89,7 @@ class RuntimeRouteDecisionContext:
     detail: str
     prompt: str
     summary: str = ""
+    explanation: str = ""
     created_at: str = ""
 
 
@@ -319,6 +321,7 @@ def _read_llm_call_context(value: object) -> RuntimeLLMCallContext | None:
         prompt=prompt,
         intent_type=intent_type,
         summary=_read_optional_str(value.get("summary")) or "",
+        reason=_read_optional_str(value.get("reason")) or "",
         provider=_read_optional_str(value.get("provider")) or "",
         model=_read_optional_str(value.get("model")) or "",
         created_at=_read_optional_str(value.get("created_at")) or "",
@@ -338,6 +341,7 @@ def _read_route_decision_context(value: object) -> RuntimeRouteDecisionContext |
         detail=detail,
         prompt=prompt,
         summary=_read_optional_str(value.get("summary")) or "",
+        explanation=_read_optional_str(value.get("explanation")) or "",
         created_at=_read_optional_str(value.get("created_at")) or "",
     )
 
@@ -469,6 +473,7 @@ def _llm_call_context_to_json(context: RuntimeLLMCallContext | None) -> dict[str
         "prompt": context.prompt,
         "intent_type": context.intent_type,
         "summary": context.summary,
+        "reason": context.reason,
         "provider": context.provider,
         "model": context.model,
         "created_at": context.created_at,
@@ -483,6 +488,7 @@ def _route_decision_context_to_json(context: RuntimeRouteDecisionContext | None)
         "detail": context.detail,
         "prompt": context.prompt,
         "summary": context.summary,
+        "explanation": context.explanation,
         "created_at": context.created_at,
     }
 

@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-29：发布 `0.15.0` 可安装测试包，收口路由决策解释详情 v1；桌面面板在最近路由状态中追加 `依据`，展示 InnerBrain 的 source/confidence/missing/reason 或 LLM fallback 的 provider/model/type/summary/reason，便于确认自然语言回复的处理依据；全量 `unittest` 487 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.15.0.exe`。
 - 2026-05-29：发布 `0.14.0` 可安装测试包，收口最近路由决策状态 v1；桌面面板会固定展示最近一条输入由 `command`、`inner-brain`、`knowledge`、`llm-fallback` 等哪一层处理，便于确认回复是否来自本地内脑、外脑或兜底；全量 `unittest` 483 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.14.0.exe`。
 - 2026-05-29：发布 `0.13.0` 可安装测试包，收口桌面外脑运行状态 v1；桌面面板会固定展示外脑启用状态、provider、model、最近一次 LLM 调用触发来源、返回类型、输入摘要和结果摘要；全量 `unittest` 478 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.13.0.exe`。
 - 2026-05-29：发布 `0.12.0` 可安装测试包，收口桌面外脑待补充状态 v1；桌面面板会固定展示当前 LLM 待补充问题、澄清轮次、原始问题和取消提示，取消或补齐后随响应刷新；全量 `unittest` 474 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.12.0.exe`。
