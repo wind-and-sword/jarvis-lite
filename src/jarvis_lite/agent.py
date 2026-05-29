@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import shlex
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -127,6 +128,13 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
 }
 
 
+@dataclass(frozen=True)
+class PendingLLMClarification:
+    original_prompt: str
+    clarification: str
+    context: tuple[str, ...]
+
+
 class JarvisAgent:
     """负责解析命令并调度第一阶段本地能力。"""
 
@@ -158,6 +166,7 @@ class JarvisAgent:
         self._pending_tagged_documents_tags: tuple[str, ...] = ()
         self._pending_tagged_documents_paths: tuple[str, ...] = ()
         self._pending_inner_brain_clarification: InnerBrainResult | None = None
+        self._pending_llm_clarification: PendingLLMClarification | None = None
         self._recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = (
             runtime_context.recent_tagged_documents_operations
         )
@@ -261,6 +270,10 @@ class JarvisAgent:
         clarification_response = self._handle_pending_inner_brain_clarification(prompt)
         if clarification_response is not None:
             return clarification_response
+
+        llm_clarification_response = self._handle_pending_llm_clarification(prompt)
+        if llm_clarification_response is not None:
+            return llm_clarification_response
 
         inner_brain_result = self.inner_brain.understand(prompt)
         if inner_brain_result.policy == InnerBrainPolicy.EXECUTE and inner_brain_result.natural_language_intent is not None:
@@ -1682,11 +1695,12 @@ class JarvisAgent:
         return answer_from_matches(matches)
 
     def _answer_from_llm(self, prompt: str) -> str:
-        intent = self.llm_router.complete_intent(prompt, self._llm_context_lines())
+        context = self._llm_context_lines()
+        intent = self.llm_router.complete_intent(prompt, context)
         if intent is None:
             return ""
         self._record_llm_usage(intent)
-        return self._handle_llm_intent(intent)
+        return self._handle_llm_intent(intent, prompt, context)
 
     def _llm_smoke(self, prompt: str) -> str:
         smoke_prompt = prompt.strip() or "请用一句话确认 Jarvis Lite LLM smoke 可用。"
@@ -1972,7 +1986,42 @@ class JarvisAgent:
             raise ValueError("至少需要提供一个 key=value 参数")
         return updates
 
-    def _handle_llm_intent(self, intent: LLMIntent) -> str:
+    def _handle_pending_llm_clarification(self, prompt: str) -> str | None:
+        pending = self._pending_llm_clarification
+        if pending is None:
+            return None
+        if self._is_inner_brain_clarification_cancel(prompt):
+            self._pending_llm_clarification = None
+            self.tools.run("record_log", message="取消 LLM 外脑澄清")
+            return "已取消这次外脑补充。"
+
+        combined_prompt = "\n".join(
+            [
+                f"原始问题：{pending.original_prompt}",
+                f"外脑澄清问题：{pending.clarification}",
+                f"用户补充：{prompt}",
+            ]
+        )
+        context = (*pending.context, f"LLM 澄清补充：{prompt}")
+        intent = self.llm_router.complete_intent(combined_prompt, context)
+        self._pending_llm_clarification = None
+        if intent is None:
+            self.tools.run("record_log", message="LLM 外脑澄清补充未返回结果")
+            return "已补齐外脑需要的信息，但 LLM 外脑没有返回可执行结果。"
+
+        self._record_llm_usage(intent)
+        self.tools.run("record_log", message="LLM 外脑澄清补充完成")
+        response = self._handle_llm_intent(intent, combined_prompt, context)
+        if not response:
+            return "已补齐外脑需要的信息，但 LLM 外脑没有返回可执行结果。"
+        return "\n".join(["已补齐外脑需要的信息，继续处理。", response])
+
+    def _handle_llm_intent(
+        self,
+        intent: LLMIntent,
+        prompt: str = "",
+        context: tuple[str, ...] = (),
+    ) -> str:
         if intent.type == "command" and intent.command:
             command = intent.command.strip()
             if not command.startswith("/"):
@@ -1988,6 +2037,13 @@ class JarvisAgent:
         if intent.type == "answer" and intent.answer:
             return f"LLM 外脑：{intent.answer}"
         if intent.type == "clarify" and intent.clarification:
+            if prompt:
+                self._pending_llm_clarification = PendingLLMClarification(
+                    original_prompt=prompt,
+                    clarification=intent.clarification,
+                    context=context,
+                )
+                self.tools.run("record_log", message=f"LLM 外脑需要澄清：{intent.clarification}")
             return f"LLM 外脑需要补充信息：{intent.clarification}"
         return ""
 
