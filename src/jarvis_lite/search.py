@@ -305,6 +305,41 @@ def write_search_example_config(paths: ProjectPaths) -> Path:
     return target
 
 
+def write_search_local_config_draft(paths: ProjectPaths, provider: str = "") -> tuple[Path, bool, str]:
+    """创建不会包含真实密钥的搜索本地配置草稿；已存在时不覆盖。"""
+
+    normalized_provider = _normalize_search_config_provider(provider)
+    target = search_local_config_path(paths)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists():
+        return target, False, normalized_provider
+    target.write_text(search_local_config_draft_text(normalized_provider), encoding="utf-8")
+    return target, True, normalized_provider
+
+
+def search_local_config_draft_text(provider: str = "") -> str:
+    """返回 search.local.json 草稿，敏感字段保持空值。"""
+
+    normalized_provider = _normalize_search_config_provider(provider)
+    fake_results: list[dict[str, str]] = []
+    if normalized_provider == "fake":
+        fake_results = [
+            {
+                "title": "测试结果",
+                "url": "https://example.test",
+                "snippet": "本地测试摘要",
+            }
+        ]
+    payload = {
+        "provider": normalized_provider,
+        "api_key": "",
+        "base_url": "",
+        "max_results": DEFAULT_SEARCH_MAX_RESULTS,
+        "fake_results": fake_results,
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+
+
 def search_example_config_text() -> str:
     """返回 JSON 模板文本；真实配置应复制到 search.local.json。"""
 
@@ -380,6 +415,13 @@ def _search_config_template_sections() -> dict[str, str]:
             ]
         ),
     }
+
+
+def _normalize_search_config_provider(provider: str = "") -> str:
+    normalized_provider = provider.strip().lower() or "tavily"
+    if normalized_provider not in VALID_SEARCH_PROVIDERS:
+        raise ValueError(f"暂不支持搜索 provider：{normalized_provider}。可用 provider：off、fake、tavily")
+    return normalized_provider
 
 
 def _search_env_setting_keys() -> dict[str, str]:

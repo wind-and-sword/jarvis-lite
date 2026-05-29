@@ -40,12 +40,14 @@ from .inner_brain import (
 from .llm import (
     LLMIntent,
     LLMRouter,
+    LLMSettings,
     build_llm_router,
     describe_llm_config_examples,
     is_llm_allowed_command,
     llm_local_config_path,
     summarize_llm_usage,
     write_llm_example_config,
+    write_llm_local_config_draft,
 )
 from .search import (
     SearchResult,
@@ -54,6 +56,7 @@ from .search import (
     describe_search_config_examples,
     search_local_config_path,
     write_search_example_config,
+    write_search_local_config_draft,
 )
 from .memory import (
     append_experience,
@@ -89,10 +92,12 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/experiences": "experience.status",
     "/llm-status": "llm.status",
     "/llm-enable": "llm.enable",
+    "/llm-config-init": "llm.config_init",
     "/llm-usage": "llm.usage",
     "/llm-context-preview": "llm.context_preview",
     "/search-status": "web.search.status",
     "/search-enable": "web.search.enable",
+    "/search-config-init": "web.search.config_init",
     "/search": "web.search",
     "/search-summary": "web.search_summarize",
     "/search-open": "web_search.open_numbered",
@@ -304,11 +309,15 @@ class JarvisAgent:
         if command == "/llm-config-example":
             self.tools.run("record_log", message="查看 LLM 配置模板")
             return describe_llm_config_examples(args[0] if args else "")
+        if command == "/llm-config-init":
+            return self._llm_config_init(args[0] if args else "")
         if command == "/llm-enable":
             return self._llm_enable_guidance()
         if command == "/search-config-example":
             self.tools.run("record_log", message="查看联网搜索配置模板")
             return describe_search_config_examples(args[0] if args else "")
+        if command == "/search-config-init":
+            return self._search_config_init(args[0] if args else "")
         if command == "/search-enable":
             return self._search_enable_guidance()
         if command == "/search":
@@ -522,9 +531,11 @@ class JarvisAgent:
                 "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
                 "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",
                 "/llm-config-example [provider]：查看 LLM 环境变量配置模板",
+                "/llm-config-init [provider]：生成外脑本地配置草稿",
                 "/search-status：查看联网搜索 provider 状态",
                 "/search-enable：查看联网搜索启用状态和本地配置路径",
                 "/search-config-example [provider]：查看联网搜索环境变量配置模板",
+                "/search-config-init [provider]：生成联网搜索本地配置草稿",
                 "/search 关键词：联网搜索并返回来源",
                 "/search-summary 关键词：联网搜索并交给 LLM 外脑总结",
                 "/search-open 编号：查看最近联网搜索的编号来源 URL",
@@ -1683,6 +1694,38 @@ class JarvisAgent:
         )
         return "\n".join(lines)
 
+    def _llm_config_init(self, provider: str) -> str:
+        try:
+            local_path, created, normalized_provider = write_llm_local_config_draft(self.paths, provider)
+        except ValueError as exc:
+            return str(exc)
+        if not self._llm_router_injected:
+            self.llm_router = build_llm_router(paths=self.paths)
+        self.tools.run("record_log", message=f"生成 LLM 本地配置草稿：provider={normalized_provider} created={created}")
+
+        if created:
+            lines = [
+                f"已生成外脑本地配置草稿：{self._project_path(local_path)}",
+                f"Provider：{normalized_provider}",
+            ]
+            adapter_provider = LLMSettings(provider=normalized_provider).adapter_provider
+            if adapter_provider != normalized_provider:
+                lines.append(f"Adapter：{adapter_provider}")
+            lines.append("下一步：填入 model、base_url、api_key 后执行 /llm-enable。")
+        else:
+            lines = [
+                f"外脑本地配置已存在：{self._project_path(local_path)}",
+                "未覆盖已有配置，也不会显示已有 API key。",
+                "下一步：编辑该文件后执行 /llm-enable。",
+            ]
+        lines.extend(
+            [
+                "状态检查：/llm-status",
+                "连通性测试：/llm-smoke 请用一句话确认连接可用",
+            ]
+        )
+        return "\n".join(lines)
+
     def _search_enable_guidance(self) -> str:
         example_path = write_search_example_config(self.paths)
         local_path = search_local_config_path(self.paths)
@@ -1700,6 +1743,35 @@ class JarvisAgent:
             lines.append("下一步：复制模板为 config/search.local.json，填入 provider、api_key 后重启 Jarvis Lite。")
         else:
             lines.append("下一步：修改 config/search.local.json 后再次执行 /search-enable，即可重新加载当前会话。")
+        lines.extend(
+            [
+                "状态检查：/search-status",
+                "搜索测试：/search Python 版本",
+            ]
+        )
+        return "\n".join(lines)
+
+    def _search_config_init(self, provider: str) -> str:
+        try:
+            local_path, created, normalized_provider = write_search_local_config_draft(self.paths, provider)
+        except ValueError as exc:
+            return str(exc)
+        if not self._search_router_injected:
+            self.search_router = build_search_router(paths=self.paths)
+        self.tools.run("record_log", message=f"生成联网搜索本地配置草稿：provider={normalized_provider} created={created}")
+
+        if created:
+            lines = [
+                f"已生成联网搜索本地配置草稿：{self._project_path(local_path)}",
+                f"Provider：{normalized_provider}",
+                "下一步：填入 api_key 后执行 /search-enable。",
+            ]
+        else:
+            lines = [
+                f"联网搜索本地配置已存在：{self._project_path(local_path)}",
+                "未覆盖已有配置，也不会显示已有 API key。",
+                "下一步：编辑该文件后执行 /search-enable。",
+            ]
         lines.extend(
             [
                 "状态检查：/search-status",

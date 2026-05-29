@@ -1089,6 +1089,24 @@ class AgentTests(unittest.TestCase):
         self.assertIn("API key：已配置", response)
         self.assertNotIn("secret-search-key", response)
 
+    def test_search_config_init_creates_tavily_local_config_draft_without_api_key(self):
+        response = self.agent.handle("/search-config-init tavily")
+
+        local_config = self.paths.config_dir / "search.local.json"
+        payload = json.loads(local_config.read_text(encoding="utf-8"))
+        enable_response = self.agent.handle("/search-enable")
+
+        self.assertIn("已生成联网搜索本地配置草稿：config/search.local.json", response)
+        self.assertIn("Provider：tavily", response)
+        self.assertIn("下一步：填入 api_key 后执行 /search-enable", response)
+        self.assertEqual(payload["provider"], "tavily")
+        self.assertEqual(payload["api_key"], "")
+        self.assertEqual(payload["base_url"], "")
+        self.assertEqual(payload["max_results"], 5)
+        self.assertEqual(payload["fake_results"], [])
+        self.assertIn("缺少 JARVIS_LITE_SEARCH_API_KEY", enable_response)
+        self.assertIn("网络调用：否（配置未完成）", enable_response)
+
     def test_agent_reads_llm_local_config_file_on_startup(self):
         local_config = self.paths.config_dir / "llm.local.json"
         local_config.write_text(
@@ -1130,6 +1148,55 @@ class AgentTests(unittest.TestCase):
         self.assertIn("API key：已配置", response)
         self.assertIn("/llm-smoke", response)
         self.assertNotIn("secret-local-key", response)
+
+    def test_llm_config_init_creates_qwen_local_config_draft_without_api_key(self):
+        response = self.agent.handle("/llm-config-init qwen")
+
+        local_config = self.paths.config_dir / "llm.local.json"
+        payload = json.loads(local_config.read_text(encoding="utf-8"))
+        enable_response = self.agent.handle("/llm-enable")
+
+        self.assertIn("已生成外脑本地配置草稿：config/llm.local.json", response)
+        self.assertIn("Provider：qwen", response)
+        self.assertIn("Adapter：openai-compatible", response)
+        self.assertIn("下一步：填入 model、base_url、api_key 后执行 /llm-enable", response)
+        self.assertEqual(payload["provider"], "qwen")
+        self.assertEqual(payload["model"], "")
+        self.assertEqual(payload["base_url"], "")
+        self.assertEqual(payload["api_key"], "")
+        self.assertEqual(payload["fake_response"], "")
+        self.assertIn("缺少 JARVIS_LITE_LLM_MODEL", enable_response)
+        self.assertIn("缺少 JARVIS_LITE_LLM_API_KEY", enable_response)
+        self.assertIn("缺少 JARVIS_LITE_LLM_BASE_URL", enable_response)
+        self.assertIn("网络调用：否（配置未完成）", enable_response)
+
+    def test_llm_config_init_does_not_overwrite_existing_local_config_or_leak_key(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        original_payload = {
+            "provider": "qwen",
+            "model": "qwen-test",
+            "base_url": "https://qwen.example/v1/responses",
+            "api_key": "secret-existing-key",
+        }
+        local_config.write_text(json.dumps(original_payload, ensure_ascii=False), encoding="utf-8")
+
+        response = self.agent.handle("/llm-config-init gemini")
+        payload = json.loads(local_config.read_text(encoding="utf-8"))
+
+        self.assertEqual(payload, original_payload)
+        self.assertIn("外脑本地配置已存在：config/llm.local.json", response)
+        self.assertIn("未覆盖已有配置", response)
+        self.assertIn("/llm-enable", response)
+        self.assertNotIn("secret-existing-key", response)
+
+    def test_natural_language_config_init_uses_inner_brain_entries(self):
+        llm_response = self.agent.handle("生成外脑配置")
+        search_response = self.agent.handle("生成联网搜索配置")
+
+        self.assertTrue((self.paths.config_dir / "llm.local.json").is_file())
+        self.assertTrue((self.paths.config_dir / "search.local.json").is_file())
+        self.assertIn("已生成外脑本地配置草稿", llm_response)
+        self.assertIn("已生成联网搜索本地配置草稿", search_response)
 
     def test_natural_language_enable_llm_uses_inner_brain_entry(self):
         response = self.agent.handle("开启外脑")
@@ -1703,7 +1770,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.3.1",
+                    "version": "0.4.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -1714,7 +1781,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.3.1", response)
+        self.assertIn("发现新版本：0.4.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -1729,7 +1796,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.3.1",
+                        "version": "0.4.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

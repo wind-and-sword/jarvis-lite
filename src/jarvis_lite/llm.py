@@ -39,6 +39,8 @@ LLM_ALLOWED_COMMAND_SPECS = (
     "/search-compare",
     "/search-save-summary [文件名]",
     "/search-import-summary [文件名]",
+    "/llm-config-init [provider]",
+    "/search-config-init [provider]",
 )
 LLM_ALLOWED_COMMAND_NAMES = tuple(spec.split(maxsplit=1)[0] for spec in LLM_ALLOWED_COMMAND_SPECS)
 LLM_INTENT_SCHEMA: dict[str, Any] = {
@@ -517,6 +519,35 @@ def write_llm_example_config(paths: ProjectPaths) -> Path:
     return target
 
 
+def write_llm_local_config_draft(paths: ProjectPaths, provider: str = "") -> tuple[Path, bool, str]:
+    """创建不会包含真实密钥的 LLM 本地配置草稿；已存在时不覆盖。"""
+
+    normalized_provider = _normalize_llm_config_provider(provider)
+    target = llm_local_config_path(paths)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists():
+        return target, False, normalized_provider
+    target.write_text(llm_local_config_draft_text(normalized_provider), encoding="utf-8")
+    return target, True, normalized_provider
+
+
+def llm_local_config_draft_text(provider: str = "") -> str:
+    """返回 llm.local.json 草稿，敏感字段保持空值。"""
+
+    normalized_provider = _normalize_llm_config_provider(provider)
+    fake_response = ""
+    if normalized_provider == "fake":
+        fake_response = '{"type":"answer","answer":"本地 fake 外脑已启用"}'
+    payload = {
+        "provider": normalized_provider,
+        "model": "",
+        "base_url": "",
+        "api_key": "",
+        "fake_response": fake_response,
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+
+
 def llm_example_config_text() -> str:
     """返回 JSON 模板文本；真实配置应复制到 llm.local.json。"""
 
@@ -657,6 +688,16 @@ def _llm_config_template_sections() -> dict[str, str]:
             ]
         ),
     }
+
+
+def _normalize_llm_config_provider(provider: str = "") -> str:
+    normalized_provider = provider.strip().lower() or "openai-compatible"
+    if normalized_provider not in VALID_LLM_PROVIDERS:
+        raise ValueError(
+            f"暂不支持 LLM provider：{normalized_provider}。"
+            "可用 provider：off、fake、openai、openai-compatible、qwen、gemini"
+        )
+    return normalized_provider
 
 
 def _parse_llm_usage_line(line: str) -> LLMUsage | None:
