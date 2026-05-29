@@ -114,6 +114,9 @@ class AssistantPanel(QWidget):
         self._llm_activity_status_label = QLabel(self.bridge.llm_activity_status_text())
         self._llm_activity_status_label.setObjectName("llmActivityStatusLabel")
         self._llm_activity_status_label.setWordWrap(True)
+        self._route_status_label = QLabel(self.bridge.route_status_text())
+        self._route_status_label.setObjectName("routeStatusLabel")
+        self._route_status_label.setWordWrap(True)
         self._output = QTextEdit()
         self._output.setObjectName("conversationOutput")
         self._output.setReadOnly(True)
@@ -149,6 +152,7 @@ class AssistantPanel(QWidget):
         layout.addWidget(self._status_label)
         layout.addWidget(self._llm_pending_status_label)
         layout.addWidget(self._llm_activity_status_label)
+        layout.addWidget(self._route_status_label)
         layout.addWidget(self._output)
         layout.addLayout(input_row)
         layout.addLayout(command_row)
@@ -187,6 +191,7 @@ class AssistantPanel(QWidget):
         self._last_result_text = f"{user_line}\n{assistant_line}"
         self._llm_pending_status_label.setText(response.llm_pending_status_text)
         self._llm_activity_status_label.setText(response.llm_activity_status_text)
+        self._route_status_label.setText(response.route_status_text)
         self._set_state(response.state)
 
     def transcript_text(self) -> str:
@@ -209,6 +214,9 @@ class AssistantPanel(QWidget):
 
     def llm_activity_status_text(self) -> str:
         return self._llm_activity_status_label.text()
+
+    def route_status_text(self) -> str:
+        return self._route_status_label.text()
 
     def set_state_listener(self, listener: Callable[[DesktopState], None]) -> None:
         self._state_listener = listener

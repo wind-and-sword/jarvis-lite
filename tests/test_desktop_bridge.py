@@ -116,6 +116,13 @@ class DesktopBridgeTests(unittest.TestCase):
         self.assertIn("结果：外脑处理开放问题", response.llm_activity_status_text)
         self.assertEqual(response.llm_activity_status_text, bridge.llm_activity_status_text())
 
+    def test_send_exposes_route_status_for_inner_brain_reply(self):
+        response = self.bridge.send("早上好")
+
+        self.assertIn("Jarvis Lite", response.assistant_text)
+        self.assertIn("最近路由：inner-brain / assistant.greeting", response.route_status_text)
+        self.assertEqual(response.route_status_text, self.bridge.route_status_text())
+
     def test_quick_commands_include_current_assistant_capabilities(self):
         commands = quick_commands()
         prompts = tuple(command.prompt for command in commands)

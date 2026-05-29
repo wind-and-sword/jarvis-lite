@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-29：发布 `0.14.0` 可安装测试包，收口最近路由决策状态 v1；桌面面板会固定展示最近一条输入由 `command`、`inner-brain`、`knowledge`、`llm-fallback` 等哪一层处理，便于确认回复是否来自本地内脑、外脑或兜底；全量 `unittest` 483 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.14.0.exe`。
 - 2026-05-29：发布 `0.13.0` 可安装测试包，收口桌面外脑运行状态 v1；桌面面板会固定展示外脑启用状态、provider、model、最近一次 LLM 调用触发来源、返回类型、输入摘要和结果摘要；全量 `unittest` 478 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.13.0.exe`。
 - 2026-05-29：发布 `0.12.0` 可安装测试包，收口桌面外脑待补充状态 v1；桌面面板会固定展示当前 LLM 待补充问题、澄清轮次、原始问题和取消提示，取消或补齐后随响应刷新；全量 `unittest` 474 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.12.0.exe`。
 - 2026-05-29：发布 `0.11.0` 可安装测试包，收口 LLM 外脑澄清轮数与过期策略 v1；连续 LLM `clarify` 会保留最初原始问题并递增轮次，超过 3 轮会结束 pending，超过 12 小时未补充的 runtime pending 会在 Agent 启动时清理；全量 `unittest` 471 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.11.0.exe`。

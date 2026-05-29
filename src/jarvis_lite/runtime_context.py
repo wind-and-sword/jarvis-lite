@@ -81,6 +81,17 @@ class RuntimeLLMCallContext:
 
 
 @dataclass(frozen=True)
+class RuntimeRouteDecisionContext:
+    """保存最近一次输入路由决策的可序列化运行态信息。"""
+
+    route: str
+    detail: str
+    prompt: str
+    summary: str = ""
+    created_at: str = ""
+
+
+@dataclass(frozen=True)
 class RuntimeContext:
     """保存可跨 Agent 实例恢复的轻量运行态上下文。"""
 
@@ -95,6 +106,7 @@ class RuntimeContext:
     recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = ()
     pending_llm_clarification: RuntimeLLMClarificationContext | None = None
     recent_llm_call: RuntimeLLMCallContext | None = None
+    recent_route_decision: RuntimeRouteDecisionContext | None = None
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -142,6 +154,7 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         recent_tagged_documents_operations=recent_tagged_documents_operations,
         pending_llm_clarification=_read_llm_clarification_context(raw.get("pending_llm_clarification")),
         recent_llm_call=_read_llm_call_context(raw.get("recent_llm_call")),
+        recent_route_decision=_read_route_decision_context(raw.get("recent_route_decision")),
     )
 
 
@@ -182,6 +195,7 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                     context.pending_llm_clarification
                 ),
                 "recent_llm_call": _llm_call_context_to_json(context.recent_llm_call),
+                "recent_route_decision": _route_decision_context_to_json(context.recent_route_decision),
             },
             ensure_ascii=False,
             indent=2,
@@ -307,6 +321,23 @@ def _read_llm_call_context(value: object) -> RuntimeLLMCallContext | None:
         summary=_read_optional_str(value.get("summary")) or "",
         provider=_read_optional_str(value.get("provider")) or "",
         model=_read_optional_str(value.get("model")) or "",
+        created_at=_read_optional_str(value.get("created_at")) or "",
+    )
+
+
+def _read_route_decision_context(value: object) -> RuntimeRouteDecisionContext | None:
+    if not isinstance(value, dict):
+        return None
+    route = _read_optional_str(value.get("route"))
+    detail = _read_optional_str(value.get("detail"))
+    prompt = _read_optional_str(value.get("prompt"))
+    if route is None or detail is None or prompt is None:
+        return None
+    return RuntimeRouteDecisionContext(
+        route=route,
+        detail=detail,
+        prompt=prompt,
+        summary=_read_optional_str(value.get("summary")) or "",
         created_at=_read_optional_str(value.get("created_at")) or "",
     )
 
@@ -440,6 +471,18 @@ def _llm_call_context_to_json(context: RuntimeLLMCallContext | None) -> dict[str
         "summary": context.summary,
         "provider": context.provider,
         "model": context.model,
+        "created_at": context.created_at,
+    }
+
+
+def _route_decision_context_to_json(context: RuntimeRouteDecisionContext | None) -> dict[str, str] | None:
+    if context is None:
+        return None
+    return {
+        "route": context.route,
+        "detail": context.detail,
+        "prompt": context.prompt,
+        "summary": context.summary,
         "created_at": context.created_at,
     }
 

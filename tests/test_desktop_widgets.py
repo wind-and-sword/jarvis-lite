@@ -72,6 +72,7 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertIn("状态：success", self.panel.status_text())
         self.assertEqual(self.panel.llm_pending_status_text(), "外脑待补充：无")
         self.assertIn("最近调用：无", self.panel.llm_activity_status_text())
+        self.assertIn("最近路由：command / /memory", self.panel.route_status_text())
 
     def test_panel_shows_llm_pending_status_and_refreshes_after_cancel(self):
         self.paths.config_dir.mkdir(parents=True, exist_ok=True)
@@ -157,6 +158,14 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertIn("外脑运行状态：已启用", activity_text)
         self.assertIn("最近调用：fallback / answer", activity_text)
         self.assertIn("结果：外脑处理开放问题", activity_text)
+
+    def test_panel_shows_route_status_after_inner_brain_reply(self):
+        self.panel.submit_text("早上好")
+
+        route_text = self.panel.route_status_text()
+
+        self.assertIn("最近路由：inner-brain / assistant.greeting", route_text)
+        self.assertIn("输入：早上好", route_text)
 
     def test_panel_exposes_only_direct_quick_command_buttons(self):
         self.assertEqual(

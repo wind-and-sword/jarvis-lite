@@ -15,6 +15,7 @@ class DesktopResponse:
     turn_count: int
     llm_pending_status_text: str = "外脑待补充：无"
     llm_activity_status_text: str = "外脑运行状态：未启用\nProvider：off\n最近调用：无"
+    route_status_text: str = "最近路由：无"
 
 
 @dataclass(frozen=True)
@@ -56,6 +57,7 @@ class DesktopBridge:
             len(self.session.turns),
             self.llm_pending_status_text(),
             self.llm_activity_status_text(),
+            self.route_status_text(),
         )
 
     def send_sensitive(self, command: str, display_input: str) -> DesktopResponse:
@@ -73,6 +75,7 @@ class DesktopBridge:
             len(self.session.turns),
             self.llm_pending_status_text(),
             self.llm_activity_status_text(),
+            self.route_status_text(),
         )
 
     def llm_pending_status_text(self) -> str:
@@ -84,6 +87,11 @@ class DesktopBridge:
         """返回桌面面板固定展示的 LLM 外脑运行状态。"""
 
         return self.session.agent.llm_activity_status_text()
+
+    def route_status_text(self) -> str:
+        """返回桌面面板固定展示的最近路由决策状态。"""
+
+        return self.session.agent.route_status_text()
 
 
 def quick_commands() -> tuple[QuickCommand, ...]:

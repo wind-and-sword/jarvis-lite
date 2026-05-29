@@ -79,6 +79,7 @@ from .runtime_context import (
     RuntimeLLMCallContext,
     RuntimeLLMClarificationContext,
     RuntimeRecentFileContext,
+    RuntimeRouteDecisionContext,
     RuntimeTaggedDocumentsOperationContext,
     RuntimeWebSearchContext,
     RuntimeWebSearchResultContext,
@@ -178,6 +179,7 @@ class JarvisAgent:
             self._restore_pending_llm_clarification(runtime_context.pending_llm_clarification)
         )
         self._recent_llm_call: RuntimeLLMCallContext | None = runtime_context.recent_llm_call
+        self._recent_route_decision: RuntimeRouteDecisionContext | None = runtime_context.recent_route_decision
         self._recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = (
             runtime_context.recent_tagged_documents_operations
         )
@@ -212,6 +214,9 @@ class JarvisAgent:
         prompt = user_input.strip()
         if not prompt:
             return "请输入问题或命令。输入 /help 查看可用命令。"
+
+        if self._is_explicit_command_prompt(prompt):
+            self._remember_command_route(prompt)
 
         if prompt in {"/help", "help"}:
             return self._help()
@@ -268,7 +273,9 @@ class JarvisAgent:
         if is_identity_question(prompt):
             identity = find_identity(read_profile(self.paths))
             if identity:
+                self._remember_route_decision("memory-fallback", "identity", prompt, "长期记忆命中")
                 return identity
+            self._remember_route_decision("memory-fallback", "identity", prompt, "长期记忆未命中")
             return "我还不知道你是谁。你可以说“我叫张三”或使用 /remember 用户姓名：张三。"
 
         if prompt.startswith("/"):
@@ -276,7 +283,9 @@ class JarvisAgent:
 
         fact = parse_identity_fact(prompt)
         if fact:
-            return self._remember(fact)
+            response = self._remember(fact)
+            self._remember_route_decision("memory-fallback", "remember", prompt, "长期记忆写入")
+            return response
 
         teach_response = self._teach_inner_brain_sample_from_natural_language(prompt)
         if teach_response is not None:
@@ -301,22 +310,30 @@ class JarvisAgent:
                     f"confidence={inner_brain_result.confidence:.2f}"
                 ),
             )
-            return self._handle_natural_language_intent(inner_brain_result.natural_language_intent)
+            response = self._handle_natural_language_intent(inner_brain_result.natural_language_intent)
+            self._remember_route_decision("inner-brain", inner_brain_result.intent, prompt, "本地内脑命中")
+            return response
         if inner_brain_result.policy == InnerBrainPolicy.CLARIFY:
-            return self._inner_brain_clarification(inner_brain_result)
+            response = self._inner_brain_clarification(inner_brain_result)
+            self._remember_route_decision("inner-brain-clarify", inner_brain_result.intent, prompt, "本地内脑需要补充槽位")
+            return response
 
         data_answer = self._answer_from_data(prompt)
         if data_answer:
             self.tools.run("record_log", message=f"基于 data 目录回答普通问题：{prompt}")
+            self._remember_route_decision("knowledge", "data-answer", prompt, "本地知识库命中")
             return data_answer
 
         llm_answer = self._answer_from_llm(prompt)
         if llm_answer:
             self.tools.run("record_log", message=f"LLM 外脑处理输入：{prompt}")
+            detail = self._recent_llm_call.intent_type if self._recent_llm_call is not None else "unknown"
+            self._remember_route_decision("llm-fallback", detail, prompt, "LLM 外脑处理")
             return llm_answer
 
         profile = read_profile(self.paths)
         summary = summarize_profile(profile)
+        self._remember_route_decision("memory-fallback", "profile", prompt, "长期记忆兜底")
         return f"Jarvis Lite 已读取长期记忆。当前记忆摘要：{self._sentence(summary)}你可以输入 /help 查看我现在能做的事。"
 
     def llm_clarification_status_text(self) -> str:
@@ -366,6 +383,20 @@ class JarvisAgent:
         lines.append(f"输入：{call.prompt}")
         if call.summary:
             lines.append(f"结果：{call.summary}")
+        return "\n".join(lines)
+
+    def route_status_text(self) -> str:
+        """返回桌面面板可展示的最近输入路由决策。"""
+
+        decision = self._recent_route_decision
+        if decision is None:
+            return "最近路由：无"
+        lines = [f"最近路由：{decision.route} / {decision.detail}"]
+        if decision.created_at:
+            lines.append(f"时间：{decision.created_at}")
+        lines.append(f"输入：{decision.prompt}")
+        if decision.summary:
+            lines.append(f"结果：{decision.summary}")
         return "\n".join(lines)
 
     def _handle_command(self, prompt: str) -> str:
@@ -2679,6 +2710,7 @@ class JarvisAgent:
             recent_tagged_documents_operations=self._recent_tagged_documents_operations,
             pending_llm_clarification=self._runtime_pending_llm_clarification(),
             recent_llm_call=self._recent_llm_call,
+            recent_route_decision=self._recent_route_decision,
         )
 
     def _save_runtime_context(self) -> None:
@@ -2725,6 +2757,58 @@ class JarvisAgent:
             created_at=self._now_iso(),
         )
         self._save_runtime_context()
+
+    def _remember_route_decision(self, route: str, detail: str, prompt: str, summary: str) -> None:
+        self._recent_route_decision = RuntimeRouteDecisionContext(
+            route=route,
+            detail=detail,
+            prompt=self._compact_status_text(prompt),
+            summary=self._compact_status_text(summary),
+            created_at=self._now_iso(),
+        )
+        self._save_runtime_context()
+
+    def _remember_command_route(self, prompt: str) -> None:
+        self._remember_route_decision("command", self._route_command_detail(prompt), prompt, "显式命令")
+
+    def _route_command_detail(self, prompt: str) -> str:
+        try:
+            parts = shlex.split(prompt, posix=False)
+        except ValueError:
+            parts = prompt.split()
+        if not parts:
+            return "unknown"
+        return parts[0]
+
+    def _is_explicit_command_prompt(self, prompt: str) -> bool:
+        if prompt.startswith("/"):
+            return True
+        return prompt in {
+            "help",
+            "memory",
+            "experiences",
+            "tools",
+            "status",
+            "llm-status",
+            "search-status",
+            "inner-brain-status",
+            "llm-usage",
+            "llm-context-preview",
+            "recent-context",
+            "context",
+            "kb",
+            "knowledge",
+            "kb-summary",
+            "knowledge-summary",
+            "voice-status",
+            "automation-status",
+            "recent-files",
+            "tag-history",
+            "batch-tag-history",
+            "update-status",
+            "update-download",
+            "dirs",
+        }
 
     def _llm_intent_summary(self, intent: LLMIntent) -> str:
         if intent.type == "answer" and intent.answer:
