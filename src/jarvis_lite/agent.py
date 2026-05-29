@@ -963,6 +963,12 @@ class JarvisAgent:
             return "/search 关键词"
         if result.intent == "web.search_summarize" and "query" in result.missing:
             return "/search-summary 关键词"
+        if result.intent in {"directory.open_alias", "directory.organize_alias"} and "alias" in result.missing:
+            return "请直接回复目录别名，例如“项目”"
+        if result.intent == "experience.record" and "experience" in result.missing:
+            return "请直接回复经验内容，例如“导入资料后先打标签”"
+        if result.intent in {"experience.search", "experience.advice"} and "query" in result.missing:
+            return "请直接回复经验关键词，例如“导入资料”"
         if {"result_index", "tags"}.issubset(set(result.missing)):
             return "请直接回复编号和标签，例如“第二份 项目 Python”"
         if "tags" in result.missing:
@@ -980,6 +986,12 @@ class JarvisAgent:
             return "/inner-brain-label 原话 => desktop.delete_shortcut items=快捷方式名称"
         if result.intent in {"web.search", "web.search_summarize"} and "query" in result.missing:
             return f"/inner-brain-label 原话 => {result.intent} query=关键词"
+        if result.intent in {"directory.open_alias", "directory.organize_alias"} and "alias" in result.missing:
+            return f"/inner-brain-label 原话 => {result.intent} alias=目录别名"
+        if result.intent == "experience.record" and "experience" in result.missing:
+            return "/inner-brain-label 原话 => experience.record experience=经验内容"
+        if result.intent in {"experience.search", "experience.advice"} and "query" in result.missing:
+            return f"/inner-brain-label 原话 => {result.intent} query=经验关键词"
         if result.intent != "unknown":
             return f"/inner-brain-label 原话 => {result.intent} slot=value"
         return ""
@@ -993,6 +1005,8 @@ class JarvisAgent:
             "tags": "标签",
             "result_index": "编号",
             "query": "查询关键词",
+            "alias": "目录别名",
+            "experience": "经验内容",
         }
         return labels.get(missing, missing)
 

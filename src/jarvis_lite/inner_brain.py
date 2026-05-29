@@ -1200,7 +1200,7 @@ def _clarification_slots_from_reply(reply: str, intent: str, missing: tuple[str,
 def _normalize_clarification_value(reply: str) -> str:
     value = reply.strip().strip("。！？!?.")
     patterns = (
-        r"^(?:就是|是|用|补充|路径是|文件是|来源是|名称是|名字是|对象是)\s*[:：]?\s*(?P<value>.+)$",
+        r"^(?:就是|是|用|补充|路径是|文件是|来源是|名称是|名字是|对象是|目录是|目录别名是|别名是|经验是|经验内容是|关键词是|查询是)\s*[:：]?\s*(?P<value>.+)$",
         r"^(?:请用|帮我用)\s*(?P<value>.+)$",
     )
     for pattern in patterns:

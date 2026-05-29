@@ -44,7 +44,7 @@ PC Agent 稳定
 - 知识库问答、摘要、标签、按标签读取资料组。
 - 最近资料、最近文件、最近目录、最近搜索结果、最近建议和批量标签历史。
 - InnerBrain 本地内脑：新增结构化 `InnerBrainResult`，包含 `intent`、`slots`、`confidence`、`missing`、`source`、`reason` 和策略；当前已迁移为 seed/runtime 样本分类器优先，既有自然语言规则只作为 `legacy_fallback` 迁移期兼容兜底。
-- InnerBrain 多轮澄清第一版：当本地内脑已识别 intent 但缺少 `source`、`items`、`query`、`result_index`、`tags` 等槽位时，`JarvisAgent` 会保留本轮澄清状态；用户下一句可直接补充文件路径、桌面快捷方式名称、联网搜索关键词，或用“第二份 项目 Python”这类一句式回复同时补齐编号和标签，Agent 补齐槽位后继续执行原请求，用户也可用“取消补充”等表达取消。
+- InnerBrain 多轮澄清第一版：当本地内脑已识别 intent 但缺少 `source`、`items`、`query`、`result_index`、`tags`、`alias`、`experience` 等槽位时，`JarvisAgent` 会保留本轮澄清状态；用户下一句可直接补充文件路径、桌面快捷方式名称、联网搜索关键词、目录别名、经验内容，或用“第二份 项目 Python”这类一句式回复同时补齐编号和标签，Agent 补齐槽位后继续执行原请求，用户也可用“取消补充”等表达取消。
 - InnerBrain 可观察与样本闭环：`/inner-brain-status` 查看样本数量、阈值和训练目录；`/inner-brain-preview 文本` 只预览识别结果，不执行命令或本地动作；`/inner-brain-adopt 文本` 将正确识别结果保存为运行态 JSONL 样本；`/inner-brain-label 文本 => intent [slot=value ...]` 可人工标注 unknown 或误识别样本；`/inner-brain-teach 文本 => /命令` 和“以后我说“文本”就是 /命令”可把用户口语短句教学为已知命令。
 - 本地自然语言意图层，可处理常见中文表达，包括问候、助手身份/能力询问、最近上下文、最近文件、显式文件读取/导入、显式文件打标签、读取编号资料、查看/导入编号最近文件、查看编号搜索结果、查看/执行编号建议、当前资料/结果打标签、编号资料/搜索结果打标签、标签组读取与批量标签预览、知识库、常用目录打开/整理、最近目录打开/整理、日报、更新、经验记录/搜索/建议、确认/取消执行、联网搜索、联网搜索后续来源处理和明确点名的桌面 `.lnk` 快捷方式删除；InnerBrain 高置信度命中后仍由 `JarvisAgent` 执行。
 - LLM 外脑 Router 第一版：provider-neutral 配置、`config/llm.local.json` 本地配置文件、fake provider 测试路径、OpenAI Responses API adapter、OpenAI-compatible 端点、完整 `/v1/responses` URL 归一化、provider 与 Agent 双层命令白名单、LLM fallback 近期上下文与最近搜索结果、`/llm-enable` 外脑启用入口、`/llm-context-preview`、`/llm-smoke` 配置验证、token usage 日志、`/llm-status` API key/网络调用诊断、`/llm-usage` 本地汇总和 `/llm-config-example` 配置模板。

@@ -543,6 +543,69 @@ class AgentTests(unittest.TestCase):
         self.assertIn("标签：项目、Python", kb_response)
         self.assertNotIn("标签：第二份", kb_response)
 
+    def test_inner_brain_clarification_accepts_followup_directory_alias(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "打开那个常用位置",
+                    "intent": "directory.open_alias",
+                    "slots": {},
+                    "missing": ["alias"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        target = Path(self.temp_dir.name) / "project"
+        target.mkdir()
+        agent = JarvisAgent(self.paths)
+        agent.handle(f"/dir-add 项目 {target}")
+
+        clarify_response = agent.handle("打开那个常用位置")
+        followup_response = agent.handle("目录是项目")
+        transcript_path = self.paths.logs_dir / "desktop-actions.txt"
+
+        self.assertIn("需要补充：目录别名", clarify_response)
+        self.assertIn("可直接补充：请直接回复目录别名，例如“项目”", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("已记录打开目录请求：项目", followup_response)
+        self.assertTrue(transcript_path.is_file())
+        transcript = transcript_path.read_text(encoding="utf-8")
+        self.assertIn("open_directory", transcript)
+        self.assertIn(str(target.resolve()), transcript)
+
+    def test_inner_brain_clarification_accepts_followup_experience_content(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "记住这个经验",
+                    "intent": "experience.record",
+                    "slots": {},
+                    "missing": ["experience"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        agent = JarvisAgent(self.paths)
+
+        clarify_response = agent.handle("记住这个经验")
+        followup_response = agent.handle("经验是导入资料后先打标签")
+        experiences_response = agent.handle("/experiences")
+
+        self.assertIn("需要补充：经验内容", clarify_response)
+        self.assertIn("可直接补充：请直接回复经验内容，例如“导入资料后先打标签”", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("已记录经验：导入资料后先打标签", followup_response)
+        self.assertIn("导入资料后先打标签", experiences_response)
+        self.assertNotIn("经验是导入资料后先打标签", experiences_response)
+
     def test_inner_brain_clarification_can_be_cancelled(self):
         fake_home = Path(self.temp_dir.name) / "home"
         desktop = fake_home / "Desktop"
