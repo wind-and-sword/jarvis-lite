@@ -239,6 +239,8 @@ class JarvisAgent:
         if prompt in {"/inner-brain-status", "inner-brain-status"}:
             self.tools.run("record_log", message="查看 InnerBrain 本地内脑状态")
             return self.inner_brain.describe_status()
+        if self._is_inner_brain_candidates_prompt(prompt):
+            return self._inner_brain_candidates_status()
         if prompt in {"/llm-usage", "llm-usage"}:
             self.tools.run("record_log", message="查看 LLM 用量汇总")
             return summarize_llm_usage(self.paths.log_path.read_text(encoding="utf-8").splitlines())
@@ -712,6 +714,7 @@ class JarvisAgent:
                 "/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本",
                 "/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本",
                 "/inner-brain-teach 文本 => /命令：把自然语言短句教学为已知命令",
+                "/inner-brain-candidates：查看最近输入中的内脑训练候选",
                 "/llm-usage：查看 LLM token 用量汇总",
                 "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
                 "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",
@@ -881,6 +884,44 @@ class JarvisAgent:
             ),
         )
         return self._describe_inner_brain_sample_save(save_result, result)
+
+    def _inner_brain_candidates_status(self) -> str:
+        self.tools.run("record_log", message="查看 InnerBrain 训练候选")
+        candidates = tuple(
+            decision for decision in self._recent_route_decisions if self._is_inner_brain_candidate_decision(decision)
+        )
+        if not candidates:
+            return "\n".join(
+                [
+                    "InnerBrain 训练候选：暂无。",
+                    "- 最近输入都已经由命令、本地内脑或知识库稳定处理，暂时不需要写入新样本。",
+                ]
+            )
+
+        lines = [
+            "InnerBrain 训练候选：",
+            "说明：这里只列候选，不自动训练；开放问题继续交给 LLM 外脑，固定动作再人工教学。",
+        ]
+        for index, decision in enumerate(candidates, start=1):
+            lines.extend(self._inner_brain_candidate_lines(index, decision))
+        return "\n".join(lines)
+
+    def _is_inner_brain_candidate_decision(self, decision: RuntimeRouteDecisionContext) -> bool:
+        return decision.route in {"llm-fallback", "memory-fallback", "inner-brain-clarify"}
+
+    def _inner_brain_candidate_lines(self, index: int, decision: RuntimeRouteDecisionContext) -> list[str]:
+        sample_text = decision.prompt
+        lines = [
+            f"{index}. {sample_text}",
+            f"   当前路由：{decision.route} / {decision.detail}",
+        ]
+        if decision.summary:
+            lines.append(f"   结果：{decision.summary}")
+        if decision.explanation:
+            lines.append(f"   依据：{decision.explanation}")
+        lines.append(f"   固定为命令：/inner-brain-teach {sample_text} => /命令")
+        lines.append(f"   人工标注：/inner-brain-label {sample_text} => intent slot=value")
+        return lines
 
     def _label_inner_brain_sample(self, prompt: str) -> str:
         usage = "用法：/inner-brain-label 文本 => intent [slot=value ...]"
@@ -2953,6 +2994,8 @@ class JarvisAgent:
             "llm-status",
             "search-status",
             "inner-brain-status",
+            "inner-brain-candidates",
+            "brain-candidates",
             "llm-usage",
             "llm-context-preview",
             "recent-context",
@@ -2979,8 +3022,15 @@ class JarvisAgent:
     def _is_route_history_prompt(self, prompt: str) -> bool:
         return prompt in {"/route-history", "route-history", "/routes", "routes"}
 
+    def _is_inner_brain_candidates_prompt(self, prompt: str) -> bool:
+        return prompt in {"/inner-brain-candidates", "inner-brain-candidates", "/brain-candidates", "brain-candidates"}
+
     def _is_route_observability_prompt(self, prompt: str) -> bool:
-        return self._is_recent_context_prompt(prompt) or self._is_route_history_prompt(prompt)
+        return (
+            self._is_recent_context_prompt(prompt)
+            or self._is_route_history_prompt(prompt)
+            or self._is_inner_brain_candidates_prompt(prompt)
+        )
 
     def _llm_intent_summary(self, intent: LLMIntent) -> str:
         if intent.type == "answer" and intent.answer:

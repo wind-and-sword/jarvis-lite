@@ -1702,6 +1702,52 @@ class AgentTests(unittest.TestCase):
         self.assertIn("LLM 外脑总结：教学后的搜索总结。", followup)
         self.assertEqual(search_provider.calls, ["Python 版本"])
 
+    def test_inner_brain_candidates_reports_empty_state_without_polluting_route_history(self):
+        self.agent.handle("早上好")
+
+        response = self.agent.handle("/inner-brain-candidates")
+        status = self.agent.route_status_text()
+
+        self.assertIn("InnerBrain 训练候选：暂无。", response)
+        self.assertIn("最近输入都已经由命令、本地内脑或知识库稳定处理", response)
+        self.assertIn("最近路由：inner-brain / assistant.greeting", status)
+        self.assertNotIn("command / /inner-brain-candidates", status)
+
+    def test_inner_brain_candidates_lists_llm_and_memory_fallback_prompts(self):
+        self.agent.handle("火星基地预算需要外部判断")
+        provider = FakeLLMProvider(
+            '{"type":"answer","answer":"外脑处理开放问题","reason":"需要开放判断"}'
+        )
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider),
+        )
+        agent.handle("这句话需要外脑判断")
+
+        response = agent.handle("/inner-brain-candidates")
+
+        self.assertIn("InnerBrain 训练候选：", response)
+        self.assertIn("1. 这句话需要外脑判断", response)
+        self.assertIn("当前路由：llm-fallback / answer", response)
+        self.assertIn("结果：LLM 外脑处理", response)
+        self.assertIn("依据：provider=fake model=intent-test source=fallback type=answer", response)
+        self.assertIn("/inner-brain-teach 这句话需要外脑判断 => /命令", response)
+        self.assertIn("/inner-brain-label 这句话需要外脑判断 => intent slot=value", response)
+        self.assertIn("2. 火星基地预算需要外部判断", response)
+        self.assertIn("当前路由：memory-fallback / profile", response)
+        self.assertNotIn("command / /inner-brain-candidates", response)
+
+    def test_inner_brain_candidates_restore_on_startup(self):
+        self.agent.handle("火星基地预算需要外部判断")
+
+        restarted_agent = JarvisAgent(self.paths)
+        response = restarted_agent.handle("brain-candidates")
+
+        self.assertIn("InnerBrain 训练候选：", response)
+        self.assertIn("1. 火星基地预算需要外部判断", response)
+        self.assertIn("当前路由：memory-fallback / profile", response)
+        self.assertNotIn("command / brain-candidates", response)
+
     def test_llm_status_command_reports_router_state(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"状态测试"}')
         router = LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider)
@@ -2325,7 +2371,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.17.1",
+                    "version": "0.18.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2336,7 +2382,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.17.1", response)
+        self.assertIn("发现新版本：0.18.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2351,7 +2397,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.17.1",
+                        "version": "0.18.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
