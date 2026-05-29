@@ -63,6 +63,8 @@ class RuntimeLLMClarificationContext:
     original_prompt: str
     clarification: str
     context: tuple[str, ...] = ()
+    clarification_count: int = 1
+    created_at: str = ""
 
 
 @dataclass(frozen=True)
@@ -186,6 +188,12 @@ def _read_optional_str(value: object) -> str | None:
     return None
 
 
+def _read_positive_int(value: object, default: int) -> int:
+    if isinstance(value, int) and value > 0:
+        return value
+    return default
+
+
 def _read_recent_document_paths(value: object, current_path: str | None) -> tuple[str, ...]:
     paths = _read_str_tuple(value)
     if current_path is None or current_path in paths:
@@ -263,6 +271,8 @@ def _read_llm_clarification_context(value: object) -> RuntimeLLMClarificationCon
         original_prompt=original_prompt,
         clarification=clarification,
         context=_read_str_tuple(value.get("context")),
+        clarification_count=_read_positive_int(value.get("clarification_count"), 1),
+        created_at=_read_optional_str(value.get("created_at")) or "",
     )
 
 
@@ -380,6 +390,8 @@ def _llm_clarification_context_to_json(
         "original_prompt": context.original_prompt,
         "clarification": context.clarification,
         "context": list(context.context),
+        "clarification_count": context.clarification_count,
+        "created_at": context.created_at,
     }
 
 

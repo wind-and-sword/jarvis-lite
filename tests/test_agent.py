@@ -12,6 +12,7 @@ from jarvis_lite import __version__
 from jarvis_lite.agent import JarvisAgent
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.llm import FakeLLMProvider, LLMIntent, LLMRouter, LLMSettings, LLMUsage, build_llm_router
+from jarvis_lite.runtime_context import load_runtime_context, runtime_context_path
 from jarvis_lite.search import FakeSearchProvider, SearchResult, SearchRouter, SearchSettings
 
 
@@ -2075,7 +2076,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.10.1",
+                    "version": "0.11.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2086,7 +2087,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.10.1", response)
+        self.assertIn("发现新版本：0.11.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2101,7 +2102,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.10.1",
+                        "version": "0.11.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
@@ -3302,6 +3303,83 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已取消这次外脑补充", cancel_response)
         self.assertIn("LLM 外脑：新的外脑判断", after_cancel_response)
         self.assertEqual(new_provider.calls[0][0], "火星基地预算需要外部判断")
+
+    def test_llm_clarification_reclarify_preserves_original_prompt_and_reports_round(self):
+        provider = SequenceLLMProvider(
+            [
+                LLMIntent(type="clarify", clarification="你想看知识库还是最近文件？"),
+                LLMIntent(type="clarify", clarification="还需要哪个时间范围？"),
+                LLMIntent(type="answer", answer="建议先看最近一周的知识库。"),
+            ]
+        )
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        first_response = agent.handle("帮我判断下一步")
+        second_response = agent.handle("知识库")
+        context_response = agent.handle("/recent-context")
+        third_response = agent.handle("最近一周")
+
+        self.assertIn("LLM 外脑需要补充信息：你想看知识库还是最近文件？", first_response)
+        self.assertIn("LLM 外脑仍需要补充信息（第 2/3 轮）：还需要哪个时间范围？", second_response)
+        self.assertIn("澄清轮次：2/3", context_response)
+        self.assertIn("LLM 外脑：建议先看最近一周的知识库。", third_response)
+        self.assertEqual(len(provider.calls), 3)
+        third_prompt, third_context = provider.calls[2]
+        self.assertIn("原始问题：帮我判断下一步", third_prompt)
+        self.assertNotIn("原始问题：原始问题：", third_prompt)
+        self.assertIn("外脑澄清问题：还需要哪个时间范围？", third_prompt)
+        self.assertIn("LLM 澄清补充：最近一周", third_context)
+
+    def test_llm_clarification_max_rounds_clears_pending(self):
+        provider = SequenceLLMProvider(
+            [
+                LLMIntent(type="clarify", clarification="第一轮问题？"),
+                LLMIntent(type="clarify", clarification="第二轮问题？"),
+                LLMIntent(type="clarify", clarification="第三轮问题？"),
+                LLMIntent(type="clarify", clarification="第四轮问题？"),
+            ]
+        )
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        agent.handle("帮我判断下一步")
+        agent.handle("补充一")
+        agent.handle("补充二")
+        limit_response = agent.handle("补充三")
+        new_provider = SequenceLLMProvider([LLMIntent(type="answer", answer="新的外脑判断")])
+        restarted_agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), new_provider))
+        after_limit_response = restarted_agent.handle("新的问题")
+
+        self.assertIn("LLM 外脑连续追问过多，已结束这次外脑补充。", limit_response)
+        self.assertIsNone(load_runtime_context(self.paths).pending_llm_clarification)
+        self.assertIn("LLM 外脑：新的外脑判断", after_limit_response)
+        self.assertEqual(new_provider.calls[0][0], "新的问题")
+
+    def test_expired_llm_clarification_pending_is_cleared_on_startup(self):
+        context_path = runtime_context_path(self.paths)
+        context_path.parent.mkdir(parents=True, exist_ok=True)
+        context_path.write_text(
+            json.dumps(
+                {
+                    "pending_llm_clarification": {
+                        "original_prompt": "旧问题",
+                        "clarification": "旧澄清",
+                        "context": ["旧上下文"],
+                        "created_at": "2000-01-01T00:00:00",
+                        "clarification_count": 1,
+                    }
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        provider = SequenceLLMProvider([LLMIntent(type="answer", answer="新的外脑判断")])
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        response = agent.handle("新的问题")
+
+        self.assertIn("LLM 外脑：新的外脑判断", response)
+        self.assertEqual(provider.calls[0][0], "新的问题")
+        self.assertIsNone(load_runtime_context(self.paths).pending_llm_clarification)
 
     def test_llm_usage_is_recorded_when_provider_returns_usage(self):
         class UsageProvider:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import shlex
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from .automation import (
@@ -134,6 +134,12 @@ class PendingLLMClarification:
     original_prompt: str
     clarification: str
     context: tuple[str, ...]
+    clarification_count: int = 1
+    created_at: str = ""
+
+
+LLM_CLARIFICATION_MAX_ROUNDS = 3
+LLM_CLARIFICATION_EXPIRES_AFTER_SECONDS = 12 * 60 * 60
 
 
 class JarvisAgent:
@@ -197,6 +203,8 @@ class JarvisAgent:
             self._recent_document_path = self._recent_search_result_paths[0]
         if self._recent_document_path is not None and self._recent_document_path not in self._recent_document_paths:
             self._recent_document_paths = (self._recent_document_path, *self._recent_document_paths)
+        if runtime_context.pending_llm_clarification is not None and self._pending_llm_clarification is None:
+            self._save_runtime_context()
 
     def handle(self, user_input: str) -> str:
         prompt = user_input.strip()
@@ -1188,6 +1196,11 @@ class JarvisAgent:
         if self._pending_llm_clarification is not None:
             lines.append(f"- 待补充外脑问题：{self._pending_llm_clarification.clarification}")
             lines.append(f"  外脑原始问题：{self._pending_llm_clarification.original_prompt}")
+            lines.append(
+                f"  澄清轮次：{self._pending_llm_clarification.clarification_count}/"
+                f"{LLM_CLARIFICATION_MAX_ROUNDS}"
+            )
+            lines.append("  过期策略：超过 12 小时未补充会在下次启动时清理。")
             lines.append("  可回复缺失信息继续，或回复“取消补充”。")
         else:
             lines.append("- 待补充外脑问题：无")
@@ -2018,13 +2031,36 @@ class JarvisAgent:
         )
         context = (*pending.context, f"LLM 澄清补充：{prompt}")
         intent = self.llm_router.complete_intent(combined_prompt, context)
-        self._pending_llm_clarification = None
-        self._save_runtime_context()
         if intent is None:
+            self._pending_llm_clarification = None
+            self._save_runtime_context()
             self.tools.run("record_log", message="LLM 外脑澄清补充未返回结果")
             return "已补齐外脑需要的信息，但 LLM 外脑没有返回可执行结果。"
 
         self._record_llm_usage(intent)
+        if intent.type == "clarify" and intent.clarification:
+            next_count = pending.clarification_count + 1
+            if next_count > LLM_CLARIFICATION_MAX_ROUNDS:
+                self._pending_llm_clarification = None
+                self._save_runtime_context()
+                self.tools.run("record_log", message="LLM 外脑连续澄清超过上限")
+                return "LLM 外脑连续追问过多，已结束这次外脑补充。请把完整需求重新说一遍。"
+            self._pending_llm_clarification = PendingLLMClarification(
+                original_prompt=pending.original_prompt,
+                clarification=intent.clarification,
+                context=context,
+                clarification_count=next_count,
+                created_at=pending.created_at or self._now_iso(),
+            )
+            self._save_runtime_context()
+            self.tools.run("record_log", message=f"LLM 外脑继续澄清第 {next_count} 轮：{intent.clarification}")
+            return (
+                f"LLM 外脑仍需要补充信息（第 {next_count}/{LLM_CLARIFICATION_MAX_ROUNDS} 轮）："
+                f"{intent.clarification}"
+            )
+
+        self._pending_llm_clarification = None
+        self._save_runtime_context()
         self.tools.run("record_log", message="LLM 外脑澄清补充完成")
         response = self._handle_llm_intent(intent, combined_prompt, context)
         if not response:
@@ -2057,6 +2093,8 @@ class JarvisAgent:
                     original_prompt=prompt,
                     clarification=intent.clarification,
                     context=context,
+                    clarification_count=1,
+                    created_at=self._now_iso(),
                 )
                 self._save_runtime_context()
                 self.tools.run("record_log", message=f"LLM 外脑需要澄清：{intent.clarification}")
@@ -2594,10 +2632,15 @@ class JarvisAgent:
     ) -> PendingLLMClarification | None:
         if context is None:
             return None
+        created_at = context.created_at or self._now_iso()
+        if self._is_llm_clarification_expired(created_at):
+            return None
         return PendingLLMClarification(
             original_prompt=context.original_prompt,
             clarification=context.clarification,
             context=context.context,
+            clarification_count=max(1, min(context.clarification_count, LLM_CLARIFICATION_MAX_ROUNDS)),
+            created_at=created_at,
         )
 
     def _runtime_pending_llm_clarification(self) -> RuntimeLLMClarificationContext | None:
@@ -2607,7 +2650,20 @@ class JarvisAgent:
             original_prompt=self._pending_llm_clarification.original_prompt,
             clarification=self._pending_llm_clarification.clarification,
             context=self._pending_llm_clarification.context,
+            clarification_count=self._pending_llm_clarification.clarification_count,
+            created_at=self._pending_llm_clarification.created_at or self._now_iso(),
         )
+
+    def _is_llm_clarification_expired(self, created_at: str) -> bool:
+        try:
+            created = datetime.fromisoformat(created_at)
+        except ValueError:
+            return True
+        now = datetime.now(created.tzinfo) if created.tzinfo is not None else datetime.now()
+        return now - created > timedelta(seconds=LLM_CLARIFICATION_EXPIRES_AFTER_SECONDS)
+
+    def _now_iso(self) -> str:
+        return datetime.now().isoformat(timespec="seconds")
 
     def _runtime_tagged_documents_operation(self) -> RuntimeTaggedDocumentsOperationContext | None:
         if self._recent_tagged_documents_operations:
