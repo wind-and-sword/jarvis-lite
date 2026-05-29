@@ -9,6 +9,7 @@ from .config import ProjectPaths
 
 RUNTIME_DIRNAME = "jarvis-lite-runtime"
 CONTEXT_FILENAME = "agent-context.json"
+ROUTE_DECISION_HISTORY_LIMIT = 5
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,7 @@ class RuntimeContext:
     pending_llm_clarification: RuntimeLLMClarificationContext | None = None
     recent_llm_call: RuntimeLLMCallContext | None = None
     recent_route_decision: RuntimeRouteDecisionContext | None = None
+    recent_route_decisions: tuple[RuntimeRouteDecisionContext, ...] = ()
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -144,6 +146,13 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
     )
     if recent_tagged_documents_operation is None and recent_tagged_documents_operations:
         recent_tagged_documents_operation = recent_tagged_documents_operations[0]
+    recent_route_decision = _read_route_decision_context(raw.get("recent_route_decision"))
+    recent_route_decisions = _route_decision_history_with_latest(
+        recent_route_decision,
+        _read_route_decision_contexts(raw.get("recent_route_decisions")),
+    )
+    if recent_route_decision is None and recent_route_decisions:
+        recent_route_decision = recent_route_decisions[0]
     return RuntimeContext(
         recent_document_path=recent_document_path,
         recent_document_paths=_read_recent_document_paths(raw.get("recent_document_paths"), recent_document_path),
@@ -156,7 +165,8 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         recent_tagged_documents_operations=recent_tagged_documents_operations,
         pending_llm_clarification=_read_llm_clarification_context(raw.get("pending_llm_clarification")),
         recent_llm_call=_read_llm_call_context(raw.get("recent_llm_call")),
-        recent_route_decision=_read_route_decision_context(raw.get("recent_route_decision")),
+        recent_route_decision=recent_route_decision,
+        recent_route_decisions=recent_route_decisions,
     )
 
 
@@ -174,6 +184,17 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
         if context.recent_tagged_documents_operation is not None
         else recent_tagged_documents_operations[0]
         if recent_tagged_documents_operations
+        else None
+    )
+    recent_route_decisions = _route_decision_history_with_latest(
+        context.recent_route_decision,
+        context.recent_route_decisions,
+    )
+    recent_route_decision = (
+        context.recent_route_decision
+        if context.recent_route_decision is not None
+        else recent_route_decisions[0]
+        if recent_route_decisions
         else None
     )
     context_path.write_text(
@@ -197,7 +218,10 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                     context.pending_llm_clarification
                 ),
                 "recent_llm_call": _llm_call_context_to_json(context.recent_llm_call),
-                "recent_route_decision": _route_decision_context_to_json(context.recent_route_decision),
+                "recent_route_decision": _route_decision_context_to_json(recent_route_decision),
+                "recent_route_decisions": [
+                    _route_decision_context_to_json(decision) for decision in recent_route_decisions
+                ],
             },
             ensure_ascii=False,
             indent=2,
@@ -343,6 +367,46 @@ def _read_route_decision_context(value: object) -> RuntimeRouteDecisionContext |
         summary=_read_optional_str(value.get("summary")) or "",
         explanation=_read_optional_str(value.get("explanation")) or "",
         created_at=_read_optional_str(value.get("created_at")) or "",
+    )
+
+
+def _read_route_decision_contexts(value: object) -> tuple[RuntimeRouteDecisionContext, ...]:
+    if not isinstance(value, list):
+        return ()
+    decisions: list[RuntimeRouteDecisionContext] = []
+    for item in value:
+        decision = _read_route_decision_context(item)
+        if decision is not None:
+            decisions.append(decision)
+        if len(decisions) >= ROUTE_DECISION_HISTORY_LIMIT:
+            break
+    return tuple(decisions)
+
+
+def _route_decision_history_with_latest(
+    latest: RuntimeRouteDecisionContext | None,
+    history: tuple[RuntimeRouteDecisionContext, ...],
+) -> tuple[RuntimeRouteDecisionContext, ...]:
+    decisions: list[RuntimeRouteDecisionContext] = []
+    if latest is not None:
+        decisions.append(latest)
+    for decision in history:
+        if latest is not None and _same_route_decision(decision, latest) and decisions:
+            continue
+        decisions.append(decision)
+        if len(decisions) >= ROUTE_DECISION_HISTORY_LIMIT:
+            break
+    return tuple(decisions[:ROUTE_DECISION_HISTORY_LIMIT])
+
+
+def _same_route_decision(left: RuntimeRouteDecisionContext, right: RuntimeRouteDecisionContext) -> bool:
+    return (
+        left.route == right.route
+        and left.detail == right.detail
+        and left.prompt == right.prompt
+        and left.summary == right.summary
+        and left.explanation == right.explanation
+        and left.created_at == right.created_at
     )
 
 

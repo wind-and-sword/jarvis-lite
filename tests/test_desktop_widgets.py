@@ -169,6 +169,17 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertIn("依据：", route_text)
         self.assertIn("source=seed_sample", route_text)
 
+    def test_panel_shows_recent_route_history(self):
+        self.panel.submit_text("早上好")
+        self.panel.submit_text("/memory")
+
+        route_text = self.panel.route_status_text()
+
+        self.assertIn("最近路由：command / /memory", route_text)
+        self.assertIn("最近路由历史：", route_text)
+        self.assertIn("1. command / /memory | 输入：/memory | 结果：显式命令", route_text)
+        self.assertIn("2. inner-brain / assistant.greeting | 输入：早上好", route_text)
+
     def test_panel_exposes_only_direct_quick_command_buttons(self):
         self.assertEqual(
             self.panel.quick_command_texts(),

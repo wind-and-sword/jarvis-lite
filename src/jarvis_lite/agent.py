@@ -180,6 +180,9 @@ class JarvisAgent:
         )
         self._recent_llm_call: RuntimeLLMCallContext | None = runtime_context.recent_llm_call
         self._recent_route_decision: RuntimeRouteDecisionContext | None = runtime_context.recent_route_decision
+        self._recent_route_decisions: tuple[RuntimeRouteDecisionContext, ...] = (
+            runtime_context.recent_route_decisions
+        )
         self._recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = (
             runtime_context.recent_tagged_documents_operations
         )
@@ -447,6 +450,10 @@ class JarvisAgent:
             lines.append(f"结果：{decision.summary}")
         if decision.explanation:
             lines.append(f"依据：{decision.explanation}")
+        if len(self._recent_route_decisions) > 1:
+            lines.append("最近路由历史：")
+            for index, route_decision in enumerate(self._recent_route_decisions, start=1):
+                lines.append(self._route_history_line(index, route_decision))
         return "\n".join(lines)
 
     def _handle_command(self, prompt: str) -> str:
@@ -2768,6 +2775,7 @@ class JarvisAgent:
             pending_llm_clarification=self._runtime_pending_llm_clarification(),
             recent_llm_call=self._recent_llm_call,
             recent_route_decision=self._recent_route_decision,
+            recent_route_decisions=self._recent_route_decisions,
         )
 
     def _save_runtime_context(self) -> None:
@@ -2824,7 +2832,7 @@ class JarvisAgent:
         summary: str,
         explanation: str = "",
     ) -> None:
-        self._recent_route_decision = RuntimeRouteDecisionContext(
+        decision = RuntimeRouteDecisionContext(
             route=route,
             detail=detail,
             prompt=self._compact_status_text(prompt),
@@ -2832,6 +2840,8 @@ class JarvisAgent:
             explanation=self._compact_status_text(explanation, max_length=220),
             created_at=self._now_iso(),
         )
+        self._recent_route_decision = decision
+        self._recent_route_decisions = (decision, *self._recent_route_decisions)[:5]
         self._save_runtime_context()
 
     def _remember_command_route(self, prompt: str) -> None:
@@ -2851,6 +2861,15 @@ class JarvisAgent:
         if not parts:
             return "unknown"
         return parts[0]
+
+    def _route_history_line(self, index: int, decision: RuntimeRouteDecisionContext) -> str:
+        parts = [
+            f"{index}. {decision.route} / {decision.detail}",
+            f"输入：{decision.prompt}",
+        ]
+        if decision.summary:
+            parts.append(f"结果：{decision.summary}")
+        return " | ".join(parts)
 
     def _inner_brain_route_explanation(self, result: InnerBrainResult) -> str:
         parts = [

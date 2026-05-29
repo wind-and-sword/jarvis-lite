@@ -125,6 +125,19 @@ class DesktopBridgeTests(unittest.TestCase):
         self.assertIn("source=seed_sample", response.route_status_text)
         self.assertEqual(response.route_status_text, self.bridge.route_status_text())
 
+    def test_send_exposes_recent_route_history(self):
+        self.bridge.send("早上好")
+        response = self.bridge.send("/memory")
+
+        self.assertIn("最近路由：command / /memory", response.route_status_text)
+        self.assertIn("最近路由历史：", response.route_status_text)
+        self.assertIn("1. command / /memory | 输入：/memory | 结果：显式命令", response.route_status_text)
+        self.assertIn(
+            "2. inner-brain / assistant.greeting | 输入：早上好 | 结果：本地内脑命中",
+            response.route_status_text,
+        )
+        self.assertEqual(response.route_status_text, self.bridge.route_status_text())
+
     def test_quick_commands_include_current_assistant_capabilities(self):
         commands = quick_commands()
         prompts = tuple(command.prompt for command in commands)
