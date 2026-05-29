@@ -1872,6 +1872,58 @@ class AgentTests(unittest.TestCase):
         self.assertIn("5. command / /kb | 输入：/kb", status)
         self.assertNotIn("command / /status | 输入：/status", status)
 
+    def test_route_history_command_reports_empty_state(self):
+        response = self.agent.handle("/route-history")
+        status = self.agent.route_status_text()
+
+        self.assertIn("路由历史：还没有记录。", response)
+        self.assertIn("先输入一个问题或命令", response)
+        self.assertEqual(status, "最近路由：无")
+
+    def test_route_history_command_reports_recent_decisions_with_explanations(self):
+        provider = FakeLLMProvider(
+            '{"type":"answer","answer":"外脑处理开放问题","reason":"需要开放判断"}'
+        )
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider),
+        )
+
+        agent.handle("早上好")
+        agent.handle("这句话需要外脑判断")
+        response = agent.handle("/route-history")
+
+        self.assertIn("路由历史：", response)
+        self.assertIn("1. llm-fallback / answer", response)
+        self.assertIn("输入：这句话需要外脑判断", response)
+        self.assertIn("结果：LLM 外脑处理", response)
+        self.assertIn("依据：provider=fake model=intent-test source=fallback type=answer", response)
+        self.assertIn("reason=需要开放判断", response)
+        self.assertIn("2. inner-brain / assistant.greeting", response)
+        self.assertIn("输入：早上好", response)
+        self.assertIn("依据：source=seed_sample confidence=1.00", response)
+        self.assertNotIn("command / /route-history", response)
+
+    def test_route_history_command_restores_on_startup(self):
+        self.agent.handle("早上好")
+
+        restarted_agent = JarvisAgent(self.paths)
+        response = restarted_agent.handle("route-history")
+
+        self.assertIn("路由历史：", response)
+        self.assertIn("1. inner-brain / assistant.greeting", response)
+        self.assertIn("输入：早上好", response)
+        self.assertNotIn("command / route-history", response)
+
+    def test_recent_context_includes_recent_route_history(self):
+        self.agent.handle("早上好")
+
+        response = self.agent.handle("/recent-context")
+
+        self.assertIn("- 最近路由：inner-brain / assistant.greeting", response)
+        self.assertIn("  1. inner-brain / assistant.greeting | 输入：早上好 | 结果：本地内脑命中", response)
+        self.assertNotIn("command / /recent-context", response)
+
     def test_route_status_records_llm_fallback(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"外脑处理开放问题"}')
         agent = JarvisAgent(
@@ -2273,7 +2325,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.16.1",
+                    "version": "0.17.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2284,7 +2336,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.16.1", response)
+        self.assertIn("发现新版本：0.17.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2299,7 +2351,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.16.1",
+                        "version": "0.17.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

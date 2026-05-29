@@ -218,7 +218,7 @@ class JarvisAgent:
         if not prompt:
             return "请输入问题或命令。输入 /help 查看可用命令。"
 
-        if self._is_explicit_command_prompt(prompt):
+        if self._is_explicit_command_prompt(prompt) and not self._is_route_observability_prompt(prompt):
             self._remember_command_route(prompt)
 
         if prompt in {"/help", "help"}:
@@ -245,8 +245,10 @@ class JarvisAgent:
         if prompt in {"/llm-context-preview", "llm-context-preview"}:
             self.tools.run("record_log", message="预览 LLM fallback 上下文")
             return self._llm_context_preview()
-        if prompt in {"/recent-context", "recent-context", "/context", "context"}:
+        if self._is_recent_context_prompt(prompt):
             return self._recent_context_status()
+        if self._is_route_history_prompt(prompt):
+            return self._route_history_status()
         if prompt in {"/kb", "kb", "/knowledge", "knowledge"}:
             self.tools.run("record_log", message="查看个人知识库状态")
             return describe_knowledge_base(self.paths)
@@ -713,6 +715,7 @@ class JarvisAgent:
                 "/llm-usage：查看 LLM token 用量汇总",
                 "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
                 "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",
+                "/route-history：查看最近 5 条输入的路由历史详情",
                 "/llm-config-example [provider]：查看 LLM 环境变量配置模板",
                 "/llm-config-init [provider]：生成外脑本地配置草稿",
                 "/llm-config-check：只读检查外脑本地配置，不调用 provider",
@@ -1266,6 +1269,7 @@ class JarvisAgent:
         has_pending_tagged_documents_tagging = bool(self._pending_tagged_documents_paths)
         has_recent_tagged_documents_operation = self._recent_tagged_documents_operation_tag is not None
         has_pending_llm_clarification = self._pending_llm_clarification is not None
+        has_route_history = bool(self._recent_route_decisions)
         if (
             not has_document
             and not has_document_list
@@ -1278,6 +1282,7 @@ class JarvisAgent:
             and not has_pending_tagged_documents_tagging
             and not has_recent_tagged_documents_operation
             and not has_pending_llm_clarification
+            and not has_route_history
         ):
             return "\n".join(
                 [
@@ -1339,6 +1344,13 @@ class JarvisAgent:
             lines.append(f"- 待确认建议命令：{self._pending_advice_command}")
         else:
             lines.append("- 待确认建议命令：无")
+        if has_route_history:
+            latest_route = self._recent_route_decisions[0]
+            lines.append(f"- 最近路由：{latest_route.route} / {latest_route.detail}")
+            for index, route_decision in enumerate(self._recent_route_decisions, start=1):
+                lines.append(f"  {self._route_history_line(index, route_decision)}")
+        else:
+            lines.append("- 最近路由：无")
         if self._pending_llm_clarification is not None:
             lines.append(f"- 待补充外脑问题：{self._pending_llm_clarification.clarification}")
             lines.append(f"  外脑原始问题：{self._pending_llm_clarification.original_prompt}")
@@ -1376,6 +1388,21 @@ class JarvisAgent:
         lines.append("下一步建议：")
         for suggestion in suggest_next_actions_from_context(self._runtime_context(), list_recent_experiences(self.paths)):
             lines.append(f"- {suggestion}")
+        return "\n".join(lines)
+
+    def _route_history_status(self) -> str:
+        self.tools.run("record_log", message="查看最近路由历史详情")
+        if not self._recent_route_decisions:
+            return "\n".join(
+                [
+                    "路由历史：还没有记录。",
+                    "- 先输入一个问题或命令，再用 /route-history 查看它由哪一层处理。",
+                ]
+            )
+
+        lines = ["路由历史："]
+        for index, decision in enumerate(self._recent_route_decisions, start=1):
+            lines.extend(self._route_history_detail_lines(index, decision))
         return "\n".join(lines)
 
     def _recent_files_status(self) -> str:
@@ -2871,6 +2898,17 @@ class JarvisAgent:
             parts.append(f"结果：{decision.summary}")
         return " | ".join(parts)
 
+    def _route_history_detail_lines(self, index: int, decision: RuntimeRouteDecisionContext) -> list[str]:
+        lines = [f"{index}. {decision.route} / {decision.detail}"]
+        if decision.created_at:
+            lines.append(f"   时间：{decision.created_at}")
+        lines.append(f"   输入：{decision.prompt}")
+        if decision.summary:
+            lines.append(f"   结果：{decision.summary}")
+        if decision.explanation:
+            lines.append(f"   依据：{decision.explanation}")
+        return lines
+
     def _inner_brain_route_explanation(self, result: InnerBrainResult) -> str:
         parts = [
             f"source={result.source}",
@@ -2919,6 +2957,8 @@ class JarvisAgent:
             "llm-context-preview",
             "recent-context",
             "context",
+            "route-history",
+            "routes",
             "kb",
             "knowledge",
             "kb-summary",
@@ -2932,6 +2972,15 @@ class JarvisAgent:
             "update-download",
             "dirs",
         }
+
+    def _is_recent_context_prompt(self, prompt: str) -> bool:
+        return prompt in {"/recent-context", "recent-context", "/context", "context"}
+
+    def _is_route_history_prompt(self, prompt: str) -> bool:
+        return prompt in {"/route-history", "route-history", "/routes", "routes"}
+
+    def _is_route_observability_prompt(self, prompt: str) -> bool:
+        return self._is_recent_context_prompt(prompt) or self._is_route_history_prompt(prompt)
 
     def _llm_intent_summary(self, intent: LLMIntent) -> str:
         if intent.type == "answer" and intent.answer:
