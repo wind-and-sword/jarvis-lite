@@ -76,6 +76,7 @@ from .memory import (
 from .runtime_context import (
     RuntimeContext,
     RuntimeDirectoryContext,
+    RuntimeLLMClarificationContext,
     RuntimeRecentFileContext,
     RuntimeTaggedDocumentsOperationContext,
     RuntimeWebSearchContext,
@@ -166,7 +167,9 @@ class JarvisAgent:
         self._pending_tagged_documents_tags: tuple[str, ...] = ()
         self._pending_tagged_documents_paths: tuple[str, ...] = ()
         self._pending_inner_brain_clarification: InnerBrainResult | None = None
-        self._pending_llm_clarification: PendingLLMClarification | None = None
+        self._pending_llm_clarification: PendingLLMClarification | None = (
+            self._restore_pending_llm_clarification(runtime_context.pending_llm_clarification)
+        )
         self._recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = (
             runtime_context.recent_tagged_documents_operations
         )
@@ -224,6 +227,8 @@ class JarvisAgent:
         if prompt in {"/llm-context-preview", "llm-context-preview"}:
             self.tools.run("record_log", message="预览 LLM fallback 上下文")
             return self._llm_context_preview()
+        if prompt in {"/recent-context", "recent-context", "/context", "context"}:
+            return self._recent_context_status()
         if prompt in {"/kb", "kb", "/knowledge", "knowledge"}:
             self.tools.run("record_log", message="查看个人知识库状态")
             return describe_knowledge_base(self.paths)
@@ -1106,6 +1111,7 @@ class JarvisAgent:
         has_pending_advice_command = self._pending_advice_command is not None
         has_pending_tagged_documents_tagging = bool(self._pending_tagged_documents_paths)
         has_recent_tagged_documents_operation = self._recent_tagged_documents_operation_tag is not None
+        has_pending_llm_clarification = self._pending_llm_clarification is not None
         if (
             not has_document
             and not has_document_list
@@ -1117,6 +1123,7 @@ class JarvisAgent:
             and not has_pending_advice_command
             and not has_pending_tagged_documents_tagging
             and not has_recent_tagged_documents_operation
+            and not has_pending_llm_clarification
         ):
             return "\n".join(
                 [
@@ -1178,6 +1185,12 @@ class JarvisAgent:
             lines.append(f"- 待确认建议命令：{self._pending_advice_command}")
         else:
             lines.append("- 待确认建议命令：无")
+        if self._pending_llm_clarification is not None:
+            lines.append(f"- 待补充外脑问题：{self._pending_llm_clarification.clarification}")
+            lines.append(f"  外脑原始问题：{self._pending_llm_clarification.original_prompt}")
+            lines.append("  可回复缺失信息继续，或回复“取消补充”。")
+        else:
+            lines.append("- 待补充外脑问题：无")
         if has_pending_tagged_documents_tagging:
             group_tag = self._pending_tagged_documents_tag or ""
             appended_tags = "、".join(self._pending_tagged_documents_tags)
@@ -1992,6 +2005,7 @@ class JarvisAgent:
             return None
         if self._is_inner_brain_clarification_cancel(prompt):
             self._pending_llm_clarification = None
+            self._save_runtime_context()
             self.tools.run("record_log", message="取消 LLM 外脑澄清")
             return "已取消这次外脑补充。"
 
@@ -2005,6 +2019,7 @@ class JarvisAgent:
         context = (*pending.context, f"LLM 澄清补充：{prompt}")
         intent = self.llm_router.complete_intent(combined_prompt, context)
         self._pending_llm_clarification = None
+        self._save_runtime_context()
         if intent is None:
             self.tools.run("record_log", message="LLM 外脑澄清补充未返回结果")
             return "已补齐外脑需要的信息，但 LLM 外脑没有返回可执行结果。"
@@ -2043,6 +2058,7 @@ class JarvisAgent:
                     clarification=intent.clarification,
                     context=context,
                 )
+                self._save_runtime_context()
                 self.tools.run("record_log", message=f"LLM 外脑需要澄清：{intent.clarification}")
             return f"LLM 外脑需要补充信息：{intent.clarification}"
         return ""
@@ -2566,10 +2582,32 @@ class JarvisAgent:
             recent_files=self._recent_files,
             recent_tagged_documents_operation=self._runtime_tagged_documents_operation(),
             recent_tagged_documents_operations=self._recent_tagged_documents_operations,
+            pending_llm_clarification=self._runtime_pending_llm_clarification(),
         )
 
     def _save_runtime_context(self) -> None:
         save_runtime_context(self.paths, self._runtime_context())
+
+    def _restore_pending_llm_clarification(
+        self,
+        context: RuntimeLLMClarificationContext | None,
+    ) -> PendingLLMClarification | None:
+        if context is None:
+            return None
+        return PendingLLMClarification(
+            original_prompt=context.original_prompt,
+            clarification=context.clarification,
+            context=context.context,
+        )
+
+    def _runtime_pending_llm_clarification(self) -> RuntimeLLMClarificationContext | None:
+        if self._pending_llm_clarification is None:
+            return None
+        return RuntimeLLMClarificationContext(
+            original_prompt=self._pending_llm_clarification.original_prompt,
+            clarification=self._pending_llm_clarification.clarification,
+            context=self._pending_llm_clarification.context,
+        )
 
     def _runtime_tagged_documents_operation(self) -> RuntimeTaggedDocumentsOperationContext | None:
         if self._recent_tagged_documents_operations:

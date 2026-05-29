@@ -57,6 +57,15 @@ class RuntimeTaggedDocumentsOperationContext:
 
 
 @dataclass(frozen=True)
+class RuntimeLLMClarificationContext:
+    """保存 LLM 外脑待澄清问题的可序列化运行态信息。"""
+
+    original_prompt: str
+    clarification: str
+    context: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class RuntimeContext:
     """保存可跨 Agent 实例恢复的轻量运行态上下文。"""
 
@@ -69,6 +78,7 @@ class RuntimeContext:
     recent_files: tuple[RuntimeRecentFileContext, ...] = ()
     recent_tagged_documents_operation: RuntimeTaggedDocumentsOperationContext | None = None
     recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = ()
+    pending_llm_clarification: RuntimeLLMClarificationContext | None = None
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -114,6 +124,7 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         recent_files=_read_recent_file_contexts(raw.get("recent_files")),
         recent_tagged_documents_operation=recent_tagged_documents_operation,
         recent_tagged_documents_operations=recent_tagged_documents_operations,
+        pending_llm_clarification=_read_llm_clarification_context(raw.get("pending_llm_clarification")),
     )
 
 
@@ -150,6 +161,9 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                     _tagged_documents_operation_context_to_json(operation)
                     for operation in recent_tagged_documents_operations
                 ],
+                "pending_llm_clarification": _llm_clarification_context_to_json(
+                    context.pending_llm_clarification
+                ),
             },
             ensure_ascii=False,
             indent=2,
@@ -236,6 +250,20 @@ def _read_web_search_result_contexts(value: object) -> tuple[RuntimeWebSearchRes
         if len(results) >= 5:
             break
     return tuple(results)
+
+
+def _read_llm_clarification_context(value: object) -> RuntimeLLMClarificationContext | None:
+    if not isinstance(value, dict):
+        return None
+    original_prompt = _read_optional_str(value.get("original_prompt"))
+    clarification = _read_optional_str(value.get("clarification"))
+    if original_prompt is None or clarification is None:
+        return None
+    return RuntimeLLMClarificationContext(
+        original_prompt=original_prompt,
+        clarification=clarification,
+        context=_read_str_tuple(value.get("context")),
+    )
 
 
 def _read_tagged_documents_operation_context(value: object) -> RuntimeTaggedDocumentsOperationContext | None:
@@ -340,6 +368,18 @@ def _web_search_result_context_to_json(context: RuntimeWebSearchResultContext) -
         "url": context.url,
         "snippet": context.snippet,
         "source": context.source,
+    }
+
+
+def _llm_clarification_context_to_json(
+    context: RuntimeLLMClarificationContext | None,
+) -> dict[str, object] | None:
+    if context is None:
+        return None
+    return {
+        "original_prompt": context.original_prompt,
+        "clarification": context.clarification,
+        "context": list(context.context),
     }
 
 

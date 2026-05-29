@@ -2075,7 +2075,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.9.1",
+                    "version": "0.10.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2086,7 +2086,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.9.1", response)
+        self.assertIn("发现新版本：0.10.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2101,7 +2101,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.9.1",
+                        "version": "0.10.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
@@ -3245,6 +3245,63 @@ class AgentTests(unittest.TestCase):
         self.assertIn("LLM 外脑需要补充信息：你想整理哪个目录？", first_response)
         self.assertIn("已取消这次外脑补充", second_response)
         self.assertEqual(len(provider.calls), 1)
+
+    def test_llm_clarification_pending_survives_new_agent_instance(self):
+        provider = SequenceLLMProvider(
+            [
+                LLMIntent(type="clarify", clarification="你想看知识库还是最近文件？"),
+                LLMIntent(type="command", command="/kb-summary", reason="用户补充了知识库"),
+            ]
+        )
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        first_response = agent.handle("帮我判断下一步")
+        restarted_agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+        second_response = restarted_agent.handle("知识库")
+
+        self.assertIn("LLM 外脑需要补充信息：你想看知识库还是最近文件？", first_response)
+        self.assertIn("已补齐外脑需要的信息，继续处理。", second_response)
+        self.assertIn("LLM 外脑建议执行命令：/kb-summary", second_response)
+        self.assertEqual(len(provider.calls), 2)
+        second_prompt, second_context = provider.calls[1]
+        self.assertIn("原始问题：帮我判断下一步", second_prompt)
+        self.assertIn("外脑澄清问题：你想看知识库还是最近文件？", second_prompt)
+        self.assertIn("用户补充：知识库", second_prompt)
+        self.assertIn("LLM 澄清补充：知识库", second_context)
+
+    def test_recent_context_reports_pending_llm_clarification_without_consuming_it(self):
+        provider = SequenceLLMProvider(
+            [
+                LLMIntent(type="clarify", clarification="你想看知识库还是最近文件？"),
+                LLMIntent(type="answer", answer="建议先看知识库。"),
+            ]
+        )
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        agent.handle("帮我判断下一步")
+        context_response = agent.handle("/recent-context")
+        followup_response = agent.handle("知识库")
+
+        self.assertIn("待补充外脑问题：你想看知识库还是最近文件？", context_response)
+        self.assertIn("外脑原始问题：帮我判断下一步", context_response)
+        self.assertIn("可回复缺失信息继续，或回复“取消补充”。", context_response)
+        self.assertIn("LLM 外脑：建议先看知识库。", followup_response)
+        self.assertEqual(len(provider.calls), 2)
+
+    def test_llm_clarification_cancel_clears_persisted_pending(self):
+        provider = SequenceLLMProvider([LLMIntent(type="clarify", clarification="你想整理哪个目录？")])
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        agent.handle("帮我判断下一步")
+        restarted_agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+        cancel_response = restarted_agent.handle("取消补充")
+        new_provider = SequenceLLMProvider([LLMIntent(type="answer", answer="新的外脑判断")])
+        after_cancel_agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), new_provider))
+        after_cancel_response = after_cancel_agent.handle("火星基地预算需要外部判断")
+
+        self.assertIn("已取消这次外脑补充", cancel_response)
+        self.assertIn("LLM 外脑：新的外脑判断", after_cancel_response)
+        self.assertEqual(new_provider.calls[0][0], "火星基地预算需要外部判断")
 
     def test_llm_usage_is_recorded_when_provider_returns_usage(self):
         class UsageProvider:
