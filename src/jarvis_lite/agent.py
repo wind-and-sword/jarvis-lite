@@ -959,6 +959,10 @@ class JarvisAgent:
             return "/read 文件名"
         if result.intent == "desktop.delete_shortcut" and "items" in result.missing:
             return "/inner-brain-label 原话 => desktop.delete_shortcut items=快捷方式名称"
+        if result.intent == "web.search" and "query" in result.missing:
+            return "/search 关键词"
+        if result.intent == "web.search_summarize" and "query" in result.missing:
+            return "/search-summary 关键词"
         if "tags" in result.missing:
             return "/tag 文件名 标签..."
         if "result_index" in result.missing:
@@ -972,6 +976,8 @@ class JarvisAgent:
             return "/inner-brain-label 原话 => document.read_path path=文件名"
         if result.intent == "desktop.delete_shortcut" and "items" in result.missing:
             return "/inner-brain-label 原话 => desktop.delete_shortcut items=快捷方式名称"
+        if result.intent in {"web.search", "web.search_summarize"} and "query" in result.missing:
+            return f"/inner-brain-label 原话 => {result.intent} query=关键词"
         if result.intent != "unknown":
             return f"/inner-brain-label 原话 => {result.intent} slot=value"
         return ""
@@ -982,6 +988,7 @@ class JarvisAgent:
             "items": "要处理的对象名称",
             "path": "路径",
             "tag": "标签",
+            "query": "查询关键词",
         }
         return labels.get(missing, missing)
 

@@ -430,6 +430,84 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已删除桌面快捷方式", followup_response)
         self.assertFalse(shortcut.exists())
 
+    def test_inner_brain_clarification_accepts_followup_web_search_query(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "帮我联网查一下",
+                    "intent": "web.search",
+                    "slots": {},
+                    "missing": ["query"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        search_provider = FakeSearchProvider(
+            (
+                SearchResult("Python current release", "https://python.example/current", "当前版本摘要。", "fake"),
+            )
+        )
+        llm_provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake"), llm_provider),
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), search_provider),
+        )
+
+        clarify_response = agent.handle("帮我联网查一下")
+        followup_response = agent.handle("Python 版本")
+
+        self.assertIn("需要补充：查询关键词", clarify_response)
+        self.assertIn("可直接补充：/search 关键词", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("联网搜索：Python 版本", followup_response)
+        self.assertIn("Python current release", followup_response)
+        self.assertEqual(search_provider.calls, ["Python 版本"])
+        self.assertEqual(llm_provider.calls, [])
+
+    def test_inner_brain_clarification_accepts_followup_web_search_summary_query(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "帮我联网总结一下",
+                    "intent": "web.search_summarize",
+                    "slots": {},
+                    "missing": ["query"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        search_provider = FakeSearchProvider(
+            (
+                SearchResult("Python 3.13 release", "https://python.example/3-13", "Python 3.13 发布摘要。", "fake"),
+            )
+        )
+        llm_provider = FakeLLMProvider('{"type":"answer","answer":"Python 3.13 是当前发布线。"}')
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake"), llm_provider),
+            search_router=SearchRouter(SearchSettings(provider="fake", max_results=5), search_provider),
+        )
+
+        clarify_response = agent.handle("帮我联网总结一下")
+        followup_response = agent.handle("Python 版本")
+
+        self.assertIn("需要补充：查询关键词", clarify_response)
+        self.assertIn("可直接补充：/search-summary 关键词", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("联网搜索：Python 版本", followup_response)
+        self.assertIn("LLM 外脑总结：Python 3.13 是当前发布线。", followup_response)
+        self.assertEqual(search_provider.calls, ["Python 版本"])
+        self.assertEqual(len(llm_provider.calls), 1)
+
     def test_inner_brain_clarification_can_be_cancelled(self):
         fake_home = Path(self.temp_dir.name) / "home"
         desktop = fake_home / "Desktop"

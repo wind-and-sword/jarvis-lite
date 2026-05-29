@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-29：发布 `0.1.8` 可安装测试包，扩展 InnerBrain 多轮澄清 query 补槽；“帮我联网查一下”后可直接回复关键词继续搜索或搜索总结，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.1.8.exe`。
 - 2026-05-29：发布 `0.1.7` 可安装测试包，包含 InnerBrain 多轮澄清补槽第一版；导入路径和桌面快捷方式名称可在下一句直接补齐后继续执行，全量 `unittest` 423 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.1.7.exe`。
 - 2026-05-28：发布 `0.1.6` 可安装测试包，包含 v6 高频 legacy 别名迁移；版本一致性测试按 TDD 先失败后通过，全量 `unittest` 420 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.1.6.exe`。
 - 2026-05-28：v6 高频 legacy 别名迁移完成，问候、身份/能力、上下文、知识库、最近文件、日报、更新、经验和礼貌前缀编号最近文件导入等 30 个代表表达返回 `seed_sample`；代表句复扫 `legacy=0 unknown=0`。

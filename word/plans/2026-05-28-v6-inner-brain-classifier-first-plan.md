@@ -128,8 +128,8 @@ InnerBrain 的主路径改为本地样本分类器优先：
 
 - 当 `InnerBrain` 已经识别 intent，但返回 `policy=CLARIFY` 和 `missing` 时，`JarvisAgent` 会在内存中保存本次 `InnerBrainResult`。
 - 用户下一句如果不是命令，会先尝试作为这次缺失槽位的补充，而不是重新进入普通聊天、知识库问答或 LLM fallback。
-- 当前已覆盖两个高频补槽类型：`knowledge.import` 的 `source`，以及 `desktop.delete_shortcut` 的 `items`。
-- 补齐后仍复用既有 `NaturalLanguageIntent` 和命令执行链路，例如继续执行 `/import` 或桌面 `.lnk` 删除，不新增独立执行层。
+- 当前已覆盖三个高频补槽类型：`knowledge.import` 的 `source`、`desktop.delete_shortcut` 的 `items`，以及 `web.search`/`web.search_summarize` 的 `query`。
+- 补齐后仍复用既有 `NaturalLanguageIntent` 和命令执行链路，例如继续执行 `/import`、`/search`、`/search-summary` 或桌面 `.lnk` 删除，不新增独立执行层。
 - 用户可用“取消”“取消补充”“不用了”“先不用”“算了”取消当前澄清状态。
 
 这一步的边界是：自然语言主识别仍由 seed/runtime 样本分类器负责；路径、名称、编号和标签等解析函数只在已知 intent 下抽取结构化槽位，不回到“用正则决定用户意图”的旧路线。

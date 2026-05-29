@@ -1053,12 +1053,12 @@ def _sample_to_natural_language_intent(
     if sample.intent == "advice.cancel_execution":
         return NaturalLanguageIntent("cancel_pending_advice_suggestion_execution")
     if sample.intent == "web.search":
-        query = _extract_web_search_query(prompt)
+        query = _slot_text(slots, "query") or _extract_web_search_query(prompt)
         if query:
             return NaturalLanguageIntent("command", command=f"/search {query}")
         return None
     if sample.intent == "web.search_summarize":
-        query = _extract_web_search_summary_query(prompt)
+        query = _slot_text(slots, "query") or _extract_web_search_summary_query(prompt)
         if query:
             return NaturalLanguageIntent("command", command=f"/search-summary {query}")
         return None
