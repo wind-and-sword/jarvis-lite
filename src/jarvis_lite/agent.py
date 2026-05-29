@@ -899,7 +899,10 @@ class JarvisAgent:
 
     def _inner_brain_clarification(self, result: InnerBrainResult) -> str:
         self._pending_inner_brain_clarification = result
-        missing = "、".join(self._inner_brain_missing_label(item) for item in result.missing) or "更多信息"
+        missing = (
+            "、".join(self._inner_brain_missing_label(item, result.intent) for item in result.missing)
+            or "更多信息"
+        )
         self.tools.run(
             "record_log",
             message=(
@@ -956,7 +959,7 @@ class JarvisAgent:
         if result.intent == "knowledge.import" and "source" in result.missing:
             return "/import 源文件或目录路径 [目标文件名]"
         if result.intent == "document.read_path" and "path" in result.missing:
-            return "/read 文件名"
+            return "请直接回复文件路径，例如“note.txt”"
         if result.intent == "desktop.delete_shortcut" and "items" in result.missing:
             return "/inner-brain-label 原话 => desktop.delete_shortcut items=快捷方式名称"
         if result.intent == "web.search" and "query" in result.missing:
@@ -969,11 +972,19 @@ class JarvisAgent:
             return "请直接回复经验内容，例如“导入资料后先打标签”"
         if result.intent in {"experience.search", "experience.advice"} and "query" in result.missing:
             return "请直接回复经验关键词，例如“导入资料”"
+        if result.intent == "tag_group.preview_tagging" and {"alias", "tags"}.issubset(set(result.missing)):
+            return "请直接回复标签组和新标签，例如“项目 归档”"
         if {"result_index", "tags"}.issubset(set(result.missing)):
             return "请直接回复编号和标签，例如“第二份 项目 Python”"
         if "tags" in result.missing:
             return "请直接回复标签，例如“项目 Python”"
         if "result_index" in result.missing:
+            if result.intent == "document.read_numbered_recent":
+                return "请补充编号，例如“第二份”"
+            if result.intent == "web_search.open_numbered":
+                return "请补充编号，例如“第一条”"
+            if result.intent in {"advice.read_numbered", "advice.execute_numbered"}:
+                return "请补充编号，例如“第一条建议”"
             return "请补充编号，例如“查看第一条结果”"
         return ""
 
@@ -981,7 +992,7 @@ class JarvisAgent:
         if result.intent == "knowledge.import" and "source" in result.missing:
             return "/inner-brain-label 原话 => knowledge.import source=文件或目录路径"
         if result.intent == "document.read_path" and "path" in result.missing:
-            return "/inner-brain-label 原话 => document.read_path path=文件名"
+            return "/inner-brain-label 原话 => document.read_path path=文件路径"
         if result.intent == "desktop.delete_shortcut" and "items" in result.missing:
             return "/inner-brain-label 原话 => desktop.delete_shortcut items=快捷方式名称"
         if result.intent in {"web.search", "web.search_summarize"} and "query" in result.missing:
@@ -992,11 +1003,19 @@ class JarvisAgent:
             return "/inner-brain-label 原话 => experience.record experience=经验内容"
         if result.intent in {"experience.search", "experience.advice"} and "query" in result.missing:
             return f"/inner-brain-label 原话 => {result.intent} query=经验关键词"
+        if result.intent == "tag_group.preview_tagging" and {"alias", "tags"}.issubset(set(result.missing)):
+            return "/inner-brain-label 原话 => tag_group.preview_tagging alias=标签组 tags=新标签"
         if result.intent != "unknown":
             return f"/inner-brain-label 原话 => {result.intent} slot=value"
         return ""
 
-    def _inner_brain_missing_label(self, missing: str) -> str:
+    def _inner_brain_missing_label(self, missing: str, intent: str = "") -> str:
+        if intent == "document.read_path" and missing == "path":
+            return "文件路径"
+        if intent in {"experience.search", "experience.advice"} and missing == "query":
+            return "经验关键词"
+        if intent == "tag_group.preview_tagging" and missing == "alias":
+            return "标签组"
         labels = {
             "source": "要导入的文件或目录",
             "items": "要处理的对象名称",

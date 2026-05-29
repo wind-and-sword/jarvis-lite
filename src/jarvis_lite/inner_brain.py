@@ -1171,6 +1171,10 @@ def _sample_slots(prompt: str, sample: InnerBrainTrainingSample) -> dict[str, An
 def _clarification_slots_from_reply(reply: str, intent: str, missing: tuple[str, ...]) -> dict[str, Any]:
     slots: dict[str, Any] = {}
     value = _normalize_clarification_value(reply)
+    if intent == "tag_group.preview_tagging" and {"alias", "tags"}.issubset(set(missing)):
+        slots.update(_clarification_tag_group_slots(value))
+        if "alias" in slots and "tags" in slots:
+            return slots
     for slot in missing:
         if slot == "source":
             source = _extract_import_source(reply) or value
@@ -1195,6 +1199,24 @@ def _clarification_slots_from_reply(reply: str, intent: str, missing: tuple[str,
         elif slot in {"query", "experience", "alias"} and value:
             slots[slot] = value
     return slots
+
+
+def _clarification_tag_group_slots(value: str) -> dict[str, Any]:
+    """解析标签组补槽，避免把标签组名当成新增标签。"""
+
+    normalized = value.strip()
+    if not normalized:
+        return {}
+    normalized = re.sub(r"^(?:标签组|目录别名|别名|目录)\s*(?:是|为)?\s*[:：]?\s*", "", normalized)
+    normalized = re.sub(r"\s*(?:新标签|追加标签|标签)\s*(?:是|为)?\s*[:：]\s*", " ", normalized, count=1)
+    parts = [part.strip() for part in re.split(r"\s+|[，,、;；]+", normalized) if part.strip()]
+    if len(parts) < 2:
+        return {}
+    alias = _normalize_directory_alias(_strip_wrapping_quotes(parts[0]))
+    tags = tuple(tag for tag in _split_tag_text(" ".join(parts[1:])) if tag != alias)
+    if not alias or not tags:
+        return {}
+    return {"alias": alias, "tags": tags}
 
 
 def _normalize_clarification_value(reply: str) -> str:

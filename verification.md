@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-29：发布 `0.2.0` 可安装测试包，收口 InnerBrain 多轮澄清 v1；文件路径、编号资料、当前资料标签、标签组+新标签、经验搜索关键词和经验建议关键词可在下一句直接补齐，全量 `unittest` 434 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.2.0.exe`。
 - 2026-05-29：发布 `0.1.10` 可安装测试包，扩展 InnerBrain 目录别名和经验内容补槽；“打开那个常用位置”后可回复“目录是项目”，“记住这个经验”后可回复“经验是导入资料后先打标签”，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.1.10.exe`。
 - 2026-05-29：发布 `0.1.9` 可安装测试包，扩展 InnerBrain 编号+标签联合补槽；“给那份资料打标签”后可直接回复“第二份 项目 Python”，编号不会写入标签，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.1.9.exe`。
 - 2026-05-29：发布 `0.1.8` 可安装测试包，扩展 InnerBrain 多轮澄清 query 补槽；“帮我联网查一下”后可直接回复关键词继续搜索或搜索总结，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.1.8.exe`。

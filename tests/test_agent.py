@@ -606,6 +606,178 @@ class AgentTests(unittest.TestCase):
         self.assertIn("导入资料后先打标签", experiences_response)
         self.assertNotIn("经验是导入资料后先打标签", experiences_response)
 
+    def test_inner_brain_clarification_accepts_followup_document_path(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "读取那个文件",
+                    "intent": "document.read_path",
+                    "slots": {},
+                    "missing": ["path"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "note.txt").write_text("路径补槽资料。\n", encoding="utf-8")
+        agent = JarvisAgent(self.paths)
+
+        clarify_response = agent.handle("读取那个文件")
+        followup_response = agent.handle("文件是 note.txt")
+
+        self.assertIn("需要补充：文件路径", clarify_response)
+        self.assertIn("可直接补充：请直接回复文件路径，例如“note.txt”", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("路径补槽资料。", followup_response)
+
+    def test_inner_brain_clarification_accepts_followup_result_index_for_recent_document(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "读取那份资料",
+                    "intent": "document.read_numbered_recent",
+                    "slots": {},
+                    "missing": ["result_index"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.paths.data_dir / "manual.md").write_text("第二份资料内容。\n", encoding="utf-8")
+        agent = JarvisAgent(self.paths)
+        agent.handle("/read manual.md")
+        agent.handle("/read note.txt")
+
+        clarify_response = agent.handle("读取那份资料")
+        followup_response = agent.handle("第二份")
+
+        self.assertIn("需要补充：编号", clarify_response)
+        self.assertIn("可直接补充：请补充编号，例如“第二份”", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("第 2 份资料：data/manual.md", followup_response)
+        self.assertIn("第二份资料内容。", followup_response)
+
+    def test_inner_brain_clarification_accepts_followup_tags_for_recent_document(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "给这个资料打标签",
+                    "intent": "document.tag_recent",
+                    "slots": {},
+                    "missing": ["tags"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        agent = JarvisAgent(self.paths)
+        agent.handle("/read note.txt")
+
+        clarify_response = agent.handle("给这个资料打标签")
+        followup_response = agent.handle("标签是项目 Python")
+        kb_response = agent.handle("/kb")
+
+        self.assertIn("需要补充：标签", clarify_response)
+        self.assertIn("可直接补充：请直接回复标签，例如“项目 Python”", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("已更新标签：data/note.txt（项目、Python）", followup_response)
+        self.assertIn("标签：项目、Python", kb_response)
+
+    def test_inner_brain_clarification_accepts_followup_tag_group_alias_and_tags(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "给一组资料打标签",
+                    "intent": "tag_group.preview_tagging",
+                    "slots": {},
+                    "missing": ["alias", "tags"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        agent = JarvisAgent(self.paths)
+        agent.handle("/read note.txt")
+        agent.handle("给这个资料打标签 项目")
+
+        clarify_response = agent.handle("给一组资料打标签")
+        followup_response = agent.handle("项目 归档")
+
+        self.assertIn("需要补充：标签组、标签", clarify_response)
+        self.assertIn("可直接补充：请直接回复标签组和新标签，例如“项目 归档”", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("批量打标签预览：项目标签资料", followup_response)
+        self.assertIn("拟追加标签：归档", followup_response)
+        self.assertNotIn("拟追加标签：项目、归档", followup_response)
+
+    def test_inner_brain_clarification_accepts_followup_experience_search_query(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "帮我搜索经验",
+                    "intent": "experience.search",
+                    "slots": {},
+                    "missing": ["query"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        agent = JarvisAgent(self.paths)
+        agent.handle("/experience 导入资料后先打标签")
+
+        clarify_response = agent.handle("帮我搜索经验")
+        followup_response = agent.handle("关键词是导入资料")
+
+        self.assertIn("需要补充：经验关键词", clarify_response)
+        self.assertIn("可直接补充：请直接回复经验关键词，例如“导入资料”", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("经验搜索：导入资料", followup_response)
+        self.assertIn("导入资料后先打标签", followup_response)
+
+    def test_inner_brain_clarification_accepts_followup_experience_advice_query(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "给我一点操作思路",
+                    "intent": "experience.advice",
+                    "slots": {},
+                    "missing": ["query"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        agent = JarvisAgent(self.paths)
+        agent.handle("/experience 导入资料后先打标签")
+
+        clarify_response = agent.handle("给我一点操作思路")
+        followup_response = agent.handle("关键词是导入资料")
+
+        self.assertIn("需要补充：经验关键词", clarify_response)
+        self.assertIn("可直接补充：请直接回复经验关键词，例如“导入资料”", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("操作建议：导入资料", followup_response)
+        self.assertIn("导入资料后先打标签", followup_response)
+
     def test_inner_brain_clarification_can_be_cancelled(self):
         fake_home = Path(self.temp_dir.name) / "home"
         desktop = fake_home / "Desktop"
@@ -1507,7 +1679,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.2.0",
+                    "version": "0.2.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -1518,7 +1690,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.2.0", response)
+        self.assertIn("发现新版本：0.2.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -1533,7 +1705,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.2.0",
+                        "version": "0.2.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

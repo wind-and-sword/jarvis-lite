@@ -128,10 +128,12 @@ InnerBrain 的主路径改为本地样本分类器优先：
 
 - 当 `InnerBrain` 已经识别 intent，但返回 `policy=CLARIFY` 和 `missing` 时，`JarvisAgent` 会在内存中保存本次 `InnerBrainResult`。
 - 用户下一句如果不是命令，会先尝试作为这次缺失槽位的补充，而不是重新进入普通聊天、知识库问答或 LLM fallback。
-- 当前已覆盖六类高频补槽类型：`knowledge.import` 的 `source`、`desktop.delete_shortcut` 的 `items`、`web.search`/`web.search_summarize` 的 `query`、`document.tag_numbered_recent` 的 `result_index + tags` 联合补槽、`directory.open_alias`/`directory.organize_alias` 的 `alias`，以及 `experience.record` 的 `experience`。
+- 当前已覆盖 v1 高频补槽类型：`knowledge.import` 的 `source`、`desktop.delete_shortcut` 的 `items`、`document.read_path` 的 `path`、`web.search`/`web.search_summarize` 的 `query`、`document.read_numbered_recent` 的 `result_index`、`document.tag_recent` 的 `tags`、`document.tag_numbered_recent` 的 `result_index + tags` 联合补槽、`tag_group.preview_tagging` 的 `alias + tags` 联合补槽、`directory.open_alias`/`directory.organize_alias` 的 `alias`、`experience.record` 的 `experience`，以及 `experience.search`/`experience.advice` 的 `query`。
 - 补齐后仍复用既有 `NaturalLanguageIntent` 和命令执行链路，例如继续执行 `/import`、`/search`、`/search-summary` 或桌面 `.lnk` 删除，不新增独立执行层。
 - 编号+标签联合补槽只在已知 intent 且 missing 同时包含 `result_index` 和 `tags` 时触发，例如用户先说“给那份资料打标签”，再回复“第二份 项目 Python”；编号词只进入 `result_index`，不会作为标签写入知识库。
+- 标签组+新标签联合补槽只在已知 `tag_group.preview_tagging` 且 missing 同时包含 `alias` 和 `tags` 时触发，例如用户先说“给一组资料打标签”，再回复“项目 归档”；第一个词进入标签组别名，其余词进入新增标签，避免把标签组名重复写入新标签。
 - 目录别名和经验内容补槽只在已知 intent 下清理补充前缀，例如“目录是项目”会补为 `alias=项目`，“经验是导入资料后先打标签”会补为 `experience=导入资料后先打标签`。
+- 经验搜索和经验建议补槽会把 `query` 展示为“经验关键词”，例如“帮我搜索经验”或“给我一点操作思路”进入澄清后，可回复“关键词是导入资料”继续执行 `/experience-search` 或 `/experience-advice`。
 - 用户可用“取消”“取消补充”“不用了”“先不用”“算了”取消当前澄清状态。
 
 这一步的边界是：自然语言主识别仍由 seed/runtime 样本分类器负责；路径、名称、编号和标签等解析函数只在已知 intent 下抽取结构化槽位，不回到“用正则决定用户意图”的旧路线。
