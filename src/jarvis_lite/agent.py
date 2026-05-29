@@ -48,6 +48,7 @@ from .llm import (
     summarize_llm_usage,
     write_llm_example_config,
     write_llm_local_config_draft,
+    write_llm_local_config_values,
 )
 from .search import (
     SearchResult,
@@ -57,6 +58,7 @@ from .search import (
     search_local_config_path,
     write_search_example_config,
     write_search_local_config_draft,
+    write_search_local_config_values,
 )
 from .memory import (
     append_experience,
@@ -94,12 +96,14 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/llm-enable": "llm.enable",
     "/llm-config-init": "llm.config_init",
     "/llm-config-check": "llm.config_check",
+    "/llm-config-set": "llm.config_set",
     "/llm-usage": "llm.usage",
     "/llm-context-preview": "llm.context_preview",
     "/search-status": "web.search.status",
     "/search-enable": "web.search.enable",
     "/search-config-init": "web.search.config_init",
     "/search-config-check": "web.search.config_check",
+    "/search-config-set": "web.search.config_set",
     "/search": "web.search",
     "/search-summary": "web.search_summarize",
     "/search-open": "web_search.open_numbered",
@@ -315,6 +319,8 @@ class JarvisAgent:
             return self._llm_config_init(args[0] if args else "")
         if command == "/llm-config-check":
             return self._llm_config_check()
+        if command == "/llm-config-set":
+            return self._llm_config_set(args)
         if command == "/llm-enable":
             return self._llm_enable_guidance()
         if command == "/search-config-example":
@@ -324,6 +330,8 @@ class JarvisAgent:
             return self._search_config_init(args[0] if args else "")
         if command == "/search-config-check":
             return self._search_config_check()
+        if command == "/search-config-set":
+            return self._search_config_set(args)
         if command == "/search-enable":
             return self._search_enable_guidance()
         if command == "/search":
@@ -539,11 +547,13 @@ class JarvisAgent:
                 "/llm-config-example [provider]：查看 LLM 环境变量配置模板",
                 "/llm-config-init [provider]：生成外脑本地配置草稿",
                 "/llm-config-check：只读检查外脑本地配置，不调用 provider",
+                "/llm-config-set key=value ...：写入外脑本地配置",
                 "/search-status：查看联网搜索 provider 状态",
                 "/search-enable：查看联网搜索启用状态和本地配置路径",
                 "/search-config-example [provider]：查看联网搜索环境变量配置模板",
                 "/search-config-init [provider]：生成联网搜索本地配置草稿",
                 "/search-config-check：只读检查联网搜索本地配置，不调用 provider",
+                "/search-config-set key=value ...：写入联网搜索本地配置",
                 "/search 关键词：联网搜索并返回来源",
                 "/search-summary 关键词：联网搜索并交给 LLM 外脑总结",
                 "/search-open 编号：查看最近联网搜索的编号来源 URL",
@@ -1755,6 +1765,40 @@ class JarvisAgent:
             lines.append("结果：配置完整，可执行 /llm-enable 或 /llm-smoke。")
         return "\n".join(lines)
 
+    def _llm_config_set(self, args: list[str]) -> str:
+        if not args:
+            self.tools.run("record_log", message="查看 LLM 本地配置写入用法")
+            return self._llm_config_set_usage()
+        try:
+            updates = self._parse_config_set_updates(args)
+            local_path, changed_fields = write_llm_local_config_values(self.paths, updates)
+        except ValueError as exc:
+            return f"外脑配置写入失败：{exc}\n{self._llm_config_set_usage()}"
+
+        if not self._llm_router_injected:
+            self.llm_router = build_llm_router(paths=self.paths)
+        self.tools.run("record_log", message=f"写入 LLM 本地配置：fields={','.join(changed_fields)}")
+        return "\n".join(
+            [
+                f"已写入外脑本地配置：{self._project_path(local_path)}",
+                f"变更字段：{'、'.join(changed_fields)}",
+                "说明：响应和日志不会显示真实 API key。",
+                "下一步：/llm-config-check",
+                "启用：/llm-enable",
+                "连通性测试：/llm-smoke 请用一句话确认连接可用",
+            ]
+        )
+
+    def _llm_config_set_usage(self) -> str:
+        return "\n".join(
+            [
+                "用法：/llm-config-set key=value ...",
+                "示例：/llm-config-set provider=qwen model=qwen-plus base_url=https://example.com/v1/responses api_key=你的key",
+                "支持字段：provider、model、base_url、api_key、fake_response",
+                "说明：不会回显 api_key；写入后执行 /llm-config-check。",
+            ]
+        )
+
     def _search_enable_guidance(self) -> str:
         example_path = write_search_example_config(self.paths)
         local_path = search_local_config_path(self.paths)
@@ -1829,6 +1873,54 @@ class JarvisAgent:
         else:
             lines.append("结果：配置完整，可执行 /search-enable 或 /search 关键词。")
         return "\n".join(lines)
+
+    def _search_config_set(self, args: list[str]) -> str:
+        if not args:
+            self.tools.run("record_log", message="查看联网搜索本地配置写入用法")
+            return self._search_config_set_usage()
+        try:
+            updates = self._parse_config_set_updates(args)
+            local_path, changed_fields = write_search_local_config_values(self.paths, updates)
+        except ValueError as exc:
+            return f"联网搜索配置写入失败：{exc}\n{self._search_config_set_usage()}"
+
+        if not self._search_router_injected:
+            self.search_router = build_search_router(paths=self.paths)
+        self.tools.run("record_log", message=f"写入联网搜索本地配置：fields={','.join(changed_fields)}")
+        return "\n".join(
+            [
+                f"已写入联网搜索本地配置：{self._project_path(local_path)}",
+                f"变更字段：{'、'.join(changed_fields)}",
+                "说明：响应和日志不会显示真实 API key。",
+                "下一步：/search-config-check",
+                "启用：/search-enable",
+                "搜索测试：/search Python 版本",
+            ]
+        )
+
+    def _search_config_set_usage(self) -> str:
+        return "\n".join(
+            [
+                "用法：/search-config-set key=value ...",
+                "示例：/search-config-set provider=tavily api_key=你的key max_results=3",
+                "支持字段：provider、api_key、base_url、max_results、fake_results",
+                "说明：不会回显 api_key；写入后执行 /search-config-check。",
+            ]
+        )
+
+    def _parse_config_set_updates(self, args: list[str]) -> dict[str, str]:
+        updates: dict[str, str] = {}
+        for raw_arg in args:
+            if "=" not in raw_arg:
+                raise ValueError(f"配置参数必须使用 key=value：{raw_arg}")
+            key, value = raw_arg.split("=", 1)
+            normalized_key = key.strip().lower()
+            if not normalized_key:
+                raise ValueError(f"配置字段不能为空：{raw_arg}")
+            updates[normalized_key] = self._strip_quotes(value.strip())
+        if not updates:
+            raise ValueError("至少需要提供一个 key=value 参数")
+        return updates
 
     def _handle_llm_intent(self, intent: LLMIntent) -> str:
         if intent.type == "command" and intent.command:

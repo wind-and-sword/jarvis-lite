@@ -1135,6 +1135,33 @@ class AgentTests(unittest.TestCase):
         self.assertIn("结果：配置完整，可执行 /search-enable 或 /search 关键词。", response)
         self.assertNotIn("secret-search-key", response)
 
+    def test_search_config_set_writes_local_config_without_leaking_api_key(self):
+        response = self.agent.handle("/search-config-set provider=tavily api_key=secret-search-key max_results=3")
+
+        local_config = self.paths.config_dir / "search.local.json"
+        payload = json.loads(local_config.read_text(encoding="utf-8"))
+        check_response = self.agent.handle("/search-config-check")
+        log_text = self.paths.log_path.read_text(encoding="utf-8")
+
+        self.assertIn("已写入联网搜索本地配置：config/search.local.json", response)
+        self.assertIn("变更字段：provider、api_key、max_results", response)
+        self.assertIn("/search-config-check", response)
+        self.assertEqual(payload["provider"], "tavily")
+        self.assertEqual(payload["api_key"], "secret-search-key")
+        self.assertEqual(payload["max_results"], 3)
+        self.assertIn("联网搜索：已启用", check_response)
+        self.assertIn("API key：已配置", check_response)
+        self.assertIn("结果：配置完整，可执行 /search-enable 或 /search 关键词。", check_response)
+        self.assertNotIn("secret-search-key", response)
+        self.assertNotIn("secret-search-key", check_response)
+        self.assertNotIn("secret-search-key", log_text)
+
+    def test_search_config_set_rejects_invalid_max_results_without_partial_write(self):
+        response = self.agent.handle("/search-config-set provider=tavily max_results=0")
+
+        self.assertIn("max_results 必须是大于 0 的整数", response)
+        self.assertFalse((self.paths.config_dir / "search.local.json").exists())
+
     def test_agent_reads_llm_local_config_file_on_startup(self):
         local_config = self.paths.config_dir / "llm.local.json"
         local_config.write_text(
@@ -1228,6 +1255,80 @@ class AgentTests(unittest.TestCase):
         self.assertIn("结果：配置完整，可执行 /llm-enable 或 /llm-smoke。", response)
         self.assertNotIn("secret-existing-key", response)
 
+    def test_llm_config_set_writes_local_config_without_leaking_api_key(self):
+        response = self.agent.handle(
+            "/llm-config-set "
+            "provider=qwen "
+            "model=qwen-plus "
+            "base_url=https://qwen.example/v1/responses "
+            "api_key=secret-existing-key"
+        )
+
+        local_config = self.paths.config_dir / "llm.local.json"
+        payload = json.loads(local_config.read_text(encoding="utf-8"))
+        check_response = self.agent.handle("/llm-config-check")
+        log_text = self.paths.log_path.read_text(encoding="utf-8")
+
+        self.assertIn("已写入外脑本地配置：config/llm.local.json", response)
+        self.assertIn("变更字段：provider、model、base_url、api_key", response)
+        self.assertIn("/llm-config-check", response)
+        self.assertEqual(payload["provider"], "qwen")
+        self.assertEqual(payload["model"], "qwen-plus")
+        self.assertEqual(payload["base_url"], "https://qwen.example/v1/responses")
+        self.assertEqual(payload["api_key"], "secret-existing-key")
+        self.assertIn("LLM 外脑：已启用", check_response)
+        self.assertIn("Provider：qwen", check_response)
+        self.assertIn("Adapter：openai-compatible", check_response)
+        self.assertIn("Model：qwen-plus", check_response)
+        self.assertIn("API key：已配置", check_response)
+        self.assertIn("结果：配置完整，可执行 /llm-enable 或 /llm-smoke。", check_response)
+        self.assertNotIn("secret-existing-key", response)
+        self.assertNotIn("secret-existing-key", check_response)
+        self.assertNotIn("secret-existing-key", log_text)
+
+    def test_llm_config_set_preserves_unspecified_existing_fields(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "qwen",
+                    "model": "old-model",
+                    "base_url": "https://qwen.example/v1/responses",
+                    "api_key": "secret-existing-key",
+                    "fake_response": "",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/llm-config-set model=qwen-max")
+        payload = json.loads(local_config.read_text(encoding="utf-8"))
+
+        self.assertIn("变更字段：model", response)
+        self.assertEqual(payload["provider"], "qwen")
+        self.assertEqual(payload["model"], "qwen-max")
+        self.assertEqual(payload["base_url"], "https://qwen.example/v1/responses")
+        self.assertEqual(payload["api_key"], "secret-existing-key")
+        self.assertNotIn("secret-existing-key", response)
+
+    def test_llm_config_set_rejects_invalid_provider_without_partial_write(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        original_payload = {
+            "provider": "qwen",
+            "model": "qwen-test",
+            "base_url": "https://qwen.example/v1/responses",
+            "api_key": "secret-existing-key",
+        }
+        local_config.write_text(json.dumps(original_payload, ensure_ascii=False), encoding="utf-8")
+
+        response = self.agent.handle("/llm-config-set provider=unknown")
+        payload = json.loads(local_config.read_text(encoding="utf-8"))
+
+        self.assertIn("暂不支持 LLM provider：unknown", response)
+        self.assertEqual(payload, original_payload)
+        self.assertNotIn("secret-existing-key", response)
+
     def test_llm_config_check_reports_invalid_json(self):
         local_config = self.paths.config_dir / "llm.local.json"
         local_config.write_text("{invalid-json", encoding="utf-8")
@@ -1275,6 +1376,15 @@ class AgentTests(unittest.TestCase):
         self.assertIn("联网搜索配置检查：", search_response)
         self.assertIn("检查方式：只读取本地配置和环境变量，不发起网络请求。", llm_response)
         self.assertIn("检查方式：只读取本地配置和环境变量，不发起网络请求。", search_response)
+
+    def test_natural_language_config_set_uses_inner_brain_entries_for_usage(self):
+        llm_response = self.agent.handle("设置外脑配置")
+        search_response = self.agent.handle("设置联网搜索配置")
+
+        self.assertIn("用法：/llm-config-set key=value ...", llm_response)
+        self.assertIn("用法：/search-config-set key=value ...", search_response)
+        self.assertFalse((self.paths.config_dir / "llm.local.json").exists())
+        self.assertFalse((self.paths.config_dir / "search.local.json").exists())
 
     def test_natural_language_enable_llm_uses_inner_brain_entry(self):
         response = self.agent.handle("开启外脑")
@@ -1848,7 +1958,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.5.1",
+                    "version": "0.6.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -1859,7 +1969,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.5.1", response)
+        self.assertIn("发现新版本：0.6.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -1874,7 +1984,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.5.1",
+                        "version": "0.6.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

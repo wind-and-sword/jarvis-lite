@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-05-29-v9-runtime-config-check-plan.md](2026-05-29-v9-runtime-config-check-plan.md)：当前方案版本，明确外脑与联网搜索的运行态配置只读检查闭环。
+- [2026-05-29-v10-runtime-config-set-plan.md](2026-05-29-v10-runtime-config-set-plan.md)：当前方案版本，明确外脑与联网搜索的运行态配置写入闭环。
 
 ## 历史版本
 
@@ -18,6 +18,7 @@
 - [2026-05-28-v6-inner-brain-classifier-first-plan.md](2026-05-28-v6-inner-brain-classifier-first-plan.md)：明确 InnerBrain 样本分类器优先、legacy fallback 仅迁移期兼容，并记录多轮澄清状态第一版。
 - [2026-05-29-v7-llm-provider-config-closure-plan.md](2026-05-29-v7-llm-provider-config-closure-plan.md)：明确外脑 provider alias 与 OpenAI-compatible adapter 的配置闭环。
 - [2026-05-29-v8-runtime-config-init-plan.md](2026-05-29-v8-runtime-config-init-plan.md)：明确外脑与联网搜索的运行态配置初始化闭环。
+- [2026-05-29-v9-runtime-config-check-plan.md](2026-05-29-v9-runtime-config-check-plan.md)：明确外脑与联网搜索的运行态配置只读检查闭环。
 
 ## 维护规则
 

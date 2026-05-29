@@ -13,6 +13,7 @@ VALID_SEARCH_PROVIDERS = {"off", "fake", "tavily"}
 SEARCH_LOCAL_CONFIG_RELATIVE_PATH = Path("config") / "search.local.json"
 SEARCH_EXAMPLE_CONFIG_RELATIVE_PATH = Path("config") / "search.example.json"
 DEFAULT_SEARCH_MAX_RESULTS = 5
+SEARCH_LOCAL_CONFIG_SET_KEYS = ("provider", "api_key", "base_url", "max_results", "fake_results")
 
 
 @dataclass(frozen=True)
@@ -317,6 +318,18 @@ def write_search_local_config_draft(paths: ProjectPaths, provider: str = "") -> 
     return target, True, normalized_provider
 
 
+def write_search_local_config_values(paths: ProjectPaths, updates: Mapping[str, object]) -> tuple[Path, tuple[str, ...]]:
+    """写入搜索本地配置指定字段，未指定字段保持不变。"""
+
+    normalized_updates = _normalize_search_config_updates(updates)
+    target = search_local_config_path(paths)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    payload = _read_search_local_config_payload(paths, target, normalized_updates.get("provider", ""))
+    payload.update(normalized_updates)
+    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return target, tuple(normalized_updates.keys())
+
+
 def search_local_config_draft_text(provider: str = "") -> str:
     """返回 search.local.json 草稿，敏感字段保持空值。"""
 
@@ -422,6 +435,72 @@ def _normalize_search_config_provider(provider: str = "") -> str:
     if normalized_provider not in VALID_SEARCH_PROVIDERS:
         raise ValueError(f"暂不支持搜索 provider：{normalized_provider}。可用 provider：off、fake、tavily")
     return normalized_provider
+
+
+def _normalize_search_config_updates(updates: Mapping[str, object]) -> dict[str, object]:
+    normalized: dict[str, object] = {}
+    for key, value in updates.items():
+        normalized_key = str(key).strip().lower()
+        if normalized_key not in SEARCH_LOCAL_CONFIG_SET_KEYS:
+            raise ValueError(
+                "不支持的联网搜索配置字段："
+                f"{normalized_key}。支持字段：{_format_allowed_config_keys(SEARCH_LOCAL_CONFIG_SET_KEYS)}"
+            )
+        if normalized_key == "provider":
+            normalized[normalized_key] = _normalize_search_config_provider(str(value))
+        elif normalized_key == "max_results":
+            normalized[normalized_key] = _parse_config_set_max_results(value)
+        elif normalized_key == "fake_results":
+            normalized[normalized_key] = _parse_config_set_fake_results(value)
+        else:
+            normalized[normalized_key] = str(value).strip()
+    return normalized
+
+
+def _parse_config_set_max_results(value: object) -> int:
+    try:
+        parsed = int(str(value).strip())
+    except (TypeError, ValueError) as exc:
+        raise ValueError("max_results 必须是大于 0 的整数") from exc
+    if parsed < 1:
+        raise ValueError("max_results 必须是大于 0 的整数")
+    return parsed
+
+
+def _parse_config_set_fake_results(value: object) -> list[object]:
+    if isinstance(value, list):
+        _fake_results_from_list(value)
+        return value
+    raw_value = str(value).strip()
+    if not raw_value:
+        return []
+    try:
+        payload = json.loads(raw_value)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"fake_results 不是有效 JSON：{exc.msg}") from exc
+    if not isinstance(payload, list):
+        raise ValueError("fake_results 必须是 JSON 数组")
+    _fake_results_from_list(payload)
+    return payload
+
+
+def _read_search_local_config_payload(paths: ProjectPaths, target: Path, provider: object = "") -> dict[str, object]:
+    if not target.exists():
+        return json.loads(search_local_config_draft_text(str(provider)))
+    source = _search_config_source_label(paths, target)
+    try:
+        payload = json.loads(target.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{source} 不是有效 JSON：{exc.msg}") from exc
+    except OSError as exc:
+        raise ValueError(f"{source} 读取失败：{exc}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"{source} 必须是 JSON 对象")
+    return dict(payload)
+
+
+def _format_allowed_config_keys(keys: tuple[str, ...]) -> str:
+    return "、".join(keys)
 
 
 def _search_env_setting_keys() -> dict[str, str]:

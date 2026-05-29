@@ -17,6 +17,7 @@ VALID_LLM_PROVIDERS = {"off", "fake", "openai", "openai-compatible", *LLM_PROVID
 LLM_CONFIG_TEMPLATE_ALIASES = dict(LLM_PROVIDER_ALIASES)
 LLM_LOCAL_CONFIG_RELATIVE_PATH = Path("config") / "llm.local.json"
 LLM_EXAMPLE_CONFIG_RELATIVE_PATH = Path("config") / "llm.example.json"
+LLM_LOCAL_CONFIG_SET_KEYS = ("provider", "model", "base_url", "api_key", "fake_response")
 LLM_ALLOWED_COMMAND_SPECS = (
     "/kb",
     "/kb-summary",
@@ -41,8 +42,10 @@ LLM_ALLOWED_COMMAND_SPECS = (
     "/search-import-summary [文件名]",
     "/llm-config-init [provider]",
     "/llm-config-check",
+    "/llm-config-set key=value ...",
     "/search-config-init [provider]",
     "/search-config-check",
+    "/search-config-set key=value ...",
 )
 LLM_ALLOWED_COMMAND_NAMES = tuple(spec.split(maxsplit=1)[0] for spec in LLM_ALLOWED_COMMAND_SPECS)
 LLM_INTENT_SCHEMA: dict[str, Any] = {
@@ -533,6 +536,18 @@ def write_llm_local_config_draft(paths: ProjectPaths, provider: str = "") -> tup
     return target, True, normalized_provider
 
 
+def write_llm_local_config_values(paths: ProjectPaths, updates: Mapping[str, object]) -> tuple[Path, tuple[str, ...]]:
+    """写入 LLM 本地配置指定字段，未指定字段保持不变。"""
+
+    normalized_updates = _normalize_llm_config_updates(updates)
+    target = llm_local_config_path(paths)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    payload = _read_llm_local_config_payload(paths, target, normalized_updates.get("provider", ""))
+    payload.update(normalized_updates)
+    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return target, tuple(normalized_updates.keys())
+
+
 def llm_local_config_draft_text(provider: str = "") -> str:
     """返回 llm.local.json 草稿，敏感字段保持空值。"""
 
@@ -700,6 +715,41 @@ def _normalize_llm_config_provider(provider: str = "") -> str:
             "可用 provider：off、fake、openai、openai-compatible、qwen、gemini"
         )
     return normalized_provider
+
+
+def _normalize_llm_config_updates(updates: Mapping[str, object]) -> dict[str, object]:
+    normalized: dict[str, object] = {}
+    for key, value in updates.items():
+        normalized_key = str(key).strip().lower()
+        if normalized_key not in LLM_LOCAL_CONFIG_SET_KEYS:
+            raise ValueError(
+                "不支持的外脑配置字段："
+                f"{normalized_key}。支持字段：{_format_allowed_config_keys(LLM_LOCAL_CONFIG_SET_KEYS)}"
+            )
+        if normalized_key == "provider":
+            normalized[normalized_key] = _normalize_llm_config_provider(str(value))
+        else:
+            normalized[normalized_key] = str(value).strip()
+    return normalized
+
+
+def _read_llm_local_config_payload(paths: ProjectPaths, target: Path, provider: object = "") -> dict[str, object]:
+    if not target.exists():
+        return json.loads(llm_local_config_draft_text(str(provider)))
+    source = _llm_config_source_label(paths, target)
+    try:
+        payload = json.loads(target.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{source} 不是有效 JSON：{exc.msg}") from exc
+    except OSError as exc:
+        raise ValueError(f"{source} 读取失败：{exc}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"{source} 必须是 JSON 对象")
+    return dict(payload)
+
+
+def _format_allowed_config_keys(keys: Iterable[str]) -> str:
+    return "、".join(keys)
 
 
 def _parse_llm_usage_line(line: str) -> LLMUsage | None:

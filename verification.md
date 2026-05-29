@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-29：发布 `0.6.0` 可安装测试包，收口本地配置写入 v1；`/llm-config-set` 和 `/search-config-set` 可用显式 `key=value` 创建或更新本机 `local.json`，保留未指定字段，错误时不部分写入，响应和日志不泄漏真实 key；全量 `unittest` 452 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.6.0.exe`。
 - 2026-05-29：发布 `0.5.0` 可安装测试包，收口本地配置检查 v1；`/llm-config-check` 和 `/search-config-check` 可只读检查本机 `local.json` 与环境变量覆盖，显示 provider、adapter、配置问题和 API key 状态但不发起网络请求、不泄漏真实 key；全量 `unittest` 446 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.5.0.exe`。
 - 2026-05-29：发布 `0.4.0` 可安装测试包，收口运行态配置初始化 v1；`/llm-config-init [provider]` 和 `/search-config-init [provider]` 可生成不含真实 API key 的本机 `local.json` 草稿，已有配置不覆盖，支持自然语言“生成外脑配置/生成联网搜索配置”；全量 `unittest` 442 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.4.0.exe`。
 - 2026-05-29：发布 `0.3.0` 可安装测试包，收口外脑 provider 配置闭环 v1；`qwen`/`gemini` 可作为 provider alias 写入本地配置并复用 OpenAI-compatible adapter，`/llm-status`、`/llm-enable` 和 `/llm-config-example` 会显示 alias 与实际 adapter；全量 `unittest` 438 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.3.0.exe`。
