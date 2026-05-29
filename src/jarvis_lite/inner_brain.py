@@ -317,6 +317,45 @@ def describe_inner_brain_result(result: InnerBrainResult) -> str:
     return "\n".join(lines)
 
 
+def complete_inner_brain_clarification(result: InnerBrainResult, reply: str) -> InnerBrainResult:
+    """用用户下一句回复补齐缺失槽位，并复用既有意图映射。"""
+
+    if result.policy != InnerBrainPolicy.CLARIFY or not result.missing:
+        return result
+
+    slots = _normalized_slots(result.slots)
+    slots.update(_clarification_slots_from_reply(reply, result.intent, result.missing))
+    missing = tuple(slot for slot in result.missing if not _slot_is_present(slot, slots))
+
+    natural_language_intent = None
+    if not missing:
+        sample = InnerBrainTrainingSample("", result.intent, {})
+        natural_language_intent = _sample_to_natural_language_intent(reply, sample, slots)
+
+    if missing or natural_language_intent is None:
+        return InnerBrainResult(
+            intent=result.intent,
+            slots=slots,
+            confidence=result.confidence,
+            missing=missing or result.missing,
+            source=result.source,
+            reason="已接收补充信息，但槽位仍未完整",
+            policy=InnerBrainPolicy.CLARIFY,
+            natural_language_intent=None,
+        )
+
+    return InnerBrainResult(
+        intent=result.intent,
+        slots=slots,
+        confidence=result.confidence,
+        missing=(),
+        source=result.source,
+        reason="已根据用户补充信息补齐槽位",
+        policy=InnerBrainPolicy.EXECUTE,
+        natural_language_intent=natural_language_intent,
+    )
+
+
 def load_training_samples(paths: ProjectPaths | None) -> tuple[InnerBrainTrainingSample, ...]:
     """读取运行态 JSONL 样本，格式为 text -> intent -> slots。"""
 
@@ -1127,6 +1166,86 @@ def _sample_slots(prompt: str, sample: InnerBrainTrainingSample) -> dict[str, An
     tag_slots = _extract_tag_slots(prompt, sample.intent)
     slots.update(tag_slots)
     return slots
+
+
+def _clarification_slots_from_reply(reply: str, intent: str, missing: tuple[str, ...]) -> dict[str, Any]:
+    slots: dict[str, Any] = {}
+    value = _normalize_clarification_value(reply)
+    for slot in missing:
+        if slot == "source":
+            source = _extract_import_source(reply) or value
+            if _looks_like_path_or_file(source):
+                slots["source"] = source
+        elif slot == "path":
+            path = _extract_read_document_path(reply) or value
+            if _looks_like_path_or_file(path):
+                slots["path"] = _normalize_read_document_path(path)
+        elif slot == "items":
+            items = _split_shortcut_items(value)
+            if items:
+                slots["items"] = items
+        elif slot == "tags":
+            tags = _split_tag_text(value)
+            if tags:
+                slots["tags"] = tags
+        elif slot == "result_index":
+            result_index = _extract_clarification_number(value)
+            if result_index > 0:
+                slots["result_index"] = result_index
+        elif slot in {"query", "experience", "alias"} and value:
+            slots[slot] = value
+    return slots
+
+
+def _normalize_clarification_value(reply: str) -> str:
+    value = reply.strip().strip("。！？!?.")
+    patterns = (
+        r"^(?:就是|是|用|补充|路径是|文件是|来源是|名称是|名字是|对象是)\s*[:：]?\s*(?P<value>.+)$",
+        r"^(?:请用|帮我用)\s*(?P<value>.+)$",
+    )
+    for pattern in patterns:
+        match = re.fullmatch(pattern, value)
+        if match:
+            value = match.group("value").strip()
+            break
+    return _strip_wrapping_quotes(value)
+
+
+def _looks_like_path_or_file(value: str) -> bool:
+    if not value:
+        return False
+    if re.match(r"^[a-zA-Z]:[/\\]", value):
+        return True
+    if value.startswith(("~/", "~\\", "./", ".\\", "../", "..\\")):
+        return True
+    if "/" in value or "\\" in value:
+        return True
+    return bool(re.search(r"\.(?:md|txt|pdf|json)$", value, flags=re.IGNORECASE))
+
+
+def _extract_clarification_number(value: str) -> int:
+    normalized = _normalize_text(value)
+    return _extract_number(normalized, r"(?:第)?(?P<number>[0-9一二两三四五六七八九十]+)(?:条|个|份)?")
+
+
+def _slot_is_present(slot: str, slots: Mapping[str, Any]) -> bool:
+    if slot == "result_index":
+        return _slot_result_index(slots) > 0
+    if slot in {"items", "tags"}:
+        value = slots.get(slot, ())
+        if isinstance(value, str):
+            return bool(value.strip())
+        if isinstance(value, list | tuple):
+            return any(str(item).strip() for item in value)
+        return False
+    value = slots.get(slot)
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, list | tuple):
+        return any(str(item).strip() for item in value)
+    return bool(value)
 
 
 def _extract_numbered_result_index(text: str, intent: str) -> int:

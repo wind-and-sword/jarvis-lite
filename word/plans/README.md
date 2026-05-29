@@ -1,12 +1,12 @@
 # Jarvis Lite 方案版本索引
 
-> 日期：2026-05-28
+> 日期：2026-05-29
 > 执行者：Codex
 
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-05-28-v6-inner-brain-classifier-first-plan.md](2026-05-28-v6-inner-brain-classifier-first-plan.md)：当前方案版本，明确 InnerBrain 样本分类器优先、legacy fallback 仅迁移期兼容。
+- [2026-05-28-v6-inner-brain-classifier-first-plan.md](2026-05-28-v6-inner-brain-classifier-first-plan.md)：当前方案版本，明确 InnerBrain 样本分类器优先、legacy fallback 仅迁移期兼容，并记录多轮澄清状态第一版。
 
 ## 历史版本
 

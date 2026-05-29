@@ -122,6 +122,18 @@ InnerBrain 的主路径改为本地样本分类器优先：
 
 这些动作只处理 Agent 已经保存的最近联网搜索上下文。LLM 仍然只能基于 Agent 提供的来源总结或比较，不自由浏览网页。
 
+## 多轮澄清状态
+
+第九批补齐了 InnerBrain 缺槽澄清的第一版状态闭环：
+
+- 当 `InnerBrain` 已经识别 intent，但返回 `policy=CLARIFY` 和 `missing` 时，`JarvisAgent` 会在内存中保存本次 `InnerBrainResult`。
+- 用户下一句如果不是命令，会先尝试作为这次缺失槽位的补充，而不是重新进入普通聊天、知识库问答或 LLM fallback。
+- 当前已覆盖两个高频补槽类型：`knowledge.import` 的 `source`，以及 `desktop.delete_shortcut` 的 `items`。
+- 补齐后仍复用既有 `NaturalLanguageIntent` 和命令执行链路，例如继续执行 `/import` 或桌面 `.lnk` 删除，不新增独立执行层。
+- 用户可用“取消”“取消补充”“不用了”“先不用”“算了”取消当前澄清状态。
+
+这一步的边界是：自然语言主识别仍由 seed/runtime 样本分类器负责；路径、名称、编号和标签等解析函数只在已知 intent 下抽取结构化槽位，不回到“用正则决定用户意图”的旧路线。
+
 ## 当前 Agent 决策规则
 
 - `confidence >= 0.78`：样本分类器高置信，生成 `NaturalLanguageIntent` 后由 `JarvisAgent` 执行。
@@ -157,5 +169,5 @@ InnerBrain 的主路径改为本地样本分类器优先：
 ## 后续迁移重点
 
 - 继续从真实使用日志里补充 seed/runtime 样本，尤其是用户自己的高频口语表达。
-- 进一步实现多轮澄清状态，让用户能直接用自然语言补齐缺失槽位，而不仅是看到补全命令。
+- 扩大多轮澄清状态覆盖面，让更多 `missing` 槽位能通过下一句自然语言补齐。
 - 评估字符 n-gram、embedding 或小型分类器替换当前轻量相似度实现。

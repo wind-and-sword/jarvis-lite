@@ -32,6 +32,7 @@ from .inner_brain import (
     InnerBrainPolicy,
     InnerBrainResult,
     InnerBrainTrainingSaveResult,
+    complete_inner_brain_clarification,
     describe_inner_brain_result,
     save_labeled_runtime_training_sample,
     save_runtime_training_sample,
@@ -143,6 +144,7 @@ class JarvisAgent:
         self._pending_tagged_documents_tag: str | None = None
         self._pending_tagged_documents_tags: tuple[str, ...] = ()
         self._pending_tagged_documents_paths: tuple[str, ...] = ()
+        self._pending_inner_brain_clarification: InnerBrainResult | None = None
         self._recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = (
             runtime_context.recent_tagged_documents_operations
         )
@@ -242,6 +244,10 @@ class JarvisAgent:
         teach_response = self._teach_inner_brain_sample_from_natural_language(prompt)
         if teach_response is not None:
             return teach_response
+
+        clarification_response = self._handle_pending_inner_brain_clarification(prompt)
+        if clarification_response is not None:
+            return clarification_response
 
         inner_brain_result = self.inner_brain.understand(prompt)
         if inner_brain_result.policy == InnerBrainPolicy.EXECUTE and inner_brain_result.natural_language_intent is not None:
@@ -892,6 +898,7 @@ class JarvisAgent:
         return lines
 
     def _inner_brain_clarification(self, result: InnerBrainResult) -> str:
+        self._pending_inner_brain_clarification = result
         missing = "、".join(self._inner_brain_missing_label(item) for item in result.missing) or "更多信息"
         self.tools.run(
             "record_log",
@@ -906,6 +913,7 @@ class JarvisAgent:
             "我理解到这个请求可能需要本地执行，但信息还不够。",
             f"- 意图：{result.intent}",
             f"- 需要补充：{missing}",
+            "- 你也可以直接回复缺失信息，我会接着这次请求继续处理。",
         ]
         action_hint = self._inner_brain_clarification_action_hint(result)
         if action_hint:
@@ -915,6 +923,34 @@ class JarvisAgent:
             lines.append(f"- 如果这次理解错了：{label_hint}")
         lines.append("- 想固定一种说法：/inner-brain-teach 原话 => /命令")
         return "\n".join(lines)
+
+    def _handle_pending_inner_brain_clarification(self, prompt: str) -> str | None:
+        pending = self._pending_inner_brain_clarification
+        if pending is None:
+            return None
+        if self._is_inner_brain_clarification_cancel(prompt):
+            self._pending_inner_brain_clarification = None
+            self.tools.run("record_log", message=f"取消 InnerBrain 澄清补槽：intent={pending.intent}")
+            return f"已取消这次补充：{pending.intent}。"
+
+        completed = complete_inner_brain_clarification(pending, prompt)
+        if completed.policy == InnerBrainPolicy.EXECUTE and completed.natural_language_intent is not None:
+            self._pending_inner_brain_clarification = None
+            self.tools.run(
+                "record_log",
+                message=(
+                    "InnerBrain 澄清补槽完成："
+                    f"intent={completed.intent} "
+                    f"source={completed.source}"
+                ),
+            )
+            response = self._handle_natural_language_intent(completed.natural_language_intent)
+            return "\n".join(["已补齐缺失信息，继续执行。", response])
+
+        return self._inner_brain_clarification(completed)
+
+    def _is_inner_brain_clarification_cancel(self, prompt: str) -> bool:
+        return prompt.strip() in {"取消", "取消补充", "不用了", "先不用", "算了"}
 
     def _inner_brain_clarification_action_hint(self, result: InnerBrainResult) -> str:
         if result.intent == "knowledge.import" and "source" in result.missing:

@@ -384,6 +384,69 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/inner-brain-teach 原话 => /命令", response)
         self.assertEqual(provider.calls, [])
 
+    def test_inner_brain_clarification_accepts_followup_source_and_executes_import(self):
+        training_dir = self.paths.data_dir / "inner-brain" / "training"
+        training_dir.mkdir(parents=True)
+        (training_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "帮我导入这份资料",
+                    "intent": "knowledge.import",
+                    "slots": {},
+                    "missing": ["source"],
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        source = Path(self.temp_dir.name) / "followup-source.md"
+        source.write_text("多轮澄清可以补齐导入路径。\n", encoding="utf-8")
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        clarify_response = agent.handle("帮我导入这份资料")
+        followup_response = agent.handle(str(source))
+
+        self.assertIn("需要补充：要导入的文件或目录", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("已导入知识库：data/followup-source.md", followup_response)
+        self.assertTrue((self.paths.data_dir / "followup-source.md").exists())
+        self.assertEqual(provider.calls, [])
+
+    def test_inner_brain_clarification_accepts_followup_desktop_shortcut_name(self):
+        fake_home = Path(self.temp_dir.name) / "home"
+        desktop = fake_home / "Desktop"
+        desktop.mkdir(parents=True)
+        shortcut = desktop / "比特浏览器.lnk"
+        shortcut.write_text("shortcut", encoding="utf-8")
+
+        with patch("jarvis_lite.agent.Path.home", return_value=fake_home):
+            clarify_response = self.agent.handle("删除桌面快捷方式")
+            followup_response = self.agent.handle("比特浏览器")
+
+        self.assertIn("需要补充：要处理的对象名称", clarify_response)
+        self.assertIn("已补齐缺失信息，继续执行。", followup_response)
+        self.assertIn("已删除桌面快捷方式", followup_response)
+        self.assertFalse(shortcut.exists())
+
+    def test_inner_brain_clarification_can_be_cancelled(self):
+        fake_home = Path(self.temp_dir.name) / "home"
+        desktop = fake_home / "Desktop"
+        desktop.mkdir(parents=True)
+        shortcut = desktop / "比特浏览器.lnk"
+        shortcut.write_text("shortcut", encoding="utf-8")
+
+        with patch("jarvis_lite.agent.Path.home", return_value=fake_home):
+            clarify_response = self.agent.handle("删除桌面快捷方式")
+            cancel_response = self.agent.handle("取消补充")
+            followup_response = self.agent.handle("比特浏览器")
+
+        self.assertIn("需要补充：要处理的对象名称", clarify_response)
+        self.assertIn("已取消这次补充", cancel_response)
+        self.assertNotIn("已删除桌面快捷方式", followup_response)
+        self.assertTrue(shortcut.exists())
+
     def test_natural_language_desktop_shortcut_delete_reports_missing_names(self):
         fake_home = Path(self.temp_dir.name) / "home"
         desktop = fake_home / "Desktop"
