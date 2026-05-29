@@ -71,6 +71,7 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertIn("用户偏好：中文回答", self.panel.transcript_text())
         self.assertIn("状态：success", self.panel.status_text())
         self.assertEqual(self.panel.llm_pending_status_text(), "外脑待补充：无")
+        self.assertIn("最近调用：无", self.panel.llm_activity_status_text())
 
     def test_panel_shows_llm_pending_status_and_refreshes_after_cancel(self):
         self.paths.config_dir.mkdir(parents=True, exist_ok=True)
@@ -128,6 +129,34 @@ class DesktopWidgetTests(unittest.TestCase):
         self.pet = DesktopPetWindow(self.panel, self.paths)
 
         self.assertIn("外脑待补充（1/3）：需要哪个时间范围？", self.panel.llm_pending_status_text())
+
+    def test_panel_shows_llm_activity_status_after_answer(self):
+        self.paths.config_dir.mkdir(parents=True, exist_ok=True)
+        (self.paths.config_dir / "llm.local.json").write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_response": {
+                        "type": "answer",
+                        "answer": "外脑处理开放问题",
+                    },
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        self.panel.close()
+        self.pet.close()
+        self.bridge = DesktopBridge(self.paths)
+        self.panel = AssistantPanel(self.bridge)
+        self.pet = DesktopPetWindow(self.panel, self.paths)
+
+        self.panel.submit_text("帮我判断下一步")
+        activity_text = self.panel.llm_activity_status_text()
+
+        self.assertIn("外脑运行状态：已启用", activity_text)
+        self.assertIn("最近调用：fallback / answer", activity_text)
+        self.assertIn("结果：外脑处理开放问题", activity_text)
 
     def test_panel_exposes_only_direct_quick_command_buttons(self):
         self.assertEqual(

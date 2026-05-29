@@ -91,6 +91,31 @@ class DesktopBridgeTests(unittest.TestCase):
         self.assertIn("回复缺失信息继续，或输入“取消补充”。", response.llm_pending_status_text)
         self.assertEqual(response.llm_pending_status_text, bridge.llm_pending_status_text())
 
+    def test_send_exposes_llm_activity_status_after_answer(self):
+        self.paths.config_dir.mkdir(parents=True, exist_ok=True)
+        (self.paths.config_dir / "llm.local.json").write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_response": {
+                        "type": "answer",
+                        "answer": "外脑处理开放问题",
+                    },
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        bridge = DesktopBridge(self.paths)
+
+        response = bridge.send("帮我判断下一步")
+
+        self.assertIn("LLM 外脑：外脑处理开放问题", response.assistant_text)
+        self.assertIn("外脑运行状态：已启用", response.llm_activity_status_text)
+        self.assertIn("最近调用：fallback / answer", response.llm_activity_status_text)
+        self.assertIn("结果：外脑处理开放问题", response.llm_activity_status_text)
+        self.assertEqual(response.llm_activity_status_text, bridge.llm_activity_status_text())
+
     def test_quick_commands_include_current_assistant_capabilities(self):
         commands = quick_commands()
         prompts = tuple(command.prompt for command in commands)

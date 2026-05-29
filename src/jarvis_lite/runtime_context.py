@@ -68,6 +68,19 @@ class RuntimeLLMClarificationContext:
 
 
 @dataclass(frozen=True)
+class RuntimeLLMCallContext:
+    """保存最近一次 LLM 外脑调用的可序列化运行态信息。"""
+
+    source: str
+    prompt: str
+    intent_type: str
+    summary: str = ""
+    provider: str = ""
+    model: str = ""
+    created_at: str = ""
+
+
+@dataclass(frozen=True)
 class RuntimeContext:
     """保存可跨 Agent 实例恢复的轻量运行态上下文。"""
 
@@ -81,6 +94,7 @@ class RuntimeContext:
     recent_tagged_documents_operation: RuntimeTaggedDocumentsOperationContext | None = None
     recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = ()
     pending_llm_clarification: RuntimeLLMClarificationContext | None = None
+    recent_llm_call: RuntimeLLMCallContext | None = None
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -127,6 +141,7 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         recent_tagged_documents_operation=recent_tagged_documents_operation,
         recent_tagged_documents_operations=recent_tagged_documents_operations,
         pending_llm_clarification=_read_llm_clarification_context(raw.get("pending_llm_clarification")),
+        recent_llm_call=_read_llm_call_context(raw.get("recent_llm_call")),
     )
 
 
@@ -166,6 +181,7 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                 "pending_llm_clarification": _llm_clarification_context_to_json(
                     context.pending_llm_clarification
                 ),
+                "recent_llm_call": _llm_call_context_to_json(context.recent_llm_call),
             },
             ensure_ascii=False,
             indent=2,
@@ -272,6 +288,25 @@ def _read_llm_clarification_context(value: object) -> RuntimeLLMClarificationCon
         clarification=clarification,
         context=_read_str_tuple(value.get("context")),
         clarification_count=_read_positive_int(value.get("clarification_count"), 1),
+        created_at=_read_optional_str(value.get("created_at")) or "",
+    )
+
+
+def _read_llm_call_context(value: object) -> RuntimeLLMCallContext | None:
+    if not isinstance(value, dict):
+        return None
+    source = _read_optional_str(value.get("source"))
+    prompt = _read_optional_str(value.get("prompt"))
+    intent_type = _read_optional_str(value.get("intent_type"))
+    if source is None or prompt is None or intent_type is None:
+        return None
+    return RuntimeLLMCallContext(
+        source=source,
+        prompt=prompt,
+        intent_type=intent_type,
+        summary=_read_optional_str(value.get("summary")) or "",
+        provider=_read_optional_str(value.get("provider")) or "",
+        model=_read_optional_str(value.get("model")) or "",
         created_at=_read_optional_str(value.get("created_at")) or "",
     )
 
@@ -391,6 +426,20 @@ def _llm_clarification_context_to_json(
         "clarification": context.clarification,
         "context": list(context.context),
         "clarification_count": context.clarification_count,
+        "created_at": context.created_at,
+    }
+
+
+def _llm_call_context_to_json(context: RuntimeLLMCallContext | None) -> dict[str, str] | None:
+    if context is None:
+        return None
+    return {
+        "source": context.source,
+        "prompt": context.prompt,
+        "intent_type": context.intent_type,
+        "summary": context.summary,
+        "provider": context.provider,
+        "model": context.model,
         "created_at": context.created_at,
     }
 

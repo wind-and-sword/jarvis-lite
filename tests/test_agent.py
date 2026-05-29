@@ -1722,6 +1722,44 @@ class AgentTests(unittest.TestCase):
         self.assertIn("缺少 JARVIS_LITE_LLM_MODEL", response)
         self.assertIn("缺少 JARVIS_LITE_LLM_API_KEY", response)
 
+    def test_llm_activity_status_records_recent_answer_fallback(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"外脑处理开放问题"}')
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider),
+        )
+
+        response = agent.handle("这句话需要外脑判断")
+        status = agent.llm_activity_status_text()
+        runtime_context = load_runtime_context(self.paths)
+
+        self.assertIn("LLM 外脑：外脑处理开放问题", response)
+        self.assertIn("外脑运行状态：已启用", status)
+        self.assertIn("Provider：fake", status)
+        self.assertIn("Model：intent-test", status)
+        self.assertIn("最近调用：fallback / answer", status)
+        self.assertIn("输入：这句话需要外脑判断", status)
+        self.assertIn("结果：外脑处理开放问题", status)
+        self.assertIsNotNone(runtime_context.recent_llm_call)
+
+    def test_llm_activity_status_restores_recent_call_on_startup(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"外脑处理开放问题"}')
+        agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider),
+        )
+        agent.handle("这句话需要外脑判断")
+        restarted_agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider),
+        )
+
+        status = restarted_agent.llm_activity_status_text()
+
+        self.assertIn("外脑运行状态：已启用", status)
+        self.assertIn("最近调用：fallback / answer", status)
+        self.assertIn("结果：外脑处理开放问题", status)
+
     def test_llm_usage_command_summarizes_local_usage_log(self):
         self.paths.log_path.write_text(
             "\n".join(
@@ -2076,7 +2114,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.12.1",
+                    "version": "0.13.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2087,7 +2125,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.12.1", response)
+        self.assertIn("发现新版本：0.13.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2102,7 +2140,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.12.1",
+                        "version": "0.13.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

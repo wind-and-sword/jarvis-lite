@@ -76,6 +76,7 @@ from .memory import (
 from .runtime_context import (
     RuntimeContext,
     RuntimeDirectoryContext,
+    RuntimeLLMCallContext,
     RuntimeLLMClarificationContext,
     RuntimeRecentFileContext,
     RuntimeTaggedDocumentsOperationContext,
@@ -176,6 +177,7 @@ class JarvisAgent:
         self._pending_llm_clarification: PendingLLMClarification | None = (
             self._restore_pending_llm_clarification(runtime_context.pending_llm_clarification)
         )
+        self._recent_llm_call: RuntimeLLMCallContext | None = runtime_context.recent_llm_call
         self._recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = (
             runtime_context.recent_tagged_documents_operations
         )
@@ -333,6 +335,38 @@ class JarvisAgent:
                 "回复缺失信息继续，或输入“取消补充”。",
             ]
         )
+
+    def llm_activity_status_text(self) -> str:
+        """返回桌面面板可展示的 LLM 外脑运行状态和最近调用快照。"""
+
+        settings = self.llm_router.settings
+        lines = [
+            f"外脑运行状态：{'已启用' if settings.enabled else '未启用'}",
+            f"Provider：{settings.provider}",
+        ]
+        if settings.adapter_provider != settings.provider:
+            lines.append(f"Adapter：{settings.adapter_provider}")
+        if settings.model:
+            lines.append(f"Model：{settings.model}")
+        issues = settings.configuration_issues()
+        if issues:
+            lines.append(f"配置问题：{len(issues)} 项")
+        if self._recent_llm_call is None:
+            lines.append("最近调用：无")
+            return "\n".join(lines)
+
+        call = self._recent_llm_call
+        lines.append(f"最近调用：{call.source} / {call.intent_type}")
+        if call.created_at:
+            lines.append(f"时间：{call.created_at}")
+        if call.provider and call.provider != settings.provider:
+            lines.append(f"调用 Provider：{call.provider}")
+        if call.model and call.model != settings.model:
+            lines.append(f"调用 Model：{call.model}")
+        lines.append(f"输入：{call.prompt}")
+        if call.summary:
+            lines.append(f"结果：{call.summary}")
+        return "\n".join(lines)
 
     def _handle_command(self, prompt: str) -> str:
         try:
@@ -1439,6 +1473,7 @@ class JarvisAgent:
             lines.append("可先运行：/llm-status 或 /llm-enable")
             return "\n".join(lines)
         self._record_llm_usage(intent)
+        self._remember_recent_llm_call("search-summary", f"请基于联网搜索结果总结：{response.query}", intent)
         if intent.type == "answer" and intent.answer:
             lines.append(f"LLM 外脑总结：{intent.answer}")
         elif intent.type == "clarify" and intent.clarification:
@@ -1500,6 +1535,7 @@ class JarvisAgent:
             lines.append("可先运行：/llm-status 或 /llm-enable")
             return "\n".join(lines)
         self._record_llm_usage(intent)
+        self._remember_recent_llm_call("search-compare", f"请比较最近联网搜索来源：{self._recent_web_search.query}", intent)
         if intent.type == "answer" and intent.answer:
             lines.append(f"LLM 外脑比较：{intent.answer}")
         elif intent.type == "clarify" and intent.clarification:
@@ -1548,6 +1584,7 @@ class JarvisAgent:
         )
         if intent is not None:
             self._record_llm_usage(intent)
+            self._remember_recent_llm_call("search-summary-file", f"{task}：{self._recent_web_search.query}", intent)
             if intent.type == "answer" and intent.answer:
                 answer = intent.answer.strip()
             elif intent.type == "clarify" and intent.clarification:
@@ -1743,6 +1780,7 @@ class JarvisAgent:
         if intent is None:
             return ""
         self._record_llm_usage(intent)
+        self._remember_recent_llm_call("fallback", prompt, intent)
         return self._handle_llm_intent(intent, prompt, context)
 
     def _llm_smoke(self, prompt: str) -> str:
@@ -1771,6 +1809,7 @@ class JarvisAgent:
         if intent is None:
             return "LLM smoke：LLM 外脑未返回结果。"
         self._record_llm_usage(intent)
+        self._remember_recent_llm_call("smoke", smoke_prompt, intent)
         return self._format_llm_smoke_intent(intent)
 
     def _format_llm_smoke_intent(self, intent: LLMIntent) -> str:
@@ -2055,6 +2094,7 @@ class JarvisAgent:
             return "已补齐外脑需要的信息，但 LLM 外脑没有返回可执行结果。"
 
         self._record_llm_usage(intent)
+        self._remember_recent_llm_call("clarification", combined_prompt, intent)
         if intent.type == "clarify" and intent.clarification:
             next_count = pending.clarification_count + 1
             if next_count > LLM_CLARIFICATION_MAX_ROUNDS:
@@ -2638,6 +2678,7 @@ class JarvisAgent:
             recent_tagged_documents_operation=self._runtime_tagged_documents_operation(),
             recent_tagged_documents_operations=self._recent_tagged_documents_operations,
             pending_llm_clarification=self._runtime_pending_llm_clarification(),
+            recent_llm_call=self._recent_llm_call,
         )
 
     def _save_runtime_context(self) -> None:
@@ -2670,6 +2711,40 @@ class JarvisAgent:
             clarification_count=self._pending_llm_clarification.clarification_count,
             created_at=self._pending_llm_clarification.created_at or self._now_iso(),
         )
+
+    def _remember_recent_llm_call(self, source: str, prompt: str, intent: LLMIntent) -> None:
+        summary = self._llm_intent_summary(intent)
+        settings = self.llm_router.settings
+        self._recent_llm_call = RuntimeLLMCallContext(
+            source=source,
+            prompt=self._compact_status_text(prompt),
+            intent_type=intent.type,
+            summary=self._compact_status_text(summary),
+            provider=settings.provider,
+            model=settings.model,
+            created_at=self._now_iso(),
+        )
+        self._save_runtime_context()
+
+    def _llm_intent_summary(self, intent: LLMIntent) -> str:
+        if intent.type == "answer" and intent.answer:
+            return intent.answer
+        if intent.type == "command" and intent.command:
+            return intent.command
+        if intent.type == "clarify" and intent.clarification:
+            return intent.clarification
+        if intent.reason:
+            return intent.reason
+        return "无可用内容"
+
+    def _compact_status_text(self, text: str, max_length: int = 120) -> str:
+        value = " ".join(text.split())
+        if self.llm_router.settings.api_key:
+            value = value.replace(self.llm_router.settings.api_key, "<redacted>")
+        value = re.sub(r"(api_key\s*=\s*)\S+", r"\1<redacted>", value, flags=re.IGNORECASE)
+        if len(value) <= max_length:
+            return value
+        return f"{value[: max_length - 1]}…"
 
     def _is_llm_clarification_expired(self, created_at: str) -> bool:
         try:
