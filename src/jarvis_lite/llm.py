@@ -12,8 +12,9 @@ from .config import ProjectPaths
 
 
 VALID_LLM_INTENT_TYPES = {"command", "answer", "clarify", "no_action"}
-VALID_LLM_PROVIDERS = {"off", "fake", "openai", "openai-compatible"}
-LLM_CONFIG_TEMPLATE_ALIASES = {"qwen": "openai-compatible", "gemini": "openai-compatible"}
+LLM_PROVIDER_ALIASES = {"qwen": "openai-compatible", "gemini": "openai-compatible"}
+VALID_LLM_PROVIDERS = {"off", "fake", "openai", "openai-compatible", *LLM_PROVIDER_ALIASES}
+LLM_CONFIG_TEMPLATE_ALIASES = dict(LLM_PROVIDER_ALIASES)
 LLM_LOCAL_CONFIG_RELATIVE_PATH = Path("config") / "llm.local.json"
 LLM_EXAMPLE_CONFIG_RELATIVE_PATH = Path("config") / "llm.example.json"
 LLM_ALLOWED_COMMAND_SPECS = (
@@ -73,6 +74,12 @@ class LLMSettings:
     def enabled(self) -> bool:
         return self.provider != "off"
 
+    @property
+    def adapter_provider(self) -> str:
+        """返回实际调用的 adapter，provider alias 只改变配置入口。"""
+
+        return LLM_PROVIDER_ALIASES.get(self.provider, self.provider)
+
     def configuration_issues(self) -> tuple[str, ...]:
         issues: list[str] = []
         if self.config_error:
@@ -82,12 +89,13 @@ class LLMSettings:
             return tuple(issues)
         if not self.enabled or self.provider == "fake":
             return ()
-        if self.provider in {"openai", "openai-compatible"}:
+        adapter_provider = self.adapter_provider
+        if adapter_provider in {"openai", "openai-compatible"}:
             if not self.model:
                 issues.append("缺少 JARVIS_LITE_LLM_MODEL")
             if not self.api_key:
                 issues.append("缺少 JARVIS_LITE_LLM_API_KEY")
-            if self.provider == "openai-compatible" and not self.base_url:
+            if adapter_provider == "openai-compatible" and not self.base_url:
                 issues.append("缺少 JARVIS_LITE_LLM_BASE_URL")
         return tuple(issues)
 
@@ -209,7 +217,7 @@ class OpenAIResponsesProvider:
             return LLMIntent(type="no_action", reason="未配置 JARVIS_LITE_LLM_API_KEY")
         if not self.settings.model:
             return LLMIntent(type="no_action", reason="未配置 JARVIS_LITE_LLM_MODEL")
-        if self.settings.provider == "openai-compatible" and not self.settings.base_url:
+        if self.settings.adapter_provider == "openai-compatible" and not self.settings.base_url:
             return LLMIntent(type="no_action", reason="openai-compatible provider 未配置 JARVIS_LITE_LLM_BASE_URL")
 
         client_class = self._openai_client_class()
@@ -408,6 +416,8 @@ class LLMRouter:
             "LLM 外脑：已启用",
             f"- Provider：{self.settings.provider}",
         ]
+        if self.settings.adapter_provider != self.settings.provider:
+            lines.append(f"- Adapter：{self.settings.adapter_provider}")
         if self.settings.config_source:
             lines.append(f"- 配置来源：{self.settings.config_source}")
         if self.settings.model:
@@ -435,7 +445,7 @@ class LLMRouter:
             return "否（LLM 未启用）"
         if self.settings.provider == "fake":
             return "否（fake provider 本地响应）"
-        if self.settings.provider in {"openai", "openai-compatible"}:
+        if self.settings.adapter_provider in {"openai", "openai-compatible"}:
             if issues:
                 return "否（配置未完成）"
             return "是（/llm-smoke 或 fallback 会调用 provider）"
@@ -454,7 +464,7 @@ def build_llm_router(
         return LLMRouter(resolved_settings)
     if resolved_settings.provider == "fake":
         return LLMRouter(resolved_settings, FakeLLMProvider(resolved_settings.fake_response))
-    if resolved_settings.provider in {"openai", "openai-compatible"}:
+    if resolved_settings.adapter_provider in {"openai", "openai-compatible"}:
         return LLMRouter(resolved_settings, OpenAIResponsesProvider(resolved_settings))
     return LLMRouter(resolved_settings)
 
@@ -573,15 +583,19 @@ def describe_llm_config_examples(provider: str = "") -> str:
             return "\n".join(
                 [
                     f"暂不支持配置模板 provider：{normalized_provider}",
-                    "可用 provider：off、fake、openai、openai-compatible",
+                    "可用 provider：off、fake、openai、openai-compatible、qwen、gemini",
                     "如果厂商提供 OpenAI-compatible Responses 端点，可先使用 openai-compatible 模板。",
                 ]
             )
         if template_provider != normalized_provider:
+            section = section.replace(
+                '$env:JARVIS_LITE_LLM_PROVIDER = "openai-compatible"',
+                f'$env:JARVIS_LITE_LLM_PROVIDER = "{normalized_provider}"',
+            )
             section = "\n".join(
                 [
-                    f"# {normalized_provider} 可先使用 OpenAI-compatible 端点模板",
-                    "# 原生 adapter 后续接入；base_url 请以厂商官方控制台为准。",
+                    f"# {normalized_provider} 使用 OpenAI-compatible adapter",
+                    "# base_url、model 和 API key 请以厂商官方控制台为准。",
                     section,
                 ]
             )

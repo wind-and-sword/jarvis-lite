@@ -405,6 +405,32 @@ class LLMTests(unittest.TestCase):
         self.assertIn("API key：已配置", router.describe())
         self.assertIn("网络调用：是", router.describe())
 
+    def test_router_uses_qwen_alias_with_openai_compatible_adapter(self):
+        router = build_llm_router(
+            LLMSettings(
+                provider="qwen",
+                model="qwen-test",
+                base_url="https://qwen.example/v1",
+                api_key="test-key",
+            )
+        )
+
+        self.assertIsInstance(router.provider, OpenAIResponsesProvider)
+        self.assertIn("Provider：qwen", router.describe())
+        self.assertIn("Adapter：openai-compatible", router.describe())
+        self.assertIn("Base URL：https://qwen.example/v1", router.describe())
+        self.assertIn("网络调用：是", router.describe())
+
+    def test_gemini_alias_requires_openai_compatible_base_url(self):
+        router = build_llm_router(LLMSettings(provider="gemini", model="gemini-test", api_key="test-key"))
+
+        description = router.describe()
+
+        self.assertIn("Provider：gemini", description)
+        self.assertIn("Adapter：openai-compatible", description)
+        self.assertIn("缺少 JARVIS_LITE_LLM_BASE_URL", description)
+        self.assertIn("网络调用：否（配置未完成）", description)
+
     def test_router_describes_openai_missing_configuration(self):
         router = build_llm_router(LLMSettings(provider="openai"))
 
@@ -489,8 +515,16 @@ class LLMTests(unittest.TestCase):
     def test_describe_llm_config_examples_maps_model_hub_alias_to_compatible_template(self):
         description = describe_llm_config_examples("qwen")
 
-        self.assertIn("qwen 可先使用 OpenAI-compatible 端点模板", description)
-        self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "openai-compatible"', description)
+        self.assertIn("qwen 使用 OpenAI-compatible adapter", description)
+        self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "qwen"', description)
+        self.assertIn("JARVIS_LITE_LLM_BASE_URL", description)
+
+    def test_describe_llm_config_examples_maps_gemini_alias_to_compatible_template(self):
+        description = describe_llm_config_examples("gemini")
+
+        self.assertIn("gemini 使用 OpenAI-compatible adapter", description)
+        self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "gemini"', description)
+        self.assertIn("JARVIS_LITE_LLM_BASE_URL", description)
 
     def test_describe_llm_config_examples_reports_unknown_provider(self):
         description = describe_llm_config_examples("unknown-model-hub")

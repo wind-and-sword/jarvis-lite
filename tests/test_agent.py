@@ -1161,6 +1161,30 @@ class AgentTests(unittest.TestCase):
         self.assertIn("再次执行 /llm-enable", enable_response)
         self.assertIn("LLM 外脑：运行中已重新接入外脑", llm_response)
 
+    def test_enable_llm_reports_qwen_alias_adapter_from_local_config(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "qwen",
+                    "model": "qwen-test",
+                    "base_url": "https://qwen.example/v1/responses",
+                    "api_key": "secret-qwen-key",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/llm-enable")
+
+        self.assertIn("LLM 外脑：已启用", response)
+        self.assertIn("Provider：qwen", response)
+        self.assertIn("Adapter：openai-compatible", response)
+        self.assertIn("SDK Base URL：https://qwen.example/v1", response)
+        self.assertIn("网络调用：是", response)
+        self.assertNotIn("secret-qwen-key", response)
+
     def test_inner_brain_status_command_reports_samples_and_thresholds(self):
         response = self.agent.handle("/inner-brain-status")
 
@@ -1424,8 +1448,8 @@ class AgentTests(unittest.TestCase):
     def test_llm_config_example_command_maps_model_hub_alias(self):
         response = self.agent.handle("/llm-config-example qwen")
 
-        self.assertIn("qwen 可先使用 OpenAI-compatible 端点模板", response)
-        self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "openai-compatible"', response)
+        self.assertIn("qwen 使用 OpenAI-compatible adapter", response)
+        self.assertIn('$env:JARVIS_LITE_LLM_PROVIDER = "qwen"', response)
 
     def test_llm_smoke_command_reports_disabled_router(self):
         agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="off")))
@@ -1679,7 +1703,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.2.1",
+                    "version": "0.3.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -1690,7 +1714,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.2.1", response)
+        self.assertIn("发现新版本：0.3.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -1705,7 +1729,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.2.1",
+                        "version": "0.3.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
