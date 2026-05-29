@@ -120,6 +120,13 @@ QLineEdit#conversationInput {{
     color: {theme.input_text};
     padding: 8px;
 }}
+QLineEdit {{
+    background: {theme.input_background};
+    border: 1px solid {theme.input_border};
+    border-radius: 6px;
+    color: {theme.input_text};
+    padding: 6px 8px;
+}}
 QPushButton {{
     background: {theme.button_background};
     border: 0;
@@ -136,6 +143,24 @@ QComboBox {{
     border-radius: 6px;
     color: {theme.input_text};
     padding: 4px 8px;
+}}
+QSpinBox {{
+    background: {theme.input_background};
+    border: 1px solid {theme.input_border};
+    border-radius: 6px;
+    color: {theme.input_text};
+    padding: 4px 8px;
+}}
+QGroupBox {{
+    border: 1px solid {theme.panel_border};
+    border-radius: 6px;
+    margin-top: 8px;
+    padding: 8px;
+}}
+QGroupBox::title {{
+    color: {theme.panel_text};
+    left: 8px;
+    padding: 0 4px;
 }}
 QCheckBox {{
     color: {theme.panel_text};

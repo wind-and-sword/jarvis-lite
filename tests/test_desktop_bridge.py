@@ -1,4 +1,5 @@
 import sys
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -44,6 +45,27 @@ class DesktopBridgeTests(unittest.TestCase):
 
         self.assertEqual(response.state, DesktopState.ERROR)
         self.assertIn("未知命令：/not-found", response.assistant_text)
+
+    def test_send_sensitive_executes_real_command_but_records_redacted_input(self):
+        secret = "secret-desktop-llm-key"
+        response = self.bridge.send_sensitive(
+            (
+                "/llm-config-set provider=qwen model=qwen-plus "
+                "base_url=https://qwen.example/v1/responses "
+                f"api_key={secret}"
+            ),
+            "写入外脑配置（api_key 已隐藏）",
+        )
+        payload = json.loads((self.paths.config_dir / "llm.local.json").read_text(encoding="utf-8"))
+        history = self.bridge.session.handle("/history")
+        log_text = self.paths.log_path.read_text(encoding="utf-8")
+
+        self.assertEqual(response.state, DesktopState.SUCCESS)
+        self.assertEqual(response.user_input, "写入外脑配置（api_key 已隐藏）")
+        self.assertEqual(payload["api_key"], secret)
+        self.assertIn("用户：写入外脑配置（api_key 已隐藏）", history)
+        self.assertNotIn(secret, history)
+        self.assertNotIn(secret, log_text)
 
     def test_quick_commands_include_current_assistant_capabilities(self):
         commands = quick_commands()

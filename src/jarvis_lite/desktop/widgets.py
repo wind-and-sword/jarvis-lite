@@ -10,17 +10,21 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFrame,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
     QSlider,
+    QSpinBox,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from ..config import ProjectPaths
+from ..llm import LLMSettings
+from ..search import SearchSettings
 from .app_style import (
     DEFAULT_THEME_NAME,
     desktop_theme_label,
@@ -75,6 +79,11 @@ MIN_OPACITY_PERCENT = 50
 MAX_OPACITY_PERCENT = 100
 MIN_PET_SIZE = 120
 MAX_PET_SIZE = 220
+LLM_PROVIDER_OPTIONS = ("off", "fake", "openai", "openai-compatible", "qwen", "gemini")
+SEARCH_PROVIDER_OPTIONS = ("off", "fake", "tavily")
+DEFAULT_DESKTOP_LLM_PROVIDER = "openai-compatible"
+DEFAULT_DESKTOP_SEARCH_PROVIDER = "tavily"
+MAX_SEARCH_RESULTS = 50
 
 
 class AssistantPanel(QWidget):
@@ -124,6 +133,7 @@ class AssistantPanel(QWidget):
             self._quick_command_buttons[command.label] = button
             command_row.addWidget(button)
 
+        provider_config_area = self._build_provider_config_area()
         settings_row = self._build_settings_row(initial_settings)
 
         layout = QVBoxLayout()
@@ -134,6 +144,7 @@ class AssistantPanel(QWidget):
         layout.addWidget(self._output)
         layout.addLayout(input_row)
         layout.addLayout(command_row)
+        layout.addWidget(provider_config_area)
         layout.addLayout(settings_row)
         self.setLayout(layout)
         self.resize(
@@ -148,13 +159,25 @@ class AssistantPanel(QWidget):
             return None
         self._set_state(DesktopState.WORKING if prompt.startswith("/") else DesktopState.THINKING)
         response = self.bridge.send(prompt)
+        self._append_response(response)
+        return response
+
+    def submit_sensitive_text(self, command: str, display_text: str) -> DesktopResponse | None:
+        prompt = command.strip()
+        if not prompt:
+            return None
+        self._set_state(DesktopState.WORKING)
+        response = self.bridge.send_sensitive(prompt, display_text)
+        self._append_response(response)
+        return response
+
+    def _append_response(self, response: DesktopResponse) -> None:
         user_line = f"用户：{response.user_input}"
         assistant_line = f"Jarvis：{response.assistant_text}"
         self._output.append(user_line)
         self._output.append(assistant_line)
         self._last_result_text = f"{user_line}\n{assistant_line}"
         self._set_state(response.state)
-        return response
 
     def transcript_text(self) -> str:
         return self._output.toPlainText()
@@ -189,6 +212,52 @@ class AssistantPanel(QWidget):
             panel_width=_clamp_int(self.width(), MIN_PANEL_WIDTH, MAX_PANEL_WIDTH),
             panel_height=_clamp_int(self.height(), MIN_PANEL_HEIGHT, MAX_PANEL_HEIGHT),
         )
+
+    def provider_config_values(self) -> dict[str, dict[str, object]]:
+        return {
+            "llm": {
+                "provider": str(self._llm_provider_select.currentData()),
+                "model": self._llm_model_input.text().strip(),
+                "base_url": self._llm_base_url_input.text().strip(),
+                "api_key": self._llm_api_key_input.text().strip(),
+            },
+            "search": {
+                "provider": str(self._search_provider_select.currentData()),
+                "api_key": self._search_api_key_input.text().strip(),
+                "base_url": self._search_base_url_input.text().strip(),
+                "max_results": self._search_max_results_input.value(),
+            },
+        }
+
+    def change_llm_provider_config(self, *, provider: str, model: str, base_url: str, api_key: str) -> None:
+        self._set_combo_data(self._llm_provider_select, provider)
+        self._llm_model_input.setText(model)
+        self._llm_base_url_input.setText(base_url)
+        self._llm_api_key_input.setText(api_key)
+
+    def change_search_provider_config(self, *, provider: str, api_key: str, base_url: str, max_results: int) -> None:
+        self._set_combo_data(self._search_provider_select, provider)
+        self._search_api_key_input.setText(api_key)
+        self._search_base_url_input.setText(base_url)
+        self._search_max_results_input.setValue(_clamp_int(max_results, 1, MAX_SEARCH_RESULTS))
+
+    def write_llm_provider_config(self) -> DesktopResponse | None:
+        return self.submit_sensitive_text(self._llm_config_set_command(), "写入外脑配置（api_key 已隐藏）")
+
+    def write_search_provider_config(self) -> DesktopResponse | None:
+        return self.submit_sensitive_text(self._search_config_set_command(), "写入联网搜索配置（api_key 已隐藏）")
+
+    def check_llm_provider_config(self) -> DesktopResponse | None:
+        return self.submit_text("/llm-config-check")
+
+    def smoke_llm_provider(self) -> DesktopResponse | None:
+        return self.submit_text("/llm-smoke 请用一句话确认连接可用")
+
+    def check_search_provider_config(self) -> DesktopResponse | None:
+        return self.submit_text("/search-config-check")
+
+    def smoke_search_provider(self) -> DesktopResponse | None:
+        return self.submit_text("/search-smoke Python 版本")
 
     def change_settings(
         self,
@@ -270,6 +339,137 @@ class AssistantPanel(QWidget):
         settings_row.addWidget(self._pet_size_slider)
         return settings_row
 
+    def _build_provider_config_area(self) -> QWidget:
+        llm_settings = LLMSettings.from_sources(self.bridge.paths)
+        search_settings = SearchSettings.from_sources(self.bridge.paths)
+
+        self._llm_provider_select = QComboBox()
+        self._llm_provider_select.setObjectName("llmProviderSelect")
+        for provider in LLM_PROVIDER_OPTIONS:
+            self._llm_provider_select.addItem(provider, provider)
+        self._set_combo_data(
+            self._llm_provider_select,
+            llm_settings.provider if llm_settings.config_source or llm_settings.enabled else DEFAULT_DESKTOP_LLM_PROVIDER,
+        )
+        self._llm_model_input = QLineEdit(llm_settings.model)
+        self._llm_model_input.setObjectName("llmModelInput")
+        self._llm_model_input.setPlaceholderText("model")
+        self._llm_base_url_input = QLineEdit(llm_settings.base_url)
+        self._llm_base_url_input.setObjectName("llmBaseUrlInput")
+        self._llm_base_url_input.setPlaceholderText("base_url 或完整 /v1/responses URL")
+        self._llm_api_key_input = QLineEdit()
+        self._llm_api_key_input.setObjectName("llmApiKeyInput")
+        self._llm_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self._llm_api_key_input.setPlaceholderText("api_key（留空保留已有值）")
+
+        llm_write_button = QPushButton("写入外脑")
+        llm_write_button.setObjectName("llmConfigWriteButton")
+        llm_write_button.clicked.connect(lambda checked=False: self.write_llm_provider_config())
+        llm_check_button = QPushButton("检查")
+        llm_check_button.setObjectName("llmConfigCheckButton")
+        llm_check_button.clicked.connect(lambda checked=False: self.check_llm_provider_config())
+        llm_smoke_button = QPushButton("测试")
+        llm_smoke_button.setObjectName("llmSmokeButton")
+        llm_smoke_button.clicked.connect(lambda checked=False: self.smoke_llm_provider())
+
+        llm_group = QGroupBox("外脑")
+        llm_group.setObjectName("llmConfigGroup")
+        llm_layout = QVBoxLayout()
+        llm_provider_row = QHBoxLayout()
+        llm_provider_row.addWidget(QLabel("Provider"))
+        llm_provider_row.addWidget(self._llm_provider_select)
+        llm_provider_row.addWidget(QLabel("Model"))
+        llm_provider_row.addWidget(self._llm_model_input)
+        llm_layout.addLayout(llm_provider_row)
+        llm_layout.addWidget(self._llm_base_url_input)
+        llm_layout.addWidget(self._llm_api_key_input)
+        llm_button_row = QHBoxLayout()
+        llm_button_row.addWidget(llm_write_button)
+        llm_button_row.addWidget(llm_check_button)
+        llm_button_row.addWidget(llm_smoke_button)
+        llm_layout.addLayout(llm_button_row)
+        llm_group.setLayout(llm_layout)
+
+        self._search_provider_select = QComboBox()
+        self._search_provider_select.setObjectName("searchProviderSelect")
+        for provider in SEARCH_PROVIDER_OPTIONS:
+            self._search_provider_select.addItem(provider, provider)
+        self._set_combo_data(
+            self._search_provider_select,
+            search_settings.provider if search_settings.config_source or search_settings.enabled else DEFAULT_DESKTOP_SEARCH_PROVIDER,
+        )
+        self._search_api_key_input = QLineEdit()
+        self._search_api_key_input.setObjectName("searchApiKeyInput")
+        self._search_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self._search_api_key_input.setPlaceholderText("api_key（留空保留已有值）")
+        self._search_base_url_input = QLineEdit(search_settings.base_url)
+        self._search_base_url_input.setObjectName("searchBaseUrlInput")
+        self._search_base_url_input.setPlaceholderText("base_url（通常留空）")
+        self._search_max_results_input = QSpinBox()
+        self._search_max_results_input.setObjectName("searchMaxResultsInput")
+        self._search_max_results_input.setRange(1, MAX_SEARCH_RESULTS)
+        self._search_max_results_input.setValue(_clamp_int(search_settings.max_results, 1, MAX_SEARCH_RESULTS))
+
+        search_write_button = QPushButton("写入搜索")
+        search_write_button.setObjectName("searchConfigWriteButton")
+        search_write_button.clicked.connect(lambda checked=False: self.write_search_provider_config())
+        search_check_button = QPushButton("检查")
+        search_check_button.setObjectName("searchConfigCheckButton")
+        search_check_button.clicked.connect(lambda checked=False: self.check_search_provider_config())
+        search_smoke_button = QPushButton("测试")
+        search_smoke_button.setObjectName("searchSmokeButton")
+        search_smoke_button.clicked.connect(lambda checked=False: self.smoke_search_provider())
+
+        search_group = QGroupBox("联网搜索")
+        search_group.setObjectName("searchConfigGroup")
+        search_layout = QVBoxLayout()
+        search_provider_row = QHBoxLayout()
+        search_provider_row.addWidget(QLabel("Provider"))
+        search_provider_row.addWidget(self._search_provider_select)
+        search_provider_row.addWidget(QLabel("Max"))
+        search_provider_row.addWidget(self._search_max_results_input)
+        search_layout.addLayout(search_provider_row)
+        search_layout.addWidget(self._search_base_url_input)
+        search_layout.addWidget(self._search_api_key_input)
+        search_button_row = QHBoxLayout()
+        search_button_row.addWidget(search_write_button)
+        search_button_row.addWidget(search_check_button)
+        search_button_row.addWidget(search_smoke_button)
+        search_layout.addLayout(search_button_row)
+        search_group.setLayout(search_layout)
+
+        area = QWidget()
+        area.setObjectName("providerConfigArea")
+        area_layout = QHBoxLayout()
+        area_layout.addWidget(llm_group)
+        area_layout.addWidget(search_group)
+        area.setLayout(area_layout)
+        return area
+
+    def _llm_config_set_command(self) -> str:
+        values = self.provider_config_values()["llm"]
+        parts = [
+            f"provider={values['provider']}",
+            f"model={values['model']}",
+            f"base_url={values['base_url']}",
+        ]
+        api_key = str(values["api_key"])
+        if api_key:
+            parts.append(f"api_key={api_key}")
+        return "/llm-config-set " + " ".join(parts)
+
+    def _search_config_set_command(self) -> str:
+        values = self.provider_config_values()["search"]
+        parts = [
+            f"provider={values['provider']}",
+            f"base_url={values['base_url']}",
+            f"max_results={values['max_results']}",
+        ]
+        api_key = str(values["api_key"])
+        if api_key:
+            parts.append(f"api_key={api_key}")
+        return "/search-config-set " + " ".join(parts)
+
     def _set_settings_controls(self, always_on_top: bool, opacity_percent: int, pet_size: int, theme_name: str | None = None) -> None:
         controls = (
             self._always_on_top_checkbox,
@@ -303,6 +503,13 @@ class AssistantPanel(QWidget):
                 self._theme_select.setCurrentIndex(index)
                 return
         self._theme_select.setCurrentIndex(0)
+
+    def _set_combo_data(self, combo: QComboBox, value: str) -> None:
+        for index in range(combo.count()):
+            if combo.itemData(index) == value:
+                combo.setCurrentIndex(index)
+                return
+        combo.setCurrentIndex(0)
 
 
 class DesktopPetWindow(QWidget):

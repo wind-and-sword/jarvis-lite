@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import tempfile
@@ -232,6 +233,113 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertTrue(settings.launch_at_login)
         self.assertEqual(settings.theme_name, "daylight")
         self.assertIn("#f8fafc", panel.styleSheet())
+
+    def test_panel_exposes_provider_config_controls(self):
+        values = self.panel.provider_config_values()
+
+        self.assertEqual(values["llm"]["provider"], "openai-compatible")
+        self.assertEqual(values["llm"]["model"], "")
+        self.assertEqual(values["llm"]["base_url"], "")
+        self.assertEqual(values["llm"]["api_key"], "")
+        self.assertEqual(values["search"]["provider"], "tavily")
+        self.assertEqual(values["search"]["base_url"], "")
+        self.assertEqual(values["search"]["api_key"], "")
+        self.assertEqual(values["search"]["max_results"], 5)
+
+    def test_panel_writes_llm_config_without_showing_api_key_in_transcript_or_history(self):
+        secret = "secret-desktop-llm-key"
+        self.panel.change_llm_provider_config(
+            provider="qwen",
+            model="qwen-plus",
+            base_url="https://qwen.example/v1/responses",
+            api_key=secret,
+        )
+
+        response = self.panel.write_llm_provider_config()
+        payload = json.loads((self.paths.config_dir / "llm.local.json").read_text(encoding="utf-8"))
+        transcript = self.panel.transcript_text()
+        history = self.bridge.session.handle("/history")
+        log_text = self.paths.log_path.read_text(encoding="utf-8")
+
+        self.assertEqual(response.state, DesktopState.SUCCESS)
+        self.assertEqual(payload["provider"], "qwen")
+        self.assertEqual(payload["model"], "qwen-plus")
+        self.assertEqual(payload["base_url"], "https://qwen.example/v1/responses")
+        self.assertEqual(payload["api_key"], secret)
+        self.assertIn("用户：写入外脑配置（api_key 已隐藏）", transcript)
+        self.assertIn("已写入外脑本地配置：config/llm.local.json", transcript)
+        self.assertNotIn(secret, transcript)
+        self.assertNotIn(secret, history)
+        self.assertNotIn(secret, log_text)
+
+    def test_panel_writes_search_config_without_showing_api_key_in_transcript_or_history(self):
+        secret = "secret-desktop-search-key"
+        self.panel.change_search_provider_config(
+            provider="tavily",
+            api_key=secret,
+            base_url="https://search.example/api",
+            max_results=3,
+        )
+
+        response = self.panel.write_search_provider_config()
+        payload = json.loads((self.paths.config_dir / "search.local.json").read_text(encoding="utf-8"))
+        transcript = self.panel.transcript_text()
+        history = self.bridge.session.handle("/history")
+        log_text = self.paths.log_path.read_text(encoding="utf-8")
+
+        self.assertEqual(response.state, DesktopState.SUCCESS)
+        self.assertEqual(payload["provider"], "tavily")
+        self.assertEqual(payload["api_key"], secret)
+        self.assertEqual(payload["base_url"], "https://search.example/api")
+        self.assertEqual(payload["max_results"], 3)
+        self.assertIn("用户：写入联网搜索配置（api_key 已隐藏）", transcript)
+        self.assertIn("已写入联网搜索本地配置：config/search.local.json", transcript)
+        self.assertNotIn(secret, transcript)
+        self.assertNotIn(secret, history)
+        self.assertNotIn(secret, log_text)
+
+    def test_panel_config_check_and_smoke_buttons_submit_existing_commands(self):
+        (self.paths.config_dir / "llm.local.json").write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_response": "{\"type\":\"answer\",\"answer\":\"桌面外脑 smoke 正常\"}",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        (self.paths.config_dir / "search.local.json").write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_results": [
+                        {
+                            "title": "Python current release",
+                            "url": "https://python.example/release",
+                            "snippet": "桌面搜索 smoke 正常",
+                        }
+                    ],
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        self.panel.check_llm_provider_config()
+        self.panel.smoke_llm_provider()
+        self.panel.check_search_provider_config()
+        self.panel.smoke_search_provider()
+        transcript = self.panel.transcript_text()
+
+        self.assertIn("用户：/llm-config-check", transcript)
+        self.assertIn("外脑配置检查：", transcript)
+        self.assertIn("用户：/llm-smoke 请用一句话确认连接可用", transcript)
+        self.assertIn("回答：桌面外脑 smoke 正常", transcript)
+        self.assertIn("用户：/search-config-check", transcript)
+        self.assertIn("联网搜索配置检查：", transcript)
+        self.assertIn("用户：/search-smoke Python 版本", transcript)
+        self.assertIn("Python current release", transcript)
 
     def test_panel_restores_saved_panel_size(self):
         panel = AssistantPanel(

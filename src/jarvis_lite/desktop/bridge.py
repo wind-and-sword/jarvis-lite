@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..config import ProjectPaths, build_project_paths
-from ..conversation import ConversationSession
+from ..conversation import ConversationSession, ConversationTurn
 from .state import DesktopState
 
 
@@ -48,6 +48,16 @@ class DesktopBridge:
         assistant_text = self.session.handle(prompt)
         self.state = _classify_response_state(assistant_text)
         return DesktopResponse(prompt, assistant_text, self.state, len(self.session.turns))
+
+    def send_sensitive(self, command: str, display_input: str) -> DesktopResponse:
+        """执行真实命令，但在桌面对话历史里只保存脱敏后的用户输入。"""
+
+        prompt = command.strip()
+        display = display_input.strip() or "敏感配置命令（已隐藏）"
+        assistant_text = self.session.agent.handle(prompt)
+        self.session.turns.append(ConversationTurn(user=display, assistant=assistant_text))
+        self.state = _classify_response_state(assistant_text)
+        return DesktopResponse(display, assistant_text, self.state, len(self.session.turns))
 
 
 def quick_commands() -> tuple[QuickCommand, ...]:
