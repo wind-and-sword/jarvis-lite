@@ -93,11 +93,13 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/llm-status": "llm.status",
     "/llm-enable": "llm.enable",
     "/llm-config-init": "llm.config_init",
+    "/llm-config-check": "llm.config_check",
     "/llm-usage": "llm.usage",
     "/llm-context-preview": "llm.context_preview",
     "/search-status": "web.search.status",
     "/search-enable": "web.search.enable",
     "/search-config-init": "web.search.config_init",
+    "/search-config-check": "web.search.config_check",
     "/search": "web.search",
     "/search-summary": "web.search_summarize",
     "/search-open": "web_search.open_numbered",
@@ -311,6 +313,8 @@ class JarvisAgent:
             return describe_llm_config_examples(args[0] if args else "")
         if command == "/llm-config-init":
             return self._llm_config_init(args[0] if args else "")
+        if command == "/llm-config-check":
+            return self._llm_config_check()
         if command == "/llm-enable":
             return self._llm_enable_guidance()
         if command == "/search-config-example":
@@ -318,6 +322,8 @@ class JarvisAgent:
             return describe_search_config_examples(args[0] if args else "")
         if command == "/search-config-init":
             return self._search_config_init(args[0] if args else "")
+        if command == "/search-config-check":
+            return self._search_config_check()
         if command == "/search-enable":
             return self._search_enable_guidance()
         if command == "/search":
@@ -532,10 +538,12 @@ class JarvisAgent:
                 "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",
                 "/llm-config-example [provider]：查看 LLM 环境变量配置模板",
                 "/llm-config-init [provider]：生成外脑本地配置草稿",
+                "/llm-config-check：只读检查外脑本地配置，不调用 provider",
                 "/search-status：查看联网搜索 provider 状态",
                 "/search-enable：查看联网搜索启用状态和本地配置路径",
                 "/search-config-example [provider]：查看联网搜索环境变量配置模板",
                 "/search-config-init [provider]：生成联网搜索本地配置草稿",
+                "/search-config-check：只读检查联网搜索本地配置，不调用 provider",
                 "/search 关键词：联网搜索并返回来源",
                 "/search-summary 关键词：联网搜索并交给 LLM 外脑总结",
                 "/search-open 编号：查看最近联网搜索的编号来源 URL",
@@ -1726,6 +1734,27 @@ class JarvisAgent:
         )
         return "\n".join(lines)
 
+    def _llm_config_check(self) -> str:
+        local_path = llm_local_config_path(self.paths)
+        router = build_llm_router(paths=self.paths)
+        issues = router.settings.configuration_issues()
+        self.tools.run("record_log", message=f"检查 LLM 本地配置：exists={local_path.exists()} issues={len(issues)}")
+
+        lines = [
+            "外脑配置检查：",
+            f"配置文件：{self._project_path(local_path)}",
+            f"本地配置：{'存在' if local_path.exists() else '未创建'}",
+            router.describe(),
+            "检查方式：只读取本地配置和环境变量，不发起网络请求。",
+        ]
+        if issues:
+            lines.append("结果：配置未完成，修正后执行 /llm-enable。")
+        elif not router.settings.enabled:
+            lines.append("结果：LLM 外脑未启用，可先执行 /llm-config-init。")
+        else:
+            lines.append("结果：配置完整，可执行 /llm-enable 或 /llm-smoke。")
+        return "\n".join(lines)
+
     def _search_enable_guidance(self) -> str:
         example_path = write_search_example_config(self.paths)
         local_path = search_local_config_path(self.paths)
@@ -1778,6 +1807,27 @@ class JarvisAgent:
                 "搜索测试：/search Python 版本",
             ]
         )
+        return "\n".join(lines)
+
+    def _search_config_check(self) -> str:
+        local_path = search_local_config_path(self.paths)
+        router = build_search_router(paths=self.paths)
+        issues = router.settings.configuration_issues()
+        self.tools.run("record_log", message=f"检查联网搜索本地配置：exists={local_path.exists()} issues={len(issues)}")
+
+        lines = [
+            "联网搜索配置检查：",
+            f"配置文件：{self._project_path(local_path)}",
+            f"本地配置：{'存在' if local_path.exists() else '未创建'}",
+            router.describe(),
+            "检查方式：只读取本地配置和环境变量，不发起网络请求。",
+        ]
+        if issues:
+            lines.append("结果：配置未完成，修正后执行 /search-enable。")
+        elif not router.settings.enabled:
+            lines.append("结果：联网搜索未启用，可先执行 /search-config-init。")
+        else:
+            lines.append("结果：配置完整，可执行 /search-enable 或 /search 关键词。")
         return "\n".join(lines)
 
     def _handle_llm_intent(self, intent: LLMIntent) -> str:

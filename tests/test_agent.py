@@ -1107,6 +1107,34 @@ class AgentTests(unittest.TestCase):
         self.assertIn("缺少 JARVIS_LITE_SEARCH_API_KEY", enable_response)
         self.assertIn("网络调用：否（配置未完成）", enable_response)
 
+    def test_search_config_check_reads_current_local_config_without_api_key_or_network(self):
+        local_config = self.paths.config_dir / "search.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "tavily",
+                    "api_key": "secret-search-key",
+                    "base_url": "https://search.example/api",
+                    "max_results": 3,
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/search-config-check")
+
+        self.assertIn("联网搜索配置检查：", response)
+        self.assertIn("配置文件：config/search.local.json", response)
+        self.assertIn("本地配置：存在", response)
+        self.assertIn("联网搜索：已启用", response)
+        self.assertIn("Provider：tavily", response)
+        self.assertIn("Max results：3", response)
+        self.assertIn("API key：已配置", response)
+        self.assertIn("检查方式：只读取本地配置和环境变量，不发起网络请求。", response)
+        self.assertIn("结果：配置完整，可执行 /search-enable 或 /search 关键词。", response)
+        self.assertNotIn("secret-search-key", response)
+
     def test_agent_reads_llm_local_config_file_on_startup(self):
         local_config = self.paths.config_dir / "llm.local.json"
         local_config.write_text(
@@ -1170,6 +1198,47 @@ class AgentTests(unittest.TestCase):
         self.assertIn("缺少 JARVIS_LITE_LLM_BASE_URL", enable_response)
         self.assertIn("网络调用：否（配置未完成）", enable_response)
 
+    def test_llm_config_check_reads_current_local_config_without_api_key_or_network(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "qwen",
+                    "model": "qwen-test",
+                    "base_url": "https://qwen.example/v1/responses",
+                    "api_key": "secret-existing-key",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/llm-config-check")
+
+        self.assertIn("外脑配置检查：", response)
+        self.assertIn("配置文件：config/llm.local.json", response)
+        self.assertIn("本地配置：存在", response)
+        self.assertIn("LLM 外脑：已启用", response)
+        self.assertIn("Provider：qwen", response)
+        self.assertIn("Adapter：openai-compatible", response)
+        self.assertIn("Model：qwen-test", response)
+        self.assertIn("SDK Base URL：https://qwen.example/v1", response)
+        self.assertIn("API key：已配置", response)
+        self.assertIn("检查方式：只读取本地配置和环境变量，不发起网络请求。", response)
+        self.assertIn("结果：配置完整，可执行 /llm-enable 或 /llm-smoke。", response)
+        self.assertNotIn("secret-existing-key", response)
+
+    def test_llm_config_check_reports_invalid_json(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        local_config.write_text("{invalid-json", encoding="utf-8")
+
+        response = self.agent.handle("/llm-config-check")
+
+        self.assertIn("外脑配置检查：", response)
+        self.assertIn("本地配置：存在", response)
+        self.assertIn("不是有效 JSON", response)
+        self.assertIn("结果：配置未完成，修正后执行 /llm-enable。", response)
+
     def test_llm_config_init_does_not_overwrite_existing_local_config_or_leak_key(self):
         local_config = self.paths.config_dir / "llm.local.json"
         original_payload = {
@@ -1197,6 +1266,15 @@ class AgentTests(unittest.TestCase):
         self.assertTrue((self.paths.config_dir / "search.local.json").is_file())
         self.assertIn("已生成外脑本地配置草稿", llm_response)
         self.assertIn("已生成联网搜索本地配置草稿", search_response)
+
+    def test_natural_language_config_check_uses_inner_brain_entries(self):
+        llm_response = self.agent.handle("检查外脑配置")
+        search_response = self.agent.handle("检查联网搜索配置")
+
+        self.assertIn("外脑配置检查：", llm_response)
+        self.assertIn("联网搜索配置检查：", search_response)
+        self.assertIn("检查方式：只读取本地配置和环境变量，不发起网络请求。", llm_response)
+        self.assertIn("检查方式：只读取本地配置和环境变量，不发起网络请求。", search_response)
 
     def test_natural_language_enable_llm_uses_inner_brain_entry(self):
         response = self.agent.handle("开启外脑")
@@ -1770,7 +1848,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.4.1",
+                    "version": "0.5.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -1781,7 +1859,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.4.1", response)
+        self.assertIn("发现新版本：0.5.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -1796,7 +1874,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.4.1",
+                        "version": "0.5.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

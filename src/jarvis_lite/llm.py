@@ -40,7 +40,9 @@ LLM_ALLOWED_COMMAND_SPECS = (
     "/search-save-summary [文件名]",
     "/search-import-summary [文件名]",
     "/llm-config-init [provider]",
+    "/llm-config-check",
     "/search-config-init [provider]",
+    "/search-config-check",
 )
 LLM_ALLOWED_COMMAND_NAMES = tuple(spec.split(maxsplit=1)[0] for spec in LLM_ALLOWED_COMMAND_SPECS)
 LLM_INTENT_SCHEMA: dict[str, Any] = {
@@ -90,7 +92,7 @@ class LLMSettings:
             issues.append(f"未知 provider：{self.provider}")
             return tuple(issues)
         if not self.enabled or self.provider == "fake":
-            return ()
+            return tuple(issues)
         adapter_provider = self.adapter_provider
         if adapter_provider in {"openai", "openai-compatible"}:
             if not self.model:
