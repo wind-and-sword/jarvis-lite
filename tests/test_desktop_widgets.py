@@ -70,6 +70,64 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertIn("用户：/memory", self.panel.transcript_text())
         self.assertIn("用户偏好：中文回答", self.panel.transcript_text())
         self.assertIn("状态：success", self.panel.status_text())
+        self.assertEqual(self.panel.llm_pending_status_text(), "外脑待补充：无")
+
+    def test_panel_shows_llm_pending_status_and_refreshes_after_cancel(self):
+        self.paths.config_dir.mkdir(parents=True, exist_ok=True)
+        (self.paths.config_dir / "llm.local.json").write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_response": {
+                        "type": "clarify",
+                        "clarification": "你想看知识库还是最近文件？",
+                    },
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        self.panel.close()
+        self.pet.close()
+        self.bridge = DesktopBridge(self.paths)
+        self.panel = AssistantPanel(self.bridge)
+        self.pet = DesktopPetWindow(self.panel, self.paths)
+
+        self.panel.submit_text("帮我判断下一步")
+        pending_text = self.panel.llm_pending_status_text()
+
+        self.assertIn("外脑待补充（1/3）：你想看知识库还是最近文件？", pending_text)
+        self.assertIn("回复缺失信息继续，或输入“取消补充”。", pending_text)
+
+        self.panel.submit_text("取消补充")
+
+        self.assertEqual(self.panel.llm_pending_status_text(), "外脑待补充：无")
+
+    def test_panel_restores_persisted_llm_pending_status_on_startup(self):
+        self.paths.config_dir.mkdir(parents=True, exist_ok=True)
+        (self.paths.config_dir / "llm.local.json").write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_response": {
+                        "type": "clarify",
+                        "clarification": "需要哪个时间范围？",
+                    },
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        self.bridge = DesktopBridge(self.paths)
+        self.bridge.send("帮我判断下一步")
+        self.panel.close()
+        self.pet.close()
+
+        self.bridge = DesktopBridge(self.paths)
+        self.panel = AssistantPanel(self.bridge)
+        self.pet = DesktopPetWindow(self.panel, self.paths)
+
+        self.assertIn("外脑待补充（1/3）：需要哪个时间范围？", self.panel.llm_pending_status_text())
 
     def test_panel_exposes_only_direct_quick_command_buttons(self):
         self.assertEqual(

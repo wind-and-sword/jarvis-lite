@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-05-29-v15-llm-clarification-guard-plan.md](2026-05-29-v15-llm-clarification-guard-plan.md)：当前方案版本，明确 LLM 外脑澄清轮数与过期策略。
+- [2026-05-29-v16-desktop-llm-pending-status-plan.md](2026-05-29-v16-desktop-llm-pending-status-plan.md)：当前方案版本，明确桌面外脑待补充状态固定展示。
 
 ## 历史版本
 
@@ -24,6 +24,7 @@
 - [2026-05-29-v12-desktop-config-panel-plan.md](2026-05-29-v12-desktop-config-panel-plan.md)：明确桌面端外脑与联网搜索配置面板闭环。
 - [2026-05-29-v13-llm-clarification-plan.md](2026-05-29-v13-llm-clarification-plan.md)：明确 LLM 外脑多轮澄清续聊闭环。
 - [2026-05-29-v14-llm-clarification-runtime-plan.md](2026-05-29-v14-llm-clarification-runtime-plan.md)：明确 LLM 外脑澄清状态运行态恢复闭环。
+- [2026-05-29-v15-llm-clarification-guard-plan.md](2026-05-29-v15-llm-clarification-guard-plan.md)：明确 LLM 外脑澄清轮数与过期策略。
 
 ## 维护规则
 

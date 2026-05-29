@@ -106,6 +106,13 @@ QLabel#panelTitle {{
 QLabel#statusLabel {{
     color: {theme.status_text};
 }}
+QLabel#llmPendingStatusLabel {{
+    background: {theme.panel_surface};
+    border: 1px solid {theme.panel_border};
+    border-radius: 6px;
+    color: {theme.status_text};
+    padding: 6px 8px;
+}}
 QTextEdit#conversationOutput {{
     background: {theme.panel_surface};
     border: 1px solid {theme.panel_border};

@@ -14,7 +14,7 @@ from jarvis_lite.desktop.state import DesktopState
 class DesktopBridgeTests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.paths = build_project_paths(Path(self.temp_dir.name))
+        self.paths = build_project_paths(Path(self.temp_dir.name) / "jarvis-lite")
         (self.paths.memory_dir / "profile.md").write_text(
             "# 长期记忆\n\n- 用户偏好：中文回答\n",
             encoding="utf-8",
@@ -66,6 +66,30 @@ class DesktopBridgeTests(unittest.TestCase):
         self.assertIn("用户：写入外脑配置（api_key 已隐藏）", history)
         self.assertNotIn(secret, history)
         self.assertNotIn(secret, log_text)
+
+    def test_send_exposes_llm_pending_status_after_clarification(self):
+        self.paths.config_dir.mkdir(parents=True, exist_ok=True)
+        (self.paths.config_dir / "llm.local.json").write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_response": {
+                        "type": "clarify",
+                        "clarification": "你想看知识库还是最近文件？",
+                    },
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        bridge = DesktopBridge(self.paths)
+
+        response = bridge.send("帮我判断下一步")
+
+        self.assertIn("LLM 外脑需要补充信息：你想看知识库还是最近文件？", response.assistant_text)
+        self.assertIn("外脑待补充（1/3）：你想看知识库还是最近文件？", response.llm_pending_status_text)
+        self.assertIn("回复缺失信息继续，或输入“取消补充”。", response.llm_pending_status_text)
+        self.assertEqual(response.llm_pending_status_text, bridge.llm_pending_status_text())
 
     def test_quick_commands_include_current_assistant_capabilities(self):
         commands = quick_commands()

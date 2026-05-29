@@ -317,6 +317,23 @@ class JarvisAgent:
         summary = summarize_profile(profile)
         return f"Jarvis Lite 已读取长期记忆。当前记忆摘要：{self._sentence(summary)}你可以输入 /help 查看我现在能做的事。"
 
+    def llm_clarification_status_text(self) -> str:
+        """返回桌面面板可展示的 LLM 外脑待补充状态。"""
+
+        pending = self._pending_llm_clarification
+        if pending is None:
+            return "外脑待补充：无"
+        return "\n".join(
+            [
+                (
+                    f"外脑待补充（{pending.clarification_count}/"
+                    f"{LLM_CLARIFICATION_MAX_ROUNDS}）：{pending.clarification}"
+                ),
+                f"原始问题：{pending.original_prompt}",
+                "回复缺失信息继续，或输入“取消补充”。",
+            ]
+        )
+
     def _handle_command(self, prompt: str) -> str:
         try:
             parts = shlex.split(prompt, posix=False)

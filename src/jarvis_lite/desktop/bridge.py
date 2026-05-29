@@ -13,6 +13,7 @@ class DesktopResponse:
     assistant_text: str
     state: DesktopState
     turn_count: int
+    llm_pending_status_text: str = "外脑待补充：无"
 
 
 @dataclass(frozen=True)
@@ -47,7 +48,7 @@ class DesktopBridge:
         prompt = user_input.strip()
         assistant_text = self.session.handle(prompt)
         self.state = _classify_response_state(assistant_text)
-        return DesktopResponse(prompt, assistant_text, self.state, len(self.session.turns))
+        return DesktopResponse(prompt, assistant_text, self.state, len(self.session.turns), self.llm_pending_status_text())
 
     def send_sensitive(self, command: str, display_input: str) -> DesktopResponse:
         """执行真实命令，但在桌面对话历史里只保存脱敏后的用户输入。"""
@@ -57,7 +58,12 @@ class DesktopBridge:
         assistant_text = self.session.agent.handle(prompt)
         self.session.turns.append(ConversationTurn(user=display, assistant=assistant_text))
         self.state = _classify_response_state(assistant_text)
-        return DesktopResponse(display, assistant_text, self.state, len(self.session.turns))
+        return DesktopResponse(display, assistant_text, self.state, len(self.session.turns), self.llm_pending_status_text())
+
+    def llm_pending_status_text(self) -> str:
+        """返回桌面面板固定展示的 LLM 外脑待补充状态。"""
+
+        return self.session.agent.llm_clarification_status_text()
 
 
 def quick_commands() -> tuple[QuickCommand, ...]:

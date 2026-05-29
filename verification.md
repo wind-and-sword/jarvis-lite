@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-05-29：发布 `0.12.0` 可安装测试包，收口桌面外脑待补充状态 v1；桌面面板会固定展示当前 LLM 待补充问题、澄清轮次、原始问题和取消提示，取消或补齐后随响应刷新；全量 `unittest` 474 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.12.0.exe`。
 - 2026-05-29：发布 `0.11.0` 可安装测试包，收口 LLM 外脑澄清轮数与过期策略 v1；连续 LLM `clarify` 会保留最初原始问题并递增轮次，超过 3 轮会结束 pending，超过 12 小时未补充的 runtime pending 会在 Agent 启动时清理；全量 `unittest` 471 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.11.0.exe`。
 - 2026-05-29：发布 `0.10.0` 可安装测试包，收口 LLM 外脑澄清状态持久化 v1；LLM 待补充问题会写入运行态上下文，新 Agent 实例可恢复并继续补充，`/recent-context` 可查看待补充外脑问题且不消耗 pending；全量 `unittest` 468 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.10.0.exe`。
 - 2026-05-29：发布 `0.9.0` 可安装测试包，收口 LLM 外脑多轮澄清 v1；LLM 返回澄清问题后，用户下一句补充会接回原始问题继续生成 answer 或白名单 command，取消补充不会二次调用 provider；全量 `unittest` 465 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.9.0.exe`。
