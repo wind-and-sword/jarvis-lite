@@ -886,6 +886,48 @@ class AgentTests(unittest.TestCase):
         self.assertIn("联网搜索未启用", response)
         self.assertIn("/search-enable", response)
 
+    def test_search_smoke_command_reloads_local_config_without_recent_context(self):
+        local_config = self.paths.config_dir / "search.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_results": [
+                        {
+                            "title": "Python current release",
+                            "url": "https://python.example/current",
+                            "snippet": "当前版本摘要。",
+                        }
+                    ],
+                    "max_results": 5,
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/search-smoke Python 版本")
+        open_response = self.agent.handle("/search-open 1")
+        context_response = self.agent.handle("查看最近上下文")
+
+        self.assertIn("联网搜索 smoke：Python 版本", response)
+        self.assertIn("这是一次 provider 连通性测试，可能发起真实网络调用。", response)
+        self.assertIn("调用结果：成功，返回 1 条来源。", response)
+        self.assertIn("1. Python current release", response)
+        self.assertIn("URL：https://python.example/current", response)
+        self.assertIn("摘要：当前版本摘要。", response)
+        self.assertIn("smoke 不会写入最近联网搜索上下文。", response)
+        self.assertIn("还没有最近联网搜索", open_response)
+        self.assertNotIn("最近联网搜索：Python 版本", context_response)
+
+    def test_search_smoke_command_reports_disabled_provider(self):
+        response = self.agent.handle("/search-smoke Python 版本")
+
+        self.assertIn("联网搜索 smoke：Python 版本", response)
+        self.assertIn("调用结果：失败", response)
+        self.assertIn("联网搜索未启用", response)
+        self.assertIn("/search-config-check", response)
+
     def test_natural_language_web_search_uses_inner_brain_entry_without_llm(self):
         search_provider = FakeSearchProvider(
             (
@@ -1715,6 +1757,24 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/llm-status", response)
         self.assertIn("/llm-config-example openai-compatible", response)
 
+    def test_llm_smoke_command_reloads_local_config_during_running_session(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_response": "{\"type\":\"answer\",\"answer\":\"smoke 已重新读取本地配置\"}",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/llm-smoke 测试连接")
+
+        self.assertIn("LLM smoke：type=answer", response)
+        self.assertIn("回答：smoke 已重新读取本地配置", response)
+
     def test_llm_smoke_command_returns_answer_without_normal_fallback(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"smoke 正常"}')
         agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider))
@@ -1767,6 +1827,49 @@ class AgentTests(unittest.TestCase):
             "LLM 外脑用量：provider=fake model=intent-test input_tokens=11 output_tokens=4 total_tokens=15",
             log_content,
         )
+
+    def test_natural_language_llm_smoke_uses_inner_brain_entry(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_response": "{\"type\":\"answer\",\"answer\":\"外脑连接可用\"}",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("测试外脑连接")
+
+        self.assertIn("LLM smoke：type=answer", response)
+        self.assertIn("回答：外脑连接可用", response)
+
+    def test_natural_language_search_smoke_uses_inner_brain_entry(self):
+        local_config = self.paths.config_dir / "search.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "fake",
+                    "fake_results": [
+                        {
+                            "title": "Python current release",
+                            "url": "https://python.example/current",
+                            "snippet": "当前版本摘要。",
+                        }
+                    ],
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("测试联网搜索连接")
+
+        self.assertIn("联网搜索 smoke：Python 版本", response)
+        self.assertIn("调用结果：成功，返回 1 条来源。", response)
+        self.assertIn("Python current release", response)
 
     def test_llm_context_preview_reports_context_without_calling_provider(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"不应调用 provider"}')
@@ -1958,7 +2061,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.6.1",
+                    "version": "0.7.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -1969,7 +2072,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.6.1", response)
+        self.assertIn("发现新版本：0.7.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -1984,7 +2087,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.6.1",
+                        "version": "0.7.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

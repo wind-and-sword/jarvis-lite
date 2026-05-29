@@ -97,6 +97,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/llm-config-init": "llm.config_init",
     "/llm-config-check": "llm.config_check",
     "/llm-config-set": "llm.config_set",
+    "/llm-smoke": "llm.smoke",
     "/llm-usage": "llm.usage",
     "/llm-context-preview": "llm.context_preview",
     "/search-status": "web.search.status",
@@ -104,6 +105,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/search-config-init": "web.search.config_init",
     "/search-config-check": "web.search.config_check",
     "/search-config-set": "web.search.config_set",
+    "/search-smoke": "web.search.smoke",
     "/search": "web.search",
     "/search-summary": "web.search_summarize",
     "/search-open": "web_search.open_numbered",
@@ -334,6 +336,8 @@ class JarvisAgent:
             return self._search_config_set(args)
         if command == "/search-enable":
             return self._search_enable_guidance()
+        if command == "/search-smoke":
+            return self._search_smoke(" ".join(args))
         if command == "/search":
             if not args:
                 return "用法：/search 关键词"
@@ -554,6 +558,7 @@ class JarvisAgent:
                 "/search-config-init [provider]：生成联网搜索本地配置草稿",
                 "/search-config-check：只读检查联网搜索本地配置，不调用 provider",
                 "/search-config-set key=value ...：写入联网搜索本地配置",
+                "/search-smoke [query]：测试联网搜索 provider 连通性，不写入最近上下文",
                 "/search 关键词：联网搜索并返回来源",
                 "/search-summary 关键词：联网搜索并交给 LLM 外脑总结",
                 "/search-open 编号：查看最近联网搜索的编号来源 URL",
@@ -1306,6 +1311,49 @@ class JarvisAgent:
             self._remember_recent_web_search(response.query, response.results)
         return self._format_search_web_response(response, include_summary_hint=True)
 
+    def _search_smoke(self, query: str) -> str:
+        smoke_query = self._strip_quotes(query.strip()) or "Python 版本"
+        if not self._search_router_injected:
+            self.search_router = build_search_router(paths=self.paths)
+
+        response = self.search_router.search(smoke_query)
+        if response.error:
+            self.tools.run("record_log", message=f"联网搜索 smoke 失败：query={smoke_query} error={response.error}")
+            return "\n".join(
+                [
+                    f"联网搜索 smoke：{response.query}",
+                    "说明：这是一次 provider 连通性测试，可能发起真实网络调用。",
+                    "调用结果：失败",
+                    f"错误：{response.error}",
+                    "可先运行：/search-config-check",
+                    "启用入口：/search-enable",
+                ]
+            )
+
+        self.tools.run("record_log", message=f"联网搜索 smoke 成功：query={response.query} results={len(response.results)}")
+        lines = [
+            f"联网搜索 smoke：{response.query}",
+            "说明：这是一次 provider 连通性测试，可能发起真实网络调用。",
+            f"调用结果：成功，返回 {len(response.results)} 条来源。",
+        ]
+        if response.results:
+            for index, result in enumerate(response.results, start=1):
+                lines.append(f"{index}. {result.title}")
+                lines.append(f"   URL：{result.url}")
+                if result.snippet:
+                    lines.append(f"   摘要：{result.snippet}")
+                if result.source:
+                    lines.append(f"   来源：{result.source}")
+        else:
+            lines.append("说明：provider 已响应但没有返回来源。")
+        lines.extend(
+            [
+                "说明：smoke 不会写入最近联网搜索上下文。",
+                "下一步：/search 关键词",
+            ]
+        )
+        return "\n".join(lines)
+
     def _search_web_and_summarize(self, query: str) -> str:
         normalized_query = self._strip_quotes(query)
         if not normalized_query:
@@ -1642,6 +1690,8 @@ class JarvisAgent:
 
     def _llm_smoke(self, prompt: str) -> str:
         smoke_prompt = prompt.strip() or "请用一句话确认 Jarvis Lite LLM smoke 可用。"
+        if not self._llm_router_injected:
+            self.llm_router = build_llm_router(paths=self.paths)
         if not self.llm_router.settings.enabled or self.llm_router.provider is None:
             return "\n".join(
                 [
