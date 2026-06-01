@@ -540,6 +540,8 @@ class JarvisAgent:
             return self._label_inner_brain_sample(prompt)
         if command in {"/inner-brain-teach", "/teach"}:
             return self._teach_inner_brain_sample(prompt, command)
+        if command == "/inner-brain-teach-candidate":
+            return self._teach_inner_brain_candidate(prompt, command)
         if command == "/llm-smoke":
             smoke_prompt = " ".join(args)
             self.tools.run("record_log", message="执行 LLM smoke 调用")
@@ -715,6 +717,7 @@ class JarvisAgent:
                 "/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本",
                 "/inner-brain-teach 文本 => /命令：把自然语言短句教学为已知命令",
                 "/inner-brain-candidates：查看最近输入中的内脑训练候选",
+                "/inner-brain-teach-candidate 编号 => /命令：把训练候选按编号教学为命令",
                 "/llm-usage：查看 LLM token 用量汇总",
                 "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
                 "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",
@@ -887,9 +890,7 @@ class JarvisAgent:
 
     def _inner_brain_candidates_status(self) -> str:
         self.tools.run("record_log", message="查看 InnerBrain 训练候选")
-        candidates = tuple(
-            decision for decision in self._recent_route_decisions if self._is_inner_brain_candidate_decision(decision)
-        )
+        candidates = self._inner_brain_candidate_decisions()
         if not candidates:
             return "\n".join(
                 [
@@ -908,6 +909,11 @@ class JarvisAgent:
 
     def _is_inner_brain_candidate_decision(self, decision: RuntimeRouteDecisionContext) -> bool:
         return decision.route in {"llm-fallback", "memory-fallback", "inner-brain-clarify"}
+
+    def _inner_brain_candidate_decisions(self) -> tuple[RuntimeRouteDecisionContext, ...]:
+        return tuple(
+            decision for decision in self._recent_route_decisions if self._is_inner_brain_candidate_decision(decision)
+        )
 
     def _inner_brain_candidate_lines(self, index: int, decision: RuntimeRouteDecisionContext) -> list[str]:
         sample_text = decision.prompt
@@ -1014,6 +1020,23 @@ class JarvisAgent:
         sample_text, target_command = parsed
         return self._save_inner_brain_teach_command(sample_text, target_command, usage)
 
+    def _teach_inner_brain_candidate(self, prompt: str, command: str) -> str:
+        usage = "用法：/inner-brain-teach-candidate 编号 => /命令"
+        body = prompt[len(command) :].strip()
+        parsed = self._parse_inner_brain_teach_candidate_body(body)
+        if parsed is None:
+            return usage
+        candidate_index, target_command = parsed
+        candidates = self._inner_brain_candidate_decisions()
+        if candidate_index < 1 or candidate_index > len(candidates):
+            return "\n".join(
+                [
+                    f"没有第 {candidate_index} 条 InnerBrain 训练候选。",
+                    "请先运行 /inner-brain-candidates 查看当前候选编号。",
+                ]
+            )
+        return self._save_inner_brain_teach_command(candidates[candidate_index - 1].prompt, target_command, usage)
+
     def _teach_inner_brain_sample_from_natural_language(self, prompt: str) -> str | None:
         parsed = self._parse_inner_brain_teach_sentence(prompt)
         if parsed is None:
@@ -1031,6 +1054,19 @@ class JarvisAgent:
         if not sample_text or not target_command:
             return None
         return sample_text, target_command
+
+    def _parse_inner_brain_teach_candidate_body(self, body: str) -> tuple[int, str] | None:
+        if "=>" not in body:
+            return None
+        raw_index, target_command = (part.strip() for part in body.split("=>", 1))
+        target_command = target_command.strip().rstrip("。")
+        if not raw_index or not target_command:
+            return None
+        try:
+            candidate_index = int(raw_index)
+        except ValueError:
+            return None
+        return candidate_index, target_command
 
     def _parse_inner_brain_teach_sentence(self, prompt: str) -> tuple[str, str] | None:
         patterns = (
@@ -2995,6 +3031,7 @@ class JarvisAgent:
             "search-status",
             "inner-brain-status",
             "inner-brain-candidates",
+            "inner-brain-teach-candidate",
             "brain-candidates",
             "llm-usage",
             "llm-context-preview",
@@ -3025,11 +3062,15 @@ class JarvisAgent:
     def _is_inner_brain_candidates_prompt(self, prompt: str) -> bool:
         return prompt in {"/inner-brain-candidates", "inner-brain-candidates", "/brain-candidates", "brain-candidates"}
 
+    def _is_inner_brain_teach_candidate_prompt(self, prompt: str) -> bool:
+        return prompt == "/inner-brain-teach-candidate" or prompt.startswith("/inner-brain-teach-candidate ")
+
     def _is_route_observability_prompt(self, prompt: str) -> bool:
         return (
             self._is_recent_context_prompt(prompt)
             or self._is_route_history_prompt(prompt)
             or self._is_inner_brain_candidates_prompt(prompt)
+            or self._is_inner_brain_teach_candidate_prompt(prompt)
         )
 
     def _llm_intent_summary(self, intent: LLMIntent) -> str:

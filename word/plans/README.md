@@ -1,12 +1,12 @@
 # Jarvis Lite 方案版本索引
 
-> 日期：2026-05-29
+> 日期：2026-06-01
 > 执行者：Codex
 
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-05-29-v22-inner-brain-candidates-plan.md](2026-05-29-v22-inner-brain-candidates-plan.md)：当前方案版本，明确基于路由历史展示 InnerBrain 训练候选。
+- [2026-06-01-v23-inner-brain-teach-candidate-plan.md](2026-06-01-v23-inner-brain-teach-candidate-plan.md)：当前方案版本，明确 InnerBrain 候选按编号教学。
 
 ## 历史版本
 
@@ -31,6 +31,7 @@
 - [2026-05-29-v19-route-decision-explanation-plan.md](2026-05-29-v19-route-decision-explanation-plan.md)：明确最近路由决策解释详情固定展示。
 - [2026-05-29-v20-route-history-plan.md](2026-05-29-v20-route-history-plan.md)：明确最近 5 条路由历史固定展示。
 - [2026-05-29-v21-route-history-detail-plan.md](2026-05-29-v21-route-history-detail-plan.md)：明确路由历史详情与最近上下文集成。
+- [2026-05-29-v22-inner-brain-candidates-plan.md](2026-05-29-v22-inner-brain-candidates-plan.md)：明确基于路由历史展示 InnerBrain 训练候选。
 
 ## 维护规则
 

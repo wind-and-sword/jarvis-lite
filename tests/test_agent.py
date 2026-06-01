@@ -1748,6 +1748,44 @@ class AgentTests(unittest.TestCase):
         self.assertIn("当前路由：memory-fallback / profile", response)
         self.assertNotIn("command / brain-candidates", response)
 
+    def test_inner_brain_teach_candidate_saves_selected_candidate_command(self):
+        self.agent.handle("火星基地预算需要外部判断")
+
+        teach_response = self.agent.handle("/inner-brain-teach-candidate 1 => /kb")
+        status_after_teach = self.agent.route_status_text()
+        followup = self.agent.handle("火星基地预算需要外部判断")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertIn("已保存 InnerBrain 教学样本", teach_response)
+        self.assertIn("目标命令：/kb", teach_response)
+        self.assertEqual(saved_sample["text"], "火星基地预算需要外部判断")
+        self.assertEqual(saved_sample["intent"], "knowledge.status")
+        self.assertEqual(saved_sample["slots"], {"command": "/kb"})
+        self.assertIn("最近路由：memory-fallback / profile", status_after_teach)
+        self.assertNotIn("command / /inner-brain-teach-candidate", status_after_teach)
+        self.assertIn("个人知识库状态", followup)
+
+    def test_inner_brain_teach_candidate_reports_missing_candidate(self):
+        self.agent.handle("火星基地预算需要外部判断")
+
+        response = self.agent.handle("/inner-brain-teach-candidate 2 => /kb")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        self.assertIn("没有第 2 条 InnerBrain 训练候选", response)
+        self.assertIn("/inner-brain-candidates", response)
+        self.assertFalse(sample_file.exists())
+
+    def test_inner_brain_teach_candidate_rejects_unknown_target_command(self):
+        self.agent.handle("火星基地预算需要外部判断")
+
+        response = self.agent.handle("/inner-brain-teach-candidate 1 => /unknown-command")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        self.assertIn("教学目标不是已知命令", response)
+        self.assertIn("/unknown-command", response)
+        self.assertFalse(sample_file.exists())
+
     def test_llm_status_command_reports_router_state(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"状态测试"}')
         router = LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider)
@@ -2371,7 +2409,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.18.1",
+                    "version": "0.19.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2382,7 +2420,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.18.1", response)
+        self.assertIn("发现新版本：0.19.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2397,7 +2435,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.18.1",
+                        "version": "0.19.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

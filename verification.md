@@ -1,11 +1,12 @@
 # 验证记录
 
-> 日期：2026-05-29
+> 日期：2026-06-01
 > 执行者：Codex
 > 说明：根目录只作为验证记录入口，不再长期追加完整命令和输出。
 
 ## 最近摘要
 
+- 2026-06-01：发布 `0.19.0` 可安装测试包，收口 InnerBrain 候选按编号教学 v1；新增 `/inner-brain-teach-candidate 编号 => /命令`，可把 `/inner-brain-candidates` 当前候选显式教学为已知命令，命令本身不污染路由历史；全量 `unittest` 502 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.19.0.exe`。
 - 2026-05-29：发布 `0.18.0` 可安装测试包，收口 InnerBrain 训练候选 v1；新增 `/inner-brain-candidates` 从最近路由历史中筛选 LLM fallback、记忆兜底和 InnerBrain 澄清输入，给出 teach/label 示例但不自动训练；全量 `unittest` 499 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.18.0.exe`。
 - 2026-05-29：发布 `0.17.0` 可安装测试包，收口路由历史详情 v1；新增 `/route-history` 展示最近 5 条输入的完整路由、时间、输入、结果和依据，`/recent-context` 同步展示最近路由摘要；全量 `unittest` 496 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.17.0.exe`。
 - 2026-05-29：发布 `0.16.0` 可安装测试包，收口最近路由历史 v1；桌面面板在最新路由详情后追加最近 5 条路由历史，便于连续测试时确认多次输入分别走了命令、InnerBrain、LLM fallback、知识库还是记忆兜底；全量 `unittest` 492 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.16.0.exe`。
@@ -59,10 +60,12 @@
 ## 详细记录
 
 - [verification/README.md](verification/README.md)：验证记录归档规则和入口。
+- [verification/2026-06/README.md](verification/2026-06/README.md)：2026-06 验证记录索引。
 - [verification/2026-05/README.md](verification/2026-05/README.md)：2026-05 验证记录索引。
+- [2026-06-01 周索引](verification/2026-06/week-2026-06-01.md)：2026-06-01 至 2026-06-07。
 - [2026-05-18 周索引](verification/2026-05/week-2026-05-18.md)：2026-05-18 至 2026-05-24。
 - [2026-05-25 周索引](verification/2026-05/week-2026-05-25.md)：2026-05-25 至 2026-05-31。
-- [2026-05-29 验证记录](verification/2026-05/2026-05-29.md)：最近一次验证明细。
+- [2026-06-01 验证记录](verification/2026-06/2026-06-01.md)：最近一次验证明细。
 
 ## 记录规则
 
