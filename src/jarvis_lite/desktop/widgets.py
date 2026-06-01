@@ -84,6 +84,7 @@ SEARCH_PROVIDER_OPTIONS = ("off", "fake", "tavily")
 DEFAULT_DESKTOP_LLM_PROVIDER = "openai-compatible"
 DEFAULT_DESKTOP_SEARCH_PROVIDER = "tavily"
 MAX_SEARCH_RESULTS = 50
+MAX_INNER_BRAIN_CANDIDATE_INDEX = 20
 
 
 class AssistantPanel(QWidget):
@@ -142,6 +143,7 @@ class AssistantPanel(QWidget):
             self._quick_command_buttons[command.label] = button
             command_row.addWidget(button)
 
+        candidate_template_row = self._build_inner_brain_candidate_template_row()
         provider_config_area = self._build_provider_config_area()
         settings_row = self._build_settings_row(initial_settings)
 
@@ -156,6 +158,7 @@ class AssistantPanel(QWidget):
         layout.addWidget(self._output)
         layout.addLayout(input_row)
         layout.addLayout(command_row)
+        layout.addLayout(candidate_template_row)
         layout.addWidget(provider_config_area)
         layout.addLayout(settings_row)
         self.setLayout(layout)
@@ -205,6 +208,29 @@ class AssistantPanel(QWidget):
 
     def quick_command_button(self, label: str) -> QPushButton:
         return self._quick_command_buttons[label]
+
+    def candidate_template_index(self) -> int:
+        return self._candidate_template_index_input.value()
+
+    def change_candidate_template_index(self, index: int) -> None:
+        self._candidate_template_index_input.setValue(_clamp_int(index, 1, MAX_INNER_BRAIN_CANDIDATE_INDEX))
+
+    def candidate_template_button_texts(self) -> tuple[str, ...]:
+        return tuple(self._candidate_template_buttons)
+
+    def candidate_template_button(self, label: str) -> QPushButton:
+        return self._candidate_template_buttons[label]
+
+    def conversation_input_text(self) -> str:
+        return self._input.text()
+
+    def fill_inner_brain_candidate_teach_template(self) -> None:
+        self._fill_conversation_input(f"/inner-brain-teach-candidate {self.candidate_template_index()} => ")
+
+    def fill_inner_brain_candidate_label_template(self) -> None:
+        self._fill_conversation_input(
+            f"/inner-brain-label-candidate {self.candidate_template_index()} => intent slot=value"
+        )
 
     def status_text(self) -> str:
         return self._status_label.text()
@@ -323,6 +349,11 @@ class AssistantPanel(QWidget):
         self._input.clear()
         self.submit_text(text)
 
+    def _fill_conversation_input(self, text: str) -> None:
+        self._input.setText(text)
+        self._input.setCursorPosition(len(text))
+        self._input.setFocus()
+
     def _set_state(self, state: DesktopState) -> None:
         self._status_label.setText(f"状态：{state.value}")
         if self._state_listener is not None:
@@ -362,6 +393,30 @@ class AssistantPanel(QWidget):
         settings_row.addWidget(QLabel("尺寸"))
         settings_row.addWidget(self._pet_size_slider)
         return settings_row
+
+    def _build_inner_brain_candidate_template_row(self) -> QHBoxLayout:
+        self._candidate_template_index_input = QSpinBox()
+        self._candidate_template_index_input.setObjectName("innerBrainCandidateIndexInput")
+        self._candidate_template_index_input.setRange(1, MAX_INNER_BRAIN_CANDIDATE_INDEX)
+        self._candidate_template_index_input.setValue(1)
+
+        teach_button = QPushButton("填教学")
+        teach_button.setObjectName("innerBrainTeachTemplateButton")
+        teach_button.clicked.connect(lambda checked=False: self.fill_inner_brain_candidate_teach_template())
+        label_button = QPushButton("填标注")
+        label_button.setObjectName("innerBrainLabelTemplateButton")
+        label_button.clicked.connect(lambda checked=False: self.fill_inner_brain_candidate_label_template())
+        self._candidate_template_buttons = {
+            "填教学": teach_button,
+            "填标注": label_button,
+        }
+
+        candidate_row = QHBoxLayout()
+        candidate_row.addWidget(QLabel("候选"))
+        candidate_row.addWidget(self._candidate_template_index_input)
+        candidate_row.addWidget(teach_button)
+        candidate_row.addWidget(label_button)
+        return candidate_row
 
     def _build_provider_config_area(self) -> QWidget:
         llm_settings = LLMSettings.from_sources(self.bridge.paths)

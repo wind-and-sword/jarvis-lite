@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-01-v27-desktop-inner-brain-candidate-shortcut-plan.md](2026-06-01-v27-desktop-inner-brain-candidate-shortcut-plan.md)：当前方案版本，明确桌面内脑候选快捷入口。
+- [2026-06-01-v28-desktop-inner-brain-candidate-template-plan.md](2026-06-01-v28-desktop-inner-brain-candidate-template-plan.md)：当前方案版本，明确桌面候选训练模板填充。
 
 ## 历史版本
 
@@ -36,6 +36,7 @@
 - [2026-06-01-v24-inner-brain-label-candidate-plan.md](2026-06-01-v24-inner-brain-label-candidate-plan.md)：明确 InnerBrain 候选按编号标注。
 - [2026-06-01-v25-inner-brain-candidate-frequency-plan.md](2026-06-01-v25-inner-brain-candidate-frequency-plan.md)：明确 InnerBrain 候选频次排序。
 - [2026-06-01-v26-inner-brain-candidate-runtime-stats-plan.md](2026-06-01-v26-inner-brain-candidate-runtime-stats-plan.md)：明确 InnerBrain 候选运行态统计。
+- [2026-06-01-v27-desktop-inner-brain-candidate-shortcut-plan.md](2026-06-01-v27-desktop-inner-brain-candidate-shortcut-plan.md)：明确桌面内脑候选快捷入口。
 
 ## 维护规则
 

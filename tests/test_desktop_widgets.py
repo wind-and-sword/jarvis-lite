@@ -235,6 +235,33 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertIn("火星基地预算需要外部判断", transcript)
         self.assertIn("状态：success", self.panel.status_text())
 
+    def test_panel_exposes_inner_brain_candidate_template_controls(self):
+        self.assertEqual(self.panel.candidate_template_index(), 1)
+        self.assertEqual(self.panel.candidate_template_button_texts(), ("填教学", "填标注"))
+
+    def test_panel_inner_brain_teach_template_button_fills_input_without_submitting(self):
+        self.panel.submit_text("火星基地预算需要外部判断")
+        transcript_before = self.panel.transcript_text()
+        self.panel.change_candidate_template_index(2)
+
+        self.panel.candidate_template_button("填教学").click()
+        QApplication.processEvents()
+
+        self.assertEqual(self.panel.conversation_input_text(), "/inner-brain-teach-candidate 2 => ")
+        self.assertEqual(self.panel.transcript_text(), transcript_before)
+
+    def test_panel_inner_brain_label_template_button_fills_label_template_for_selected_candidate(self):
+        self.panel.change_candidate_template_index(3)
+
+        self.panel.candidate_template_button("填标注").click()
+        QApplication.processEvents()
+
+        self.assertEqual(
+            self.panel.conversation_input_text(),
+            "/inner-brain-label-candidate 3 => intent slot=value",
+        )
+        self.assertEqual(self.panel.transcript_text(), "")
+
     def test_panel_tracks_last_result_after_submission(self):
         self.panel.submit_text("/memory")
 
