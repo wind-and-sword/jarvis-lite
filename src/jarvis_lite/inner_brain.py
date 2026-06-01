@@ -557,7 +557,8 @@ def _sample_similarity(prompt: str, sample: InnerBrainTrainingSample) -> float:
     sample_text = _similarity_text(sample.text, sample.intent)
     if prompt_text == sample_text:
         return 1.0
-    return _dice_similarity(_features(prompt_text), _features(sample_text))
+    score = _dice_similarity(_features(prompt_text), _features(sample_text))
+    return max(score, _contained_sample_signature_similarity(prompt_text, sample_text))
 
 
 def _similarity_text(text: str, intent: str) -> str:
@@ -929,6 +930,13 @@ def _dice_similarity(left: set[str], right: set[str]) -> float:
     if not left or not right:
         return 0.0
     return (2 * len(left & right)) / (len(left) + len(right))
+
+
+def _contained_sample_signature_similarity(prompt_text: str, sample_text: str) -> float:
+    if len(sample_text) < 4 or sample_text not in prompt_text:
+        return 0.0
+    coverage = len(sample_text) / max(len(prompt_text), 1)
+    return min(0.94, HIGH_CONFIDENCE + coverage * 0.18)
 
 
 def _sample_to_natural_language_intent(

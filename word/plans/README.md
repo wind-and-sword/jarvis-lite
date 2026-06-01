@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-01-v31-desktop-inner-brain-candidate-target-prefill-plan.md](2026-06-01-v31-desktop-inner-brain-candidate-target-prefill-plan.md)：当前方案版本，明确桌面候选目标预填。
+- [2026-06-01-v32-inner-brain-contained-signature-boost-plan.md](2026-06-01-v32-inner-brain-contained-signature-boost-plan.md)：当前方案版本，明确 InnerBrain 包含签名置信度补偿。
 
 ## 历史版本
 
@@ -40,6 +40,7 @@
 - [2026-06-01-v28-desktop-inner-brain-candidate-template-plan.md](2026-06-01-v28-desktop-inner-brain-candidate-template-plan.md)：明确桌面候选训练模板填充。
 - [2026-06-01-v29-desktop-inner-brain-candidate-template-sync-plan.md](2026-06-01-v29-desktop-inner-brain-candidate-template-sync-plan.md)：明确桌面候选模板状态同步。
 - [2026-06-01-v30-desktop-inner-brain-candidate-selection-plan.md](2026-06-01-v30-desktop-inner-brain-candidate-selection-plan.md)：明确桌面候选选择绑定。
+- [2026-06-01-v31-desktop-inner-brain-candidate-target-prefill-plan.md](2026-06-01-v31-desktop-inner-brain-candidate-target-prefill-plan.md)：明确桌面候选目标预填。
 
 ## 维护规则
 

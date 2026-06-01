@@ -44,7 +44,7 @@ PC Agent 稳定
 - Markdown、txt、PDF、JSON 聊天记录和资料目录导入。
 - 知识库问答、摘要、标签、按标签读取资料组。
 - 最近资料、最近文件、最近目录、最近搜索结果、最近建议和批量标签历史。
-- InnerBrain 本地内脑：新增结构化 `InnerBrainResult`，包含 `intent`、`slots`、`confidence`、`missing`、`source`、`reason` 和策略；当前已迁移为 seed/runtime 样本分类器优先，既有自然语言规则只作为 `legacy_fallback` 迁移期兼容兜底。
+- InnerBrain 本地内脑：新增结构化 `InnerBrainResult`，包含 `intent`、`slots`、`confidence`、`missing`、`source`、`reason` 和策略；当前已迁移为 seed/runtime 样本分类器优先，并在字符 n-gram Dice 相似度基础上增加包含签名置信度补偿，既有自然语言规则只作为 `legacy_fallback` 迁移期兼容兜底。
 - InnerBrain 多轮澄清 v1：当本地内脑已识别 intent 但缺少 `source`、`items`、`path`、`query`、`result_index`、`tags`、`alias`、`experience` 等槽位时，`JarvisAgent` 会保留本轮澄清状态；用户下一句可直接补充文件路径、桌面快捷方式名称、联网搜索关键词、经验搜索/建议关键词、目录别名、经验内容、当前资料标签，或用“第二份 项目 Python”“项目 归档”这类一句式回复补齐组合槽位，Agent 补齐后继续执行原请求，用户也可用“取消补充”等表达取消。
 - InnerBrain 可观察与样本闭环：`/inner-brain-status` 查看样本数量、阈值和训练目录；`/inner-brain-preview 文本` 只预览识别结果，不执行命令或本地动作；`/inner-brain-adopt 文本` 将正确识别结果保存为运行态 JSONL 样本；`/inner-brain-label 文本 => intent [slot=value ...]` 可人工标注 unknown 或误识别样本；`/inner-brain-teach 文本 => /命令` 和“以后我说“文本”就是 /命令”可把用户口语短句教学为已知命令；`/inner-brain-candidates` 会把 fallback/澄清候选写入本地运行态统计，按出现次数优先展示，显式 teach、label 或 adopt 后移除对应候选。
 - 本地自然语言意图层，可处理常见中文表达，包括问候、助手身份/能力询问、最近上下文、最近文件、显式文件读取/导入、显式文件打标签、读取编号资料、查看/导入编号最近文件、查看编号搜索结果、查看/执行编号建议、当前资料/结果打标签、编号资料/搜索结果打标签、标签组读取与批量标签预览、知识库、常用目录打开/整理、最近目录打开/整理、日报、更新、经验记录/搜索/建议、确认/取消执行、联网搜索、联网搜索后续来源处理和明确点名的桌面 `.lnk` 快捷方式删除；InnerBrain 高置信度命中后仍由 `JarvisAgent` 执行。
@@ -55,9 +55,9 @@ PC Agent 稳定
 
 ## 下一阶段
 
-当前已经完成 `0.27.0` 里程碑：
+当前已经完成 `0.28.0` 里程碑：
 
-> InnerBrain 样本分类器优先 + LLM 外脑接入第一版 + Agent 联网搜索第一版 + 多轮澄清 v1 可安装闭环 + 外脑 provider 配置闭环 v1 + 运行态配置初始化 v1 + 本地配置检查 v1 + 本地配置写入 v1 + 连通性诊断 v1 + 桌面配置面板 v1 + LLM 外脑多轮澄清 v1 + LLM 澄清状态持久化 v1 + LLM 澄清轮数与过期策略 v1 + 桌面外脑待补充状态 v1 + 桌面外脑运行状态 v1 + 最近路由决策状态 v1 + 路由决策解释详情 v1 + 最近路由历史 v1 + 路由历史详情 v1 + InnerBrain 训练候选 v1 + 候选按编号教学 v1 + 候选按编号标注 v1 + 候选频次排序 v1 + 候选运行态统计 v1 + 桌面内脑候选快捷入口 v1 + 桌面候选训练模板填充 v1 + 桌面候选模板状态同步 v1 + 桌面候选选择绑定 v1 + 桌面候选目标预填 v1。
+> InnerBrain 样本分类器优先 + InnerBrain 包含签名置信度补偿 + LLM 外脑接入第一版 + Agent 联网搜索第一版 + 多轮澄清 v1 可安装闭环 + 外脑 provider 配置闭环 v1 + 运行态配置初始化 v1 + 本地配置检查 v1 + 本地配置写入 v1 + 连通性诊断 v1 + 桌面配置面板 v1 + LLM 外脑多轮澄清 v1 + LLM 澄清状态持久化 v1 + LLM 澄清轮数与过期策略 v1 + 桌面外脑待补充状态 v1 + 桌面外脑运行状态 v1 + 最近路由决策状态 v1 + 路由决策解释详情 v1 + 最近路由历史 v1 + 路由历史详情 v1 + InnerBrain 训练候选 v1 + 候选按编号教学 v1 + 候选按编号标注 v1 + 候选频次排序 v1 + 候选运行态统计 v1 + 桌面内脑候选快捷入口 v1 + 桌面候选训练模板填充 v1 + 桌面候选模板状态同步 v1 + 桌面候选选择绑定 v1 + 桌面候选目标预填 v1。
 
 后续目标：
 
@@ -115,3 +115,4 @@ PC Agent 稳定
 - [v29：桌面候选模板状态同步方案](plans/2026-06-01-v29-desktop-inner-brain-candidate-template-sync-plan.md)
 - [v30：桌面候选选择绑定方案](plans/2026-06-01-v30-desktop-inner-brain-candidate-selection-plan.md)
 - [v31：桌面候选目标预填方案](plans/2026-06-01-v31-desktop-inner-brain-candidate-target-prefill-plan.md)
+- [v32：InnerBrain 包含签名置信度补偿方案](plans/2026-06-01-v32-inner-brain-contained-signature-boost-plan.md)

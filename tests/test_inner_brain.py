@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.inner_brain import (
+    HIGH_CONFIDENCE,
     InnerBrain,
     InnerBrainPolicy,
     describe_inner_brain_result,
@@ -110,6 +111,16 @@ class InnerBrainTests(unittest.TestCase):
                 self.assertEqual(result.natural_language_intent.name, expected_natural_name)
                 if expected_command:
                     self.assertEqual(result.natural_language_intent.command, expected_command)
+
+    def test_sample_classifier_boosts_contained_sample_signature(self):
+        result = InnerBrain(self.paths).understand("帮我看一下知识库状态")
+
+        self.assertEqual(result.intent, "knowledge.status")
+        self.assertEqual(result.policy, InnerBrainPolicy.EXECUTE)
+        self.assertEqual(result.source, "seed_sample")
+        self.assertGreaterEqual(result.confidence, HIGH_CONFIDENCE)
+        self.assertIsNotNone(result.natural_language_intent)
+        self.assertEqual(result.natural_language_intent.command, "/kb")
 
     def test_explicit_file_tag_intents_use_sample_classifier_slots(self):
         cases = (

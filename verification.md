@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-01：发布 `0.28.0` 可安装测试包，收口 InnerBrain 样本包含签名置信度补偿；当用户长句完整包含不少于 4 字的已知样本签名时，分类器在样本相似度层提升置信度，不新增自然语言意图正则；全量 `unittest` 522 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.28.0.exe`。
 - 2026-06-01：发布 `0.27.0` 可安装测试包，收口桌面候选目标预填；桌面候选训练区可选择常见教学命令或常见 `intent slot=value` 标注模板，但仍只写入输入框，不自动提交、不自动训练；全量 `unittest` 521 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.27.0.exe`。
 - 2026-06-01：发布 `0.26.0` 可安装测试包，收口桌面候选选择绑定；执行 `/inner-brain-candidates` 后，桌面候选下拉框会展示当前候选，选择某条候选会同步编号，随后“填教学”“填标注”继续只把对应编号模板写入输入框；全量 `unittest` 519 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.26.0.exe`。
 - 2026-06-01：发布 `0.25.0` 可安装测试包，收口桌面候选模板状态同步；执行 `/inner-brain-candidates` 后，桌面候选模板会显示空候选或候选数量，自动禁用/启用“填教学”“填标注”，并把编号上限收紧到实际候选数；全量 `unittest` 517 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.25.0.exe`。
