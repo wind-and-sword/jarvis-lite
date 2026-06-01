@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-01-v37-inner-brain-local-evaluation-view-plan.md](2026-06-01-v37-inner-brain-local-evaluation-view-plan.md)：当前方案版本，明确 InnerBrain 本机评估过滤视图。
+- [2026-06-01-v38-inner-brain-local-evaluation-save-plan.md](2026-06-01-v38-inner-brain-local-evaluation-save-plan.md)：当前方案版本，明确 InnerBrain 本机评估样本显式写入。
 
 ## 历史版本
 
@@ -46,6 +46,7 @@
 - [2026-06-01-v34-inner-brain-local-evaluation-plan.md](2026-06-01-v34-inner-brain-local-evaluation-plan.md)：明确 InnerBrain 本机评估集扩展。
 - [2026-06-01-v35-inner-brain-evaluation-fix-suggestion-plan.md](2026-06-01-v35-inner-brain-evaluation-fix-suggestion-plan.md)：明确 InnerBrain 评估失败修复建议。
 - [2026-06-01-v36-inner-brain-evaluation-failures-only-plan.md](2026-06-01-v36-inner-brain-evaluation-failures-only-plan.md)：明确 InnerBrain 评估失败过滤视图。
+- [2026-06-01-v37-inner-brain-local-evaluation-view-plan.md](2026-06-01-v37-inner-brain-local-evaluation-view-plan.md)：明确 InnerBrain 本机评估过滤视图。
 
 ## 维护规则
 

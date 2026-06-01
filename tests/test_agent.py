@@ -1640,6 +1640,42 @@ class AgentTests(unittest.TestCase):
         self.assertIn("失败修复建议：", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
+    def test_inner_brain_eval_add_command_saves_local_evaluation_case_without_training(self):
+        response = self.agent.handle("/inner-brain-eval-add 请看看资料库状态 => /kb")
+
+        self.assertIn("已保存 InnerBrain 本机评估样本", response)
+        self.assertIn("样本文件：data/inner-brain/evaluation/runtime.jsonl", response)
+        self.assertIn("目标命令：/kb", response)
+        sample_file = self.paths.data_dir / "inner-brain" / "evaluation" / "runtime.jsonl"
+        payload = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertEqual(payload["text"], "请看看资料库状态")
+        self.assertEqual(payload["expected_intent"], "knowledge.status")
+        self.assertEqual(payload["expected_command"], "/kb")
+        local_eval_response = self.agent.handle("/inner-brain-eval-local")
+        self.assertIn("评估集：local_evaluation", local_eval_response)
+        self.assertIn("请看看资料库状态 -> knowledge.status", local_eval_response)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
+    def test_inner_brain_eval_label_command_saves_local_evaluation_case_without_training(self):
+        response = self.agent.handle("/inner-brain-eval-label 请看看资料库状态 => knowledge.status command=/kb")
+
+        self.assertIn("已保存 InnerBrain 本机评估样本", response)
+        self.assertIn("意图：knowledge.status", response)
+        self.assertIn("目标命令：/kb", response)
+        sample_file = self.paths.data_dir / "inner-brain" / "evaluation" / "runtime.jsonl"
+        payload = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertEqual(payload["text"], "请看看资料库状态")
+        self.assertEqual(payload["expected_intent"], "knowledge.status")
+        self.assertEqual(payload["expected_command"], "/kb")
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
+    def test_inner_brain_eval_add_rejects_unknown_command_without_writing_case(self):
+        response = self.agent.handle("/inner-brain-eval-add 打开未知工具 => /unknown-command")
+
+        self.assertIn("教学目标不是已知命令：/unknown-command", response)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "evaluation" / "runtime.jsonl").exists())
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
     def test_inner_brain_preview_command_reports_result_without_execution(self):
         response = self.agent.handle("/inner-brain-preview 麻烦看一下知识库摘要")
 
@@ -2668,7 +2704,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.33.1",
+                    "version": "0.34.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2679,7 +2715,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.33.1", response)
+        self.assertIn("发现新版本：0.34.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2694,7 +2730,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.33.1",
+                        "version": "0.34.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

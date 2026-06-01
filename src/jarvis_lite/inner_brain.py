@@ -71,6 +71,17 @@ class InnerBrainEvaluationCase:
 
 
 @dataclass(frozen=True)
+class InnerBrainEvaluationSaveResult:
+    """本机评估样本写入结果，供 Agent 返回可审计反馈。"""
+
+    case: InnerBrainEvaluationCase
+    path: Path
+    relative_path: str
+    created: bool
+    duplicate: bool
+
+
+@dataclass(frozen=True)
 class InnerBrainEvaluationCaseResult:
     """单条评估样本的实际识别结果。"""
 
@@ -447,6 +458,36 @@ def load_evaluation_cases(paths: ProjectPaths | None) -> tuple[InnerBrainEvaluat
     return tuple(cases)
 
 
+def save_local_evaluation_case(
+    paths: ProjectPaths,
+    case: InnerBrainEvaluationCase,
+) -> InnerBrainEvaluationSaveResult:
+    """保存本机评估样本，只用于评估，不写入训练样本。"""
+
+    normalized_case = _normalized_local_evaluation_case(case)
+    case_file = _runtime_evaluation_case_file(paths)
+    relative_path = _relative_evaluation_case_path(paths, case_file)
+    if _local_evaluation_case_exists(paths, normalized_case):
+        return InnerBrainEvaluationSaveResult(
+            case=normalized_case,
+            path=case_file,
+            relative_path=relative_path,
+            created=False,
+            duplicate=True,
+        )
+
+    case_file.parent.mkdir(parents=True, exist_ok=True)
+    with case_file.open("a", encoding="utf-8", newline="\n") as file:
+        file.write(json.dumps(_evaluation_case_payload(normalized_case), ensure_ascii=False, sort_keys=True) + "\n")
+    return InnerBrainEvaluationSaveResult(
+        case=normalized_case,
+        path=case_file,
+        relative_path=relative_path,
+        created=True,
+        duplicate=False,
+    )
+
+
 def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures_only: bool = False) -> str:
     """格式化内脑评估结果，供命令行和桌面转录查看。"""
 
@@ -555,6 +596,54 @@ def _evaluation_policy(raw_policy: object) -> InnerBrainPolicy | None:
         return InnerBrainPolicy(raw_policy.strip())
     except ValueError:
         return None
+
+
+def _normalized_local_evaluation_case(case: InnerBrainEvaluationCase) -> InnerBrainEvaluationCase:
+    text = case.text.strip()
+    expected_intent = case.expected_intent.strip()
+    if not text:
+        raise ValueError("评估样本文本不能为空")
+    if not expected_intent or re.search(r"\s", expected_intent):
+        raise ValueError("expected_intent 不能为空且不能包含空白")
+    expected_command = case.expected_command.strip() if isinstance(case.expected_command, str) else None
+    return InnerBrainEvaluationCase(
+        text=text,
+        expected_intent=expected_intent,
+        expected_policy=case.expected_policy,
+        expected_command=expected_command or None,
+        source="local_evaluation",
+    )
+
+
+def _runtime_evaluation_case_file(paths: ProjectPaths) -> Path:
+    return paths.data_dir / "inner-brain" / "evaluation" / "runtime.jsonl"
+
+
+def _relative_evaluation_case_path(paths: ProjectPaths, case_file: Path) -> str:
+    try:
+        return case_file.relative_to(paths.root).as_posix()
+    except ValueError:
+        return case_file.as_posix()
+
+
+def _local_evaluation_case_exists(paths: ProjectPaths, case: InnerBrainEvaluationCase) -> bool:
+    case_key = _evaluation_case_key(case)
+    return any(_evaluation_case_key(existing_case) == case_key for existing_case in load_evaluation_cases(paths))
+
+
+def _evaluation_case_key(case: InnerBrainEvaluationCase) -> str:
+    return json.dumps(_evaluation_case_payload(case), ensure_ascii=False, sort_keys=True)
+
+
+def _evaluation_case_payload(case: InnerBrainEvaluationCase) -> dict[str, str]:
+    payload = {
+        "expected_intent": case.expected_intent,
+        "expected_policy": case.expected_policy.value,
+        "text": case.text,
+    }
+    if case.expected_command:
+        payload["expected_command"] = case.expected_command
+    return payload
 
 
 def complete_inner_brain_clarification(result: InnerBrainResult, reply: str) -> InnerBrainResult:

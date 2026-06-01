@@ -30,6 +30,8 @@ from .knowledge import (
 )
 from .inner_brain import (
     InnerBrain,
+    InnerBrainEvaluationCase,
+    InnerBrainEvaluationSaveResult,
     InnerBrainPolicy,
     InnerBrainResult,
     InnerBrainTrainingSaveResult,
@@ -37,6 +39,7 @@ from .inner_brain import (
     describe_inner_brain_evaluation,
     describe_inner_brain_result,
     evaluate_inner_brain,
+    save_local_evaluation_case,
     save_labeled_runtime_training_sample,
     save_runtime_training_sample,
 )
@@ -567,6 +570,10 @@ class JarvisAgent:
             return self._label_inner_brain_sample(prompt)
         if command in {"/inner-brain-teach", "/teach"}:
             return self._teach_inner_brain_sample(prompt, command)
+        if command == "/inner-brain-eval-add":
+            return self._save_inner_brain_command_evaluation_case(prompt, command)
+        if command == "/inner-brain-eval-label":
+            return self._save_inner_brain_labeled_evaluation_case(prompt, command)
         if command == "/inner-brain-teach-candidate":
             return self._teach_inner_brain_candidate(prompt, command)
         if command == "/inner-brain-label-candidate":
@@ -745,6 +752,8 @@ class JarvisAgent:
                 "/inner-brain-eval-failed：只显示 InnerBrain 评估失败样本",
                 "/inner-brain-eval-local：只执行本机 InnerBrain 评估样本",
                 "/inner-brain-eval-local-failed：只显示本机 InnerBrain 评估失败样本",
+                "/inner-brain-eval-add 文本 => /命令：保存本机评估样本，不训练",
+                "/inner-brain-eval-label 文本 => intent [slot=value ...]：保存本机评估标注，不训练",
                 "/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作",
                 "/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本",
                 "/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本",
@@ -1062,6 +1071,94 @@ class JarvisAgent:
             ),
         )
         return self._describe_inner_brain_labeled_sample_save(save_result, missing)
+
+    def _save_inner_brain_command_evaluation_case(self, prompt: str, command: str) -> str:
+        usage = "用法：/inner-brain-eval-add 文本 => /命令"
+        body = prompt[len(command) :].strip()
+        parsed = self._parse_inner_brain_teach_body(body)
+        if parsed is None:
+            return usage
+        sample_text, target_command = parsed
+        try:
+            command_text, intent = self._inner_brain_teach_target(target_command)
+            save_result = save_local_evaluation_case(
+                self.paths,
+                InnerBrainEvaluationCase(sample_text, intent, expected_command=command_text),
+            )
+        except ValueError as exc:
+            self.tools.run("record_log", message=f"InnerBrain 本机评估样本保存失败：{sample_text} -> {exc}")
+            return f"{exc}\n{usage}"
+
+        self.tools.run(
+            "record_log",
+            message=(
+                "保存 InnerBrain 本机命令评估样本："
+                f"intent={save_result.case.expected_intent} "
+                f"created={save_result.created} "
+                f"text={save_result.case.text} "
+                f"command={command_text}"
+            ),
+        )
+        return self._describe_inner_brain_evaluation_case_save(save_result)
+
+    def _save_inner_brain_labeled_evaluation_case(self, prompt: str, command: str) -> str:
+        usage = "用法：/inner-brain-eval-label 文本 => intent [slot=value ...]"
+        body = prompt[len(command) :].strip()
+        if "=>" not in body:
+            return usage
+        sample_text, raw_label = (part.strip() for part in body.split("=>", 1))
+        if not sample_text or not raw_label:
+            return usage
+        try:
+            label_parts = shlex.split(raw_label, posix=True)
+        except ValueError as exc:
+            return f"标注参数错误：{exc}\n{usage}"
+        if not label_parts:
+            return usage
+
+        intent = label_parts[0]
+        try:
+            slots, missing = self._inner_brain_label_slots(label_parts[1:])
+            expected_command = slots.get("command") if isinstance(slots.get("command"), str) else None
+            expected_policy = InnerBrainPolicy.CLARIFY if missing else InnerBrainPolicy.EXECUTE
+            save_result = save_local_evaluation_case(
+                self.paths,
+                InnerBrainEvaluationCase(
+                    sample_text,
+                    intent,
+                    expected_policy=expected_policy,
+                    expected_command=expected_command,
+                ),
+            )
+        except ValueError as exc:
+            self.tools.run("record_log", message=f"InnerBrain 本机评估标注保存失败：{sample_text} -> {exc}")
+            return f"标注参数错误：{exc}\n{usage}"
+
+        self.tools.run(
+            "record_log",
+            message=(
+                "保存 InnerBrain 本机标注评估样本："
+                f"intent={save_result.case.expected_intent} "
+                f"created={save_result.created} "
+                f"text={save_result.case.text}"
+            ),
+        )
+        return self._describe_inner_brain_evaluation_case_save(save_result)
+
+    def _describe_inner_brain_evaluation_case_save(self, save_result: InnerBrainEvaluationSaveResult) -> str:
+        title = "已保存 InnerBrain 本机评估样本。" if save_result.created else "InnerBrain 本机评估样本已存在，未重复写入。"
+        lines = [
+            title,
+            f"样本文件：{save_result.relative_path}",
+            f"用户说法：{save_result.case.text}",
+            f"意图：{save_result.case.expected_intent}",
+            f"期望策略：{save_result.case.expected_policy.value}",
+        ]
+        if save_result.case.expected_command:
+            lines.append(f"目标命令：{save_result.case.expected_command}")
+        lines.append("说明：这里只保存评估样本，不执行命令、不训练。")
+        lines.append("查看本机评估：/inner-brain-eval-local")
+        return "\n".join(lines)
 
     def _parse_inner_brain_label_candidate_body(self, body: str) -> tuple[int, str] | None:
         if "=>" not in body:

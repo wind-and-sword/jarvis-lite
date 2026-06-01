@@ -16,6 +16,7 @@ from jarvis_lite.inner_brain import (
     describe_inner_brain_result,
     evaluate_inner_brain,
     load_evaluation_cases,
+    save_local_evaluation_case,
     save_labeled_runtime_training_sample,
     save_runtime_training_sample,
 )
@@ -233,6 +234,33 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("请看看资料库状态 -> knowledge.status", description)
         self.assertNotIn("seed_evaluation：", description)
         self.assertNotIn("早上好 -> assistant.greeting", description)
+
+    def test_save_local_evaluation_case_writes_reloadable_jsonl_without_training(self):
+        case = InnerBrainEvaluationCase(
+            "请看看资料库状态",
+            "knowledge.status",
+            expected_command="/kb",
+        )
+
+        first_result = save_local_evaluation_case(self.paths, case)
+        second_result = save_local_evaluation_case(self.paths, case)
+
+        self.assertTrue(first_result.created)
+        self.assertFalse(first_result.duplicate)
+        self.assertFalse(second_result.created)
+        self.assertTrue(second_result.duplicate)
+        self.assertEqual(first_result.relative_path, "data/inner-brain/evaluation/runtime.jsonl")
+        case_file = self.paths.data_dir / "inner-brain" / "evaluation" / "runtime.jsonl"
+        lines = case_file.read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len(lines), 1)
+        payload = json.loads(lines[0])
+        self.assertEqual(payload["text"], "请看看资料库状态")
+        self.assertEqual(payload["expected_intent"], "knowledge.status")
+        self.assertEqual(payload["expected_command"], "/kb")
+        local_cases = load_evaluation_cases(self.paths)
+        self.assertEqual(len(local_cases), 1)
+        self.assertEqual(local_cases[0].expected_command, "/kb")
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_explicit_file_tag_intents_use_sample_classifier_slots(self):
         cases = (
