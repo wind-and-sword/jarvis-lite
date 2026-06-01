@@ -186,6 +186,27 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("说明：这里只生成显式训练提示，不自动写入 runtime 样本。", description)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
+    def test_inner_brain_evaluation_can_describe_failed_cases_only(self):
+        cases = (
+            InnerBrainEvaluationCase("早上好", "assistant.greeting"),
+            InnerBrainEvaluationCase(
+                text="请看看资料库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+            ),
+        )
+
+        report = evaluate_inner_brain(InnerBrain(self.paths), cases=cases, name="mixed_evaluation")
+        description = describe_inner_brain_evaluation(report, failures_only=True)
+
+        self.assertIn("失败样例：", description)
+        self.assertNotIn("PASS 早上好", description)
+        self.assertNotIn("早上好 -> assistant.greeting", description)
+        self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", description)
+        self.assertIn("失败修复建议：", description)
+        self.assertIn("请看看资料库状态：/inner-brain-teach 请看看资料库状态 => /kb-summary", description)
+
     def test_explicit_file_tag_intents_use_sample_classifier_slots(self):
         cases = (
             ("给 note.txt 打标签 项目", {"path": "note.txt", "tags": ("项目",)}, '/tag "note.txt" 项目'),

@@ -440,7 +440,7 @@ def load_evaluation_cases(paths: ProjectPaths | None) -> tuple[InnerBrainEvaluat
     return tuple(cases)
 
 
-def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport) -> str:
+def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures_only: bool = False) -> str:
     """格式化内脑评估结果，供命令行和桌面转录查看。"""
 
     lines = [
@@ -452,8 +452,11 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport) -> str:
     ]
     for source, count in report.source_counts.items():
         lines.append(f"- {source}：{count} 条")
-    lines.append("样例：")
-    for case_result in report.case_results:
+    case_results = report.failed_case_results if failures_only else report.case_results
+    lines.append("失败样例：" if failures_only else "样例：")
+    if failures_only and not case_results:
+        lines.append("- 无")
+    for case_result in case_results:
         mark = "PASS" if case_result.passed else "FAIL"
         lines.append(
             f"- {mark} {case_result.case.text} -> {case_result.result.intent} "
