@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -195,6 +196,7 @@ class AssistantPanel(QWidget):
         self._llm_pending_status_label.setText(response.llm_pending_status_text)
         self._llm_activity_status_label.setText(response.llm_activity_status_text)
         self._route_status_label.setText(response.route_status_text)
+        self._sync_inner_brain_candidate_template_state(response)
         self._set_state(response.state)
 
     def transcript_text(self) -> str:
@@ -212,14 +214,23 @@ class AssistantPanel(QWidget):
     def candidate_template_index(self) -> int:
         return self._candidate_template_index_input.value()
 
+    def candidate_template_index_maximum(self) -> int:
+        return self._candidate_template_index_input.maximum()
+
     def change_candidate_template_index(self, index: int) -> None:
         self._candidate_template_index_input.setValue(_clamp_int(index, 1, MAX_INNER_BRAIN_CANDIDATE_INDEX))
+
+    def candidate_template_status_text(self) -> str:
+        return self._candidate_template_status_label.text()
 
     def candidate_template_button_texts(self) -> tuple[str, ...]:
         return tuple(self._candidate_template_buttons)
 
     def candidate_template_button(self, label: str) -> QPushButton:
         return self._candidate_template_buttons[label]
+
+    def candidate_template_button_enabled(self, label: str) -> bool:
+        return self._candidate_template_buttons[label].isEnabled()
 
     def conversation_input_text(self) -> str:
         return self._input.text()
@@ -354,6 +365,23 @@ class AssistantPanel(QWidget):
         self._input.setCursorPosition(len(text))
         self._input.setFocus()
 
+    def _sync_inner_brain_candidate_template_state(self, response: DesktopResponse) -> None:
+        if response.user_input != "/inner-brain-candidates":
+            return
+        candidate_count = _count_inner_brain_candidates(response.assistant_text)
+        if candidate_count < 1:
+            self._candidate_template_status_label.setText("候选模板：暂无候选")
+            self._candidate_template_index_input.setRange(1, 1)
+            self._set_candidate_template_buttons_enabled(False)
+            return
+        self._candidate_template_status_label.setText(f"候选模板：{candidate_count} 条候选")
+        self._candidate_template_index_input.setRange(1, min(candidate_count, MAX_INNER_BRAIN_CANDIDATE_INDEX))
+        self._set_candidate_template_buttons_enabled(True)
+
+    def _set_candidate_template_buttons_enabled(self, enabled: bool) -> None:
+        for button in self._candidate_template_buttons.values():
+            button.setEnabled(enabled)
+
     def _set_state(self, state: DesktopState) -> None:
         self._status_label.setText(f"状态：{state.value}")
         if self._state_listener is not None:
@@ -399,6 +427,8 @@ class AssistantPanel(QWidget):
         self._candidate_template_index_input.setObjectName("innerBrainCandidateIndexInput")
         self._candidate_template_index_input.setRange(1, MAX_INNER_BRAIN_CANDIDATE_INDEX)
         self._candidate_template_index_input.setValue(1)
+        self._candidate_template_status_label = QLabel("候选模板：未加载候选")
+        self._candidate_template_status_label.setObjectName("innerBrainCandidateTemplateStatus")
 
         teach_button = QPushButton("填教学")
         teach_button.setObjectName("innerBrainTeachTemplateButton")
@@ -412,6 +442,7 @@ class AssistantPanel(QWidget):
         }
 
         candidate_row = QHBoxLayout()
+        candidate_row.addWidget(self._candidate_template_status_label)
         candidate_row.addWidget(QLabel("候选"))
         candidate_row.addWidget(self._candidate_template_index_input)
         candidate_row.addWidget(teach_button)
@@ -813,3 +844,7 @@ class DesktopPetWindow(QWidget):
 
 def _clamp_int(value: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, int(value)))
+
+
+def _count_inner_brain_candidates(assistant_text: str) -> int:
+    return len(re.findall(r"(?m)^\d+\. ", assistant_text))

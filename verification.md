@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-01：发布 `0.25.0` 可安装测试包，收口桌面候选模板状态同步；执行 `/inner-brain-candidates` 后，桌面候选模板会显示空候选或候选数量，自动禁用/启用“填教学”“填标注”，并把编号上限收紧到实际候选数；全量 `unittest` 517 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.25.0.exe`。
 - 2026-06-01：发布 `0.24.0` 可安装测试包，收口桌面候选训练模板填充；桌面面板新增候选编号、 “填教学”和“填标注”入口，只把 teach/label 模板写入输入框，由用户显式补全并发送；全量 `unittest` 515 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.24.0.exe`。
 - 2026-06-01：发布 `0.23.0` 可安装测试包，收口桌面内脑候选快捷入口；桌面面板和托盘直接快捷命令新增“内脑候选”，一键执行 `/inner-brain-candidates` 查看待显式教学或标注的候选；全量 `unittest` 512 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.23.0.exe`。
 - 2026-06-01：发布 `0.22.0` 可安装测试包，收口 InnerBrain 候选运行态统计 v1；候选出现次数会写入本地运行态上下文，跨最近 5 条路由继续保留，显式 teach、label 或 adopt 后移除对应候选；全量 `unittest` 511 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.22.0.exe`。

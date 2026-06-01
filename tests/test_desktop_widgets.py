@@ -262,6 +262,32 @@ class DesktopWidgetTests(unittest.TestCase):
         )
         self.assertEqual(self.panel.transcript_text(), "")
 
+    def test_panel_empty_inner_brain_candidates_disables_candidate_template_buttons(self):
+        self.panel.quick_command_button("内脑候选").click()
+        QApplication.processEvents()
+
+        self.assertEqual(self.panel.candidate_template_status_text(), "候选模板：暂无候选")
+        self.assertEqual(self.panel.candidate_template_index_maximum(), 1)
+        self.assertFalse(self.panel.candidate_template_button_enabled("填教学"))
+        self.assertFalse(self.panel.candidate_template_button_enabled("填标注"))
+
+    def test_panel_inner_brain_candidates_result_limits_template_index_to_candidate_count(self):
+        self.panel.submit_text("第一条桌面模板候选需要外部判断")
+        self.panel.submit_text("第二条桌面模板候选需要外部判断")
+
+        self.panel.quick_command_button("内脑候选").click()
+        QApplication.processEvents()
+        self.panel.change_candidate_template_index(3)
+        self.panel.candidate_template_button("填教学").click()
+        QApplication.processEvents()
+
+        self.assertEqual(self.panel.candidate_template_status_text(), "候选模板：2 条候选")
+        self.assertEqual(self.panel.candidate_template_index_maximum(), 2)
+        self.assertTrue(self.panel.candidate_template_button_enabled("填教学"))
+        self.assertTrue(self.panel.candidate_template_button_enabled("填标注"))
+        self.assertEqual(self.panel.candidate_template_index(), 2)
+        self.assertEqual(self.panel.conversation_input_text(), "/inner-brain-teach-candidate 2 => ")
+
     def test_panel_tracks_last_result_after_submission(self):
         self.panel.submit_text("/memory")
 
