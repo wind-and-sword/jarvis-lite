@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-01：发布 `0.33.0` 可安装测试包，收口 InnerBrain 本机评估过滤视图；新增 `/inner-brain-eval-local` 与 `/inner-brain-eval-local-failed` 单独查看本机 JSONL 评估样本，不写入 runtime 样本；全量 `unittest` 533 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.33.0.exe`。
 - 2026-06-01：发布 `0.32.0` 可安装测试包，收口 InnerBrain 评估失败过滤视图；新增 `/inner-brain-eval-failed` 只显示失败样本和显式修复建议，不写入 runtime 样本；全量 `unittest` 530 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.32.0.exe`。
 - 2026-06-01：发布 `0.31.0` 可安装测试包，收口 InnerBrain 评估失败修复建议；`/inner-brain-eval` 在失败样本下追加可复制的 `/inner-brain-teach` 或 `/inner-brain-label` 显式训练提示，但不写入 runtime 样本；全量 `unittest` 528 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.31.0.exe`。
 - 2026-06-01：发布 `0.30.0` 可安装测试包，收口 InnerBrain 本机评估集扩展；`/inner-brain-eval` 默认合并固定 seed 评估集和 `data/inner-brain/evaluation/*.jsonl` 本机 JSONL 样本，输出来源计数且不写入 runtime 训练样本；全量 `unittest` 526 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.30.0.exe`。

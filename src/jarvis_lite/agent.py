@@ -252,6 +252,14 @@ class JarvisAgent:
         if prompt in {"/inner-brain-status", "inner-brain-status"}:
             self.tools.run("record_log", message="查看 InnerBrain 本地内脑状态")
             return self.inner_brain.describe_status()
+        if self._is_inner_brain_eval_local_failures_prompt(prompt):
+            self.tools.run("record_log", message="执行 InnerBrain 本机评估集并只显示失败样本")
+            return describe_inner_brain_evaluation(
+                evaluate_inner_brain(self.inner_brain, source_filter="local_evaluation"), failures_only=True
+            )
+        if self._is_inner_brain_eval_local_prompt(prompt):
+            self.tools.run("record_log", message="执行 InnerBrain 本机评估集")
+            return describe_inner_brain_evaluation(evaluate_inner_brain(self.inner_brain, source_filter="local_evaluation"))
         if self._is_inner_brain_eval_failures_prompt(prompt):
             self.tools.run("record_log", message="执行 InnerBrain 本地评估集并只显示失败样本")
             return describe_inner_brain_evaluation(evaluate_inner_brain(self.inner_brain), failures_only=True)
@@ -735,6 +743,8 @@ class JarvisAgent:
                 "/inner-brain-status：查看 InnerBrain 本地内脑状态",
                 "/inner-brain-eval：执行 InnerBrain 评估集，失败时显示显式训练建议",
                 "/inner-brain-eval-failed：只显示 InnerBrain 评估失败样本",
+                "/inner-brain-eval-local：只执行本机 InnerBrain 评估样本",
+                "/inner-brain-eval-local-failed：只显示本机 InnerBrain 评估失败样本",
                 "/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作",
                 "/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本",
                 "/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本",
@@ -3178,6 +3188,8 @@ class JarvisAgent:
             "inner-brain-status",
             "inner-brain-eval",
             "inner-brain-eval-failed",
+            "inner-brain-eval-local",
+            "inner-brain-eval-local-failed",
             "inner-brain-candidates",
             "inner-brain-teach-candidate",
             "inner-brain-label-candidate",
@@ -3224,6 +3236,24 @@ class JarvisAgent:
             "inner-brain-eval-failures",
         }
 
+    def _is_inner_brain_eval_local_prompt(self, prompt: str) -> bool:
+        return prompt in {
+            "/inner-brain-eval-local",
+            "inner-brain-eval-local",
+            "/brain-eval-local",
+            "brain-eval-local",
+        }
+
+    def _is_inner_brain_eval_local_failures_prompt(self, prompt: str) -> bool:
+        return prompt in {
+            "/inner-brain-eval-local-failed",
+            "inner-brain-eval-local-failed",
+            "/brain-eval-local-failed",
+            "brain-eval-local-failed",
+            "/inner-brain-eval-local-failures",
+            "inner-brain-eval-local-failures",
+        }
+
     def _is_inner_brain_teach_candidate_prompt(self, prompt: str) -> bool:
         return prompt == "/inner-brain-teach-candidate" or prompt.startswith("/inner-brain-teach-candidate ")
 
@@ -3234,6 +3264,8 @@ class JarvisAgent:
         return (
             self._is_recent_context_prompt(prompt)
             or self._is_route_history_prompt(prompt)
+            or self._is_inner_brain_eval_local_failures_prompt(prompt)
+            or self._is_inner_brain_eval_local_prompt(prompt)
             or self._is_inner_brain_eval_failures_prompt(prompt)
             or self._is_inner_brain_eval_prompt(prompt)
             or self._is_inner_brain_candidates_prompt(prompt)

@@ -1589,6 +1589,57 @@ class AgentTests(unittest.TestCase):
         self.assertIn("失败修复建议：", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
+    def test_inner_brain_eval_local_command_lists_only_local_cases(self):
+        evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
+        evaluation_dir.mkdir(parents=True)
+        (evaluation_dir / "real-log.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请看看资料库状态",
+                    "expected_intent": "knowledge.status",
+                    "expected_command": "/kb",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/inner-brain-eval-local")
+
+        self.assertIn("评估集：local_evaluation", response)
+        self.assertIn("local_evaluation：1 条", response)
+        self.assertIn("请看看资料库状态 -> knowledge.status", response)
+        self.assertNotIn("seed_evaluation：", response)
+        self.assertNotIn("早上好 -> assistant.greeting", response)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
+    def test_inner_brain_eval_local_failed_command_lists_only_failed_local_cases(self):
+        evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
+        evaluation_dir.mkdir(parents=True)
+        (evaluation_dir / "failed-log.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请看看资料库状态",
+                    "expected_intent": "knowledge.summary",
+                    "expected_command": "/kb-summary",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/inner-brain-eval-local-failed")
+
+        self.assertIn("评估集：local_evaluation", response)
+        self.assertIn("失败样例：", response)
+        self.assertNotIn("PASS 早上好", response)
+        self.assertNotIn("早上好 -> assistant.greeting", response)
+        self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", response)
+        self.assertIn("失败修复建议：", response)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
     def test_inner_brain_preview_command_reports_result_without_execution(self):
         response = self.agent.handle("/inner-brain-preview 麻烦看一下知识库摘要")
 
@@ -2617,7 +2668,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.32.1",
+                    "version": "0.33.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2628,7 +2679,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.32.1", response)
+        self.assertIn("发现新版本：0.33.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2643,7 +2694,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.32.1",
+                        "version": "0.33.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

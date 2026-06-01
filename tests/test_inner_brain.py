@@ -207,6 +207,33 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("失败修复建议：", description)
         self.assertIn("请看看资料库状态：/inner-brain-teach 请看看资料库状态 => /kb-summary", description)
 
+    def test_inner_brain_evaluation_can_filter_local_evaluation_source(self):
+        evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
+        evaluation_dir.mkdir(parents=True)
+        (evaluation_dir / "real-log.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请看看资料库状态",
+                    "expected_intent": "knowledge.status",
+                    "expected_command": "/kb",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        report = evaluate_inner_brain(InnerBrain(self.paths), source_filter="local_evaluation")
+        description = describe_inner_brain_evaluation(report)
+
+        self.assertEqual(report.total_count, 1)
+        self.assertEqual(report.name, "local_evaluation")
+        self.assertIn("评估集：local_evaluation", description)
+        self.assertIn("local_evaluation：1 条", description)
+        self.assertIn("请看看资料库状态 -> knowledge.status", description)
+        self.assertNotIn("seed_evaluation：", description)
+        self.assertNotIn("早上好 -> assistant.greeting", description)
+
     def test_explicit_file_tag_intents_use_sample_classifier_slots(self):
         cases = (
             ("给 note.txt 打标签 项目", {"path": "note.txt", "tags": ("项目",)}, '/tag "note.txt" 项目'),

@@ -412,14 +412,21 @@ def evaluate_inner_brain(
     inner_brain: InnerBrain,
     cases: tuple[InnerBrainEvaluationCase, ...] | None = None,
     name: str | None = None,
+    source_filter: str | None = None,
 ) -> InnerBrainEvaluationReport:
     """执行固定评估集，不写入训练样本或运行态上下文。"""
 
     if cases is None:
         local_cases = load_evaluation_cases(inner_brain.paths)
         cases = (*seed_evaluation_cases(), *local_cases)
-        report_name = name or ("seed_evaluation+local_evaluation" if local_cases else "seed_evaluation")
+        if source_filter is not None:
+            cases = tuple(case for case in cases if case.source == source_filter)
+            report_name = name or source_filter
+        else:
+            report_name = name or ("seed_evaluation+local_evaluation" if local_cases else "seed_evaluation")
     else:
+        if source_filter is not None:
+            cases = tuple(case for case in cases if case.source == source_filter)
         report_name = name or "custom_evaluation"
     case_results = tuple(_evaluate_inner_brain_case(inner_brain, case) for case in cases)
     return InnerBrainEvaluationReport(name=report_name, case_results=case_results)
