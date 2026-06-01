@@ -1748,6 +1748,21 @@ class AgentTests(unittest.TestCase):
         self.assertIn("当前路由：memory-fallback / profile", response)
         self.assertNotIn("command / brain-candidates", response)
 
+    def test_inner_brain_candidates_prioritize_repeated_fallback_prompts(self):
+        self.agent.handle("火星基地预算需要外部判断")
+        self.agent.handle("火星基地预算需要外部判断")
+        self.agent.handle("木星基地预算需要外部判断")
+
+        response = self.agent.handle("/inner-brain-candidates")
+
+        self.assertIn("1. 火星基地预算需要外部判断", response)
+        self.assertIn("出现次数：2", response)
+        self.assertIn("2. 木星基地预算需要外部判断", response)
+        self.assertLess(
+            response.index("1. 火星基地预算需要外部判断"),
+            response.index("2. 木星基地预算需要外部判断"),
+        )
+
     def test_inner_brain_teach_candidate_saves_selected_candidate_command(self):
         self.agent.handle("火星基地预算需要外部判断")
 
@@ -1765,6 +1780,19 @@ class AgentTests(unittest.TestCase):
         self.assertIn("最近路由：memory-fallback / profile", status_after_teach)
         self.assertNotIn("command / /inner-brain-teach-candidate", status_after_teach)
         self.assertIn("个人知识库状态", followup)
+
+    def test_inner_brain_teach_candidate_uses_frequency_ranked_candidate(self):
+        self.agent.handle("火星基地预算需要外部判断")
+        self.agent.handle("火星基地预算需要外部判断")
+        self.agent.handle("木星基地预算需要外部判断")
+
+        teach_response = self.agent.handle("/inner-brain-teach-candidate 1 => /kb")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertIn("已保存 InnerBrain 教学样本", teach_response)
+        self.assertEqual(saved_sample["text"], "火星基地预算需要外部判断")
+        self.assertEqual(saved_sample["slots"], {"command": "/kb"})
 
     def test_inner_brain_teach_candidate_reports_missing_candidate(self):
         self.agent.handle("火星基地预算需要外部判断")
@@ -1805,6 +1833,20 @@ class AgentTests(unittest.TestCase):
         self.assertIn("最近路由：memory-fallback / profile", status_after_label)
         self.assertNotIn("command / /inner-brain-label-candidate", status_after_label)
         self.assertIn("个人知识库状态", followup)
+
+    def test_inner_brain_label_candidate_uses_frequency_ranked_candidate(self):
+        self.agent.handle("火星基地预算需要外部判断")
+        self.agent.handle("火星基地预算需要外部判断")
+        self.agent.handle("木星基地预算需要外部判断")
+
+        label_response = self.agent.handle("/inner-brain-label-candidate 1 => knowledge.status command=/kb")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertIn("已保存 InnerBrain 人工标注样本", label_response)
+        self.assertEqual(saved_sample["text"], "火星基地预算需要外部判断")
+        self.assertEqual(saved_sample["intent"], "knowledge.status")
+        self.assertEqual(saved_sample["slots"], {"command": "/kb"})
 
     def test_inner_brain_label_candidate_reports_missing_candidate(self):
         self.agent.handle("火星基地预算需要外部判断")
@@ -2449,7 +2491,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.20.1",
+                    "version": "0.21.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2460,7 +2502,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.20.1", response)
+        self.assertIn("发现新版本：0.21.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2475,7 +2517,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.20.1",
+                        "version": "0.21.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

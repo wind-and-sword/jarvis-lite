@@ -140,6 +140,12 @@ class PendingLLMClarification:
     created_at: str = ""
 
 
+@dataclass(frozen=True)
+class InnerBrainCandidateSummary:
+    decision: RuntimeRouteDecisionContext
+    count: int
+
+
 LLM_CLARIFICATION_MAX_ROUNDS = 3
 LLM_CLARIFICATION_EXPIRES_AFTER_SECONDS = 12 * 60 * 60
 
@@ -893,7 +899,7 @@ class JarvisAgent:
 
     def _inner_brain_candidates_status(self) -> str:
         self.tools.run("record_log", message="查看 InnerBrain 训练候选")
-        candidates = self._inner_brain_candidate_decisions()
+        candidates = self._inner_brain_candidate_summaries()
         if not candidates:
             return "\n".join(
                 [
@@ -904,25 +910,43 @@ class JarvisAgent:
 
         lines = [
             "InnerBrain 训练候选：",
-            "说明：这里只列候选，不自动训练；开放问题继续交给 LLM 外脑，固定动作再人工教学。",
+            "说明：这里只列候选，不自动训练；重复 fallback 会按出现次数优先展示。",
         ]
-        for index, decision in enumerate(candidates, start=1):
-            lines.extend(self._inner_brain_candidate_lines(index, decision))
+        for index, candidate in enumerate(candidates, start=1):
+            lines.extend(self._inner_brain_candidate_lines(index, candidate))
         return "\n".join(lines)
 
     def _is_inner_brain_candidate_decision(self, decision: RuntimeRouteDecisionContext) -> bool:
         return decision.route in {"llm-fallback", "memory-fallback", "inner-brain-clarify"}
 
     def _inner_brain_candidate_decisions(self) -> tuple[RuntimeRouteDecisionContext, ...]:
-        return tuple(
-            decision for decision in self._recent_route_decisions if self._is_inner_brain_candidate_decision(decision)
-        )
+        return tuple(candidate.decision for candidate in self._inner_brain_candidate_summaries())
 
-    def _inner_brain_candidate_lines(self, index: int, decision: RuntimeRouteDecisionContext) -> list[str]:
+    def _inner_brain_candidate_summaries(self) -> tuple[InnerBrainCandidateSummary, ...]:
+        candidates_by_prompt: dict[str, InnerBrainCandidateSummary] = {}
+        for decision in self._recent_route_decisions:
+            if not self._is_inner_brain_candidate_decision(decision):
+                continue
+            prompt_key = decision.prompt.strip()
+            if not prompt_key:
+                continue
+            existing = candidates_by_prompt.get(prompt_key)
+            if existing is None:
+                candidates_by_prompt[prompt_key] = InnerBrainCandidateSummary(decision=decision, count=1)
+            else:
+                candidates_by_prompt[prompt_key] = InnerBrainCandidateSummary(
+                    decision=existing.decision,
+                    count=existing.count + 1,
+                )
+        return tuple(sorted(candidates_by_prompt.values(), key=lambda candidate: -candidate.count))
+
+    def _inner_brain_candidate_lines(self, index: int, candidate: InnerBrainCandidateSummary) -> list[str]:
+        decision = candidate.decision
         sample_text = decision.prompt
         lines = [
             f"{index}. {sample_text}",
             f"   当前路由：{decision.route} / {decision.detail}",
+            f"   出现次数：{candidate.count}",
         ]
         if decision.summary:
             lines.append(f"   结果：{decision.summary}")

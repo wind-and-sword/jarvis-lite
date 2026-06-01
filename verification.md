@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-01：发布 `0.21.0` 可安装测试包，收口 InnerBrain 候选频次排序 v1；`/inner-brain-candidates` 会聚合最近路由里的重复 fallback 候选，按出现次数优先展示，并让编号教学/编号标注使用同一排序；全量 `unittest` 508 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.21.0.exe`。
 - 2026-06-01：发布 `0.20.0` 可安装测试包，收口 InnerBrain 候选按编号标注 v1；新增 `/inner-brain-label-candidate 编号 => intent [slot=value ...]`，可把 `/inner-brain-candidates` 当前候选显式标注为 runtime 样本，命令本身不污染路由历史；全量 `unittest` 505 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.20.0.exe`。
 - 2026-06-01：发布 `0.19.0` 可安装测试包，收口 InnerBrain 候选按编号教学 v1；新增 `/inner-brain-teach-candidate 编号 => /命令`，可把 `/inner-brain-candidates` 当前候选显式教学为已知命令，命令本身不污染路由历史；全量 `unittest` 502 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.19.0.exe`。
 - 2026-05-29：发布 `0.18.0` 可安装测试包，收口 InnerBrain 训练候选 v1；新增 `/inner-brain-candidates` 从最近路由历史中筛选 LLM fallback、记忆兜底和 InnerBrain 澄清输入，给出 teach/label 示例但不自动训练；全量 `unittest` 499 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.18.0.exe`。
