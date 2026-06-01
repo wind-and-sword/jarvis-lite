@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..agent import TEACHABLE_INNER_BRAIN_COMMAND_INTENTS
 from ..config import ProjectPaths
 from ..llm import LLMSettings
 from ..search import SearchSettings
@@ -87,6 +88,42 @@ DEFAULT_DESKTOP_SEARCH_PROVIDER = "tavily"
 MAX_SEARCH_RESULTS = 50
 MAX_INNER_BRAIN_CANDIDATE_INDEX = 20
 MAX_INNER_BRAIN_CANDIDATE_OPTION_TEXT_LENGTH = 72
+PREFERRED_INNER_BRAIN_TEACH_TARGETS = (
+    "/kb",
+    "/kb-summary",
+    "/recent-files",
+    "/tag-history",
+    "/daily-report",
+    "/search",
+    "/search-summary",
+    "/search-open",
+    "/search-compare",
+    "/search-save-summary",
+    "/search-import-summary",
+    "/llm-status",
+    "/llm-enable",
+)
+INNER_BRAIN_LABEL_TARGET_TEMPLATES = (
+    "intent slot=value",
+    "knowledge.status command=/kb",
+    "knowledge.summary command=/kb-summary",
+    "web.search query=关键词",
+    "web.search_summarize query=关键词",
+    "web_search.open_numbered result_index=编号",
+    "web_search.compare_recent",
+    "web_search.save_summary filename=文件名",
+    "web_search.import_summary filename=文件名",
+    "document.read_path path=文件路径",
+    "knowledge.import source=文件或目录路径",
+    "directory.open_alias alias=目录别名",
+    "directory.organize_alias alias=目录别名",
+    "experience.record experience=经验内容",
+    "experience.search query=经验关键词",
+    "experience.advice query=经验关键词",
+    "tag_group.read alias=标签组",
+    "tag_group.preview_tagging alias=标签组 tags=新标签",
+    "desktop.delete_shortcut items=快捷方式名称",
+)
 
 
 class AssistantPanel(QWidget):
@@ -241,6 +278,18 @@ class AssistantPanel(QWidget):
                 return
         self.change_candidate_template_index(target)
 
+    def candidate_teach_target_options(self) -> tuple[str, ...]:
+        return _combo_string_data_values(self._candidate_teach_target_select)
+
+    def candidate_label_target_options(self) -> tuple[str, ...]:
+        return _combo_string_data_values(self._candidate_label_target_select)
+
+    def change_candidate_teach_target(self, command: str) -> None:
+        self._set_combo_data(self._candidate_teach_target_select, command)
+
+    def change_candidate_label_target(self, label_template: str) -> None:
+        self._set_combo_data(self._candidate_label_target_select, label_template)
+
     def candidate_template_status_text(self) -> str:
         return self._candidate_template_status_label.text()
 
@@ -257,11 +306,14 @@ class AssistantPanel(QWidget):
         return self._input.text()
 
     def fill_inner_brain_candidate_teach_template(self) -> None:
-        self._fill_conversation_input(f"/inner-brain-teach-candidate {self.candidate_template_index()} => ")
+        target = _combo_current_string_data(self._candidate_teach_target_select)
+        suffix = f" {target}" if target else " "
+        self._fill_conversation_input(f"/inner-brain-teach-candidate {self.candidate_template_index()} =>{suffix}")
 
     def fill_inner_brain_candidate_label_template(self) -> None:
+        target = _combo_current_string_data(self._candidate_label_target_select) or "intent slot=value"
         self._fill_conversation_input(
-            f"/inner-brain-label-candidate {self.candidate_template_index()} => intent slot=value"
+            f"/inner-brain-label-candidate {self.candidate_template_index()} => {target}"
         )
 
     def status_text(self) -> str:
@@ -496,6 +548,15 @@ class AssistantPanel(QWidget):
         )
         self._candidate_template_status_label = QLabel("候选模板：未加载候选")
         self._candidate_template_status_label.setObjectName("innerBrainCandidateTemplateStatus")
+        self._candidate_teach_target_select = QComboBox()
+        self._candidate_teach_target_select.setObjectName("innerBrainTeachTargetSelect")
+        self._candidate_teach_target_select.addItem("手动填写命令", "")
+        for command in _desktop_teach_target_commands():
+            self._candidate_teach_target_select.addItem(command, command)
+        self._candidate_label_target_select = QComboBox()
+        self._candidate_label_target_select.setObjectName("innerBrainLabelTargetSelect")
+        for label_template in INNER_BRAIN_LABEL_TARGET_TEMPLATES:
+            self._candidate_label_target_select.addItem(label_template, label_template)
 
         teach_button = QPushButton("填教学")
         teach_button.setObjectName("innerBrainTeachTemplateButton")
@@ -513,6 +574,10 @@ class AssistantPanel(QWidget):
         candidate_row.addWidget(QLabel("候选"))
         candidate_row.addWidget(self._candidate_template_index_input)
         candidate_row.addWidget(self._candidate_template_select)
+        candidate_row.addWidget(QLabel("教学"))
+        candidate_row.addWidget(self._candidate_teach_target_select)
+        candidate_row.addWidget(QLabel("标注"))
+        candidate_row.addWidget(self._candidate_label_target_select)
         candidate_row.addWidget(teach_button)
         candidate_row.addWidget(label_button)
         return candidate_row
@@ -912,6 +977,32 @@ class DesktopPetWindow(QWidget):
 
 def _clamp_int(value: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, int(value)))
+
+
+def _desktop_teach_target_commands() -> tuple[str, ...]:
+    preferred = tuple(
+        command
+        for command in PREFERRED_INNER_BRAIN_TEACH_TARGETS
+        if command in TEACHABLE_INNER_BRAIN_COMMAND_INTENTS
+    )
+    remaining = tuple(
+        sorted(command for command in TEACHABLE_INNER_BRAIN_COMMAND_INTENTS if command not in preferred)
+    )
+    return (*preferred, *remaining)
+
+
+def _combo_current_string_data(combo: QComboBox) -> str:
+    value = combo.currentData()
+    return value if isinstance(value, str) else ""
+
+
+def _combo_string_data_values(combo: QComboBox) -> tuple[str, ...]:
+    values: list[str] = []
+    for index in range(combo.count()):
+        value = combo.itemData(index)
+        if isinstance(value, str) and value:
+            values.append(value)
+    return tuple(values)
 
 
 def _extract_inner_brain_candidate_options(assistant_text: str) -> tuple[tuple[int, str], ...]:

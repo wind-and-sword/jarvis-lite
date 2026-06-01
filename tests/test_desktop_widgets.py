@@ -238,6 +238,8 @@ class DesktopWidgetTests(unittest.TestCase):
     def test_panel_exposes_inner_brain_candidate_template_controls(self):
         self.assertEqual(self.panel.candidate_template_index(), 1)
         self.assertEqual(self.panel.candidate_template_button_texts(), ("填教学", "填标注"))
+        self.assertIn("/kb", self.panel.candidate_teach_target_options())
+        self.assertIn("web.search query=关键词", self.panel.candidate_label_target_options())
 
     def test_panel_inner_brain_teach_template_button_fills_input_without_submitting(self):
         self.panel.submit_text("火星基地预算需要外部判断")
@@ -248,6 +250,18 @@ class DesktopWidgetTests(unittest.TestCase):
         QApplication.processEvents()
 
         self.assertEqual(self.panel.conversation_input_text(), "/inner-brain-teach-candidate 2 => ")
+        self.assertEqual(self.panel.transcript_text(), transcript_before)
+
+    def test_panel_inner_brain_teach_template_can_prefill_known_target_command(self):
+        self.panel.submit_text("火星基地预算需要外部判断")
+        transcript_before = self.panel.transcript_text()
+        self.panel.change_candidate_template_index(2)
+        self.panel.change_candidate_teach_target("/kb")
+
+        self.panel.candidate_template_button("填教学").click()
+        QApplication.processEvents()
+
+        self.assertEqual(self.panel.conversation_input_text(), "/inner-brain-teach-candidate 2 => /kb")
         self.assertEqual(self.panel.transcript_text(), transcript_before)
 
     def test_panel_inner_brain_label_template_button_fills_label_template_for_selected_candidate(self):
@@ -261,6 +275,25 @@ class DesktopWidgetTests(unittest.TestCase):
             "/inner-brain-label-candidate 3 => intent slot=value",
         )
         self.assertEqual(self.panel.transcript_text(), "")
+
+    def test_panel_inner_brain_label_template_can_prefill_known_intent_template(self):
+        self.panel.submit_text("第一条标注目标预填需要外部判断")
+        self.panel.submit_text("第二条标注目标预填需要外部判断")
+
+        self.panel.quick_command_button("内脑候选").click()
+        QApplication.processEvents()
+        self.panel.change_candidate_template_selection(2)
+        self.panel.change_candidate_label_target("web.search query=关键词")
+        transcript_before = self.panel.transcript_text()
+
+        self.panel.candidate_template_button("填标注").click()
+        QApplication.processEvents()
+
+        self.assertEqual(
+            self.panel.conversation_input_text(),
+            "/inner-brain-label-candidate 2 => web.search query=关键词",
+        )
+        self.assertEqual(self.panel.transcript_text(), transcript_before)
 
     def test_panel_empty_inner_brain_candidates_disables_candidate_template_buttons(self):
         self.panel.quick_command_button("内脑候选").click()
