@@ -730,7 +730,7 @@ class JarvisAgent:
                 "/llm-status：查看 LLM 外脑 provider 状态",
                 "/llm-enable：查看外脑启用状态和本地配置路径",
                 "/inner-brain-status：查看 InnerBrain 本地内脑状态",
-                "/inner-brain-eval：执行 InnerBrain 固定评估集",
+                "/inner-brain-eval：执行 InnerBrain 评估集，失败时显示显式训练建议",
                 "/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作",
                 "/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本",
                 "/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本",

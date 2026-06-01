@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-01-v34-inner-brain-local-evaluation-plan.md](2026-06-01-v34-inner-brain-local-evaluation-plan.md)：当前方案版本，明确 InnerBrain 本机评估集扩展。
+- [2026-06-01-v35-inner-brain-evaluation-fix-suggestion-plan.md](2026-06-01-v35-inner-brain-evaluation-fix-suggestion-plan.md)：当前方案版本，明确 InnerBrain 评估失败修复建议。
 
 ## 历史版本
 
@@ -43,6 +43,7 @@
 - [2026-06-01-v31-desktop-inner-brain-candidate-target-prefill-plan.md](2026-06-01-v31-desktop-inner-brain-candidate-target-prefill-plan.md)：明确桌面候选目标预填。
 - [2026-06-01-v32-inner-brain-contained-signature-boost-plan.md](2026-06-01-v32-inner-brain-contained-signature-boost-plan.md)：明确 InnerBrain 包含签名置信度补偿。
 - [2026-06-01-v33-inner-brain-seed-evaluation-plan.md](2026-06-01-v33-inner-brain-seed-evaluation-plan.md)：明确 InnerBrain 固定评估集。
+- [2026-06-01-v34-inner-brain-local-evaluation-plan.md](2026-06-01-v34-inner-brain-local-evaluation-plan.md)：明确 InnerBrain 本机评估集扩展。
 
 ## 维护规则
 

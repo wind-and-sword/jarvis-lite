@@ -10,6 +10,7 @@ from jarvis_lite.config import build_project_paths
 from jarvis_lite.inner_brain import (
     HIGH_CONFIDENCE,
     InnerBrain,
+    InnerBrainEvaluationCase,
     InnerBrainPolicy,
     describe_inner_brain_evaluation,
     describe_inner_brain_result,
@@ -165,6 +166,25 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("local_evaluation：1 条", description)
         self.assertIn("请看看资料库状态 -> knowledge.status", description)
         self.assertEqual(report.failed_count, 0)
+
+    def test_inner_brain_evaluation_describes_failed_cases_with_training_suggestions(self):
+        cases = (
+            InnerBrainEvaluationCase(
+                text="请看看资料库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+            ),
+        )
+
+        report = evaluate_inner_brain(InnerBrain(self.paths), cases=cases, name="local_evaluation")
+        description = describe_inner_brain_evaluation(report)
+
+        self.assertEqual(report.failed_count, 1)
+        self.assertIn("失败修复建议：", description)
+        self.assertIn("请看看资料库状态：/inner-brain-teach 请看看资料库状态 => /kb-summary", description)
+        self.assertIn("说明：这里只生成显式训练提示，不自动写入 runtime 样本。", description)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_explicit_file_tag_intents_use_sample_classifier_slots(self):
         cases = (

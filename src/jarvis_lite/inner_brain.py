@@ -112,6 +112,10 @@ class InnerBrainEvaluationReport:
             counts[case_result.case.source] = counts.get(case_result.case.source, 0) + 1
         return counts
 
+    @property
+    def failed_case_results(self) -> tuple[InnerBrainEvaluationCaseResult, ...]:
+        return tuple(case_result for case_result in self.case_results if not case_result.passed)
+
 
 class InnerBrain:
     """本地轻量内脑，负责把自然语言转成可审计的结构化意图。"""
@@ -457,6 +461,11 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport) -> str:
         )
         if not case_result.passed:
             lines.append(f"  原因：{case_result.reason}")
+    if report.failed_case_results:
+        lines.append("失败修复建议：")
+        for case_result in report.failed_case_results:
+            lines.append(f"- {_inner_brain_evaluation_fix_suggestion(case_result)}")
+        lines.append("说明：这里只生成显式训练提示，不自动写入 runtime 样本。")
     return "\n".join(lines)
 
 
@@ -476,6 +485,16 @@ def _evaluate_inner_brain_case(
             failures.append(f"命令期望 {case.expected_command}，实际 {command or '无'}")
     reason = "通过" if not failures else "；".join(failures)
     return InnerBrainEvaluationCaseResult(case=case, result=result, passed=not failures, reason=reason)
+
+
+def _inner_brain_evaluation_fix_suggestion(case_result: InnerBrainEvaluationCaseResult) -> str:
+    case = case_result.case
+    text = " ".join(case.text.split())
+    if case.expected_command:
+        return f"{text}：/inner-brain-teach {text} => {case.expected_command}"
+    if case.expected_policy == InnerBrainPolicy.EXECUTE:
+        return f"{text}：/inner-brain-label {text} => {case.expected_intent}"
+    return f"{text}：先确认 expected_policy={case.expected_policy.value} 是否符合预期，再决定是否补样本"
 
 
 def _load_evaluation_case_file(case_file: Path) -> tuple[InnerBrainEvaluationCase, ...]:
