@@ -1786,6 +1786,46 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/unknown-command", response)
         self.assertFalse(sample_file.exists())
 
+    def test_inner_brain_label_candidate_saves_selected_candidate_label(self):
+        agent = self.agent
+        agent.handle("火星基地预算需要外部判断")
+
+        label_response = agent.handle("/inner-brain-label-candidate 1 => knowledge.status command=/kb")
+        status_after_label = agent.route_status_text()
+        followup = agent.handle("火星基地预算需要外部判断")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertIn("已保存 InnerBrain 人工标注样本", label_response)
+        self.assertIn("意图：knowledge.status", label_response)
+        self.assertIn("槽位 command：/kb", label_response)
+        self.assertEqual(saved_sample["text"], "火星基地预算需要外部判断")
+        self.assertEqual(saved_sample["intent"], "knowledge.status")
+        self.assertEqual(saved_sample["slots"], {"command": "/kb"})
+        self.assertIn("最近路由：memory-fallback / profile", status_after_label)
+        self.assertNotIn("command / /inner-brain-label-candidate", status_after_label)
+        self.assertIn("个人知识库状态", followup)
+
+    def test_inner_brain_label_candidate_reports_missing_candidate(self):
+        self.agent.handle("火星基地预算需要外部判断")
+
+        response = self.agent.handle("/inner-brain-label-candidate 2 => knowledge.status command=/kb")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        self.assertIn("没有第 2 条 InnerBrain 训练候选", response)
+        self.assertIn("/inner-brain-candidates", response)
+        self.assertFalse(sample_file.exists())
+
+    def test_inner_brain_label_candidate_rejects_invalid_slot_assignment(self):
+        self.agent.handle("火星基地预算需要外部判断")
+
+        response = self.agent.handle("/inner-brain-label-candidate 1 => knowledge.status command")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        self.assertIn("标注参数错误", response)
+        self.assertIn("slot 必须使用 key=value", response)
+        self.assertFalse(sample_file.exists())
+
     def test_llm_status_command_reports_router_state(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"状态测试"}')
         router = LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider)
@@ -2409,7 +2449,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.19.1",
+                    "version": "0.20.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2420,7 +2460,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.19.1", response)
+        self.assertIn("发现新版本：0.20.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2435,7 +2475,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.19.1",
+                        "version": "0.20.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

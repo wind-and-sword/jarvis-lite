@@ -542,6 +542,8 @@ class JarvisAgent:
             return self._teach_inner_brain_sample(prompt, command)
         if command == "/inner-brain-teach-candidate":
             return self._teach_inner_brain_candidate(prompt, command)
+        if command == "/inner-brain-label-candidate":
+            return self._label_inner_brain_candidate(prompt, command)
         if command == "/llm-smoke":
             smoke_prompt = " ".join(args)
             self.tools.run("record_log", message="执行 LLM smoke 调用")
@@ -718,6 +720,7 @@ class JarvisAgent:
                 "/inner-brain-teach 文本 => /命令：把自然语言短句教学为已知命令",
                 "/inner-brain-candidates：查看最近输入中的内脑训练候选",
                 "/inner-brain-teach-candidate 编号 => /命令：把训练候选按编号教学为命令",
+                "/inner-brain-label-candidate 编号 => intent [slot=value ...]：把训练候选按编号人工标注",
                 "/llm-usage：查看 LLM token 用量汇总",
                 "/llm-smoke [prompt]：强制调用 LLM 做一次配置验证",
                 "/llm-context-preview：预览 LLM fallback 上下文，不调用 provider",
@@ -926,7 +929,9 @@ class JarvisAgent:
         if decision.explanation:
             lines.append(f"   依据：{decision.explanation}")
         lines.append(f"   固定为命令：/inner-brain-teach {sample_text} => /命令")
+        lines.append(f"   按编号固定：/inner-brain-teach-candidate {index} => /命令")
         lines.append(f"   人工标注：/inner-brain-label {sample_text} => intent slot=value")
+        lines.append(f"   按编号标注：/inner-brain-label-candidate {index} => intent slot=value")
         return lines
 
     def _label_inner_brain_sample(self, prompt: str) -> str:
@@ -938,6 +943,26 @@ class JarvisAgent:
         sample_text, raw_label = (part.strip() for part in body.split("=>", 1))
         if not sample_text or not raw_label:
             return usage
+        return self._save_inner_brain_labeled_sample(sample_text, raw_label, usage)
+
+    def _label_inner_brain_candidate(self, prompt: str, command: str) -> str:
+        usage = "用法：/inner-brain-label-candidate 编号 => intent [slot=value ...]"
+        body = prompt[len(command) :].strip()
+        parsed = self._parse_inner_brain_label_candidate_body(body)
+        if parsed is None:
+            return usage
+        candidate_index, raw_label = parsed
+        candidates = self._inner_brain_candidate_decisions()
+        if candidate_index < 1 or candidate_index > len(candidates):
+            return "\n".join(
+                [
+                    f"没有第 {candidate_index} 条 InnerBrain 训练候选。",
+                    "请先运行 /inner-brain-candidates 查看当前候选编号。",
+                ]
+            )
+        return self._save_inner_brain_labeled_sample(candidates[candidate_index - 1].prompt, raw_label, usage)
+
+    def _save_inner_brain_labeled_sample(self, sample_text: str, raw_label: str, usage: str) -> str:
         try:
             label_parts = shlex.split(raw_label, posix=True)
         except ValueError as exc:
@@ -964,6 +989,18 @@ class JarvisAgent:
             ),
         )
         return self._describe_inner_brain_labeled_sample_save(save_result, missing)
+
+    def _parse_inner_brain_label_candidate_body(self, body: str) -> tuple[int, str] | None:
+        if "=>" not in body:
+            return None
+        raw_index, raw_label = (part.strip() for part in body.split("=>", 1))
+        if not raw_index or not raw_label:
+            return None
+        try:
+            candidate_index = int(raw_index)
+        except ValueError:
+            return None
+        return candidate_index, raw_label
 
     def _inner_brain_label_slots(self, raw_slots: list[str]) -> tuple[dict[str, object], tuple[str, ...]]:
         slots: dict[str, object] = {}
@@ -3032,6 +3069,7 @@ class JarvisAgent:
             "inner-brain-status",
             "inner-brain-candidates",
             "inner-brain-teach-candidate",
+            "inner-brain-label-candidate",
             "brain-candidates",
             "llm-usage",
             "llm-context-preview",
@@ -3065,12 +3103,16 @@ class JarvisAgent:
     def _is_inner_brain_teach_candidate_prompt(self, prompt: str) -> bool:
         return prompt == "/inner-brain-teach-candidate" or prompt.startswith("/inner-brain-teach-candidate ")
 
+    def _is_inner_brain_label_candidate_prompt(self, prompt: str) -> bool:
+        return prompt == "/inner-brain-label-candidate" or prompt.startswith("/inner-brain-label-candidate ")
+
     def _is_route_observability_prompt(self, prompt: str) -> bool:
         return (
             self._is_recent_context_prompt(prompt)
             or self._is_route_history_prompt(prompt)
             or self._is_inner_brain_candidates_prompt(prompt)
             or self._is_inner_brain_teach_candidate_prompt(prompt)
+            or self._is_inner_brain_label_candidate_prompt(prompt)
         )
 
     def _llm_intent_summary(self, intent: LLMIntent) -> str:
