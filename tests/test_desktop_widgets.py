@@ -191,6 +191,7 @@ class DesktopWidgetTests(unittest.TestCase):
                 "最近上下文",
                 "最近文件",
                 "标签历史",
+                "内脑候选",
                 "生成日报",
                 "检查更新",
                 "下载更新",
@@ -219,6 +220,19 @@ class DesktopWidgetTests(unittest.TestCase):
 
         self.assertIn("用户：/tag-history", self.panel.transcript_text())
         self.assertIn("批量打标签历史：还没有记录。", self.panel.transcript_text())
+        self.assertIn("状态：success", self.panel.status_text())
+
+    def test_panel_inner_brain_candidates_quick_command_submits_candidates_command(self):
+        self.panel.submit_text("火星基地预算需要外部判断")
+
+        self.assertIn("内脑候选", self.panel.quick_command_texts())
+        self.panel.quick_command_button("内脑候选").click()
+        QApplication.processEvents()
+
+        transcript = self.panel.transcript_text()
+        self.assertIn("用户：/inner-brain-candidates", transcript)
+        self.assertIn("InnerBrain 训练候选：", transcript)
+        self.assertIn("火星基地预算需要外部判断", transcript)
         self.assertIn("状态：success", self.panel.status_text())
 
     def test_panel_tracks_last_result_after_submission(self):

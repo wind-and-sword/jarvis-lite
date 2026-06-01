@@ -149,6 +149,7 @@ class DesktopBridgeTests(unittest.TestCase):
         self.assertIn("查看最近上下文", prompts)
         self.assertIn("/recent-files", prompts)
         self.assertIn("/tag-history", prompts)
+        self.assertIn("/inner-brain-candidates", prompts)
         self.assertIn("/daily-report", prompts)
         self.assertIn("/update-status", prompts)
         self.assertIn("/update-download", prompts)
@@ -169,6 +170,7 @@ class DesktopBridgeTests(unittest.TestCase):
                 "最近上下文",
                 "最近文件",
                 "标签历史",
+                "内脑候选",
                 "生成日报",
                 "检查更新",
                 "下载更新",
@@ -178,6 +180,7 @@ class DesktopBridgeTests(unittest.TestCase):
         self.assertIn("查看最近上下文", prompts)
         self.assertIn("/recent-files", prompts)
         self.assertIn("/tag-history", prompts)
+        self.assertIn("/inner-brain-candidates", prompts)
         self.assertNotIn("/organize-preview", prompts)
         self.assertIn("/update-status", prompts)
         self.assertIn("/update-download", prompts)
