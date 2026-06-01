@@ -10,6 +10,7 @@ from .config import ProjectPaths
 RUNTIME_DIRNAME = "jarvis-lite-runtime"
 CONTEXT_FILENAME = "agent-context.json"
 ROUTE_DECISION_HISTORY_LIMIT = 5
+INNER_BRAIN_CANDIDATE_LIMIT = 20
 
 
 @dataclass(frozen=True)
@@ -95,6 +96,20 @@ class RuntimeRouteDecisionContext:
 
 
 @dataclass(frozen=True)
+class RuntimeInnerBrainCandidateContext:
+    """保存 InnerBrain 训练候选的可序列化观察统计。"""
+
+    prompt: str
+    route: str
+    detail: str
+    summary: str = ""
+    explanation: str = ""
+    count: int = 1
+    first_seen_at: str = ""
+    last_seen_at: str = ""
+
+
+@dataclass(frozen=True)
 class RuntimeContext:
     """保存可跨 Agent 实例恢复的轻量运行态上下文。"""
 
@@ -111,6 +126,7 @@ class RuntimeContext:
     recent_llm_call: RuntimeLLMCallContext | None = None
     recent_route_decision: RuntimeRouteDecisionContext | None = None
     recent_route_decisions: tuple[RuntimeRouteDecisionContext, ...] = ()
+    inner_brain_candidates: tuple[RuntimeInnerBrainCandidateContext, ...] | None = None
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -167,6 +183,7 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         recent_llm_call=_read_llm_call_context(raw.get("recent_llm_call")),
         recent_route_decision=recent_route_decision,
         recent_route_decisions=recent_route_decisions,
+        inner_brain_candidates=_read_inner_brain_candidate_contexts(raw.get("inner_brain_candidates")),
     )
 
 
@@ -222,6 +239,9 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                 "recent_route_decisions": [
                     _route_decision_context_to_json(decision) for decision in recent_route_decisions
                 ],
+                "inner_brain_candidates": _inner_brain_candidate_contexts_to_json(
+                    context.inner_brain_candidates
+                ),
             },
             ensure_ascii=False,
             indent=2,
@@ -381,6 +401,42 @@ def _read_route_decision_contexts(value: object) -> tuple[RuntimeRouteDecisionCo
         if len(decisions) >= ROUTE_DECISION_HISTORY_LIMIT:
             break
     return tuple(decisions)
+
+
+def _read_inner_brain_candidate_contexts(value: object) -> tuple[RuntimeInnerBrainCandidateContext, ...] | None:
+    if value is None:
+        return None
+    if not isinstance(value, list):
+        return ()
+    candidates: list[RuntimeInnerBrainCandidateContext] = []
+    seen_prompts: set[str] = set()
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        prompt = _read_optional_str(item.get("prompt"))
+        route = _read_optional_str(item.get("route"))
+        detail = _read_optional_str(item.get("detail"))
+        if prompt is None or route is None or detail is None:
+            continue
+        prompt_key = prompt.strip()
+        if prompt_key in seen_prompts:
+            continue
+        seen_prompts.add(prompt_key)
+        candidates.append(
+            RuntimeInnerBrainCandidateContext(
+                prompt=prompt,
+                route=route,
+                detail=detail,
+                summary=_read_optional_str(item.get("summary")) or "",
+                explanation=_read_optional_str(item.get("explanation")) or "",
+                count=_read_positive_int(item.get("count"), 1),
+                first_seen_at=_read_optional_str(item.get("first_seen_at")) or "",
+                last_seen_at=_read_optional_str(item.get("last_seen_at")) or "",
+            )
+        )
+        if len(candidates) >= INNER_BRAIN_CANDIDATE_LIMIT:
+            break
+    return tuple(candidates)
 
 
 def _route_decision_history_with_latest(
@@ -554,6 +610,27 @@ def _route_decision_context_to_json(context: RuntimeRouteDecisionContext | None)
         "summary": context.summary,
         "explanation": context.explanation,
         "created_at": context.created_at,
+    }
+
+
+def _inner_brain_candidate_contexts_to_json(
+    contexts: tuple[RuntimeInnerBrainCandidateContext, ...] | None,
+) -> list[dict[str, object]] | None:
+    if contexts is None:
+        return None
+    return [_inner_brain_candidate_context_to_json(context) for context in contexts[:INNER_BRAIN_CANDIDATE_LIMIT]]
+
+
+def _inner_brain_candidate_context_to_json(context: RuntimeInnerBrainCandidateContext) -> dict[str, object]:
+    return {
+        "prompt": context.prompt,
+        "route": context.route,
+        "detail": context.detail,
+        "summary": context.summary,
+        "explanation": context.explanation,
+        "count": context.count,
+        "first_seen_at": context.first_seen_at,
+        "last_seen_at": context.last_seen_at,
     }
 
 

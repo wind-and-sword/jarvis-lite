@@ -1763,6 +1763,25 @@ class AgentTests(unittest.TestCase):
             response.index("2. 木星基地预算需要外部判断"),
         )
 
+    def test_inner_brain_candidates_keep_persistent_counts_after_recent_history_rotation(self):
+        self.agent.handle("火星基地预算需要外部判断")
+        self.agent.handle("火星基地预算需要外部判断")
+        self.agent.handle("火星基地预算需要外部判断")
+        for index in range(1, 6):
+            self.agent.handle(f"第{index}个新候选需要外部判断")
+
+        runtime_context = load_runtime_context(self.paths)
+        response = self.agent.handle("/inner-brain-candidates")
+
+        recent_prompts = {decision.prompt for decision in runtime_context.recent_route_decisions}
+        self.assertNotIn("火星基地预算需要外部判断", recent_prompts)
+        self.assertIn("1. 火星基地预算需要外部判断", response)
+        self.assertIn("出现次数：3", response)
+        self.assertLess(
+            response.index("1. 火星基地预算需要外部判断"),
+            response.index("2. 第5个新候选需要外部判断"),
+        )
+
     def test_inner_brain_teach_candidate_saves_selected_candidate_command(self):
         self.agent.handle("火星基地预算需要外部判断")
 
@@ -1793,6 +1812,31 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已保存 InnerBrain 教学样本", teach_response)
         self.assertEqual(saved_sample["text"], "火星基地预算需要外部判断")
         self.assertEqual(saved_sample["slots"], {"command": "/kb"})
+
+    def test_inner_brain_teach_candidate_uses_persistent_rank_after_recent_history_rotation(self):
+        self.agent.handle("火星基地预算需要外部判断")
+        self.agent.handle("火星基地预算需要外部判断")
+        self.agent.handle("火星基地预算需要外部判断")
+        for index in range(1, 6):
+            self.agent.handle(f"第{index}个新候选需要外部判断")
+
+        teach_response = self.agent.handle("/inner-brain-teach-candidate 1 => /kb")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl"
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertIn("已保存 InnerBrain 教学样本", teach_response)
+        self.assertEqual(saved_sample["text"], "火星基地预算需要外部判断")
+        self.assertEqual(saved_sample["slots"], {"command": "/kb"})
+
+    def test_inner_brain_teach_candidate_removes_trained_persistent_candidate(self):
+        self.agent.handle("火星基地预算需要外部判断")
+        self.agent.handle("火星基地预算需要外部判断")
+
+        self.agent.handle("/inner-brain-teach-candidate 1 => /kb")
+        response = self.agent.handle("/inner-brain-candidates")
+
+        self.assertNotIn("火星基地预算需要外部判断", response)
+        self.assertIn("InnerBrain 训练候选：暂无。", response)
 
     def test_inner_brain_teach_candidate_reports_missing_candidate(self):
         self.agent.handle("火星基地预算需要外部判断")
@@ -2491,7 +2535,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.21.1",
+                    "version": "0.22.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2502,7 +2546,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.21.1", response)
+        self.assertIn("发现新版本：0.22.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2517,7 +2561,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.21.1",
+                        "version": "0.22.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

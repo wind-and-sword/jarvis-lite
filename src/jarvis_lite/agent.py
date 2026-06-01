@@ -76,6 +76,7 @@ from .memory import (
 from .runtime_context import (
     RuntimeContext,
     RuntimeDirectoryContext,
+    RuntimeInnerBrainCandidateContext,
     RuntimeLLMCallContext,
     RuntimeLLMClarificationContext,
     RuntimeRecentFileContext,
@@ -189,6 +190,10 @@ class JarvisAgent:
         self._recent_route_decisions: tuple[RuntimeRouteDecisionContext, ...] = (
             runtime_context.recent_route_decisions
         )
+        self._inner_brain_candidate_stats: tuple[RuntimeInnerBrainCandidateContext, ...] = (
+            runtime_context.inner_brain_candidates or ()
+        )
+        self._inner_brain_candidate_stats_initialized = runtime_context.inner_brain_candidates is not None
         self._recent_tagged_documents_operations: tuple[RuntimeTaggedDocumentsOperationContext, ...] = (
             runtime_context.recent_tagged_documents_operations
         )
@@ -886,6 +891,7 @@ class JarvisAgent:
             )
 
         self.inner_brain = InnerBrain(self.paths)
+        self._forget_inner_brain_candidate(save_result.sample.text)
         self.tools.run(
             "record_log",
             message=(
@@ -910,7 +916,7 @@ class JarvisAgent:
 
         lines = [
             "InnerBrain 训练候选：",
-            "说明：这里只列候选，不自动训练；重复 fallback 会按出现次数优先展示。",
+            "说明：这里只列候选，不自动训练；候选出现次数来自本地运行态统计。",
         ]
         for index, candidate in enumerate(candidates, start=1):
             lines.extend(self._inner_brain_candidate_lines(index, candidate))
@@ -923,6 +929,15 @@ class JarvisAgent:
         return tuple(candidate.decision for candidate in self._inner_brain_candidate_summaries())
 
     def _inner_brain_candidate_summaries(self) -> tuple[InnerBrainCandidateSummary, ...]:
+        if self._inner_brain_candidate_stats_initialized:
+            return tuple(
+                InnerBrainCandidateSummary(
+                    decision=self._inner_brain_candidate_decision(candidate),
+                    count=candidate.count,
+                )
+                for candidate in self._inner_brain_candidate_stats
+            )
+
         candidates_by_prompt: dict[str, InnerBrainCandidateSummary] = {}
         for decision in self._recent_route_decisions:
             if not self._is_inner_brain_candidate_decision(decision):
@@ -939,6 +954,19 @@ class JarvisAgent:
                     count=existing.count + 1,
                 )
         return tuple(sorted(candidates_by_prompt.values(), key=lambda candidate: -candidate.count))
+
+    def _inner_brain_candidate_decision(
+        self,
+        candidate: RuntimeInnerBrainCandidateContext,
+    ) -> RuntimeRouteDecisionContext:
+        return RuntimeRouteDecisionContext(
+            route=candidate.route,
+            detail=candidate.detail,
+            prompt=candidate.prompt,
+            summary=candidate.summary,
+            explanation=candidate.explanation,
+            created_at=candidate.last_seen_at,
+        )
 
     def _inner_brain_candidate_lines(self, index: int, candidate: InnerBrainCandidateSummary) -> list[str]:
         decision = candidate.decision
@@ -1003,6 +1031,7 @@ class JarvisAgent:
             return f"标注参数错误：{exc}\n{usage}"
 
         self.inner_brain = InnerBrain(self.paths)
+        self._forget_inner_brain_candidate(save_result.sample.text)
         self.tools.run(
             "record_log",
             message=(
@@ -1161,6 +1190,7 @@ class JarvisAgent:
             return f"{exc}\n{usage}"
 
         self.inner_brain = InnerBrain(self.paths)
+        self._forget_inner_brain_candidate(save_result.sample.text)
         self.tools.run(
             "record_log",
             message=(
@@ -2941,6 +2971,9 @@ class JarvisAgent:
             recent_llm_call=self._recent_llm_call,
             recent_route_decision=self._recent_route_decision,
             recent_route_decisions=self._recent_route_decisions,
+            inner_brain_candidates=(
+                self._inner_brain_candidate_stats if self._inner_brain_candidate_stats_initialized else None
+            ),
         )
 
     def _save_runtime_context(self) -> None:
@@ -3007,6 +3040,48 @@ class JarvisAgent:
         )
         self._recent_route_decision = decision
         self._recent_route_decisions = (decision, *self._recent_route_decisions)[:5]
+        if self._is_inner_brain_candidate_decision(decision):
+            self._remember_inner_brain_candidate_observation(decision)
+        self._save_runtime_context()
+
+    def _remember_inner_brain_candidate_observation(self, decision: RuntimeRouteDecisionContext) -> None:
+        prompt_key = decision.prompt.strip()
+        if not prompt_key:
+            return
+        self._inner_brain_candidate_stats_initialized = True
+        existing = next(
+            (candidate for candidate in self._inner_brain_candidate_stats if candidate.prompt.strip() == prompt_key),
+            None,
+        )
+        first_seen_at = existing.first_seen_at if existing is not None else decision.created_at
+        count = existing.count + 1 if existing is not None else 1
+        updated_candidate = RuntimeInnerBrainCandidateContext(
+            prompt=decision.prompt,
+            route=decision.route,
+            detail=decision.detail,
+            summary=decision.summary,
+            explanation=decision.explanation,
+            count=count,
+            first_seen_at=first_seen_at or decision.created_at,
+            last_seen_at=decision.created_at,
+        )
+        remaining_candidates = tuple(
+            candidate for candidate in self._inner_brain_candidate_stats if candidate.prompt.strip() != prompt_key
+        )
+        candidates = (updated_candidate, *remaining_candidates)
+        self._inner_brain_candidate_stats = tuple(sorted(candidates, key=lambda candidate: -candidate.count))[:20]
+
+    def _forget_inner_brain_candidate(self, sample_text: str) -> None:
+        prompt_key = sample_text.strip()
+        if not prompt_key:
+            return
+        remaining_candidates = tuple(
+            candidate for candidate in self._inner_brain_candidate_stats if candidate.prompt.strip() != prompt_key
+        )
+        if remaining_candidates == self._inner_brain_candidate_stats and self._inner_brain_candidate_stats_initialized:
+            return
+        self._inner_brain_candidate_stats = remaining_candidates
+        self._inner_brain_candidate_stats_initialized = True
         self._save_runtime_context()
 
     def _remember_command_route(self, prompt: str) -> None:
