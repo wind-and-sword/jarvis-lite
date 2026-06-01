@@ -86,6 +86,7 @@ DEFAULT_DESKTOP_LLM_PROVIDER = "openai-compatible"
 DEFAULT_DESKTOP_SEARCH_PROVIDER = "tavily"
 MAX_SEARCH_RESULTS = 50
 MAX_INNER_BRAIN_CANDIDATE_INDEX = 20
+MAX_INNER_BRAIN_CANDIDATE_OPTION_TEXT_LENGTH = 72
 
 
 class AssistantPanel(QWidget):
@@ -219,6 +220,26 @@ class AssistantPanel(QWidget):
 
     def change_candidate_template_index(self, index: int) -> None:
         self._candidate_template_index_input.setValue(_clamp_int(index, 1, MAX_INNER_BRAIN_CANDIDATE_INDEX))
+
+    def candidate_template_option_texts(self) -> tuple[str, ...]:
+        return tuple(
+            self._candidate_template_select.itemText(index)
+            for index in range(self._candidate_template_select.count())
+        )
+
+    def candidate_template_selector_enabled(self) -> bool:
+        return self._candidate_template_select.isEnabled()
+
+    def candidate_template_selected_text(self) -> str:
+        return self._candidate_template_select.currentText()
+
+    def change_candidate_template_selection(self, candidate_index: int) -> None:
+        target = _clamp_int(candidate_index, 1, MAX_INNER_BRAIN_CANDIDATE_INDEX)
+        for row in range(self._candidate_template_select.count()):
+            if self._candidate_template_select.itemData(row) == target:
+                self._candidate_template_select.setCurrentIndex(row)
+                return
+        self.change_candidate_template_index(target)
 
     def candidate_template_status_text(self) -> str:
         return self._candidate_template_status_label.text()
@@ -368,19 +389,55 @@ class AssistantPanel(QWidget):
     def _sync_inner_brain_candidate_template_state(self, response: DesktopResponse) -> None:
         if response.user_input != "/inner-brain-candidates":
             return
-        candidate_count = _count_inner_brain_candidates(response.assistant_text)
+        candidates = _extract_inner_brain_candidate_options(response.assistant_text)
+        candidate_count = len(candidates)
         if candidate_count < 1:
             self._candidate_template_status_label.setText("候选模板：暂无候选")
             self._candidate_template_index_input.setRange(1, 1)
+            self._set_candidate_template_options(())
             self._set_candidate_template_buttons_enabled(False)
             return
         self._candidate_template_status_label.setText(f"候选模板：{candidate_count} 条候选")
         self._candidate_template_index_input.setRange(1, min(candidate_count, MAX_INNER_BRAIN_CANDIDATE_INDEX))
+        self._set_candidate_template_options(candidates[:MAX_INNER_BRAIN_CANDIDATE_INDEX])
         self._set_candidate_template_buttons_enabled(True)
 
     def _set_candidate_template_buttons_enabled(self, enabled: bool) -> None:
         for button in self._candidate_template_buttons.values():
             button.setEnabled(enabled)
+
+    def _set_candidate_template_options(self, candidates: tuple[tuple[int, str], ...]) -> None:
+        self._candidate_template_select.blockSignals(True)
+        self._candidate_template_select.clear()
+        if not candidates:
+            self._candidate_template_select.addItem("暂无候选", None)
+            self._candidate_template_select.setEnabled(False)
+            self._candidate_template_select.blockSignals(False)
+            return
+        for candidate_index, prompt in candidates:
+            self._candidate_template_select.addItem(
+                f"{candidate_index}. {_compact_candidate_option_text(prompt)}",
+                candidate_index,
+            )
+        self._candidate_template_select.setEnabled(True)
+        self._candidate_template_select.blockSignals(False)
+        self._sync_candidate_template_select_to_index(self.candidate_template_index())
+
+    def _sync_candidate_template_select_to_index(self, candidate_index: int) -> None:
+        if not self._candidate_template_select.isEnabled():
+            return
+        for row in range(self._candidate_template_select.count()):
+            if self._candidate_template_select.itemData(row) == candidate_index:
+                self._candidate_template_select.blockSignals(True)
+                self._candidate_template_select.setCurrentIndex(row)
+                self._candidate_template_select.blockSignals(False)
+                return
+
+    def _sync_candidate_template_index_to_selection(self, row: int) -> None:
+        candidate_index = self._candidate_template_select.itemData(row)
+        if not isinstance(candidate_index, int):
+            return
+        self._candidate_template_index_input.setValue(candidate_index)
 
     def _set_state(self, state: DesktopState) -> None:
         self._status_label.setText(f"状态：{state.value}")
@@ -427,6 +484,16 @@ class AssistantPanel(QWidget):
         self._candidate_template_index_input.setObjectName("innerBrainCandidateIndexInput")
         self._candidate_template_index_input.setRange(1, MAX_INNER_BRAIN_CANDIDATE_INDEX)
         self._candidate_template_index_input.setValue(1)
+        self._candidate_template_index_input.valueChanged.connect(
+            lambda value: self._sync_candidate_template_select_to_index(value)
+        )
+        self._candidate_template_select = QComboBox()
+        self._candidate_template_select.setObjectName("innerBrainCandidateSelect")
+        self._candidate_template_select.addItem("未加载候选", None)
+        self._candidate_template_select.setEnabled(False)
+        self._candidate_template_select.currentIndexChanged.connect(
+            lambda row: self._sync_candidate_template_index_to_selection(row)
+        )
         self._candidate_template_status_label = QLabel("候选模板：未加载候选")
         self._candidate_template_status_label.setObjectName("innerBrainCandidateTemplateStatus")
 
@@ -445,6 +512,7 @@ class AssistantPanel(QWidget):
         candidate_row.addWidget(self._candidate_template_status_label)
         candidate_row.addWidget(QLabel("候选"))
         candidate_row.addWidget(self._candidate_template_index_input)
+        candidate_row.addWidget(self._candidate_template_select)
         candidate_row.addWidget(teach_button)
         candidate_row.addWidget(label_button)
         return candidate_row
@@ -846,5 +914,15 @@ def _clamp_int(value: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, int(value)))
 
 
-def _count_inner_brain_candidates(assistant_text: str) -> int:
-    return len(re.findall(r"(?m)^\d+\. ", assistant_text))
+def _extract_inner_brain_candidate_options(assistant_text: str) -> tuple[tuple[int, str], ...]:
+    candidates: list[tuple[int, str]] = []
+    for match in re.finditer(r"(?m)^(\d+)\. (.+)$", assistant_text):
+        candidates.append((int(match.group(1)), match.group(2).strip()))
+    return tuple(candidates)
+
+
+def _compact_candidate_option_text(text: str) -> str:
+    compact = " ".join(text.split())
+    if len(compact) <= MAX_INNER_BRAIN_CANDIDATE_OPTION_TEXT_LENGTH:
+        return compact
+    return compact[: MAX_INNER_BRAIN_CANDIDATE_OPTION_TEXT_LENGTH - 3] + "..."

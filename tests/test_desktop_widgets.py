@@ -288,6 +288,35 @@ class DesktopWidgetTests(unittest.TestCase):
         self.assertEqual(self.panel.candidate_template_index(), 2)
         self.assertEqual(self.panel.conversation_input_text(), "/inner-brain-teach-candidate 2 => ")
 
+    def test_panel_empty_inner_brain_candidates_disables_candidate_selector(self):
+        self.panel.quick_command_button("内脑候选").click()
+        QApplication.processEvents()
+
+        self.assertFalse(self.panel.candidate_template_selector_enabled())
+        self.assertEqual(self.panel.candidate_template_option_texts(), ("暂无候选",))
+
+    def test_panel_inner_brain_candidate_selector_binds_selected_candidate_to_templates(self):
+        self.panel.submit_text("第一条桌面候选绑定需要外部判断")
+        self.panel.submit_text("第二条桌面候选绑定需要外部判断")
+
+        self.panel.quick_command_button("内脑候选").click()
+        QApplication.processEvents()
+        self.panel.change_candidate_template_selection(2)
+        self.panel.candidate_template_button("填标注").click()
+        QApplication.processEvents()
+
+        options = self.panel.candidate_template_option_texts()
+        self.assertEqual(len(options), 2)
+        self.assertTrue(self.panel.candidate_template_selector_enabled())
+        self.assertTrue(any("第一条桌面候选绑定需要外部判断" in option for option in options))
+        self.assertTrue(any("第二条桌面候选绑定需要外部判断" in option for option in options))
+        self.assertEqual(self.panel.candidate_template_index(), 2)
+        self.assertTrue(self.panel.candidate_template_selected_text().startswith("2. "))
+        self.assertEqual(
+            self.panel.conversation_input_text(),
+            "/inner-brain-label-candidate 2 => intent slot=value",
+        )
+
     def test_panel_tracks_last_result_after_submission(self):
         self.panel.submit_text("/memory")
 

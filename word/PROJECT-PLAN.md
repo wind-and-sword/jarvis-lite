@@ -50,21 +50,21 @@ PC Agent 稳定
 - 本地自然语言意图层，可处理常见中文表达，包括问候、助手身份/能力询问、最近上下文、最近文件、显式文件读取/导入、显式文件打标签、读取编号资料、查看/导入编号最近文件、查看编号搜索结果、查看/执行编号建议、当前资料/结果打标签、编号资料/搜索结果打标签、标签组读取与批量标签预览、知识库、常用目录打开/整理、最近目录打开/整理、日报、更新、经验记录/搜索/建议、确认/取消执行、联网搜索、联网搜索后续来源处理和明确点名的桌面 `.lnk` 快捷方式删除；InnerBrain 高置信度命中后仍由 `JarvisAgent` 执行。
 - LLM 外脑 Router 第一版：provider-neutral 配置、`config/llm.local.json` 本地配置文件、fake provider 测试路径、OpenAI Responses API adapter、OpenAI-compatible 端点、`qwen`/`gemini` provider alias、完整 `/v1/responses` URL 归一化、provider 与 Agent 双层命令白名单、LLM fallback 近期上下文与最近搜索结果、LLM `clarify` 多轮澄清续聊、LLM 澄清状态运行态恢复、LLM 澄清轮数限制和过期清理、`/llm-config-init` 本地配置草稿生成、`/llm-config-set` 本地配置写入、`/llm-config-check` 本地配置只读检查、`/llm-enable` 外脑启用入口、`/llm-context-preview`、`/llm-smoke` 运行时配置验证、token usage 日志、`/llm-status` API key/网络调用诊断、`/llm-usage` 本地汇总和 `/llm-config-example` 配置模板。
 - 联网搜索方案已明确为 SearchRouter 工具能力：搜索负责获取当前网页来源和摘要，LLM 外脑负责在 Agent 提供来源后做总结、比较和自然表达；两者互补，均不绕过 `JarvisAgent`。当前 `/search` 会把联网搜索结果写入最近上下文和 LLM context，`/search-summary` 与“联网查一下...并总结”会先搜索再把来源交给 LLM 总结；`/search-open`、`/search-compare`、`/search-save-summary` 和 `/search-import-summary` 负责最近联网搜索的来源查看、来源比较、摘要保存和知识库导入；`/search-config-init` 可生成本地搜索配置草稿，`/search-config-set` 可写入本地搜索配置，`/search-config-check` 可做只读配置检查，`/search-smoke` 可做不写入最近上下文的 provider 连通性测试。
-- 桌面小助手、助手面板、托盘、快捷命令、主题、尺寸、开机启动和更新入口；助手面板已提供外脑和联网搜索配置区，可写入、检查和 smoke 测试 provider 配置，写入 API key 时不会把真实 key 显示到 transcript 或会话历史；面板固定展示 LLM 外脑待补充问题、澄清轮次、取消提示、外脑启用状态、最近一次 LLM 调用结果、最近一条用户输入的路由决策和路由选择依据；桌面面板和托盘快捷命令已提供“内脑候选”入口，桌面面板会根据候选列表同步 teach/label 模板按钮状态和编号上限。
+- 桌面小助手、助手面板、托盘、快捷命令、主题、尺寸、开机启动和更新入口；助手面板已提供外脑和联网搜索配置区，可写入、检查和 smoke 测试 provider 配置，写入 API key 时不会把真实 key 显示到 transcript 或会话历史；面板固定展示 LLM 外脑待补充问题、澄清轮次、取消提示、外脑启用状态、最近一次 LLM 调用结果、最近一条用户输入的路由决策和路由选择依据；桌面面板和托盘快捷命令已提供“内脑候选”入口，桌面面板会根据候选列表同步 teach/label 模板按钮状态、编号上限和候选下拉选择。
 - 本地 `unittest` 验证体系。
 
 ## 下一阶段
 
-当前已经完成 `0.25.0` 里程碑：
+当前已经完成 `0.26.0` 里程碑：
 
-> InnerBrain 样本分类器优先 + LLM 外脑接入第一版 + Agent 联网搜索第一版 + 多轮澄清 v1 可安装闭环 + 外脑 provider 配置闭环 v1 + 运行态配置初始化 v1 + 本地配置检查 v1 + 本地配置写入 v1 + 连通性诊断 v1 + 桌面配置面板 v1 + LLM 外脑多轮澄清 v1 + LLM 澄清状态持久化 v1 + LLM 澄清轮数与过期策略 v1 + 桌面外脑待补充状态 v1 + 桌面外脑运行状态 v1 + 最近路由决策状态 v1 + 路由决策解释详情 v1 + 最近路由历史 v1 + 路由历史详情 v1 + InnerBrain 训练候选 v1 + 候选按编号教学 v1 + 候选按编号标注 v1 + 候选频次排序 v1 + 候选运行态统计 v1 + 桌面内脑候选快捷入口 v1 + 桌面候选训练模板填充 v1 + 桌面候选模板状态同步 v1。
+> InnerBrain 样本分类器优先 + LLM 外脑接入第一版 + Agent 联网搜索第一版 + 多轮澄清 v1 可安装闭环 + 外脑 provider 配置闭环 v1 + 运行态配置初始化 v1 + 本地配置检查 v1 + 本地配置写入 v1 + 连通性诊断 v1 + 桌面配置面板 v1 + LLM 外脑多轮澄清 v1 + LLM 澄清状态持久化 v1 + LLM 澄清轮数与过期策略 v1 + 桌面外脑待补充状态 v1 + 桌面外脑运行状态 v1 + 最近路由决策状态 v1 + 路由决策解释详情 v1 + 最近路由历史 v1 + 路由历史详情 v1 + InnerBrain 训练候选 v1 + 候选按编号教学 v1 + 候选按编号标注 v1 + 候选频次排序 v1 + 候选运行态统计 v1 + 桌面内脑候选快捷入口 v1 + 桌面候选训练模板填充 v1 + 桌面候选模板状态同步 v1 + 桌面候选选择绑定 v1。
 
 后续目标：
 
 - 继续扩展 InnerBrain seed/runtime 样本，把用户真实日志和现有命令能力持续沉淀为 `text -> intent -> slots` 数据。
 - 继续评估字符 n-gram、轻量 embedding 相似度或小型分类器，不从零训练通用 LLM。
 - 继续扩大缺失槽位的自然语言补全范围，把更多 `missing` 场景接入多轮澄清状态，并沉淀更细的用户纠错样本；`0.2.0` 已收口文件路径、编号资料、当前资料标签、标签组+新标签、经验搜索关键词和经验建议关键词。
-- 继续打磨真实 provider 的兼容端点体验、运行态本地配置体验和用量观察能力；`0.3.0` 已让 `qwen`/`gemini` 可作为 provider alias 复用 OpenAI-compatible adapter，`0.4.0` 已支持 `/llm-config-init` 与 `/search-config-init` 生成本机配置草稿，`0.5.0` 已支持 `/llm-config-check` 与 `/search-config-check` 做只读配置检查，`0.6.0` 已支持 `/llm-config-set` 与 `/search-config-set` 用显式 `key=value` 写入本机配置，`0.7.0` 已支持 `/llm-smoke` 重新读取当前本地配置和 `/search-smoke` provider 连通性测试，`0.8.0` 已把写入、检查和 smoke 入口放入桌面配置面板，`0.9.0` 已补齐 LLM `clarify` 的多轮续聊，`0.10.0` 已让 LLM 待澄清状态进入运行态上下文，`0.11.0` 已补齐连续澄清轮数和过期清理边界，`0.12.0` 已把 LLM 待补充状态固定展示到桌面面板，`0.13.0` 已把外脑启用状态和最近调用结果固定展示到桌面面板，`0.14.0` 已把最近路由决策固定展示到桌面面板，`0.15.0` 已把路由选择依据固定展示到同一段路由状态，`0.16.0` 已把最近 5 条路由历史固定展示到同一状态区，`0.17.0` 已提供 `/route-history` 路由历史详情并让 `/recent-context` 展示最近路由摘要，`0.18.0` 已提供 `/inner-brain-candidates` 从 fallback/澄清路由中列出人工训练候选，`0.19.0` 已支持 `/inner-brain-teach-candidate 编号 => /命令` 按编号教学候选，`0.20.0` 已支持 `/inner-brain-label-candidate 编号 => intent [slot=value ...]` 按编号标注候选，`0.21.0` 已让候选按出现次数优先排序，`0.22.0` 已把候选出现次数写入本地运行态统计并在训练后移除对应候选，`0.23.0` 已把“内脑候选”加入桌面面板和托盘直接快捷命令，`0.24.0` 已在桌面面板增加候选编号和 teach/label 模板填充入口，`0.25.0` 已让模板状态和编号上限随最近候选列表同步。
+- 继续打磨真实 provider 的兼容端点体验、运行态本地配置体验和用量观察能力；`0.3.0` 已让 `qwen`/`gemini` 可作为 provider alias 复用 OpenAI-compatible adapter，`0.4.0` 已支持 `/llm-config-init` 与 `/search-config-init` 生成本机配置草稿，`0.5.0` 已支持 `/llm-config-check` 与 `/search-config-check` 做只读配置检查，`0.6.0` 已支持 `/llm-config-set` 与 `/search-config-set` 用显式 `key=value` 写入本机配置，`0.7.0` 已支持 `/llm-smoke` 重新读取当前本地配置和 `/search-smoke` provider 连通性测试，`0.8.0` 已把写入、检查和 smoke 入口放入桌面配置面板，`0.9.0` 已补齐 LLM `clarify` 的多轮续聊，`0.10.0` 已让 LLM 待澄清状态进入运行态上下文，`0.11.0` 已补齐连续澄清轮数和过期清理边界，`0.12.0` 已把 LLM 待补充状态固定展示到桌面面板，`0.13.0` 已把外脑启用状态和最近调用结果固定展示到桌面面板，`0.14.0` 已把最近路由决策固定展示到桌面面板，`0.15.0` 已把路由选择依据固定展示到同一段路由状态，`0.16.0` 已把最近 5 条路由历史固定展示到同一状态区，`0.17.0` 已提供 `/route-history` 路由历史详情并让 `/recent-context` 展示最近路由摘要，`0.18.0` 已提供 `/inner-brain-candidates` 从 fallback/澄清路由中列出人工训练候选，`0.19.0` 已支持 `/inner-brain-teach-candidate 编号 => /命令` 按编号教学候选，`0.20.0` 已支持 `/inner-brain-label-candidate 编号 => intent [slot=value ...]` 按编号标注候选，`0.21.0` 已让候选按出现次数优先排序，`0.22.0` 已把候选出现次数写入本地运行态统计并在训练后移除对应候选，`0.23.0` 已把“内脑候选”加入桌面面板和托盘直接快捷命令，`0.24.0` 已在桌面面板增加候选编号和 teach/label 模板填充入口，`0.25.0` 已让模板状态和编号上限随最近候选列表同步，`0.26.0` 已把候选列表单条候选绑定到桌面下拉选择。
 - 如果兼容端点无法覆盖真实使用，再评估 Gemini 和 Qwen 原生 provider adapter。
 - 继续打磨 LLM 结构化意图提示词、命令参数澄清、provider 错误可读化和失败兜底。
 - 让 LLM 生成更稳定的命令建议、资料总结、任务拆解、澄清问题和澄清后的最终回答。
@@ -113,3 +113,4 @@ PC Agent 稳定
 - [v27：桌面内脑候选快捷入口方案](plans/2026-06-01-v27-desktop-inner-brain-candidate-shortcut-plan.md)
 - [v28：桌面候选训练模板填充方案](plans/2026-06-01-v28-desktop-inner-brain-candidate-template-plan.md)
 - [v29：桌面候选模板状态同步方案](plans/2026-06-01-v29-desktop-inner-brain-candidate-template-sync-plan.md)
+- [v30：桌面候选选择绑定方案](plans/2026-06-01-v30-desktop-inner-brain-candidate-selection-plan.md)
