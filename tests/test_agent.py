@@ -1507,6 +1507,16 @@ class AgentTests(unittest.TestCase):
         self.assertRegex(response, r"seed_sample：\d+ 条")
         self.assertIn("高置信阈值：0.78", response)
 
+    def test_inner_brain_eval_command_reports_repeatable_seed_baseline(self):
+        response = self.agent.handle("/inner-brain-eval")
+
+        self.assertIn("InnerBrain 评估", response)
+        self.assertIn("评估集：seed_evaluation", response)
+        self.assertRegex(response, r"通过：\d+/\d+")
+        self.assertIn("失败：0", response)
+        self.assertIn("帮我看一下知识库状态 -> knowledge.status", response)
+        self.assertNotIn("未知命令", response)
+
     def test_inner_brain_preview_command_reports_result_without_execution(self):
         response = self.agent.handle("/inner-brain-preview 麻烦看一下知识库摘要")
 
@@ -2535,7 +2545,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.28.1",
+                    "version": "0.29.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2546,7 +2556,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.28.1", response)
+        self.assertIn("发现新版本：0.29.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2561,7 +2571,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.28.1",
+                        "version": "0.29.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

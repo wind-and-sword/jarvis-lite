@@ -59,6 +59,52 @@ class InnerBrainResult:
     natural_language_intent: NaturalLanguageIntent | None = None
 
 
+@dataclass(frozen=True)
+class InnerBrainEvaluationCase:
+    """一条固定评估样本，用于衡量内脑分类器质量。"""
+
+    text: str
+    expected_intent: str
+    expected_policy: InnerBrainPolicy = InnerBrainPolicy.EXECUTE
+    expected_command: str | None = None
+
+
+@dataclass(frozen=True)
+class InnerBrainEvaluationCaseResult:
+    """单条评估样本的实际识别结果。"""
+
+    case: InnerBrainEvaluationCase
+    result: InnerBrainResult
+    passed: bool
+    reason: str
+
+
+@dataclass(frozen=True)
+class InnerBrainEvaluationReport:
+    """固定评估集的汇总结果。"""
+
+    name: str
+    case_results: tuple[InnerBrainEvaluationCaseResult, ...]
+
+    @property
+    def total_count(self) -> int:
+        return len(self.case_results)
+
+    @property
+    def passed_count(self) -> int:
+        return sum(1 for result in self.case_results if result.passed)
+
+    @property
+    def failed_count(self) -> int:
+        return self.total_count - self.passed_count
+
+    @property
+    def accuracy(self) -> float:
+        if self.total_count == 0:
+            return 0.0
+        return self.passed_count / self.total_count
+
+
 class InnerBrain:
     """本地轻量内脑，负责把自然语言转成可审计的结构化意图。"""
 
@@ -331,6 +377,74 @@ def describe_inner_brain_result(result: InnerBrainResult) -> str:
     lines.append(f"- 原因：{result.reason}")
     lines.append("说明：这里只预览识别结果，不执行命令。")
     return "\n".join(lines)
+
+
+def seed_evaluation_cases() -> tuple[InnerBrainEvaluationCase, ...]:
+    """返回可重复执行的内脑基线评估集。"""
+
+    return (
+        InnerBrainEvaluationCase("早上好", "assistant.greeting"),
+        InnerBrainEvaluationCase("帮我看一下知识库状态", "knowledge.status", expected_command="/kb"),
+        InnerBrainEvaluationCase("麻烦看一下知识库摘要", "knowledge.summary", expected_command="/kb-summary"),
+        InnerBrainEvaluationCase("帮我联网查一下 Python 版本", "web.search", expected_command="/search Python 版本"),
+        InnerBrainEvaluationCase("联网查一下 Python 版本并总结", "web.search_summarize", expected_command="/search-summary Python 版本"),
+        InnerBrainEvaluationCase("读取第二份资料", "document.read_numbered_recent"),
+        InnerBrainEvaluationCase("给第二份资料打标签 项目 Python", "document.tag_numbered_recent"),
+        InnerBrainEvaluationCase("导入 note.txt 到知识库", "knowledge.import", expected_command='/import "note.txt"'),
+        InnerBrainEvaluationCase("删除桌面快捷方式", "desktop.delete_shortcut", expected_policy=InnerBrainPolicy.CLARIFY),
+        InnerBrainEvaluationCase("这句话需要外脑理解", "unknown", expected_policy=InnerBrainPolicy.FALLBACK_TO_LLM),
+    )
+
+
+def evaluate_inner_brain(
+    inner_brain: InnerBrain,
+    cases: tuple[InnerBrainEvaluationCase, ...] | None = None,
+    name: str = "seed_evaluation",
+) -> InnerBrainEvaluationReport:
+    """执行固定评估集，不写入训练样本或运行态上下文。"""
+
+    case_results = tuple(_evaluate_inner_brain_case(inner_brain, case) for case in (cases or seed_evaluation_cases()))
+    return InnerBrainEvaluationReport(name=name, case_results=case_results)
+
+
+def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport) -> str:
+    """格式化内脑评估结果，供命令行和桌面转录查看。"""
+
+    lines = [
+        "InnerBrain 评估：",
+        f"- 评估集：{report.name}",
+        f"- 通过：{report.passed_count}/{report.total_count}",
+        f"- 失败：{report.failed_count}",
+        f"- 准确率：{report.accuracy * 100:.1f}%",
+        "样例：",
+    ]
+    for case_result in report.case_results:
+        mark = "PASS" if case_result.passed else "FAIL"
+        lines.append(
+            f"- {mark} {case_result.case.text} -> {case_result.result.intent} "
+            f"({case_result.result.policy.value}, {case_result.result.confidence:.2f})"
+        )
+        if not case_result.passed:
+            lines.append(f"  原因：{case_result.reason}")
+    return "\n".join(lines)
+
+
+def _evaluate_inner_brain_case(
+    inner_brain: InnerBrain,
+    case: InnerBrainEvaluationCase,
+) -> InnerBrainEvaluationCaseResult:
+    result = inner_brain.understand(case.text)
+    failures: list[str] = []
+    if result.intent != case.expected_intent:
+        failures.append(f"意图期望 {case.expected_intent}，实际 {result.intent}")
+    if result.policy != case.expected_policy:
+        failures.append(f"策略期望 {case.expected_policy.value}，实际 {result.policy.value}")
+    if case.expected_command is not None:
+        command = result.natural_language_intent.command if result.natural_language_intent is not None else ""
+        if command != case.expected_command:
+            failures.append(f"命令期望 {case.expected_command}，实际 {command or '无'}")
+    reason = "通过" if not failures else "；".join(failures)
+    return InnerBrainEvaluationCaseResult(case=case, result=result, passed=not failures, reason=reason)
 
 
 def complete_inner_brain_clarification(result: InnerBrainResult, reply: str) -> InnerBrainResult:

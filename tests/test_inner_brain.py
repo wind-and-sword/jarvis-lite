@@ -11,7 +11,9 @@ from jarvis_lite.inner_brain import (
     HIGH_CONFIDENCE,
     InnerBrain,
     InnerBrainPolicy,
+    describe_inner_brain_evaluation,
     describe_inner_brain_result,
+    evaluate_inner_brain,
     save_labeled_runtime_training_sample,
     save_runtime_training_sample,
 )
@@ -121,6 +123,19 @@ class InnerBrainTests(unittest.TestCase):
         self.assertGreaterEqual(result.confidence, HIGH_CONFIDENCE)
         self.assertIsNotNone(result.natural_language_intent)
         self.assertEqual(result.natural_language_intent.command, "/kb")
+
+    def test_inner_brain_evaluation_reports_repeatable_seed_baseline(self):
+        report = evaluate_inner_brain(InnerBrain(self.paths))
+
+        self.assertGreaterEqual(report.total_count, 8)
+        self.assertEqual(report.failed_count, 0)
+        self.assertEqual(report.passed_count, report.total_count)
+        description = describe_inner_brain_evaluation(report)
+        self.assertIn("InnerBrain 评估", description)
+        self.assertIn("评估集：seed_evaluation", description)
+        self.assertIn(f"通过：{report.passed_count}/{report.total_count}", description)
+        self.assertIn("失败：0", description)
+        self.assertIn("帮我看一下知识库状态 -> knowledge.status", description)
 
     def test_explicit_file_tag_intents_use_sample_classifier_slots(self):
         cases = (
