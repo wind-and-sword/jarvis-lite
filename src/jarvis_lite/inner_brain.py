@@ -67,6 +67,7 @@ class InnerBrainEvaluationCase:
     expected_intent: str
     expected_policy: InnerBrainPolicy = InnerBrainPolicy.EXECUTE
     expected_command: str | None = None
+    source: str = "seed_evaluation"
 
 
 @dataclass(frozen=True)
@@ -103,6 +104,13 @@ class InnerBrainEvaluationReport:
         if self.total_count == 0:
             return 0.0
         return self.passed_count / self.total_count
+
+    @property
+    def source_counts(self) -> Mapping[str, int]:
+        counts: dict[str, int] = {}
+        for case_result in self.case_results:
+            counts[case_result.case.source] = counts.get(case_result.case.source, 0) + 1
+        return counts
 
 
 class InnerBrain:
@@ -399,12 +407,33 @@ def seed_evaluation_cases() -> tuple[InnerBrainEvaluationCase, ...]:
 def evaluate_inner_brain(
     inner_brain: InnerBrain,
     cases: tuple[InnerBrainEvaluationCase, ...] | None = None,
-    name: str = "seed_evaluation",
+    name: str | None = None,
 ) -> InnerBrainEvaluationReport:
     """执行固定评估集，不写入训练样本或运行态上下文。"""
 
-    case_results = tuple(_evaluate_inner_brain_case(inner_brain, case) for case in (cases or seed_evaluation_cases()))
-    return InnerBrainEvaluationReport(name=name, case_results=case_results)
+    if cases is None:
+        local_cases = load_evaluation_cases(inner_brain.paths)
+        cases = (*seed_evaluation_cases(), *local_cases)
+        report_name = name or ("seed_evaluation+local_evaluation" if local_cases else "seed_evaluation")
+    else:
+        report_name = name or "custom_evaluation"
+    case_results = tuple(_evaluate_inner_brain_case(inner_brain, case) for case in cases)
+    return InnerBrainEvaluationReport(name=report_name, case_results=case_results)
+
+
+def load_evaluation_cases(paths: ProjectPaths | None) -> tuple[InnerBrainEvaluationCase, ...]:
+    """读取本机评估 JSONL，只用于评估，不作为训练样本。"""
+
+    if paths is None:
+        return ()
+    evaluation_dir = paths.data_dir / "inner-brain" / "evaluation"
+    if not evaluation_dir.is_dir():
+        return ()
+
+    cases: list[InnerBrainEvaluationCase] = []
+    for case_file in sorted(evaluation_dir.glob("*.jsonl")):
+        cases.extend(_load_evaluation_case_file(case_file))
+    return tuple(cases)
 
 
 def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport) -> str:
@@ -416,8 +445,10 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport) -> str:
         f"- 通过：{report.passed_count}/{report.total_count}",
         f"- 失败：{report.failed_count}",
         f"- 准确率：{report.accuracy * 100:.1f}%",
-        "样例：",
     ]
+    for source, count in report.source_counts.items():
+        lines.append(f"- {source}：{count} 条")
+    lines.append("样例：")
     for case_result in report.case_results:
         mark = "PASS" if case_result.passed else "FAIL"
         lines.append(
@@ -445,6 +476,56 @@ def _evaluate_inner_brain_case(
             failures.append(f"命令期望 {case.expected_command}，实际 {command or '无'}")
     reason = "通过" if not failures else "；".join(failures)
     return InnerBrainEvaluationCaseResult(case=case, result=result, passed=not failures, reason=reason)
+
+
+def _load_evaluation_case_file(case_file: Path) -> tuple[InnerBrainEvaluationCase, ...]:
+    cases: list[InnerBrainEvaluationCase] = []
+    for line in case_file.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            raw_case = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        case = _evaluation_case_from_json(raw_case)
+        if case is not None:
+            cases.append(case)
+    return tuple(cases)
+
+
+def _evaluation_case_from_json(raw_case: object) -> InnerBrainEvaluationCase | None:
+    if not isinstance(raw_case, dict):
+        return None
+    text = raw_case.get("text")
+    expected_intent = raw_case.get("expected_intent")
+    if not isinstance(text, str) or not text.strip():
+        return None
+    if not isinstance(expected_intent, str) or not expected_intent.strip():
+        return None
+    expected_policy = _evaluation_policy(raw_case.get("expected_policy", InnerBrainPolicy.EXECUTE.value))
+    if expected_policy is None:
+        return None
+    expected_command = raw_case.get("expected_command")
+    if expected_command is not None and not isinstance(expected_command, str):
+        return None
+    return InnerBrainEvaluationCase(
+        text=text.strip(),
+        expected_intent=expected_intent.strip(),
+        expected_policy=expected_policy,
+        expected_command=expected_command.strip() if isinstance(expected_command, str) and expected_command.strip() else None,
+        source="local_evaluation",
+    )
+
+
+def _evaluation_policy(raw_policy: object) -> InnerBrainPolicy | None:
+    if isinstance(raw_policy, InnerBrainPolicy):
+        return raw_policy
+    if not isinstance(raw_policy, str):
+        return None
+    try:
+        return InnerBrainPolicy(raw_policy.strip())
+    except ValueError:
+        return None
 
 
 def complete_inner_brain_clarification(result: InnerBrainResult, reply: str) -> InnerBrainResult:

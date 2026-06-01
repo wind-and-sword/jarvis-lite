@@ -1517,6 +1517,30 @@ class AgentTests(unittest.TestCase):
         self.assertIn("帮我看一下知识库状态 -> knowledge.status", response)
         self.assertNotIn("未知命令", response)
 
+    def test_inner_brain_eval_command_includes_local_evaluation_cases_without_training(self):
+        evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
+        evaluation_dir.mkdir(parents=True)
+        (evaluation_dir / "real-log.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请看看资料库状态",
+                    "expected_intent": "knowledge.status",
+                    "expected_command": "/kb",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/inner-brain-eval")
+
+        self.assertIn("评估集：seed_evaluation+local_evaluation", response)
+        self.assertIn("local_evaluation：1 条", response)
+        self.assertIn("请看看资料库状态 -> knowledge.status", response)
+        self.assertIn("失败：0", response)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
     def test_inner_brain_preview_command_reports_result_without_execution(self):
         response = self.agent.handle("/inner-brain-preview 麻烦看一下知识库摘要")
 
@@ -2545,7 +2569,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.29.1",
+                    "version": "0.30.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2556,7 +2580,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.29.1", response)
+        self.assertIn("发现新版本：0.30.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2571,7 +2595,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.29.1",
+                        "version": "0.30.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

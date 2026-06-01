@@ -14,6 +14,7 @@ from jarvis_lite.inner_brain import (
     describe_inner_brain_evaluation,
     describe_inner_brain_result,
     evaluate_inner_brain,
+    load_evaluation_cases,
     save_labeled_runtime_training_sample,
     save_runtime_training_sample,
 )
@@ -136,6 +137,34 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn(f"通过：{report.passed_count}/{report.total_count}", description)
         self.assertIn("失败：0", description)
         self.assertIn("帮我看一下知识库状态 -> knowledge.status", description)
+
+    def test_inner_brain_evaluation_loads_local_jsonl_cases(self):
+        evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
+        evaluation_dir.mkdir(parents=True)
+        (evaluation_dir / "custom.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请看看资料库状态",
+                    "expected_intent": "knowledge.status",
+                    "expected_command": "/kb",
+                },
+                ensure_ascii=False,
+            )
+            + "\n"
+            + '{"text": ""}\n',
+            encoding="utf-8",
+        )
+
+        local_cases = load_evaluation_cases(self.paths)
+        report = evaluate_inner_brain(InnerBrain(self.paths))
+        description = describe_inner_brain_evaluation(report)
+
+        self.assertEqual(len(local_cases), 1)
+        self.assertEqual(local_cases[0].source, "local_evaluation")
+        self.assertIn("评估集：seed_evaluation+local_evaluation", description)
+        self.assertIn("local_evaluation：1 条", description)
+        self.assertIn("请看看资料库状态 -> knowledge.status", description)
+        self.assertEqual(report.failed_count, 0)
 
     def test_explicit_file_tag_intents_use_sample_classifier_slots(self):
         cases = (

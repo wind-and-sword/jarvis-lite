@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-01：发布 `0.30.0` 可安装测试包，收口 InnerBrain 本机评估集扩展；`/inner-brain-eval` 默认合并固定 seed 评估集和 `data/inner-brain/evaluation/*.jsonl` 本机 JSONL 样本，输出来源计数且不写入 runtime 训练样本；全量 `unittest` 526 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.30.0.exe`。
 - 2026-06-01：发布 `0.29.0` 可安装测试包，收口 InnerBrain 固定评估集；新增 `/inner-brain-eval` 执行 seed 评估基线，输出通过数、失败数、准确率和逐条样例，不写入 runtime 样本、不自动训练；全量 `unittest` 524 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.29.0.exe`。
 - 2026-06-01：发布 `0.28.0` 可安装测试包，收口 InnerBrain 样本包含签名置信度补偿；当用户长句完整包含不少于 4 字的已知样本签名时，分类器在样本相似度层提升置信度，不新增自然语言意图正则；全量 `unittest` 522 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.28.0.exe`。
 - 2026-06-01：发布 `0.27.0` 可安装测试包，收口桌面候选目标预填；桌面候选训练区可选择常见教学命令或常见 `intent slot=value` 标注模板，但仍只写入输入框，不自动提交、不自动训练；全量 `unittest` 521 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.27.0.exe`。
