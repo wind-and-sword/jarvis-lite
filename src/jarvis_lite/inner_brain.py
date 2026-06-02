@@ -68,6 +68,7 @@ class InnerBrainEvaluationCase:
     expected_policy: InnerBrainPolicy = InnerBrainPolicy.EXECUTE
     expected_command: str | None = None
     source: str = "seed_evaluation"
+    source_file: str | None = None
 
 
 @dataclass(frozen=True)
@@ -97,6 +98,7 @@ class InnerBrainEvaluationReport:
 
     name: str
     case_results: tuple[InnerBrainEvaluationCaseResult, ...]
+    source_file_filter: str | None = None
 
     @property
     def total_count(self) -> int:
@@ -121,6 +123,15 @@ class InnerBrainEvaluationReport:
         counts: dict[str, int] = {}
         for case_result in self.case_results:
             counts[case_result.case.source] = counts.get(case_result.case.source, 0) + 1
+        return counts
+
+    @property
+    def source_file_counts(self) -> Mapping[str, int]:
+        counts: dict[str, int] = {}
+        for case_result in self.case_results:
+            if case_result.case.source_file is None:
+                continue
+            counts[case_result.case.source_file] = counts.get(case_result.case.source_file, 0) + 1
         return counts
 
     @property
@@ -424,23 +435,35 @@ def evaluate_inner_brain(
     cases: tuple[InnerBrainEvaluationCase, ...] | None = None,
     name: str | None = None,
     source_filter: str | None = None,
+    source_file_filter: str | None = None,
 ) -> InnerBrainEvaluationReport:
     """执行固定评估集，不写入训练样本或运行态上下文。"""
 
+    normalized_source_file_filter = _normalize_evaluation_source_file_filter(source_file_filter)
     if cases is None:
         local_cases = load_evaluation_cases(inner_brain.paths)
         cases = (*seed_evaluation_cases(), *local_cases)
         if source_filter is not None:
             cases = tuple(case for case in cases if case.source == source_filter)
-            report_name = name or source_filter
+            report_name = name or (
+                f"{source_filter}:{normalized_source_file_filter}"
+                if normalized_source_file_filter is not None
+                else source_filter
+            )
         else:
             report_name = name or ("seed_evaluation+local_evaluation" if local_cases else "seed_evaluation")
     else:
         if source_filter is not None:
             cases = tuple(case for case in cases if case.source == source_filter)
         report_name = name or "custom_evaluation"
+    if normalized_source_file_filter is not None:
+        cases = tuple(case for case in cases if case.source_file == normalized_source_file_filter)
     case_results = tuple(_evaluate_inner_brain_case(inner_brain, case) for case in cases)
-    return InnerBrainEvaluationReport(name=report_name, case_results=case_results)
+    return InnerBrainEvaluationReport(
+        name=report_name,
+        case_results=case_results,
+        source_file_filter=normalized_source_file_filter,
+    )
 
 
 def load_evaluation_cases(paths: ProjectPaths | None) -> tuple[InnerBrainEvaluationCase, ...]:
@@ -498,8 +521,13 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
         f"- 失败：{report.failed_count}",
         f"- 准确率：{report.accuracy * 100:.1f}%",
     ]
+    if report.source_file_filter is not None:
+        lines.append(f"- 评估文件：{report.source_file_filter}")
     for source, count in report.source_counts.items():
         lines.append(f"- {source}：{count} 条")
+    if report.source_file_filter is None:
+        for source_file, count in report.source_file_counts.items():
+            lines.append(f"- {source_file}：{count} 条")
     case_results = report.failed_case_results if failures_only else report.case_results
     lines.append("失败样例：" if failures_only else "样例：")
     if failures_only and not case_results:
@@ -557,13 +585,13 @@ def _load_evaluation_case_file(case_file: Path) -> tuple[InnerBrainEvaluationCas
             raw_case = json.loads(line)
         except json.JSONDecodeError:
             continue
-        case = _evaluation_case_from_json(raw_case)
+        case = _evaluation_case_from_json(raw_case, source_file=case_file.name)
         if case is not None:
             cases.append(case)
     return tuple(cases)
 
 
-def _evaluation_case_from_json(raw_case: object) -> InnerBrainEvaluationCase | None:
+def _evaluation_case_from_json(raw_case: object, source_file: str | None = None) -> InnerBrainEvaluationCase | None:
     if not isinstance(raw_case, dict):
         return None
     text = raw_case.get("text")
@@ -584,6 +612,7 @@ def _evaluation_case_from_json(raw_case: object) -> InnerBrainEvaluationCase | N
         expected_policy=expected_policy,
         expected_command=expected_command.strip() if isinstance(expected_command, str) and expected_command.strip() else None,
         source="local_evaluation",
+        source_file=source_file,
     )
 
 
@@ -612,7 +641,19 @@ def _normalized_local_evaluation_case(case: InnerBrainEvaluationCase) -> InnerBr
         expected_policy=case.expected_policy,
         expected_command=expected_command or None,
         source="local_evaluation",
+        source_file="runtime.jsonl",
     )
+
+
+def _normalize_evaluation_source_file_filter(source_file_filter: str | None) -> str | None:
+    if source_file_filter is None:
+        return None
+    source_file = Path(source_file_filter.strip()).name
+    if not source_file:
+        return None
+    if Path(source_file).suffix:
+        return source_file
+    return f"{source_file}.jsonl"
 
 
 def _runtime_evaluation_case_file(paths: ProjectPaths) -> Path:

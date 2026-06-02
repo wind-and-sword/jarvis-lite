@@ -1,12 +1,12 @@
 # Jarvis Lite 方案版本索引
 
-> 日期：2026-06-01
+> 日期：2026-06-02
 > 执行者：Codex
 
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-01-v39-inner-brain-candidate-evaluation-save-plan.md](2026-06-01-v39-inner-brain-candidate-evaluation-save-plan.md)：当前方案版本，明确 InnerBrain 候选编号写入本机评估样本。
+- [2026-06-02-v40-inner-brain-local-evaluation-file-filter-plan.md](2026-06-02-v40-inner-brain-local-evaluation-file-filter-plan.md)：当前方案版本，明确 InnerBrain 本机评估 JSONL 文件过滤。
 
 ## 历史版本
 
@@ -49,6 +49,7 @@
 - [2026-06-01-v37-inner-brain-local-evaluation-view-plan.md](2026-06-01-v37-inner-brain-local-evaluation-view-plan.md)：明确 InnerBrain 本机评估过滤视图。
 - [2026-06-01-v38-inner-brain-local-evaluation-save-plan.md](2026-06-01-v38-inner-brain-local-evaluation-save-plan.md)：明确 InnerBrain 本机评估样本显式写入。
 - [2026-06-01-v39-inner-brain-candidate-evaluation-save-plan.md](2026-06-01-v39-inner-brain-candidate-evaluation-save-plan.md)：明确 InnerBrain 候选编号写入本机评估样本。
+- [2026-06-02-v40-inner-brain-local-evaluation-file-filter-plan.md](2026-06-02-v40-inner-brain-local-evaluation-file-filter-plan.md)：明确 InnerBrain 本机评估 JSONL 文件过滤。
 
 ## 维护规则
 

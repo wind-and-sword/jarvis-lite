@@ -235,6 +235,49 @@ class InnerBrainTests(unittest.TestCase):
         self.assertNotIn("seed_evaluation：", description)
         self.assertNotIn("早上好 -> assistant.greeting", description)
 
+    def test_inner_brain_evaluation_can_filter_local_evaluation_file(self):
+        evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
+        evaluation_dir.mkdir(parents=True)
+        (evaluation_dir / "real-log.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请看看资料库状态",
+                    "expected_intent": "knowledge.status",
+                    "expected_command": "/kb",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (evaluation_dir / "failed-log.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请看看资料库状态",
+                    "expected_intent": "knowledge.summary",
+                    "expected_command": "/kb-summary",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        local_cases = load_evaluation_cases(self.paths)
+        report = evaluate_inner_brain(
+            InnerBrain(self.paths),
+            source_filter="local_evaluation",
+            source_file_filter="real-log.jsonl",
+        )
+        description = describe_inner_brain_evaluation(report)
+
+        self.assertEqual(sorted(case.source_file for case in local_cases), ["failed-log.jsonl", "real-log.jsonl"])
+        self.assertEqual(report.total_count, 1)
+        self.assertEqual(report.name, "local_evaluation:real-log.jsonl")
+        self.assertIn("评估文件：real-log.jsonl", description)
+        self.assertIn("请看看资料库状态 -> knowledge.status", description)
+        self.assertNotIn("FAIL 请看看资料库状态", description)
+
     def test_save_local_evaluation_case_writes_reloadable_jsonl_without_training(self):
         case = InnerBrainEvaluationCase(
             "请看看资料库状态",
