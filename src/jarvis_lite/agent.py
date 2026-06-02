@@ -1443,9 +1443,9 @@ class JarvisAgent:
             [
                 "后续验证：",
                 "- 复跑本机评估：/inner-brain-eval-local",
-                "- 只看失败样本：/inner-brain-eval-local-failed",
+                "- 只看待处理失败样本：/inner-brain-eval-local-failed",
                 f"- 聚焦样本文件：/inner-brain-eval-local-file {source_file}",
-                f"- 导出样本文件失败报告：/inner-brain-eval-local-report {source_file}",
+                f"- 导出样本文件待处理失败报告：/inner-brain-eval-local-report {source_file}",
             ]
         )
         return "\n".join(lines)

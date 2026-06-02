@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v90-inner-brain-current-file-report-label-plan.md](2026-06-03-v90-inner-brain-current-file-report-label-plan.md)：当前方案版本，明确 InnerBrain 本机当前文件待处理失败报告标签。
+- [2026-06-03-v91-inner-brain-eval-save-pending-label-plan.md](2026-06-03-v91-inner-brain-eval-save-pending-label-plan.md)：当前方案版本，明确 InnerBrain 本机评估样本保存反馈待处理失败标签。
 
 ## 历史版本
 
@@ -100,6 +100,7 @@
 - [2026-06-03-v88-inner-brain-local-failed-report-label-plan.md](2026-06-03-v88-inner-brain-local-failed-report-label-plan.md)：明确 InnerBrain 本机失败视图待处理失败报告标签。
 - [2026-06-03-v89-inner-brain-local-failed-file-report-label-plan.md](2026-06-03-v89-inner-brain-local-failed-file-report-label-plan.md)：明确 InnerBrain 本机失败视图按文件待处理失败报告标签。
 - [2026-06-03-v90-inner-brain-current-file-report-label-plan.md](2026-06-03-v90-inner-brain-current-file-report-label-plan.md)：明确 InnerBrain 本机当前文件待处理失败报告标签。
+- [2026-06-03-v91-inner-brain-eval-save-pending-label-plan.md](2026-06-03-v91-inner-brain-eval-save-pending-label-plan.md)：明确 InnerBrain 本机评估样本保存反馈待处理失败标签。
 
 ## 维护规则
 
