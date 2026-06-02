@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-02-v48-inner-brain-intent-confusion-fix-suggestions-plan.md](2026-06-02-v48-inner-brain-intent-confusion-fix-suggestions-plan.md)：当前方案版本，明确 InnerBrain 本机评估失败意图混淆修复建议分组。
+- [2026-06-02-v49-inner-brain-file-intent-confusion-fix-suggestions-plan.md](2026-06-02-v49-inner-brain-file-intent-confusion-fix-suggestions-plan.md)：当前方案版本，明确 InnerBrain 本机失败评估文件意图混淆修复建议分组。
 
 ## 历史版本
 
@@ -58,6 +58,7 @@
 - [2026-06-02-v46-inner-brain-intent-confusion-summary-plan.md](2026-06-02-v46-inner-brain-intent-confusion-summary-plan.md)：明确 InnerBrain 本机评估失败意图混淆汇总。
 - [2026-06-02-v47-inner-brain-file-intent-confusion-summary-plan.md](2026-06-02-v47-inner-brain-file-intent-confusion-summary-plan.md)：明确 InnerBrain 本机评估失败文件意图混淆汇总。
 - [2026-06-02-v48-inner-brain-intent-confusion-fix-suggestions-plan.md](2026-06-02-v48-inner-brain-intent-confusion-fix-suggestions-plan.md)：明确 InnerBrain 本机评估失败意图混淆修复建议分组。
+- [2026-06-02-v49-inner-brain-file-intent-confusion-fix-suggestions-plan.md](2026-06-02-v49-inner-brain-file-intent-confusion-fix-suggestions-plan.md)：明确 InnerBrain 本机失败评估文件意图混淆修复建议分组。
 
 ## 维护规则
 

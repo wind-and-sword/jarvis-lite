@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-02：发布 `0.45.0` 可安装测试包，收口 InnerBrain 本机失败评估文件意图混淆修复建议分组；`/inner-brain-eval-local-report [文件名]` 未指定文件时会按 `source_file + expected_intent -> actual_intent` 集中列出显式 `/inner-brain-teach` 或 `/inner-brain-label` 建议，只读导出且不写入 runtime 训练样本；全量 `unittest` 555 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.45.0.exe`。
 - 2026-06-02：发布 `0.44.0` 可安装测试包，收口 InnerBrain 本机失败评估意图混淆修复建议分组；`/inner-brain-eval-local-report [文件名]` 导出的 `word/inner-brain-evaluation-report.md` 会按 `expected_intent -> actual_intent` 混淆方向集中列出显式 `/inner-brain-teach` 或 `/inner-brain-label` 建议，只读导出且不写入 runtime 训练样本；全量 `unittest` 554 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.44.0.exe`。
 - 2026-06-02：发布 `0.43.0` 可安装测试包，收口 InnerBrain 本机失败评估文件意图混淆汇总；`/inner-brain-eval-local-report [文件名]` 在未指定单个文件时会按失败样本的 `source_file + expected_intent -> actual_intent` 统计数量并列出典型样本，只读导出且不写入 runtime 训练样本；全量 `unittest` 553 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.43.0.exe`。
 - 2026-06-02：发布 `0.41.0` 可安装测试包，收口 InnerBrain 本机失败评估期望意图汇总；`/inner-brain-eval-local-report [文件名]` 导出的 `word/inner-brain-evaluation-report.md` 会按失败样本的 `expected_intent` 统计数量并列出典型样本，只读导出且不写入 runtime 训练样本；全量 `unittest` 551 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.41.0.exe`。
