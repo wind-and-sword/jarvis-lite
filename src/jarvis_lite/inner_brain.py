@@ -155,6 +155,13 @@ class InnerBrainEvaluationReport:
         return counts
 
     @property
+    def failed_reason_counts(self) -> Mapping[str, int]:
+        counts: dict[str, int] = {}
+        for case_result in self.failed_case_results:
+            counts[case_result.reason] = counts.get(case_result.reason, 0) + 1
+        return counts
+
+    @property
     def failed_case_results(self) -> tuple[InnerBrainEvaluationCaseResult, ...]:
         return tuple(case_result for case_result in self.case_results if not case_result.passed)
 
@@ -554,6 +561,14 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
     elif report.source_file_filter is None:
         for source_file, count in report.source_file_counts.items():
             lines.append(f"- {source_file}：{count} 条")
+    if failures_only and report.failed_case_results:
+        reason_examples: dict[str, str] = {}
+        for case_result in report.failed_case_results:
+            reason_examples.setdefault(case_result.reason, case_result.case.text)
+        lines.append("失败原因汇总：")
+        for reason, count in sorted(report.failed_reason_counts.items(), key=lambda item: (-item[1], item[0])):
+            lines.append(f"- {reason}：{count} 条")
+            lines.append(f"  典型样本：{reason_examples[reason]}")
     case_results = report.failed_case_results if failures_only else report.case_results
     lines.append("失败样例：" if failures_only else "样例：")
     if failures_only and not case_results:
