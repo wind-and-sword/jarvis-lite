@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-02-v61-inner-brain-local-file-failed-resolved-hint-plan.md](2026-06-02-v61-inner-brain-local-file-failed-resolved-hint-plan.md)：当前方案版本，明确 InnerBrain 本机文件失败视图已处理入口。
+- [2026-06-02-v62-inner-brain-local-resolved-file-suggestions-plan.md](2026-06-02-v62-inner-brain-local-resolved-file-suggestions-plan.md)：当前方案版本，明确 InnerBrain 本机已处理视图文件候选提示。
 
 ## 历史版本
 
@@ -71,6 +71,7 @@
 - [2026-06-02-v59-inner-brain-local-eval-file-priority-plan.md](2026-06-02-v59-inner-brain-local-eval-file-priority-plan.md)：明确 InnerBrain 本机评估全量视图文件候选失败优先排序。
 - [2026-06-02-v60-inner-brain-local-failed-file-priority-plan.md](2026-06-02-v60-inner-brain-local-failed-file-priority-plan.md)：明确 InnerBrain 本机失败视图失败文件汇总排序。
 - [2026-06-02-v61-inner-brain-local-file-failed-resolved-hint-plan.md](2026-06-02-v61-inner-brain-local-file-failed-resolved-hint-plan.md)：明确 InnerBrain 本机文件失败视图已处理入口。
+- [2026-06-02-v62-inner-brain-local-resolved-file-suggestions-plan.md](2026-06-02-v62-inner-brain-local-resolved-file-suggestions-plan.md)：明确 InnerBrain 本机已处理视图文件候选提示。
 
 ## 维护规则
 

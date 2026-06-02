@@ -1281,6 +1281,19 @@ class JarvisAgent:
             lines.append("- 查看待处理失败样本：/inner-brain-eval-local-failed")
             lines.append("- 按文件查看已处理样本：/inner-brain-eval-local-resolved 文件名")
             lines.append("- 按文件查看待处理失败样本：/inner-brain-eval-local-file-failed 文件名")
+            passed_source_file_counts: dict[str, int] = {}
+            for case_result in report.case_results:
+                source_file = case_result.case.source_file
+                if source_file is None or not case_result.passed:
+                    continue
+                passed_source_file_counts[source_file] = passed_source_file_counts.get(source_file, 0) + 1
+            if passed_source_file_counts:
+                lines.append("可查看文件：")
+                for source_file, count in sorted(
+                    passed_source_file_counts.items(),
+                    key=lambda item: (-item[1], item[0]),
+                ):
+                    lines.append(f"- {source_file}：{count} 条：/inner-brain-eval-local-resolved {source_file}")
         return "\n".join(lines)
 
     def _export_inner_brain_local_evaluation_report(self, args: list[str]) -> str:
