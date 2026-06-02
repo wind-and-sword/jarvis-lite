@@ -39,6 +39,7 @@ from .inner_brain import (
     describe_inner_brain_evaluation,
     describe_inner_brain_result,
     evaluate_inner_brain,
+    export_inner_brain_evaluation_report,
     save_local_evaluation_case,
     save_labeled_runtime_training_sample,
     save_runtime_training_sample,
@@ -578,6 +579,8 @@ class JarvisAgent:
             return self._inner_brain_local_file_evaluation(args, failures_only=False)
         if command in {"/inner-brain-eval-local-file-failed", "/inner-brain-eval-local-file-failures"}:
             return self._inner_brain_local_file_evaluation(args, failures_only=True)
+        if command == "/inner-brain-eval-local-report":
+            return self._export_inner_brain_local_evaluation_report(args)
         if command == "/inner-brain-eval-add-candidate":
             return self._save_inner_brain_command_evaluation_candidate(prompt, command)
         if command == "/inner-brain-eval-label-candidate":
@@ -760,6 +763,7 @@ class JarvisAgent:
                 "/inner-brain-eval-failed：只显示 InnerBrain 评估失败样本",
                 "/inner-brain-eval-local：只执行本机 InnerBrain 评估样本",
                 "/inner-brain-eval-local-failed：只显示本机 InnerBrain 评估失败样本",
+                "/inner-brain-eval-local-report [文件名]：导出本机 InnerBrain 失败评估报告",
                 "/inner-brain-eval-local-file 文件名：只执行指定本机评估 JSONL",
                 "/inner-brain-eval-local-file-failed 文件名：只显示指定本机评估 JSONL 的失败样本",
                 "/inner-brain-eval-add 文本 => /命令：保存本机评估样本，不训练",
@@ -1183,6 +1187,32 @@ class JarvisAgent:
             source_file_filter=source_file,
         )
         return describe_inner_brain_evaluation(report, failures_only=failures_only)
+
+    def _export_inner_brain_local_evaluation_report(self, args: list[str]) -> str:
+        source_file = self._inner_brain_evaluation_source_file_arg(" ".join(args)) if args else None
+        self.tools.run(
+            "record_log",
+            message=(
+                f"导出 InnerBrain 本机评估失败报告：{source_file}"
+                if source_file is not None
+                else "导出 InnerBrain 本机评估失败报告"
+            ),
+        )
+        report = evaluate_inner_brain(
+            self.inner_brain,
+            source_filter="local_evaluation",
+            source_file_filter=source_file,
+        )
+        save_result = export_inner_brain_evaluation_report(self.paths, report)
+        lines = [
+            "已导出 InnerBrain 本机评估失败报告。",
+            f"报告文件：{save_result.relative_path}",
+            f"失败样本：{save_result.failed_count}",
+        ]
+        if save_result.source_file_filter is not None:
+            lines.append(f"评估文件：{save_result.source_file_filter}")
+        lines.append("说明：这里只导出评估报告，不写入 runtime 训练样本。")
+        return "\n".join(lines)
 
     def _inner_brain_evaluation_source_file_arg(self, value: str) -> str:
         source_file = Path(self._strip_quotes(value).strip()).name
@@ -3390,6 +3420,7 @@ class JarvisAgent:
             "inner-brain-eval-failed",
             "inner-brain-eval-local",
             "inner-brain-eval-local-failed",
+            "inner-brain-eval-local-report",
             "inner-brain-eval-local-file",
             "inner-brain-eval-local-file-failed",
             "inner-brain-candidates",
@@ -3456,6 +3487,9 @@ class JarvisAgent:
             "inner-brain-eval-local-failures",
         }
 
+    def _is_inner_brain_eval_local_report_prompt(self, prompt: str) -> bool:
+        return prompt == "/inner-brain-eval-local-report" or prompt.startswith("/inner-brain-eval-local-report ")
+
     def _is_inner_brain_eval_local_file_prompt(self, prompt: str) -> bool:
         return prompt in {
             "/inner-brain-eval-local-file",
@@ -3486,6 +3520,7 @@ class JarvisAgent:
         return (
             self._is_recent_context_prompt(prompt)
             or self._is_route_history_prompt(prompt)
+            or self._is_inner_brain_eval_local_report_prompt(prompt)
             or self._is_inner_brain_eval_local_file_failures_prompt(prompt)
             or self._is_inner_brain_eval_local_file_prompt(prompt)
             or self._is_inner_brain_eval_local_failures_prompt(prompt)

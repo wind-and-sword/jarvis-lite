@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-02-v41-inner-brain-local-evaluation-failure-group-plan.md](2026-06-02-v41-inner-brain-local-evaluation-failure-group-plan.md)：当前方案版本，明确 InnerBrain 本机评估失败按 JSONL 文件分组。
+- [2026-06-02-v42-inner-brain-local-evaluation-report-export-plan.md](2026-06-02-v42-inner-brain-local-evaluation-report-export-plan.md)：当前方案版本，明确 InnerBrain 本机评估失败报告导出。
 
 ## 历史版本
 
@@ -51,6 +51,7 @@
 - [2026-06-01-v39-inner-brain-candidate-evaluation-save-plan.md](2026-06-01-v39-inner-brain-candidate-evaluation-save-plan.md)：明确 InnerBrain 候选编号写入本机评估样本。
 - [2026-06-02-v40-inner-brain-local-evaluation-file-filter-plan.md](2026-06-02-v40-inner-brain-local-evaluation-file-filter-plan.md)：明确 InnerBrain 本机评估 JSONL 文件过滤。
 - [2026-06-02-v41-inner-brain-local-evaluation-failure-group-plan.md](2026-06-02-v41-inner-brain-local-evaluation-failure-group-plan.md)：明确 InnerBrain 本机评估失败按 JSONL 文件分组。
+- [2026-06-02-v42-inner-brain-local-evaluation-report-export-plan.md](2026-06-02-v42-inner-brain-local-evaluation-report-export-plan.md)：明确 InnerBrain 本机评估失败报告导出。
 
 ## 维护规则
 

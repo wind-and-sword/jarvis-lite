@@ -313,6 +313,40 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("- failed-log.jsonl：1 条", description)
         self.assertNotIn("- real-log.jsonl：", description)
 
+    def test_export_inner_brain_evaluation_report_writes_failed_markdown_without_training(self):
+        evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
+        evaluation_dir.mkdir(parents=True)
+        (evaluation_dir / "failed-log.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请看看资料库状态",
+                    "expected_intent": "knowledge.summary",
+                    "expected_command": "/kb-summary",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        report = evaluate_inner_brain(InnerBrain(self.paths), source_filter="local_evaluation")
+        from jarvis_lite import inner_brain as inner_brain_module
+
+        export_report = getattr(inner_brain_module, "export_inner_brain_evaluation_report", None)
+
+        self.assertIsNotNone(export_report)
+        save_result = export_report(self.paths, report)
+        content = save_result.path.read_text(encoding="utf-8")
+        self.assertEqual(save_result.relative_path, "word/inner-brain-evaluation-report.md")
+        self.assertEqual(save_result.failed_count, 1)
+        self.assertIn("# InnerBrain 本机评估失败报告", content)
+        self.assertIn("> 执行者：Codex", content)
+        self.assertIn("失败文件：", content)
+        self.assertIn("- failed-log.jsonl：1 条", content)
+        self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", content)
+        self.assertIn("失败修复建议：", content)
+        self.assertIn("说明：报告只读导出，不自动训练。", content)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
     def test_save_local_evaluation_case_writes_reloadable_jsonl_without_training(self):
         case = InnerBrainEvaluationCase(
             "请看看资料库状态",

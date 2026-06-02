@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
+from datetime import date
 from enum import Enum
 from pathlib import Path
 from typing import Any, Mapping
@@ -80,6 +81,16 @@ class InnerBrainEvaluationSaveResult:
     relative_path: str
     created: bool
     duplicate: bool
+
+
+@dataclass(frozen=True)
+class InnerBrainEvaluationReportSaveResult:
+    """本机评估报告导出结果，供 Agent 返回可审计反馈。"""
+
+    path: Path
+    relative_path: str
+    failed_count: int
+    source_file_filter: str | None = None
 
 
 @dataclass(frozen=True)
@@ -563,6 +574,42 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
     return "\n".join(lines)
 
 
+def export_inner_brain_evaluation_report(
+    paths: ProjectPaths,
+    report: InnerBrainEvaluationReport,
+    filename: str = "inner-brain-evaluation-report.md",
+) -> InnerBrainEvaluationReportSaveResult:
+    """导出本机评估失败报告，只写 Markdown，不写训练样本。"""
+
+    report_file = paths.word_dir / Path(filename).name
+    relative_path = _relative_report_path(paths, report_file)
+    report_file.parent.mkdir(parents=True, exist_ok=True)
+    content_lines = [
+        "# InnerBrain 本机评估失败报告",
+        "",
+        f"> 日期：{date.today().isoformat()}",
+        "> 执行者：Codex",
+        "> 说明：报告只读导出，不自动训练。",
+        "",
+        "## 评估结果",
+        "",
+        describe_inner_brain_evaluation(report, failures_only=True),
+        "",
+        "## 处理边界",
+        "",
+        "- 本报告只读取 `data/inner-brain/evaluation/*.jsonl` 本机评估样本。",
+        "- 本报告不会写入 `data/inner-brain/training/runtime.jsonl`。",
+        "- 需要修复失败样本时，请人工执行报告中的 `/inner-brain-teach` 或 `/inner-brain-label` 建议。",
+    ]
+    report_file.write_text("\n".join(content_lines) + "\n", encoding="utf-8")
+    return InnerBrainEvaluationReportSaveResult(
+        path=report_file,
+        relative_path=relative_path,
+        failed_count=report.failed_count,
+        source_file_filter=report.source_file_filter,
+    )
+
+
 def _evaluate_inner_brain_case(
     inner_brain: InnerBrain,
     case: InnerBrainEvaluationCase,
@@ -680,6 +727,13 @@ def _relative_evaluation_case_path(paths: ProjectPaths, case_file: Path) -> str:
         return case_file.relative_to(paths.root).as_posix()
     except ValueError:
         return case_file.as_posix()
+
+
+def _relative_report_path(paths: ProjectPaths, report_file: Path) -> str:
+    try:
+        return report_file.relative_to(paths.root).as_posix()
+    except ValueError:
+        return report_file.as_posix()
 
 
 def _local_evaluation_case_exists(paths: ProjectPaths, case: InnerBrainEvaluationCase) -> bool:
