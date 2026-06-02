@@ -457,6 +457,60 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("  典型样本：请看看资料库状态", description)
         self.assertNotIn("- desktop.delete_shortcut -> desktop.delete_shortcut：", description)
 
+    def test_inner_brain_failed_evaluation_summarizes_failed_file_intent_confusions(self):
+        cases = (
+            InnerBrainEvaluationCase(
+                text="请看看资料库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+                source_file="runtime.jsonl",
+            ),
+            InnerBrainEvaluationCase(
+                text="知识库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+                source_file="runtime.jsonl",
+            ),
+            InnerBrainEvaluationCase(
+                text="请看看资料库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+                source_file="failed-log.jsonl",
+            ),
+            InnerBrainEvaluationCase(
+                text="删除桌面快捷方式",
+                expected_intent="desktop.delete_shortcut",
+                source="local_evaluation",
+                source_file="runtime.jsonl",
+            ),
+            InnerBrainEvaluationCase(
+                text="请看看资料库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="seed_evaluation",
+            ),
+            InnerBrainEvaluationCase("早上好", "assistant.greeting", source="local_evaluation", source_file="runtime.jsonl"),
+        )
+
+        report = evaluate_inner_brain(InnerBrain(self.paths), cases=cases, name="local_evaluation")
+        description = describe_inner_brain_evaluation(report, failures_only=True)
+
+        self.assertEqual(
+            report.failed_source_file_intent_confusion_counts,
+            {
+                ("runtime.jsonl", "knowledge.summary -> knowledge.status"): 2,
+                ("failed-log.jsonl", "knowledge.summary -> knowledge.status"): 1,
+            },
+        )
+        self.assertIn("失败文件意图混淆汇总：", description)
+        self.assertIn("- runtime.jsonl：knowledge.summary -> knowledge.status：2 条", description)
+        self.assertIn("- failed-log.jsonl：knowledge.summary -> knowledge.status：1 条", description)
+        self.assertIn("  典型样本：请看看资料库状态", description)
+        self.assertNotIn("- runtime.jsonl：desktop.delete_shortcut -> desktop.delete_shortcut：", description)
+
     def test_export_inner_brain_evaluation_report_writes_failed_markdown_without_training(self):
         evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
         evaluation_dir.mkdir(parents=True)
@@ -493,6 +547,8 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("- knowledge.summary：1 条", content)
         self.assertIn("失败意图混淆汇总：", content)
         self.assertIn("- knowledge.summary -> knowledge.status：1 条", content)
+        self.assertIn("失败文件意图混淆汇总：", content)
+        self.assertIn("- failed-log.jsonl：knowledge.summary -> knowledge.status：1 条", content)
         self.assertIn("失败原因汇总：", content)
         self.assertIn("意图期望 knowledge.summary，实际 knowledge.status；命令期望 /kb-summary，实际 /kb：1 条", content)
         self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", content)

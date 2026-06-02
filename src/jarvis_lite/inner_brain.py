@@ -190,6 +190,22 @@ class InnerBrainEvaluationReport:
         return counts
 
     @property
+    def failed_source_file_intent_confusion_counts(self) -> Mapping[tuple[str, str], int]:
+        counts: dict[tuple[str, str], int] = {}
+        for case_result in self.failed_case_results:
+            source_file = case_result.case.source_file
+            if source_file is None:
+                continue
+            expected_intent = case_result.case.expected_intent
+            actual_intent = case_result.result.intent
+            if expected_intent == actual_intent:
+                continue
+            confusion = f"{expected_intent} -> {actual_intent}"
+            key = (source_file, confusion)
+            counts[key] = counts.get(key, 0) + 1
+        return counts
+
+    @property
     def failed_case_results(self) -> tuple[InnerBrainEvaluationCaseResult, ...]:
         return tuple(case_result for case_result in self.case_results if not case_result.passed)
 
@@ -617,6 +633,22 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
             for confusion, count in sorted(report.failed_intent_confusion_counts.items(), key=lambda item: (-item[1], item[0])):
                 lines.append(f"- {confusion}：{count} 条")
                 lines.append(f"  典型样本：{intent_confusion_examples[confusion]}")
+        file_intent_confusion_examples: dict[tuple[str, str], str] = {}
+        if report.source_file_filter is None:
+            for case_result in report.failed_case_results:
+                source_file = case_result.case.source_file
+                if source_file is None or case_result.case.expected_intent == case_result.result.intent:
+                    continue
+                confusion = f"{case_result.case.expected_intent} -> {case_result.result.intent}"
+                file_intent_confusion_examples.setdefault((source_file, confusion), case_result.case.text)
+        if file_intent_confusion_examples:
+            lines.append("失败文件意图混淆汇总：")
+            for (source_file, confusion), count in sorted(
+                report.failed_source_file_intent_confusion_counts.items(),
+                key=lambda item: (-item[1], item[0][0], item[0][1]),
+            ):
+                lines.append(f"- {source_file}：{confusion}：{count} 条")
+                lines.append(f"  典型样本：{file_intent_confusion_examples[(source_file, confusion)]}")
         reason_examples: dict[str, str] = {}
         for case_result in report.failed_case_results:
             reason_examples.setdefault(case_result.reason, case_result.case.text)
