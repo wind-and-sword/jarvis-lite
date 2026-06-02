@@ -1226,7 +1226,11 @@ class JarvisAgent:
                     else:
                         file_failed_counts[source_file] = file_failed_counts.get(source_file, 0) + 1
                 lines.append("可聚焦文件：")
-                for source_file, count in source_file_counts.items():
+                sorted_source_file_counts = sorted(
+                    source_file_counts.items(),
+                    key=lambda item: (-file_failed_counts.get(item[0], 0), -item[1], item[0]),
+                )
+                for source_file, count in sorted_source_file_counts:
                     passed_count = file_passed_counts.get(source_file, 0)
                     failed_count = file_failed_counts.get(source_file, 0)
                     lines.append(
