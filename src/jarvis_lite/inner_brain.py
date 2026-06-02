@@ -170,6 +170,14 @@ class InnerBrainEvaluationReport:
         return counts
 
     @property
+    def failed_expected_intent_counts(self) -> Mapping[str, int]:
+        counts: dict[str, int] = {}
+        for case_result in self.failed_case_results:
+            expected_intent = case_result.case.expected_intent
+            counts[expected_intent] = counts.get(expected_intent, 0) + 1
+        return counts
+
+    @property
     def failed_case_results(self) -> tuple[InnerBrainEvaluationCaseResult, ...]:
         return tuple(case_result for case_result in self.case_results if not case_result.passed)
 
@@ -579,6 +587,13 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
             for category, count in sorted(report.failed_reason_category_counts.items(), key=lambda item: (-item[1], item[0])):
                 lines.append(f"- {category}：{count} 条")
                 lines.append(f"  典型样本：{category_examples[category]}")
+        expected_intent_examples: dict[str, str] = {}
+        for case_result in report.failed_case_results:
+            expected_intent_examples.setdefault(case_result.case.expected_intent, case_result.case.text)
+        lines.append("失败期望意图汇总：")
+        for expected_intent, count in sorted(report.failed_expected_intent_counts.items(), key=lambda item: (-item[1], item[0])):
+            lines.append(f"- {expected_intent}：{count} 条")
+            lines.append(f"  典型样本：{expected_intent_examples[expected_intent]}")
         reason_examples: dict[str, str] = {}
         for case_result in report.failed_case_results:
             reason_examples.setdefault(case_result.reason, case_result.case.text)

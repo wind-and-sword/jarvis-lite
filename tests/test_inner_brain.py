@@ -377,6 +377,47 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("  典型样本：请看看资料库状态", description)
         self.assertIn("  典型样本：删除桌面快捷方式", description)
 
+    def test_inner_brain_failed_evaluation_summarizes_failed_expected_intents(self):
+        cases = (
+            InnerBrainEvaluationCase(
+                text="请看看资料库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+                source_file="runtime.jsonl",
+            ),
+            InnerBrainEvaluationCase(
+                text="知识库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+                source_file="runtime.jsonl",
+            ),
+            InnerBrainEvaluationCase(
+                text="删除桌面快捷方式",
+                expected_intent="desktop.delete_shortcut",
+                source="local_evaluation",
+                source_file="runtime.jsonl",
+            ),
+            InnerBrainEvaluationCase("早上好", "assistant.greeting", source="local_evaluation", source_file="runtime.jsonl"),
+        )
+
+        report = evaluate_inner_brain(InnerBrain(self.paths), cases=cases, name="local_evaluation")
+        description = describe_inner_brain_evaluation(report, failures_only=True)
+
+        self.assertEqual(
+            report.failed_expected_intent_counts,
+            {
+                "knowledge.summary": 2,
+                "desktop.delete_shortcut": 1,
+            },
+        )
+        self.assertIn("失败期望意图汇总：", description)
+        self.assertIn("- knowledge.summary：2 条", description)
+        self.assertIn("- desktop.delete_shortcut：1 条", description)
+        self.assertIn("  典型样本：请看看资料库状态", description)
+        self.assertIn("  典型样本：删除桌面快捷方式", description)
+
     def test_export_inner_brain_evaluation_report_writes_failed_markdown_without_training(self):
         evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
         evaluation_dir.mkdir(parents=True)
@@ -409,6 +450,8 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("失败类型汇总：", content)
         self.assertIn("- 命令不匹配：1 条", content)
         self.assertIn("- 意图不匹配：1 条", content)
+        self.assertIn("失败期望意图汇总：", content)
+        self.assertIn("- knowledge.summary：1 条", content)
         self.assertIn("失败原因汇总：", content)
         self.assertIn("意图期望 knowledge.summary，实际 knowledge.status；命令期望 /kb-summary，实际 /kb：1 条", content)
         self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", content)
