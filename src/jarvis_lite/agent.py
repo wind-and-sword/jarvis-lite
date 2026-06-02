@@ -1436,7 +1436,7 @@ class JarvisAgent:
                 "- 复跑本机评估：/inner-brain-eval-local",
                 "- 只看失败样本：/inner-brain-eval-local-failed",
                 f"- 聚焦样本文件：/inner-brain-eval-local-file {source_file}",
-                "- 导出失败报告：/inner-brain-eval-local-report",
+                f"- 导出样本文件失败报告：/inner-brain-eval-local-report {source_file}",
             ]
         )
         return "\n".join(lines)
