@@ -1295,7 +1295,7 @@ class JarvisAgent:
                 lines.append("可查看文件：")
                 for source_file, count in sorted(
                     passed_source_file_counts.items(),
-                    key=lambda item: (-item[1], item[0]),
+                    key=lambda item: (-failed_source_file_counts.get(item[0], 0), -item[1], item[0]),
                 ):
                     failed_count = failed_source_file_counts.get(source_file, 0)
                     lines.append(
