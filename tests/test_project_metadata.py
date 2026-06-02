@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-RELEASE_VERSION = "0.96.0"
+RELEASE_VERSION = "0.97.0"
 
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
@@ -28,6 +28,15 @@ class ProjectMetadataTests(unittest.TestCase):
 
         self.assertEqual(pyproject["project"]["version"], RELEASE_VERSION)
         self.assertEqual(__version__, RELEASE_VERSION)
+
+    def test_current_docs_use_pending_failure_language_for_local_failed_view(self):
+        readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8-sig")
+        project_plan = (PROJECT_ROOT / "word" / "PROJECT-PLAN.md").read_text(encoding="utf-8")
+
+        self.assertIn("有样本时会提示只看待处理失败、查看已处理和按文件聚焦入口", readme)
+        self.assertNotIn("有样本时会提示只看失败、查看已处理和按文件聚焦入口", readme)
+        self.assertIn("`/inner-brain-eval-local-failed` 只显示本机待处理失败样本", project_plan)
+        self.assertNotIn("`/inner-brain-eval-local-failed` 只显示本机失败样本", project_plan)
 
 
 if __name__ == "__main__":

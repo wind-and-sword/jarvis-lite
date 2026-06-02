@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.97.0` 可安装测试包，收口 InnerBrain 本机失败视图文档待处理失败标签；README 与 PROJECT-PLAN 的本机失败视图描述已统一为“待处理失败样本”；全量 `unittest` 567 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.97.0.exe`。
 - 2026-06-03：发布 `0.96.0` 可安装测试包，收口 InnerBrain 本机报告处理边界待处理失败标签；导出的 `word/inner-brain-evaluation-report.md` 会提示“需要修复待处理失败样本时”；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.96.0.exe`。
 - 2026-06-03：发布 `0.95.0` 可安装测试包，收口 InnerBrain 全量评估帮助固定与本机评估集标签；`/help` 中 `/inner-brain-eval` 和 `/inner-brain-eval-failed` 会明确固定评估集与本机评估集范围；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.95.0.exe`。
 - 2026-06-03：发布 `0.94.0` 可安装测试包，收口 InnerBrain 全量评估输出固定与本机评估集标签；`/inner-brain-eval` 输出正文会显示 `固定评估集` 或 `固定评估集+本机评估集`，本机视图显示 `本机评估集` 并保留文件名上下文；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.94.0.exe`。

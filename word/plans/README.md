@@ -110,6 +110,7 @@
 - [2026-06-03-v98-inner-brain-full-eval-output-label-plan.md](2026-06-03-v98-inner-brain-full-eval-output-label-plan.md)：明确 InnerBrain 全量评估输出固定与本机评估集标签。
 - [2026-06-03-v99-inner-brain-full-eval-help-label-plan.md](2026-06-03-v99-inner-brain-full-eval-help-label-plan.md)：明确 InnerBrain 全量评估帮助固定与本机评估集标签。
 - [2026-06-03-v100-inner-brain-report-boundary-pending-label-plan.md](2026-06-03-v100-inner-brain-report-boundary-pending-label-plan.md)：明确 InnerBrain 本机报告处理边界待处理失败标签。
+- [2026-06-03-v101-inner-brain-doc-pending-label-plan.md](2026-06-03-v101-inner-brain-doc-pending-label-plan.md)：明确 InnerBrain 本机失败视图文档待处理失败标签。
 
 ## 维护规则
 
