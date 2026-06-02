@@ -1212,6 +1212,17 @@ class JarvisAgent:
         if save_result.source_file_filter is not None:
             lines.append(f"评估文件：{save_result.source_file_filter}")
         lines.append("说明：这里只导出评估报告，不写入 runtime 训练样本。")
+        lines.append("后续处理：")
+        if save_result.source_file_filter is not None:
+            lines.append(
+                f"- 复查当前文件失败样本：/inner-brain-eval-local-file-failed {save_result.source_file_filter}"
+            )
+            lines.append("- 查看全部本机失败样本：/inner-brain-eval-local-failed")
+        else:
+            lines.append("- 查看本机失败样本：/inner-brain-eval-local-failed")
+            lines.append("- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名")
+        lines.append("- 补命令评估样本：/inner-brain-eval-add 文本 => /命令")
+        lines.append("- 补意图评估样本：/inner-brain-eval-label 文本 => intent [slot=value ...]")
         return "\n".join(lines)
 
     def _inner_brain_evaluation_source_file_arg(self, value: str) -> str:
