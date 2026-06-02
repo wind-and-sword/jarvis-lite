@@ -108,6 +108,7 @@
 - [2026-06-03-v96-inner-brain-file-focus-pending-label-plan.md](2026-06-03-v96-inner-brain-file-focus-pending-label-plan.md)：明确 InnerBrain 本机全量反馈按文件聚焦待处理失败标签。
 - [2026-06-03-v97-inner-brain-full-eval-log-label-plan.md](2026-06-03-v97-inner-brain-full-eval-log-label-plan.md)：明确 InnerBrain 全量评估运行日志固定与本机评估集标签。
 - [2026-06-03-v98-inner-brain-full-eval-output-label-plan.md](2026-06-03-v98-inner-brain-full-eval-output-label-plan.md)：明确 InnerBrain 全量评估输出固定与本机评估集标签。
+- [2026-06-03-v99-inner-brain-full-eval-help-label-plan.md](2026-06-03-v99-inner-brain-full-eval-help-label-plan.md)：明确 InnerBrain 全量评估帮助固定与本机评估集标签。
 
 ## 维护规则
 

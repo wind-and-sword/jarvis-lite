@@ -865,6 +865,13 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本", response)
         self.assertIn("/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本", response)
         self.assertIn("/inner-brain-teach 文本 => /命令：把自然语言短句教学为已知命令", response)
+        self.assertIn(
+            "/inner-brain-eval：执行 InnerBrain 固定评估集和本机评估集，失败时显示显式训练建议",
+            response,
+        )
+        self.assertIn("/inner-brain-eval-failed：只显示 InnerBrain 固定与本机评估集失败样本", response)
+        self.assertNotIn("/inner-brain-eval：执行 InnerBrain 评估集，失败时显示显式训练建议", response)
+        self.assertNotIn("/inner-brain-eval-failed：只显示 InnerBrain 评估失败样本", response)
         self.assertIn("/inner-brain-eval-local-failed：只显示本机 InnerBrain 评估待处理失败样本", response)
         self.assertIn("/inner-brain-eval-local-report [文件名]：导出本机 InnerBrain 评估待处理失败报告", response)
         self.assertIn(
@@ -3344,7 +3351,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.94.1",
+                        "version": "0.95.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3355,7 +3362,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.94.1", response)
+        self.assertIn("发现新版本：0.95.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3370,7 +3377,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.94.1",
+                        "version": "0.95.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

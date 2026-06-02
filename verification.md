@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.95.0` 可安装测试包，收口 InnerBrain 全量评估帮助固定与本机评估集标签；`/help` 中 `/inner-brain-eval` 和 `/inner-brain-eval-failed` 会明确固定评估集与本机评估集范围；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.95.0.exe`。
 - 2026-06-03：发布 `0.94.0` 可安装测试包，收口 InnerBrain 全量评估输出固定与本机评估集标签；`/inner-brain-eval` 输出正文会显示 `固定评估集` 或 `固定评估集+本机评估集`，本机视图显示 `本机评估集` 并保留文件名上下文；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.94.0.exe`。
 - 2026-06-03：发布 `0.93.0` 可安装测试包，收口 InnerBrain 全量评估运行日志固定与本机评估集标签；`/inner-brain-eval` 和 `/inner-brain-eval-failed` 的运行日志会明确执行“固定与本机评估集”，和只看本机样本的 `/inner-brain-eval-local` 区分；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.93.0.exe`。
 - 2026-06-03：发布 `0.92.0` 可安装测试包，收口 InnerBrain 本机全量反馈按文件聚焦待处理失败标签；`/inner-brain-eval-local-failed` 与 `/inner-brain-eval-local-report` 未指定文件时会提示 `按文件聚焦待处理失败：/inner-brain-eval-local-file-failed 文件名`；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.92.0.exe`。
