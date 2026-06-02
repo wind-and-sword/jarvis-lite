@@ -770,6 +770,11 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("失败文件意图混淆修复建议：", content)
         self.assertIn("- failed-log.jsonl：knowledge.summary -> knowledge.status：1 条", content)
         self.assertIn("  - 请看看资料库状态：/inner-brain-teach 请看看资料库状态 => /kb-summary", content)
+        self.assertIn(
+            "- 需要修复待处理失败样本时，请人工执行报告中的 `/inner-brain-teach` 或 `/inner-brain-label` 建议。",
+            content,
+        )
+        self.assertNotIn("- 需要修复失败样本时，请人工执行报告中的", content)
         self.assertIn("失败原因汇总：", content)
         self.assertIn("意图期望 knowledge.summary，实际 knowledge.status；命令期望 /kb-summary，实际 /kb：1 条", content)
         self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", content)

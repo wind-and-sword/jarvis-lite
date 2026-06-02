@@ -800,7 +800,7 @@ def export_inner_brain_evaluation_report(
         "",
         "- 本报告只读取 `data/inner-brain/evaluation/*.jsonl` 本机评估样本。",
         "- 本报告不会写入 `data/inner-brain/training/runtime.jsonl`。",
-        "- 需要修复失败样本时，请人工执行报告中的 `/inner-brain-teach` 或 `/inner-brain-label` 建议。",
+        "- 需要修复待处理失败样本时，请人工执行报告中的 `/inner-brain-teach` 或 `/inner-brain-label` 建议。",
     ]
     report_file.write_text("\n".join(content_lines) + "\n", encoding="utf-8")
     return InnerBrainEvaluationReportSaveResult(
