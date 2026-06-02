@@ -135,6 +135,15 @@ class InnerBrainEvaluationReport:
         return counts
 
     @property
+    def failed_source_file_counts(self) -> Mapping[str, int]:
+        counts: dict[str, int] = {}
+        for case_result in self.failed_case_results:
+            if case_result.case.source_file is None:
+                continue
+            counts[case_result.case.source_file] = counts.get(case_result.case.source_file, 0) + 1
+        return counts
+
+    @property
     def failed_case_results(self) -> tuple[InnerBrainEvaluationCaseResult, ...]:
         return tuple(case_result for case_result in self.case_results if not case_result.passed)
 
@@ -525,7 +534,13 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
         lines.append(f"- 评估文件：{report.source_file_filter}")
     for source, count in report.source_counts.items():
         lines.append(f"- {source}：{count} 条")
-    if report.source_file_filter is None:
+    if failures_only and report.source_file_filter is None:
+        failed_source_file_counts = report.failed_source_file_counts
+        if failed_source_file_counts:
+            lines.append("失败文件：")
+            for source_file, count in failed_source_file_counts.items():
+                lines.append(f"- {source_file}：{count} 条")
+    elif report.source_file_filter is None:
         for source_file, count in report.source_file_counts.items():
             lines.append(f"- {source_file}：{count} 条")
     case_results = report.failed_case_results if failures_only else report.case_results

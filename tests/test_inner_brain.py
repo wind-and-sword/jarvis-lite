@@ -278,6 +278,41 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("请看看资料库状态 -> knowledge.status", description)
         self.assertNotIn("FAIL 请看看资料库状态", description)
 
+    def test_inner_brain_failed_evaluation_groups_local_failures_by_file(self):
+        evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
+        evaluation_dir.mkdir(parents=True)
+        (evaluation_dir / "real-log.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请看看资料库状态",
+                    "expected_intent": "knowledge.status",
+                    "expected_command": "/kb",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (evaluation_dir / "failed-log.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请看看资料库状态",
+                    "expected_intent": "knowledge.summary",
+                    "expected_command": "/kb-summary",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        report = evaluate_inner_brain(InnerBrain(self.paths), source_filter="local_evaluation")
+        description = describe_inner_brain_evaluation(report, failures_only=True)
+
+        self.assertIn("失败文件：", description)
+        self.assertIn("- failed-log.jsonl：1 条", description)
+        self.assertNotIn("- real-log.jsonl：", description)
+
     def test_save_local_evaluation_case_writes_reloadable_jsonl_without_training(self):
         case = InnerBrainEvaluationCase(
             "请看看资料库状态",
