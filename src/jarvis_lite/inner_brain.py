@@ -209,6 +209,10 @@ class InnerBrainEvaluationReport:
     def failed_case_results(self) -> tuple[InnerBrainEvaluationCaseResult, ...]:
         return tuple(case_result for case_result in self.case_results if not case_result.passed)
 
+    @property
+    def passed_case_results(self) -> tuple[InnerBrainEvaluationCaseResult, ...]:
+        return tuple(case_result for case_result in self.case_results if case_result.passed)
+
 
 class InnerBrain:
     """本地轻量内脑，负责把自然语言转成可审计的结构化意图。"""
@@ -718,6 +722,32 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
         for case_result in report.failed_case_results:
             lines.append(f"- {_inner_brain_evaluation_fix_suggestion(case_result)}")
         lines.append("说明：这里只生成显式训练提示，不自动写入 runtime 样本。")
+    return "\n".join(lines)
+
+
+def describe_inner_brain_resolved_evaluation(report: InnerBrainEvaluationReport) -> str:
+    """格式化当前已经通过的本机评估样本，只读展示处理状态。"""
+
+    lines = [
+        "InnerBrain 评估：",
+        f"- 评估集：{report.name}",
+        f"- 通过：{report.passed_count}/{report.total_count}",
+        f"- 失败：{report.failed_count}",
+        f"- 准确率：{report.accuracy * 100:.1f}%",
+    ]
+    if report.source_file_filter is not None:
+        lines.append(f"- 评估文件：{report.source_file_filter}")
+    for source, count in report.source_counts.items():
+        lines.append(f"- {source}：{count} 条")
+    lines.append("已处理样例：")
+    if not report.passed_case_results:
+        lines.append("- 无")
+    for case_result in report.passed_case_results:
+        lines.append(
+            f"- PASS {case_result.case.text} -> {case_result.result.intent} "
+            f"({case_result.result.policy.value}, {case_result.result.confidence:.2f})"
+        )
+    lines.append("说明：这里只展示当前已通过的本机 evaluation 样本，不自动写入 runtime 样本。")
     return "\n".join(lines)
 
 

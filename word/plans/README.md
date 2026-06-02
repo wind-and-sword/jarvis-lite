@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-02-v54-inner-brain-local-failed-file-focus-hint-plan.md](2026-06-02-v54-inner-brain-local-failed-file-focus-hint-plan.md)：当前方案版本，明确 InnerBrain 本机失败视图文件聚焦提示。
+- [2026-06-02-v55-inner-brain-local-resolved-list-plan.md](2026-06-02-v55-inner-brain-local-resolved-list-plan.md)：当前方案版本，明确 InnerBrain 本机 evaluation 已处理样本只读清单。
 
 ## 历史版本
 
@@ -64,6 +64,7 @@
 - [2026-06-02-v52-inner-brain-report-export-next-steps-plan.md](2026-06-02-v52-inner-brain-report-export-next-steps-plan.md)：明确 InnerBrain 本机失败评估报告导出后续处理提示。
 - [2026-06-02-v53-inner-brain-local-failed-report-hint-plan.md](2026-06-02-v53-inner-brain-local-failed-report-hint-plan.md)：明确 InnerBrain 本机失败视图导出报告提示。
 - [2026-06-02-v54-inner-brain-local-failed-file-focus-hint-plan.md](2026-06-02-v54-inner-brain-local-failed-file-focus-hint-plan.md)：明确 InnerBrain 本机失败视图文件聚焦提示。
+- [2026-06-02-v55-inner-brain-local-resolved-list-plan.md](2026-06-02-v55-inner-brain-local-resolved-list-plan.md)：明确 InnerBrain 本机 evaluation 已处理样本只读清单。
 
 ## 维护规则
 

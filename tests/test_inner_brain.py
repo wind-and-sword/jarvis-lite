@@ -13,6 +13,7 @@ from jarvis_lite.inner_brain import (
     InnerBrainEvaluationCase,
     InnerBrainPolicy,
     describe_inner_brain_evaluation,
+    describe_inner_brain_resolved_evaluation,
     describe_inner_brain_result,
     evaluate_inner_brain,
     load_evaluation_cases,
@@ -620,6 +621,52 @@ class InnerBrainTests(unittest.TestCase):
         )
         filtered_description = describe_inner_brain_evaluation(filtered_report, failures_only=True)
         self.assertNotIn("失败文件意图混淆修复建议：", filtered_description)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
+    def test_inner_brain_resolved_evaluation_lists_only_passed_local_cases(self):
+        cases = (
+            InnerBrainEvaluationCase(
+                text="早上好",
+                expected_intent="assistant.greeting",
+                source="local_evaluation",
+                source_file="runtime.jsonl",
+            ),
+            InnerBrainEvaluationCase(
+                text="请看看资料库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+                source_file="runtime.jsonl",
+            ),
+        )
+
+        report = evaluate_inner_brain(InnerBrain(self.paths), cases=cases, name="local_evaluation")
+        description = describe_inner_brain_resolved_evaluation(report)
+
+        self.assertIn("已处理样例：", description)
+        self.assertIn("PASS 早上好 -> assistant.greeting", description)
+        self.assertNotIn("FAIL 请看看资料库状态", description)
+        self.assertNotIn("失败修复建议：", description)
+        self.assertIn("说明：这里只展示当前已通过的本机 evaluation 样本，不自动写入 runtime 样本。", description)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
+    def test_inner_brain_resolved_evaluation_reports_empty_passed_list(self):
+        cases = (
+            InnerBrainEvaluationCase(
+                text="请看看资料库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+                source_file="runtime.jsonl",
+            ),
+        )
+
+        report = evaluate_inner_brain(InnerBrain(self.paths), cases=cases, name="local_evaluation")
+        description = describe_inner_brain_resolved_evaluation(report)
+
+        self.assertIn("已处理样例：", description)
+        self.assertIn("- 无", description)
+        self.assertNotIn("FAIL 请看看资料库状态", description)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_export_inner_brain_evaluation_report_writes_failed_markdown_without_training(self):

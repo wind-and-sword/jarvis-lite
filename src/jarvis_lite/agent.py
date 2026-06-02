@@ -38,6 +38,7 @@ from .inner_brain import (
     InnerBrainTrainingSaveResult,
     complete_inner_brain_clarification,
     describe_inner_brain_evaluation,
+    describe_inner_brain_resolved_evaluation,
     describe_inner_brain_result,
     evaluate_inner_brain,
     export_inner_brain_evaluation_report,
@@ -261,6 +262,9 @@ class JarvisAgent:
             self.tools.run("record_log", message="执行 InnerBrain 本机评估集并只显示失败样本")
             report = evaluate_inner_brain(self.inner_brain, source_filter="local_evaluation")
             return self._describe_inner_brain_local_failed_evaluation(report)
+        if self._is_inner_brain_eval_local_resolved_prompt(prompt):
+            args = shlex.split(prompt)[1:] if prompt.startswith("/") else []
+            return self._inner_brain_local_resolved_evaluation(args)
         if self._is_inner_brain_eval_local_prompt(prompt):
             self.tools.run("record_log", message="执行 InnerBrain 本机评估集")
             return describe_inner_brain_evaluation(evaluate_inner_brain(self.inner_brain, source_filter="local_evaluation"))
@@ -579,6 +583,8 @@ class JarvisAgent:
             return self._inner_brain_local_file_evaluation(args, failures_only=False)
         if command in {"/inner-brain-eval-local-file-failed", "/inner-brain-eval-local-file-failures"}:
             return self._inner_brain_local_file_evaluation(args, failures_only=True)
+        if command == "/inner-brain-eval-local-resolved":
+            return self._inner_brain_local_resolved_evaluation(args)
         if command == "/inner-brain-eval-local-report":
             return self._export_inner_brain_local_evaluation_report(args)
         if command == "/inner-brain-eval-add-candidate":
@@ -766,6 +772,7 @@ class JarvisAgent:
                 "/inner-brain-eval-local-report [文件名]：导出本机 InnerBrain 失败评估报告",
                 "/inner-brain-eval-local-file 文件名：只执行指定本机评估 JSONL",
                 "/inner-brain-eval-local-file-failed 文件名：只显示指定本机评估 JSONL 的失败样本",
+                "/inner-brain-eval-local-resolved [文件名]：只读查看本机评估已处理样本",
                 "/inner-brain-eval-add 文本 => /命令：保存本机评估样本，不训练",
                 "/inner-brain-eval-label 文本 => intent [slot=value ...]：保存本机评估标注，不训练",
                 "/inner-brain-eval-add-candidate 编号 => /命令：把训练候选按编号保存为评估样本",
@@ -1205,6 +1212,32 @@ class JarvisAgent:
             lines.append("- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名")
             lines.append("- 导出本机失败报告：/inner-brain-eval-local-report")
             lines.append("- 按文件导出失败报告：/inner-brain-eval-local-report 文件名")
+        return "\n".join(lines)
+
+    def _inner_brain_local_resolved_evaluation(self, args: list[str]) -> str:
+        source_file = self._inner_brain_evaluation_source_file_arg(" ".join(args)) if args else None
+        self.tools.run(
+            "record_log",
+            message=(
+                f"查看 InnerBrain 本机评估已处理样本：{source_file}"
+                if source_file is not None
+                else "查看 InnerBrain 本机评估已处理样本"
+            ),
+        )
+        report = evaluate_inner_brain(
+            self.inner_brain,
+            source_filter="local_evaluation",
+            source_file_filter=source_file,
+        )
+        lines = [describe_inner_brain_resolved_evaluation(report), "后续处理："]
+        if report.source_file_filter is not None:
+            lines.append(f"- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed {report.source_file_filter}")
+            lines.append("- 查看全部已处理样本：/inner-brain-eval-local-resolved")
+            lines.append("- 查看全部待处理失败样本：/inner-brain-eval-local-failed")
+        else:
+            lines.append("- 查看待处理失败样本：/inner-brain-eval-local-failed")
+            lines.append("- 按文件查看已处理样本：/inner-brain-eval-local-resolved 文件名")
+            lines.append("- 按文件查看待处理失败样本：/inner-brain-eval-local-file-failed 文件名")
         return "\n".join(lines)
 
     def _export_inner_brain_local_evaluation_report(self, args: list[str]) -> str:
@@ -3462,6 +3495,7 @@ class JarvisAgent:
             "inner-brain-eval-local-report",
             "inner-brain-eval-local-file",
             "inner-brain-eval-local-file-failed",
+            "inner-brain-eval-local-resolved",
             "inner-brain-candidates",
             "inner-brain-teach-candidate",
             "inner-brain-label-candidate",
@@ -3542,6 +3576,12 @@ class JarvisAgent:
             "/inner-brain-eval-local-file-failures",
             "inner-brain-eval-local-file-failures",
         } or prompt.startswith(("/inner-brain-eval-local-file-failed ", "/inner-brain-eval-local-file-failures "))
+
+    def _is_inner_brain_eval_local_resolved_prompt(self, prompt: str) -> bool:
+        return prompt in {
+            "/inner-brain-eval-local-resolved",
+            "inner-brain-eval-local-resolved",
+        } or prompt.startswith("/inner-brain-eval-local-resolved ")
 
     def _is_inner_brain_teach_candidate_prompt(self, prompt: str) -> bool:
         return prompt == "/inner-brain-teach-candidate" or prompt.startswith("/inner-brain-teach-candidate ")
