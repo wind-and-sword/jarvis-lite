@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-02：发布 `0.50.0` 可安装测试包，收口 InnerBrain 本机失败视图文件聚焦提示；`/inner-brain-eval-local-failed` 有失败样本时会提示按文件聚焦，`/inner-brain-eval-local-file-failed 文件名` 会提示回到全部本机失败样本；全量 `unittest` 557 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.50.0.exe`。
 - 2026-06-02：发布 `0.49.0` 可安装测试包，收口 InnerBrain 本机失败视图导出报告提示；`/inner-brain-eval-local-failed` 与 `/inner-brain-eval-local-file-failed 文件名` 有失败样本时会提示导出全部或当前文件失败报告；全量 `unittest` 557 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.49.0.exe`。
 - 2026-06-02：发布 `0.48.0` 可安装测试包，收口 InnerBrain 本机失败报告导出后续处理提示；`/inner-brain-eval-local-report [文件名]` 导出报告后会提示继续查看失败样本、按文件聚焦失败和补充本机 evaluation 样本；全量 `unittest` 557 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.48.0.exe`。
 - 2026-06-02：发布 `0.47.0` 可安装测试包，收口 InnerBrain 本机 evaluation 样本保存后续验证提示；`/inner-brain-eval-add`、`/inner-brain-eval-label`、`/inner-brain-eval-add-candidate` 与 `/inner-brain-eval-label-candidate` 保存样本后会提示复跑本机评估、只看失败、聚焦 `runtime.jsonl` 和导出失败报告；全量 `unittest` 557 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.47.0.exe`。

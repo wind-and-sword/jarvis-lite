@@ -1198,9 +1198,11 @@ class JarvisAgent:
             return description
         lines = [description, "后续处理："]
         if report.source_file_filter is not None:
+            lines.append("- 查看全部本机失败样本：/inner-brain-eval-local-failed")
             lines.append(f"- 导出当前文件失败报告：/inner-brain-eval-local-report {report.source_file_filter}")
             lines.append("- 导出全部本机失败报告：/inner-brain-eval-local-report")
         else:
+            lines.append("- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名")
             lines.append("- 导出本机失败报告：/inner-brain-eval-local-report")
             lines.append("- 按文件导出失败报告：/inner-brain-eval-local-report 文件名")
         return "\n".join(lines)

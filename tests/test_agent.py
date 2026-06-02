@@ -1625,6 +1625,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("- /inner-brain-eval-label 文本 => intent [slot=value ...]", response)
         self.assertIn("说明：这些命令只写入本机 evaluation 样本，不自动训练。", response)
         self.assertNotIn("导出本机失败报告", response)
+        self.assertNotIn("按文件聚焦失败", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_inner_brain_eval_local_failed_command_lists_only_failed_local_cases(self):
@@ -1652,6 +1653,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", response)
         self.assertIn("失败修复建议：", response)
         self.assertIn("后续处理：", response)
+        self.assertIn("- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名", response)
         self.assertIn("- 导出本机失败报告：/inner-brain-eval-local-report", response)
         self.assertIn("- 按文件导出失败报告：/inner-brain-eval-local-report 文件名", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
@@ -1767,6 +1769,7 @@ class AgentTests(unittest.TestCase):
         self.assertNotIn("PASS 请看看资料库状态", response)
         self.assertIn("失败修复建议：", response)
         self.assertIn("后续处理：", response)
+        self.assertIn("- 查看全部本机失败样本：/inner-brain-eval-local-failed", response)
         self.assertIn("- 导出当前文件失败报告：/inner-brain-eval-local-report failed-log.jsonl", response)
         self.assertIn("- 导出全部本机失败报告：/inner-brain-eval-local-report", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
@@ -2984,7 +2987,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.49.1",
+                        "version": "0.50.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -2995,7 +2998,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.49.1", response)
+        self.assertIn("发现新版本：0.50.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3010,7 +3013,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.49.1",
+                        "version": "0.50.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
