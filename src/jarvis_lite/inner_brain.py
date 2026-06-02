@@ -178,6 +178,18 @@ class InnerBrainEvaluationReport:
         return counts
 
     @property
+    def failed_intent_confusion_counts(self) -> Mapping[str, int]:
+        counts: dict[str, int] = {}
+        for case_result in self.failed_case_results:
+            expected_intent = case_result.case.expected_intent
+            actual_intent = case_result.result.intent
+            if expected_intent == actual_intent:
+                continue
+            confusion = f"{expected_intent} -> {actual_intent}"
+            counts[confusion] = counts.get(confusion, 0) + 1
+        return counts
+
+    @property
     def failed_case_results(self) -> tuple[InnerBrainEvaluationCaseResult, ...]:
         return tuple(case_result for case_result in self.case_results if not case_result.passed)
 
@@ -594,6 +606,17 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
         for expected_intent, count in sorted(report.failed_expected_intent_counts.items(), key=lambda item: (-item[1], item[0])):
             lines.append(f"- {expected_intent}：{count} 条")
             lines.append(f"  典型样本：{expected_intent_examples[expected_intent]}")
+        intent_confusion_examples: dict[str, str] = {}
+        for case_result in report.failed_case_results:
+            if case_result.case.expected_intent == case_result.result.intent:
+                continue
+            confusion = f"{case_result.case.expected_intent} -> {case_result.result.intent}"
+            intent_confusion_examples.setdefault(confusion, case_result.case.text)
+        if intent_confusion_examples:
+            lines.append("失败意图混淆汇总：")
+            for confusion, count in sorted(report.failed_intent_confusion_counts.items(), key=lambda item: (-item[1], item[0])):
+                lines.append(f"- {confusion}：{count} 条")
+                lines.append(f"  典型样本：{intent_confusion_examples[confusion]}")
         reason_examples: dict[str, str] = {}
         for case_result in report.failed_case_results:
             reason_examples.setdefault(case_result.reason, case_result.case.text)
