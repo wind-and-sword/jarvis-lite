@@ -1324,9 +1324,9 @@ class JarvisAgent:
         self.tools.run(
             "record_log",
             message=(
-                f"导出 InnerBrain 本机评估失败报告：{source_file}"
+                f"导出 InnerBrain 本机评估待处理失败报告：{source_file}"
                 if source_file is not None
-                else "导出 InnerBrain 本机评估失败报告"
+                else "导出 InnerBrain 本机评估待处理失败报告"
             ),
         )
         report = evaluate_inner_brain(
@@ -1336,7 +1336,7 @@ class JarvisAgent:
         )
         save_result = export_inner_brain_evaluation_report(self.paths, report)
         lines = [
-            "已导出 InnerBrain 本机评估失败报告。",
+            "已导出 InnerBrain 本机评估待处理失败报告。",
             f"报告文件：{save_result.relative_path}",
             f"失败样本：{save_result.failed_count}",
         ]

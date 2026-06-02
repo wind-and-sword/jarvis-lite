@@ -742,7 +742,7 @@ class InnerBrainTests(unittest.TestCase):
         content = save_result.path.read_text(encoding="utf-8")
         self.assertEqual(save_result.relative_path, "word/inner-brain-evaluation-report.md")
         self.assertEqual(save_result.failed_count, 1)
-        self.assertIn("# InnerBrain 本机评估失败报告", content)
+        self.assertIn("# InnerBrain 本机评估待处理失败报告", content)
         self.assertIn("> 执行者：Codex", content)
         self.assertIn("失败文件：", content)
         self.assertIn("- failed-log.jsonl：1 条", content)

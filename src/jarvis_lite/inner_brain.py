@@ -764,13 +764,13 @@ def export_inner_brain_evaluation_report(
     report: InnerBrainEvaluationReport,
     filename: str = "inner-brain-evaluation-report.md",
 ) -> InnerBrainEvaluationReportSaveResult:
-    """导出本机评估失败报告，只写 Markdown，不写训练样本。"""
+    """导出本机评估待处理失败报告，只写 Markdown，不写训练样本。"""
 
     report_file = paths.word_dir / Path(filename).name
     relative_path = _relative_report_path(paths, report_file)
     report_file.parent.mkdir(parents=True, exist_ok=True)
     content_lines = [
-        "# InnerBrain 本机评估失败报告",
+        "# InnerBrain 本机评估待处理失败报告",
         "",
         f"> 日期：{date.today().isoformat()}",
         "> 执行者：Codex",
