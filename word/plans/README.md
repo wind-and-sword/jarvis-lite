@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-02-v65-inner-brain-local-resolved-file-failed-shortcut-plan.md](2026-06-02-v65-inner-brain-local-resolved-file-failed-shortcut-plan.md)：当前方案版本，明确 InnerBrain 本机已处理视图文件候选待处理入口。
+- [2026-06-02-v66-inner-brain-local-eval-file-failed-shortcut-plan.md](2026-06-02-v66-inner-brain-local-eval-file-failed-shortcut-plan.md)：当前方案版本，明确 InnerBrain 本机评估全量视图文件候选待处理入口。
 
 ## 历史版本
 
@@ -75,6 +75,7 @@
 - [2026-06-02-v63-inner-brain-local-resolved-file-status-plan.md](2026-06-02-v63-inner-brain-local-resolved-file-status-plan.md)：明确 InnerBrain 本机已处理视图文件候选状态摘要。
 - [2026-06-02-v64-inner-brain-local-resolved-file-priority-plan.md](2026-06-02-v64-inner-brain-local-resolved-file-priority-plan.md)：明确 InnerBrain 本机已处理视图文件候选待处理优先排序。
 - [2026-06-02-v65-inner-brain-local-resolved-file-failed-shortcut-plan.md](2026-06-02-v65-inner-brain-local-resolved-file-failed-shortcut-plan.md)：明确 InnerBrain 本机已处理视图文件候选待处理入口。
+- [2026-06-02-v66-inner-brain-local-eval-file-failed-shortcut-plan.md](2026-06-02-v66-inner-brain-local-eval-file-failed-shortcut-plan.md)：明确 InnerBrain 本机评估全量视图文件候选待处理入口。
 
 ## 维护规则
 
