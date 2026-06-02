@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-02：发布 `0.53.0` 可安装测试包，收口 InnerBrain 本机评估全量视图文件名候选提示；`/inner-brain-eval-local` 有样本时会列出可复制的 `/inner-brain-eval-local-file 文件名` 命令和来源文件样本数量；全量 `unittest` 562 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.53.0.exe`。
 - 2026-06-02：发布 `0.52.0` 可安装测试包，收口 InnerBrain 本机评估全量视图后续处理提示；`/inner-brain-eval-local` 与 `/inner-brain-eval-local-file 文件名` 有样本时会提示失败视图、已处理清单和文件聚焦入口；全量 `unittest` 562 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.52.0.exe`。
 - 2026-06-02：发布 `0.51.0` 可安装测试包，收口 InnerBrain 本机 evaluation 已处理样本只读清单；新增 `/inner-brain-eval-local-resolved [文件名]`，可只读查看当前已通过的本机评估样本并支持按 JSONL 文件过滤；全量 `unittest` 562 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.51.0.exe`。
 - 2026-06-02：发布 `0.50.0` 可安装测试包，收口 InnerBrain 本机失败视图文件聚焦提示；`/inner-brain-eval-local-failed` 有失败样本时会提示按文件聚焦，`/inner-brain-eval-local-file-failed 文件名` 会提示回到全部本机失败样本；全量 `unittest` 557 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.50.0.exe`。

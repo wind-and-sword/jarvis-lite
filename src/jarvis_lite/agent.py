@@ -1213,6 +1213,11 @@ class JarvisAgent:
             lines.append("- 只看待处理失败样本：/inner-brain-eval-local-failed")
             lines.append("- 查看已处理样本：/inner-brain-eval-local-resolved")
             lines.append("- 按文件聚焦样本：/inner-brain-eval-local-file 文件名")
+            source_file_counts = report.source_file_counts
+            if source_file_counts:
+                lines.append("可聚焦文件：")
+                for source_file, count in source_file_counts.items():
+                    lines.append(f"- {source_file}：{count} 条：/inner-brain-eval-local-file {source_file}")
         return "\n".join(lines)
 
     def _describe_inner_brain_local_failed_evaluation(self, report: InnerBrainEvaluationReport) -> str:
