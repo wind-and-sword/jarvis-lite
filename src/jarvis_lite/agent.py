@@ -270,10 +270,10 @@ class JarvisAgent:
             report = evaluate_inner_brain(self.inner_brain, source_filter="local_evaluation")
             return self._describe_inner_brain_local_evaluation(report)
         if self._is_inner_brain_eval_failures_prompt(prompt):
-            self.tools.run("record_log", message="执行 InnerBrain 本地评估集并只显示失败样本")
+            self.tools.run("record_log", message="执行 InnerBrain 固定与本机评估集并只显示失败样本")
             return describe_inner_brain_evaluation(evaluate_inner_brain(self.inner_brain), failures_only=True)
         if self._is_inner_brain_eval_prompt(prompt):
-            self.tools.run("record_log", message="执行 InnerBrain 本地评估集")
+            self.tools.run("record_log", message="执行 InnerBrain 固定与本机评估集")
             return describe_inner_brain_evaluation(evaluate_inner_brain(self.inner_brain))
         if self._is_inner_brain_candidates_prompt(prompt):
             return self._inner_brain_candidates_status()

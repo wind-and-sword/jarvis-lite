@@ -1545,6 +1545,10 @@ class AgentTests(unittest.TestCase):
         self.assertIn("local_evaluation：1 条", response)
         self.assertIn("请看看资料库状态 -> knowledge.status", response)
         self.assertIn("失败：0", response)
+        log_content = (self.paths.logs_dir / "jarvis.log").read_text(encoding="utf-8")
+        self.assertIn("执行 InnerBrain 固定与本机评估集", log_content)
+        old_log_message = "执行 InnerBrain " + "本地评估集"
+        self.assertNotIn(old_log_message, log_content)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_inner_brain_eval_command_suggests_explicit_training_for_failed_local_cases(self):
@@ -1592,6 +1596,10 @@ class AgentTests(unittest.TestCase):
         self.assertNotIn("早上好 -> assistant.greeting", response)
         self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", response)
         self.assertIn("失败修复建议：", response)
+        log_content = (self.paths.logs_dir / "jarvis.log").read_text(encoding="utf-8")
+        self.assertIn("执行 InnerBrain 固定与本机评估集并只显示失败样本", log_content)
+        old_log_message = "执行 InnerBrain " + "本地评估集并只显示失败样本"
+        self.assertNotIn(old_log_message, log_content)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_inner_brain_eval_local_command_lists_only_local_cases(self):
@@ -3336,7 +3344,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.92.1",
+                        "version": "0.93.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3347,7 +3355,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.92.1", response)
+        self.assertIn("发现新版本：0.93.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3362,7 +3370,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.92.1",
+                        "version": "0.93.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
