@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v77-inner-brain-local-resolved-overview-shortcut-plan.md](2026-06-03-v77-inner-brain-local-resolved-overview-shortcut-plan.md)：当前方案版本，明确 InnerBrain 本机已处理指定文件视图当前文件总览入口。
+- [2026-06-03-v78-inner-brain-local-failed-file-overview-shortcut-plan.md](2026-06-03-v78-inner-brain-local-failed-file-overview-shortcut-plan.md)：当前方案版本，明确 InnerBrain 本机失败视图失败文件分组当前文件总览入口。
 
 ## 历史版本
 
@@ -87,6 +87,7 @@
 - [2026-06-03-v75-inner-brain-report-export-file-overview-shortcut-plan.md](2026-06-03-v75-inner-brain-report-export-file-overview-shortcut-plan.md)：明确 InnerBrain 本机失败报告导出反馈当前文件总览入口。
 - [2026-06-03-v76-inner-brain-local-file-failed-overview-shortcut-plan.md](2026-06-03-v76-inner-brain-local-file-failed-overview-shortcut-plan.md)：明确 InnerBrain 本机文件失败视图当前文件总览入口。
 - [2026-06-03-v77-inner-brain-local-resolved-overview-shortcut-plan.md](2026-06-03-v77-inner-brain-local-resolved-overview-shortcut-plan.md)：明确 InnerBrain 本机已处理指定文件视图当前文件总览入口。
+- [2026-06-03-v78-inner-brain-local-failed-file-overview-shortcut-plan.md](2026-06-03-v78-inner-brain-local-failed-file-overview-shortcut-plan.md)：明确 InnerBrain 本机失败视图失败文件分组当前文件总览入口。
 
 ## 维护规则
 
