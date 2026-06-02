@@ -1298,10 +1298,13 @@ class JarvisAgent:
                     key=lambda item: (-failed_source_file_counts.get(item[0], 0), -item[1], item[0]),
                 ):
                     failed_count = failed_source_file_counts.get(source_file, 0)
-                    lines.append(
+                    candidate_line = (
                         f"- {source_file}：已处理 {count} 条，待处理失败 {failed_count} 条："
                         f"/inner-brain-eval-local-resolved {source_file}"
                     )
+                    if failed_count > 0:
+                        candidate_line += f"；待处理：/inner-brain-eval-local-file-failed {source_file}"
+                    lines.append(candidate_line)
         return "\n".join(lines)
 
     def _export_inner_brain_local_evaluation_report(self, args: list[str]) -> str:
