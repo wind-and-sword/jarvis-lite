@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v85-inner-brain-report-export-all-pending-label-plan.md](2026-06-03-v85-inner-brain-report-export-all-pending-label-plan.md)：当前方案版本，明确 InnerBrain 本机当前文件反馈全部待处理失败标签。
+- [2026-06-03-v86-inner-brain-report-export-pending-label-plan.md](2026-06-03-v86-inner-brain-report-export-pending-label-plan.md)：当前方案版本，明确 InnerBrain 本机失败报告导出反馈全量待处理失败标签。
 
 ## 历史版本
 
@@ -95,6 +95,7 @@
 - [2026-06-03-v83-inner-brain-report-export-overview-label-plan.md](2026-06-03-v83-inner-brain-report-export-overview-label-plan.md)：明确 InnerBrain 本机失败报告导出反馈当前文件总览标签。
 - [2026-06-03-v84-inner-brain-report-export-file-failed-label-plan.md](2026-06-03-v84-inner-brain-report-export-file-failed-label-plan.md)：明确 InnerBrain 本机失败报告导出反馈当前文件待处理失败标签。
 - [2026-06-03-v85-inner-brain-report-export-all-pending-label-plan.md](2026-06-03-v85-inner-brain-report-export-all-pending-label-plan.md)：明确 InnerBrain 本机当前文件反馈全部待处理失败标签。
+- [2026-06-03-v86-inner-brain-report-export-pending-label-plan.md](2026-06-03-v86-inner-brain-report-export-pending-label-plan.md)：明确 InnerBrain 本机失败报告导出反馈全量待处理失败标签。
 
 ## 维护规则
 

@@ -2129,7 +2129,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("报告文件：word/inner-brain-evaluation-report.md", response)
         self.assertIn("失败样本：1", response)
         self.assertIn("后续处理：", response)
-        self.assertIn("- 查看本机失败样本：/inner-brain-eval-local-failed", response)
+        self.assertIn("- 查看待处理失败样本：/inner-brain-eval-local-failed", response)
         self.assertIn("- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名", response)
         self.assertIn("- 补命令评估样本：/inner-brain-eval-add 文本 => /命令", response)
         self.assertIn("- 补意图评估样本：/inner-brain-eval-label 文本 => intent [slot=value ...]", response)
@@ -3323,7 +3323,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.81.1",
+                        "version": "0.82.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3334,7 +3334,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.81.1", response)
+        self.assertIn("发现新版本：0.82.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3349,7 +3349,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.81.1",
+                        "version": "0.82.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
