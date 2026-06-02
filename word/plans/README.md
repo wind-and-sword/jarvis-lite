@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-02-v52-inner-brain-report-export-next-steps-plan.md](2026-06-02-v52-inner-brain-report-export-next-steps-plan.md)：当前方案版本，明确 InnerBrain 本机失败评估报告导出后续处理提示。
+- [2026-06-02-v53-inner-brain-local-failed-report-hint-plan.md](2026-06-02-v53-inner-brain-local-failed-report-hint-plan.md)：当前方案版本，明确 InnerBrain 本机失败视图导出报告提示。
 
 ## 历史版本
 
@@ -62,6 +62,7 @@
 - [2026-06-02-v50-inner-brain-local-evaluation-empty-guidance-plan.md](2026-06-02-v50-inner-brain-local-evaluation-empty-guidance-plan.md)：明确 InnerBrain 本机评估空样本引导。
 - [2026-06-02-v51-inner-brain-local-evaluation-save-next-steps-plan.md](2026-06-02-v51-inner-brain-local-evaluation-save-next-steps-plan.md)：明确 InnerBrain 本机评估样本保存后续验证提示。
 - [2026-06-02-v52-inner-brain-report-export-next-steps-plan.md](2026-06-02-v52-inner-brain-report-export-next-steps-plan.md)：明确 InnerBrain 本机失败评估报告导出后续处理提示。
+- [2026-06-02-v53-inner-brain-local-failed-report-hint-plan.md](2026-06-02-v53-inner-brain-local-failed-report-hint-plan.md)：明确 InnerBrain 本机失败视图导出报告提示。
 
 ## 维护规则
 

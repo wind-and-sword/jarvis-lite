@@ -31,6 +31,7 @@ from .knowledge import (
 from .inner_brain import (
     InnerBrain,
     InnerBrainEvaluationCase,
+    InnerBrainEvaluationReport,
     InnerBrainEvaluationSaveResult,
     InnerBrainPolicy,
     InnerBrainResult,
@@ -258,9 +259,8 @@ class JarvisAgent:
             return self.inner_brain.describe_status()
         if self._is_inner_brain_eval_local_failures_prompt(prompt):
             self.tools.run("record_log", message="执行 InnerBrain 本机评估集并只显示失败样本")
-            return describe_inner_brain_evaluation(
-                evaluate_inner_brain(self.inner_brain, source_filter="local_evaluation"), failures_only=True
-            )
+            report = evaluate_inner_brain(self.inner_brain, source_filter="local_evaluation")
+            return self._describe_inner_brain_local_failed_evaluation(report)
         if self._is_inner_brain_eval_local_prompt(prompt):
             self.tools.run("record_log", message="执行 InnerBrain 本机评估集")
             return describe_inner_brain_evaluation(evaluate_inner_brain(self.inner_brain, source_filter="local_evaluation"))
@@ -1186,7 +1186,24 @@ class JarvisAgent:
             source_filter="local_evaluation",
             source_file_filter=source_file,
         )
-        return describe_inner_brain_evaluation(report, failures_only=failures_only)
+        if failures_only:
+            return self._describe_inner_brain_local_failed_evaluation(report)
+        return describe_inner_brain_evaluation(report, failures_only=False)
+
+    def _describe_inner_brain_local_failed_evaluation(self, report: InnerBrainEvaluationReport) -> str:
+        """本机失败视图追加报告导出入口，不改评估主体。"""
+
+        description = describe_inner_brain_evaluation(report, failures_only=True)
+        if not report.failed_case_results:
+            return description
+        lines = [description, "后续处理："]
+        if report.source_file_filter is not None:
+            lines.append(f"- 导出当前文件失败报告：/inner-brain-eval-local-report {report.source_file_filter}")
+            lines.append("- 导出全部本机失败报告：/inner-brain-eval-local-report")
+        else:
+            lines.append("- 导出本机失败报告：/inner-brain-eval-local-report")
+            lines.append("- 按文件导出失败报告：/inner-brain-eval-local-report 文件名")
+        return "\n".join(lines)
 
     def _export_inner_brain_local_evaluation_report(self, args: list[str]) -> str:
         source_file = self._inner_brain_evaluation_source_file_arg(" ".join(args)) if args else None
