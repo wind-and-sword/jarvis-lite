@@ -1261,7 +1261,7 @@ class JarvisAgent:
         else:
             lines.append("- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名")
             lines.append("- 导出待处理失败报告：/inner-brain-eval-local-report")
-            lines.append("- 按文件导出失败报告：/inner-brain-eval-local-report 文件名")
+            lines.append("- 按文件导出待处理失败报告：/inner-brain-eval-local-report 文件名")
         return "\n".join(lines)
 
     def _inner_brain_local_resolved_evaluation(self, args: list[str]) -> str:
