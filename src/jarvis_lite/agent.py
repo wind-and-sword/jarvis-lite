@@ -1215,9 +1215,24 @@ class JarvisAgent:
             lines.append("- 按文件聚焦样本：/inner-brain-eval-local-file 文件名")
             source_file_counts = report.source_file_counts
             if source_file_counts:
+                file_passed_counts: dict[str, int] = {}
+                file_failed_counts: dict[str, int] = {}
+                for case_result in report.case_results:
+                    source_file = case_result.case.source_file
+                    if source_file is None:
+                        continue
+                    if case_result.passed:
+                        file_passed_counts[source_file] = file_passed_counts.get(source_file, 0) + 1
+                    else:
+                        file_failed_counts[source_file] = file_failed_counts.get(source_file, 0) + 1
                 lines.append("可聚焦文件：")
                 for source_file, count in source_file_counts.items():
-                    lines.append(f"- {source_file}：{count} 条：/inner-brain-eval-local-file {source_file}")
+                    passed_count = file_passed_counts.get(source_file, 0)
+                    failed_count = file_failed_counts.get(source_file, 0)
+                    lines.append(
+                        f"- {source_file}：{count} 条，通过 {passed_count} 条，失败 {failed_count} 条："
+                        f"/inner-brain-eval-local-file {source_file}"
+                    )
         return "\n".join(lines)
 
     def _describe_inner_brain_local_failed_evaluation(self, report: InnerBrainEvaluationReport) -> str:

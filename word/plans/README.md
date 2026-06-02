@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-02-v57-inner-brain-local-eval-file-suggestions-plan.md](2026-06-02-v57-inner-brain-local-eval-file-suggestions-plan.md)：当前方案版本，明确 InnerBrain 本机评估全量视图文件名候选提示。
+- [2026-06-02-v58-inner-brain-local-eval-file-status-plan.md](2026-06-02-v58-inner-brain-local-eval-file-status-plan.md)：当前方案版本，明确 InnerBrain 本机评估全量视图文件候选状态摘要。
 
 ## 历史版本
 
@@ -67,6 +67,7 @@
 - [2026-06-02-v55-inner-brain-local-resolved-list-plan.md](2026-06-02-v55-inner-brain-local-resolved-list-plan.md)：明确 InnerBrain 本机 evaluation 已处理样本只读清单。
 - [2026-06-02-v56-inner-brain-local-eval-next-steps-plan.md](2026-06-02-v56-inner-brain-local-eval-next-steps-plan.md)：明确 InnerBrain 本机评估全量视图后续处理提示。
 - [2026-06-02-v57-inner-brain-local-eval-file-suggestions-plan.md](2026-06-02-v57-inner-brain-local-eval-file-suggestions-plan.md)：明确 InnerBrain 本机评估全量视图文件名候选提示。
+- [2026-06-02-v58-inner-brain-local-eval-file-status-plan.md](2026-06-02-v58-inner-brain-local-eval-file-status-plan.md)：明确 InnerBrain 本机评估全量视图文件候选状态摘要。
 
 ## 维护规则
 
