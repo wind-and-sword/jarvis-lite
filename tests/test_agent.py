@@ -1980,14 +1980,16 @@ class AgentTests(unittest.TestCase):
         self.assertIn("可查看文件：", response)
         self.assertIn(
             "- real-log.jsonl：已处理 1 条，待处理失败 1 条："
-            "/inner-brain-eval-local-resolved real-log.jsonl；"
+            "总览：/inner-brain-eval-local-file real-log.jsonl；"
+            "已处理：/inner-brain-eval-local-resolved real-log.jsonl；"
             "待处理：/inner-brain-eval-local-file-failed real-log.jsonl；"
             "报告：/inner-brain-eval-local-report real-log.jsonl",
             response,
         )
         self.assertIn(
             "- clean-log.jsonl：已处理 2 条，待处理失败 0 条："
-            "/inner-brain-eval-local-resolved clean-log.jsonl",
+            "总览：/inner-brain-eval-local-file clean-log.jsonl；"
+            "已处理：/inner-brain-eval-local-resolved clean-log.jsonl",
             response,
         )
         self.assertNotIn(
@@ -3321,7 +3323,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.74.1",
+                        "version": "0.75.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3332,7 +3334,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.74.1", response)
+        self.assertIn("发现新版本：0.75.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3347,7 +3349,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.74.1",
+                        "version": "0.75.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
