@@ -1836,7 +1836,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed real-log.jsonl", response)
         self.assertIn("- 查看当前文件已处理样本：/inner-brain-eval-local-resolved real-log.jsonl", response)
         self.assertIn("- 查看全部本机评估样本：/inner-brain-eval-local", response)
-        self.assertNotIn("- 导出当前文件失败报告：/inner-brain-eval-local-report real-log.jsonl", response)
+        self.assertNotIn("- 导出当前文件待处理失败报告：/inner-brain-eval-local-report real-log.jsonl", response)
         self.assertNotIn("报告：/inner-brain-eval-local-report real-log.jsonl", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
@@ -1865,7 +1865,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("后续处理：", response)
         self.assertIn("- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed failed-log.jsonl", response)
         self.assertIn("- 查看当前文件已处理样本：/inner-brain-eval-local-resolved failed-log.jsonl", response)
-        self.assertIn("- 导出当前文件失败报告：/inner-brain-eval-local-report failed-log.jsonl", response)
+        self.assertIn("- 导出当前文件待处理失败报告：/inner-brain-eval-local-report failed-log.jsonl", response)
         self.assertIn("- 查看全部本机评估样本：/inner-brain-eval-local", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
@@ -1909,7 +1909,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("- 当前文件总览：/inner-brain-eval-local-file failed-log.jsonl", response)
         self.assertIn("- 查看当前文件已处理样本：/inner-brain-eval-local-resolved failed-log.jsonl", response)
         self.assertIn("- 查看全部待处理失败样本：/inner-brain-eval-local-failed", response)
-        self.assertIn("- 导出当前文件失败报告：/inner-brain-eval-local-report failed-log.jsonl", response)
+        self.assertIn("- 导出当前文件待处理失败报告：/inner-brain-eval-local-report failed-log.jsonl", response)
         self.assertIn("- 导出全部待处理失败报告：/inner-brain-eval-local-report", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
@@ -2041,7 +2041,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("- 当前文件总览：/inner-brain-eval-local-file real-log.jsonl", response)
         self.assertIn("- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed real-log.jsonl", response)
         self.assertIn("- 查看全部已处理样本：/inner-brain-eval-local-resolved", response)
-        self.assertNotIn("- 导出当前文件失败报告：/inner-brain-eval-local-report real-log.jsonl", response)
+        self.assertNotIn("- 导出当前文件待处理失败报告：/inner-brain-eval-local-report real-log.jsonl", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_inner_brain_eval_local_resolved_command_suggests_report_for_file_with_pending_failures(self):
@@ -2077,7 +2077,7 @@ class AgentTests(unittest.TestCase):
         self.assertNotIn("FAIL 请看看资料库状态", response)
         self.assertIn("- 当前文件总览：/inner-brain-eval-local-file real-log.jsonl", response)
         self.assertIn("- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed real-log.jsonl", response)
-        self.assertIn("- 导出当前文件失败报告：/inner-brain-eval-local-report real-log.jsonl", response)
+        self.assertIn("- 导出当前文件待处理失败报告：/inner-brain-eval-local-report real-log.jsonl", response)
         self.assertIn("- 查看全部已处理样本：/inner-brain-eval-local-resolved", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
@@ -3323,7 +3323,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.85.1",
+                        "version": "0.86.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3334,7 +3334,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.85.1", response)
+        self.assertIn("发现新版本：0.86.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3349,7 +3349,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.85.1",
+                        "version": "0.86.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

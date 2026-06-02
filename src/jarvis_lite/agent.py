@@ -1209,7 +1209,7 @@ class JarvisAgent:
             lines.append(f"- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed {report.source_file_filter}")
             lines.append(f"- 查看当前文件已处理样本：/inner-brain-eval-local-resolved {report.source_file_filter}")
             if report.failed_case_results:
-                lines.append(f"- 导出当前文件失败报告：/inner-brain-eval-local-report {report.source_file_filter}")
+                lines.append(f"- 导出当前文件待处理失败报告：/inner-brain-eval-local-report {report.source_file_filter}")
             lines.append("- 查看全部本机评估样本：/inner-brain-eval-local")
         else:
             lines.append("- 只看待处理失败样本：/inner-brain-eval-local-failed")
@@ -1256,7 +1256,7 @@ class JarvisAgent:
             lines.append(f"- 当前文件总览：/inner-brain-eval-local-file {report.source_file_filter}")
             lines.append(f"- 查看当前文件已处理样本：/inner-brain-eval-local-resolved {report.source_file_filter}")
             lines.append("- 查看全部待处理失败样本：/inner-brain-eval-local-failed")
-            lines.append(f"- 导出当前文件失败报告：/inner-brain-eval-local-report {report.source_file_filter}")
+            lines.append(f"- 导出当前文件待处理失败报告：/inner-brain-eval-local-report {report.source_file_filter}")
             lines.append("- 导出全部待处理失败报告：/inner-brain-eval-local-report")
         else:
             lines.append("- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名")
@@ -1284,7 +1284,7 @@ class JarvisAgent:
             lines.append(f"- 当前文件总览：/inner-brain-eval-local-file {report.source_file_filter}")
             lines.append(f"- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed {report.source_file_filter}")
             if report.failed_case_results:
-                lines.append(f"- 导出当前文件失败报告：/inner-brain-eval-local-report {report.source_file_filter}")
+                lines.append(f"- 导出当前文件待处理失败报告：/inner-brain-eval-local-report {report.source_file_filter}")
             lines.append("- 查看全部已处理样本：/inner-brain-eval-local-resolved")
             lines.append("- 查看全部待处理失败样本：/inner-brain-eval-local-failed")
         else:
