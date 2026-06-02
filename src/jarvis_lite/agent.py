@@ -1338,7 +1338,7 @@ class JarvisAgent:
         lines = [
             "已导出 InnerBrain 本机评估待处理失败报告。",
             f"报告文件：{save_result.relative_path}",
-            f"失败样本：{save_result.failed_count}",
+            f"待处理失败样本：{save_result.failed_count}",
         ]
         if save_result.source_file_filter is not None:
             lines.append(f"评估文件：{save_result.source_file_filter}")
