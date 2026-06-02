@@ -1517,7 +1517,7 @@ class AgentTests(unittest.TestCase):
         response = self.agent.handle("/inner-brain-eval")
 
         self.assertIn("InnerBrain 评估", response)
-        self.assertIn("评估集：seed_evaluation", response)
+        self.assertIn("评估集：固定评估集", response)
         self.assertRegex(response, r"通过：\d+/\d+")
         self.assertIn("失败：0", response)
         self.assertIn("帮我看一下知识库状态 -> knowledge.status", response)
@@ -1541,8 +1541,8 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle("/inner-brain-eval")
 
-        self.assertIn("评估集：seed_evaluation+local_evaluation", response)
-        self.assertIn("local_evaluation：1 条", response)
+        self.assertIn("评估集：固定评估集+本机评估集", response)
+        self.assertIn("本机评估集：1 条", response)
         self.assertIn("请看看资料库状态 -> knowledge.status", response)
         self.assertIn("失败：0", response)
         log_content = (self.paths.logs_dir / "jarvis.log").read_text(encoding="utf-8")
@@ -1632,10 +1632,10 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle("/inner-brain-eval-local")
 
-        self.assertIn("评估集：local_evaluation", response)
-        self.assertIn("local_evaluation：2 条", response)
+        self.assertIn("评估集：本机评估集", response)
+        self.assertIn("本机评估集：2 条", response)
         self.assertIn("请看看资料库状态 -> knowledge.status", response)
-        self.assertNotIn("seed_evaluation：", response)
+        self.assertNotIn("固定评估集：", response)
         self.assertNotIn("早上好 -> assistant.greeting", response)
         self.assertIn("后续处理：", response)
         self.assertIn("- 只看待处理失败样本：/inner-brain-eval-local-failed", response)
@@ -1668,7 +1668,7 @@ class AgentTests(unittest.TestCase):
     def test_inner_brain_eval_local_failed_command_guides_empty_local_evaluation_samples(self):
         response = self.agent.handle("/inner-brain-eval-local-failed")
 
-        self.assertIn("评估集：local_evaluation", response)
+        self.assertIn("评估集：本机评估集", response)
         self.assertIn("本机评估样本：", response)
         self.assertIn("- 无", response)
         self.assertIn("添加本机评估样本：", response)
@@ -1700,7 +1700,7 @@ class AgentTests(unittest.TestCase):
         response = self.agent.handle("/inner-brain-eval-local-failed")
         log_content = (self.paths.logs_dir / "jarvis.log").read_text(encoding="utf-8")
 
-        self.assertIn("评估集：local_evaluation", response)
+        self.assertIn("评估集：本机评估集", response)
         self.assertIn("失败样例：", response)
         self.assertNotIn("PASS 早上好", response)
         self.assertNotIn("早上好 -> assistant.greeting", response)
@@ -1843,12 +1843,12 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle("/inner-brain-eval-local-file real-log.jsonl")
 
-        self.assertIn("评估集：local_evaluation:real-log.jsonl", response)
+        self.assertIn("评估集：本机评估集:real-log.jsonl", response)
         self.assertIn("评估文件：real-log.jsonl", response)
         self.assertIn("通过：1/1", response)
         self.assertIn("请看看资料库状态 -> knowledge.status", response)
         self.assertNotIn("FAIL 请看看资料库状态", response)
-        self.assertNotIn("seed_evaluation：", response)
+        self.assertNotIn("固定评估集：", response)
         self.assertIn("后续处理：", response)
         self.assertIn("- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed real-log.jsonl", response)
         self.assertIn("- 查看当前文件已处理样本：/inner-brain-eval-local-resolved real-log.jsonl", response)
@@ -1875,7 +1875,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle("/inner-brain-eval-local-file failed-log.jsonl")
 
-        self.assertIn("评估集：local_evaluation:failed-log.jsonl", response)
+        self.assertIn("评估集：本机评估集:failed-log.jsonl", response)
         self.assertIn("评估文件：failed-log.jsonl", response)
         self.assertIn("失败：1", response)
         self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", response)
@@ -1917,7 +1917,7 @@ class AgentTests(unittest.TestCase):
         response = self.agent.handle("/inner-brain-eval-local-file-failed failed-log.jsonl")
         log_content = (self.paths.logs_dir / "jarvis.log").read_text(encoding="utf-8")
 
-        self.assertIn("评估集：local_evaluation:failed-log.jsonl", response)
+        self.assertIn("评估集：本机评估集:failed-log.jsonl", response)
         self.assertIn("评估文件：failed-log.jsonl", response)
         self.assertIn("失败样例：", response)
         self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", response)
@@ -1989,7 +1989,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle("/inner-brain-eval-local-resolved")
 
-        self.assertIn("评估集：local_evaluation", response)
+        self.assertIn("评估集：本机评估集", response)
         self.assertIn("已处理样例：", response)
         self.assertIn("PASS 早上好 -> assistant.greeting", response)
         self.assertNotIn("FAIL 请看看资料库状态", response)
@@ -2052,7 +2052,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle("/inner-brain-eval-local-resolved real-log")
 
-        self.assertIn("评估集：local_evaluation:real-log.jsonl", response)
+        self.assertIn("评估集：本机评估集:real-log.jsonl", response)
         self.assertIn("评估文件：real-log.jsonl", response)
         self.assertIn("已处理样例：", response)
         self.assertIn("PASS 早上好 -> assistant.greeting", response)
@@ -2089,7 +2089,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle("/inner-brain-eval-local-resolved real-log")
 
-        self.assertIn("评估集：local_evaluation:real-log.jsonl", response)
+        self.assertIn("评估集：本机评估集:real-log.jsonl", response)
         self.assertIn("评估文件：real-log.jsonl", response)
         self.assertIn("已处理样例：", response)
         self.assertIn("PASS 早上好 -> assistant.greeting", response)
@@ -2118,7 +2118,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle("/inner-brain-eval-local-resolved failed-log.jsonl")
 
-        self.assertIn("评估集：local_evaluation:failed-log.jsonl", response)
+        self.assertIn("评估集：本机评估集:failed-log.jsonl", response)
         self.assertIn("评估文件：failed-log.jsonl", response)
         self.assertIn("已处理样例：", response)
         self.assertIn("- 无", response)
@@ -2238,7 +2238,7 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(payload["expected_intent"], "knowledge.status")
         self.assertEqual(payload["expected_command"], "/kb")
         local_eval_response = self.agent.handle("/inner-brain-eval-local")
-        self.assertIn("评估集：local_evaluation", local_eval_response)
+        self.assertIn("评估集：本机评估集", local_eval_response)
         self.assertIn("请看看资料库状态 -> knowledge.status", local_eval_response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
@@ -3344,7 +3344,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.93.1",
+                        "version": "0.94.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3355,7 +3355,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.93.1", response)
+        self.assertIn("发现新版本：0.94.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3370,7 +3370,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.93.1",
+                        "version": "0.94.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

@@ -591,7 +591,7 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
 
     lines = [
         "InnerBrain 评估：",
-        f"- 评估集：{report.name}",
+        f"- 评估集：{_inner_brain_evaluation_display_name(report.name)}",
         f"- 通过：{report.passed_count}/{report.total_count}",
         f"- 失败：{report.failed_count}",
         f"- 准确率：{report.accuracy * 100:.1f}%",
@@ -599,7 +599,7 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
     if report.source_file_filter is not None:
         lines.append(f"- 评估文件：{report.source_file_filter}")
     for source, count in report.source_counts.items():
-        lines.append(f"- {source}：{count} 条")
+        lines.append(f"- {_inner_brain_evaluation_display_name(source)}：{count} 条")
     if report.total_count == 0 and report.name.startswith("local_evaluation"):
         lines.append("本机评估样本：")
         lines.append("- 无")
@@ -733,12 +733,28 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
     return "\n".join(lines)
 
 
+def _inner_brain_evaluation_display_name(name: str) -> str:
+    """把内部评估来源名转成用户可读标签，内部 key 保持不变。"""
+
+    display_names = {
+        "seed_evaluation": "固定评估集",
+        "local_evaluation": "本机评估集",
+    }
+    if ":" in name:
+        source, suffix = name.split(":", 1)
+        return f"{display_names.get(source, source)}:{suffix}"
+    return "+".join(
+        display_names.get(part, part)
+        for part in name.split("+")
+    )
+
+
 def describe_inner_brain_resolved_evaluation(report: InnerBrainEvaluationReport) -> str:
     """格式化当前已经通过的本机评估样本，只读展示处理状态。"""
 
     lines = [
         "InnerBrain 评估：",
-        f"- 评估集：{report.name}",
+        f"- 评估集：{_inner_brain_evaluation_display_name(report.name)}",
         f"- 通过：{report.passed_count}/{report.total_count}",
         f"- 失败：{report.failed_count}",
         f"- 准确率：{report.accuracy * 100:.1f}%",
@@ -746,7 +762,7 @@ def describe_inner_brain_resolved_evaluation(report: InnerBrainEvaluationReport)
     if report.source_file_filter is not None:
         lines.append(f"- 评估文件：{report.source_file_filter}")
     for source, count in report.source_counts.items():
-        lines.append(f"- {source}：{count} 条")
+        lines.append(f"- {_inner_brain_evaluation_display_name(source)}：{count} 条")
     lines.append("已处理样例：")
     if not report.passed_case_results:
         lines.append("- 无")

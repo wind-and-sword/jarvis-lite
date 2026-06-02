@@ -136,7 +136,9 @@ class InnerBrainTests(unittest.TestCase):
         self.assertEqual(report.passed_count, report.total_count)
         description = describe_inner_brain_evaluation(report)
         self.assertIn("InnerBrain 评估", description)
-        self.assertIn("评估集：seed_evaluation", description)
+        self.assertIn("评估集：固定评估集", description)
+        self.assertIn("固定评估集：", description)
+        self.assertNotIn("评估集：seed_evaluation", description)
         self.assertIn(f"通过：{report.passed_count}/{report.total_count}", description)
         self.assertIn("失败：0", description)
         self.assertIn("帮我看一下知识库状态 -> knowledge.status", description)
@@ -164,8 +166,9 @@ class InnerBrainTests(unittest.TestCase):
 
         self.assertEqual(len(local_cases), 1)
         self.assertEqual(local_cases[0].source, "local_evaluation")
-        self.assertIn("评估集：seed_evaluation+local_evaluation", description)
-        self.assertIn("local_evaluation：1 条", description)
+        self.assertIn("评估集：固定评估集+本机评估集", description)
+        self.assertIn("本机评估集：1 条", description)
+        self.assertNotIn("评估集：seed_evaluation+local_evaluation", description)
         self.assertIn("请看看资料库状态 -> knowledge.status", description)
         self.assertEqual(report.failed_count, 0)
 
@@ -230,10 +233,10 @@ class InnerBrainTests(unittest.TestCase):
 
         self.assertEqual(report.total_count, 1)
         self.assertEqual(report.name, "local_evaluation")
-        self.assertIn("评估集：local_evaluation", description)
-        self.assertIn("local_evaluation：1 条", description)
+        self.assertIn("评估集：本机评估集", description)
+        self.assertIn("本机评估集：1 条", description)
         self.assertIn("请看看资料库状态 -> knowledge.status", description)
-        self.assertNotIn("seed_evaluation：", description)
+        self.assertNotIn("固定评估集：", description)
         self.assertNotIn("早上好 -> assistant.greeting", description)
 
     def test_inner_brain_local_evaluation_empty_state_suggests_evaluation_sample_commands(self):
@@ -691,6 +694,9 @@ class InnerBrainTests(unittest.TestCase):
         report = evaluate_inner_brain(InnerBrain(self.paths), cases=cases, name="local_evaluation")
         description = describe_inner_brain_resolved_evaluation(report)
 
+        self.assertIn("评估集：本机评估集", description)
+        self.assertIn("本机评估集：2 条", description)
+        self.assertNotIn("评估集：local_evaluation", description)
         self.assertIn("已处理样例：", description)
         self.assertIn("PASS 早上好 -> assistant.greeting", description)
         self.assertNotIn("FAIL 请看看资料库状态", description)
@@ -712,6 +718,9 @@ class InnerBrainTests(unittest.TestCase):
         report = evaluate_inner_brain(InnerBrain(self.paths), cases=cases, name="local_evaluation")
         description = describe_inner_brain_resolved_evaluation(report)
 
+        self.assertIn("评估集：本机评估集", description)
+        self.assertIn("本机评估集：1 条", description)
+        self.assertNotIn("评估集：local_evaluation", description)
         self.assertIn("已处理样例：", description)
         self.assertIn("- 无", description)
         self.assertNotIn("FAIL 请看看资料库状态", description)
