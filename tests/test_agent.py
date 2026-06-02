@@ -865,6 +865,12 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本", response)
         self.assertIn("/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本", response)
         self.assertIn("/inner-brain-teach 文本 => /命令：把自然语言短句教学为已知命令", response)
+        self.assertIn("/inner-brain-eval-local-failed：只显示本机 InnerBrain 评估待处理失败样本", response)
+        self.assertIn("/inner-brain-eval-local-report [文件名]：导出本机 InnerBrain 评估待处理失败报告", response)
+        self.assertIn(
+            "/inner-brain-eval-local-file-failed 文件名：只显示指定本机评估 JSONL 的待处理失败样本",
+            response,
+        )
         self.assertIn("/llm-enable：查看外脑启用状态和本地配置路径", response)
         self.assertIn("/search-status：查看联网搜索 provider 状态", response)
         self.assertIn("/search 关键词：联网搜索并返回来源", response)
@@ -1684,6 +1690,7 @@ class AgentTests(unittest.TestCase):
         )
 
         response = self.agent.handle("/inner-brain-eval-local-failed")
+        log_content = (self.paths.logs_dir / "jarvis.log").read_text(encoding="utf-8")
 
         self.assertIn("评估集：local_evaluation", response)
         self.assertIn("失败样例：", response)
@@ -1695,6 +1702,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名", response)
         self.assertIn("- 导出待处理失败报告：/inner-brain-eval-local-report", response)
         self.assertIn("- 按文件导出待处理失败报告：/inner-brain-eval-local-report 文件名", response)
+        self.assertIn("执行 InnerBrain 本机评估集并只显示待处理失败样本", log_content)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_inner_brain_eval_local_failed_command_groups_failures_by_local_file(self):
@@ -1898,6 +1906,7 @@ class AgentTests(unittest.TestCase):
         )
 
         response = self.agent.handle("/inner-brain-eval-local-file-failed failed-log.jsonl")
+        log_content = (self.paths.logs_dir / "jarvis.log").read_text(encoding="utf-8")
 
         self.assertIn("评估集：local_evaluation:failed-log.jsonl", response)
         self.assertIn("评估文件：failed-log.jsonl", response)
@@ -1911,6 +1920,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("- 查看全部待处理失败样本：/inner-brain-eval-local-failed", response)
         self.assertIn("- 导出当前文件待处理失败报告：/inner-brain-eval-local-report failed-log.jsonl", response)
         self.assertIn("- 导出全部待处理失败报告：/inner-brain-eval-local-report", response)
+        self.assertIn("执行 InnerBrain 本机评估文件并只显示待处理失败样本：failed-log.jsonl", log_content)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_inner_brain_eval_local_resolved_command_lists_only_passed_local_cases(self):
@@ -3323,7 +3333,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.89.1",
+                        "version": "0.90.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3334,7 +3344,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.89.1", response)
+        self.assertIn("发现新版本：0.90.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3349,7 +3359,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.89.1",
+                        "version": "0.90.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

@@ -259,7 +259,7 @@ class JarvisAgent:
             self.tools.run("record_log", message="查看 InnerBrain 本地内脑状态")
             return self.inner_brain.describe_status()
         if self._is_inner_brain_eval_local_failures_prompt(prompt):
-            self.tools.run("record_log", message="执行 InnerBrain 本机评估集并只显示失败样本")
+            self.tools.run("record_log", message="执行 InnerBrain 本机评估集并只显示待处理失败样本")
             report = evaluate_inner_brain(self.inner_brain, source_filter="local_evaluation")
             return self._describe_inner_brain_local_failed_evaluation(report)
         if self._is_inner_brain_eval_local_resolved_prompt(prompt):
@@ -769,10 +769,10 @@ class JarvisAgent:
                 "/inner-brain-eval：执行 InnerBrain 评估集，失败时显示显式训练建议",
                 "/inner-brain-eval-failed：只显示 InnerBrain 评估失败样本",
                 "/inner-brain-eval-local：只执行本机 InnerBrain 评估样本",
-                "/inner-brain-eval-local-failed：只显示本机 InnerBrain 评估失败样本",
-                "/inner-brain-eval-local-report [文件名]：导出本机 InnerBrain 失败评估报告",
+                "/inner-brain-eval-local-failed：只显示本机 InnerBrain 评估待处理失败样本",
+                "/inner-brain-eval-local-report [文件名]：导出本机 InnerBrain 评估待处理失败报告",
                 "/inner-brain-eval-local-file 文件名：只执行指定本机评估 JSONL",
-                "/inner-brain-eval-local-file-failed 文件名：只显示指定本机评估 JSONL 的失败样本",
+                "/inner-brain-eval-local-file-failed 文件名：只显示指定本机评估 JSONL 的待处理失败样本",
                 "/inner-brain-eval-local-resolved [文件名]：只读查看本机评估已处理样本",
                 "/inner-brain-eval-add 文本 => /命令：保存本机评估样本，不训练",
                 "/inner-brain-eval-label 文本 => intent [slot=value ...]：保存本机评估标注，不训练",
@@ -1183,7 +1183,7 @@ class JarvisAgent:
         self.tools.run(
             "record_log",
             message=(
-                "执行 InnerBrain 本机评估文件并只显示失败样本："
+                "执行 InnerBrain 本机评估文件并只显示待处理失败样本："
                 if failures_only
                 else "执行 InnerBrain 本机评估文件："
             )

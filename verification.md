@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.90.0` 可安装测试包，收口 InnerBrain 本机失败帮助待处理标签；`/help` 和本机失败视图运行日志统一使用“待处理失败样本/待处理失败报告”语义；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.90.0.exe`。
 - 2026-06-03：发布 `0.89.0` 可安装测试包，收口 InnerBrain 本机报告导出待处理失败标题；`/inner-brain-eval-local-report [文件名]` 的导出反馈、运行日志和 Markdown H1 标题统一为“本机评估待处理失败报告”；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.89.0.exe`。
 - 2026-06-03：发布 `0.88.0` 可安装测试包，收口 InnerBrain 本机文件候选待处理报告标签；`/inner-brain-eval-local`、`/inner-brain-eval-local-failed` 和 `/inner-brain-eval-local-resolved` 的文件候选在同文件仍有失败时会用 `待处理报告：/inner-brain-eval-local-report 文件名` 提示按文件导出待处理失败报告；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.88.0.exe`。
 - 2026-06-03：发布 `0.87.0` 可安装测试包，收口 InnerBrain 本机评估样本保存反馈待处理失败标签；保存本机 evaluation 样本后会用 `只看待处理失败样本：/inner-brain-eval-local-failed` 和 `导出样本文件待处理失败报告：/inner-brain-eval-local-report runtime.jsonl` 提示后续验证；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.87.0.exe`。

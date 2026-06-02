@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v93-inner-brain-report-export-pending-title-plan.md](2026-06-03-v93-inner-brain-report-export-pending-title-plan.md)：当前方案版本，明确 InnerBrain 本机报告导出待处理失败标题。
+- [2026-06-03-v94-inner-brain-help-pending-label-plan.md](2026-06-03-v94-inner-brain-help-pending-label-plan.md)：当前方案版本，明确 InnerBrain 本机失败帮助待处理标签。
 
 ## 历史版本
 
@@ -103,6 +103,7 @@
 - [2026-06-03-v91-inner-brain-eval-save-pending-label-plan.md](2026-06-03-v91-inner-brain-eval-save-pending-label-plan.md)：明确 InnerBrain 本机评估样本保存反馈待处理失败标签。
 - [2026-06-03-v92-inner-brain-file-candidate-report-label-plan.md](2026-06-03-v92-inner-brain-file-candidate-report-label-plan.md)：明确 InnerBrain 本机文件候选待处理报告标签。
 - [2026-06-03-v93-inner-brain-report-export-pending-title-plan.md](2026-06-03-v93-inner-brain-report-export-pending-title-plan.md)：明确 InnerBrain 本机报告导出待处理失败标题。
+- [2026-06-03-v94-inner-brain-help-pending-label-plan.md](2026-06-03-v94-inner-brain-help-pending-label-plan.md)：明确 InnerBrain 本机失败帮助待处理标签。
 
 ## 维护规则
 
