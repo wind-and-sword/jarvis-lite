@@ -2033,6 +2033,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已处理样例：", response)
         self.assertIn("PASS 早上好 -> assistant.greeting", response)
         self.assertNotIn("请看看资料库状态", response)
+        self.assertIn("- 查看当前文件全部样本：/inner-brain-eval-local-file real-log.jsonl", response)
         self.assertIn("- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed real-log.jsonl", response)
         self.assertIn("- 查看全部已处理样本：/inner-brain-eval-local-resolved", response)
         self.assertNotIn("- 导出当前文件失败报告：/inner-brain-eval-local-report real-log.jsonl", response)
@@ -2069,6 +2070,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已处理样例：", response)
         self.assertIn("PASS 早上好 -> assistant.greeting", response)
         self.assertNotIn("FAIL 请看看资料库状态", response)
+        self.assertIn("- 查看当前文件全部样本：/inner-brain-eval-local-file real-log.jsonl", response)
         self.assertIn("- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed real-log.jsonl", response)
         self.assertIn("- 导出当前文件失败报告：/inner-brain-eval-local-report real-log.jsonl", response)
         self.assertIn("- 查看全部已处理样本：/inner-brain-eval-local-resolved", response)
@@ -3316,7 +3318,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.72.1",
+                        "version": "0.73.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3327,7 +3329,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.72.1", response)
+        self.assertIn("发现新版本：0.73.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3342,7 +3344,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.72.1",
+                        "version": "0.73.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
