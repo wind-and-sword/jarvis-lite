@@ -574,6 +574,10 @@ class JarvisAgent:
             return self._save_inner_brain_command_evaluation_case(prompt, command)
         if command == "/inner-brain-eval-label":
             return self._save_inner_brain_labeled_evaluation_case(prompt, command)
+        if command == "/inner-brain-eval-add-candidate":
+            return self._save_inner_brain_command_evaluation_candidate(prompt, command)
+        if command == "/inner-brain-eval-label-candidate":
+            return self._save_inner_brain_labeled_evaluation_candidate(prompt, command)
         if command == "/inner-brain-teach-candidate":
             return self._teach_inner_brain_candidate(prompt, command)
         if command == "/inner-brain-label-candidate":
@@ -754,6 +758,8 @@ class JarvisAgent:
                 "/inner-brain-eval-local-failed：只显示本机 InnerBrain 评估失败样本",
                 "/inner-brain-eval-add 文本 => /命令：保存本机评估样本，不训练",
                 "/inner-brain-eval-label 文本 => intent [slot=value ...]：保存本机评估标注，不训练",
+                "/inner-brain-eval-add-candidate 编号 => /命令：把训练候选按编号保存为评估样本",
+                "/inner-brain-eval-label-candidate 编号 => intent [slot=value ...]：把训练候选按编号保存为评估标注",
                 "/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作",
                 "/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本",
                 "/inner-brain-label 文本 => intent [slot=value ...]：人工标注 InnerBrain runtime 样本",
@@ -1013,6 +1019,8 @@ class JarvisAgent:
         lines.append(f"   按编号固定：/inner-brain-teach-candidate {index} => /命令")
         lines.append(f"   人工标注：/inner-brain-label {sample_text} => intent slot=value")
         lines.append(f"   按编号标注：/inner-brain-label-candidate {index} => intent slot=value")
+        lines.append(f"   保存评估命令：/inner-brain-eval-add-candidate {index} => /命令")
+        lines.append(f"   保存评估标注：/inner-brain-eval-label-candidate {index} => intent slot=value")
         return lines
 
     def _label_inner_brain_sample(self, prompt: str) -> str:
@@ -1079,6 +1087,26 @@ class JarvisAgent:
         if parsed is None:
             return usage
         sample_text, target_command = parsed
+        return self._save_inner_brain_command_evaluation_sample(sample_text, target_command, usage)
+
+    def _save_inner_brain_command_evaluation_candidate(self, prompt: str, command: str) -> str:
+        usage = "用法：/inner-brain-eval-add-candidate 编号 => /命令"
+        body = prompt[len(command) :].strip()
+        parsed = self._parse_inner_brain_teach_candidate_body(body)
+        if parsed is None:
+            return usage
+        candidate_index, target_command = parsed
+        candidate_prompt = self._inner_brain_candidate_prompt(candidate_index)
+        if candidate_prompt is None:
+            return self._missing_inner_brain_candidate_message(candidate_index)
+        return self._save_inner_brain_command_evaluation_sample(candidate_prompt, target_command, usage)
+
+    def _save_inner_brain_command_evaluation_sample(
+        self,
+        sample_text: str,
+        target_command: str,
+        usage: str,
+    ) -> str:
         try:
             command_text, intent = self._inner_brain_teach_target(target_command)
             save_result = save_local_evaluation_case(
@@ -1109,6 +1137,26 @@ class JarvisAgent:
         sample_text, raw_label = (part.strip() for part in body.split("=>", 1))
         if not sample_text or not raw_label:
             return usage
+        return self._save_inner_brain_labeled_evaluation_sample(sample_text, raw_label, usage)
+
+    def _save_inner_brain_labeled_evaluation_candidate(self, prompt: str, command: str) -> str:
+        usage = "用法：/inner-brain-eval-label-candidate 编号 => intent [slot=value ...]"
+        body = prompt[len(command) :].strip()
+        parsed = self._parse_inner_brain_label_candidate_body(body)
+        if parsed is None:
+            return usage
+        candidate_index, raw_label = parsed
+        candidate_prompt = self._inner_brain_candidate_prompt(candidate_index)
+        if candidate_prompt is None:
+            return self._missing_inner_brain_candidate_message(candidate_index)
+        return self._save_inner_brain_labeled_evaluation_sample(candidate_prompt, raw_label, usage)
+
+    def _save_inner_brain_labeled_evaluation_sample(
+        self,
+        sample_text: str,
+        raw_label: str,
+        usage: str,
+    ) -> str:
         try:
             label_parts = shlex.split(raw_label, posix=True)
         except ValueError as exc:
@@ -1144,6 +1192,20 @@ class JarvisAgent:
             ),
         )
         return self._describe_inner_brain_evaluation_case_save(save_result)
+
+    def _inner_brain_candidate_prompt(self, candidate_index: int) -> str | None:
+        candidates = self._inner_brain_candidate_decisions()
+        if candidate_index < 1 or candidate_index > len(candidates):
+            return None
+        return candidates[candidate_index - 1].prompt
+
+    def _missing_inner_brain_candidate_message(self, candidate_index: int) -> str:
+        return "\n".join(
+            [
+                f"没有第 {candidate_index} 条 InnerBrain 训练候选。",
+                "请先运行 /inner-brain-candidates 查看当前候选编号。",
+            ]
+        )
 
     def _describe_inner_brain_evaluation_case_save(self, save_result: InnerBrainEvaluationSaveResult) -> str:
         title = "已保存 InnerBrain 本机评估样本。" if save_result.created else "InnerBrain 本机评估样本已存在，未重复写入。"
@@ -3357,6 +3419,12 @@ class JarvisAgent:
     def _is_inner_brain_label_candidate_prompt(self, prompt: str) -> bool:
         return prompt == "/inner-brain-label-candidate" or prompt.startswith("/inner-brain-label-candidate ")
 
+    def _is_inner_brain_eval_add_candidate_prompt(self, prompt: str) -> bool:
+        return prompt == "/inner-brain-eval-add-candidate" or prompt.startswith("/inner-brain-eval-add-candidate ")
+
+    def _is_inner_brain_eval_label_candidate_prompt(self, prompt: str) -> bool:
+        return prompt == "/inner-brain-eval-label-candidate" or prompt.startswith("/inner-brain-eval-label-candidate ")
+
     def _is_route_observability_prompt(self, prompt: str) -> bool:
         return (
             self._is_recent_context_prompt(prompt)
@@ -3368,6 +3436,8 @@ class JarvisAgent:
             or self._is_inner_brain_candidates_prompt(prompt)
             or self._is_inner_brain_teach_candidate_prompt(prompt)
             or self._is_inner_brain_label_candidate_prompt(prompt)
+            or self._is_inner_brain_eval_add_candidate_prompt(prompt)
+            or self._is_inner_brain_eval_label_candidate_prompt(prompt)
         )
 
     def _llm_intent_summary(self, intent: LLMIntent) -> str:

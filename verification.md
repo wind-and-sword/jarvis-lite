@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-02：发布 `0.35.0` 可安装测试包，收口 InnerBrain 候选编号写入本机评估样本；新增 `/inner-brain-eval-add-candidate` 与 `/inner-brain-eval-label-candidate`，可把 `/inner-brain-candidates` 当前候选按编号写入本机 evaluation JSONL，不写入 runtime 训练样本且不移除候选；全量 `unittest` 540 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.35.0.exe`。
 - 2026-06-01：发布 `0.34.0` 可安装测试包，收口 InnerBrain 本机评估样本显式写入；新增 `/inner-brain-eval-add` 与 `/inner-brain-eval-label` 把用户确认的真实日志写入本机 evaluation JSONL，不写入 runtime 训练样本；全量 `unittest` 537 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.34.0.exe`。
 - 2026-06-01：发布 `0.33.0` 可安装测试包，收口 InnerBrain 本机评估过滤视图；新增 `/inner-brain-eval-local` 与 `/inner-brain-eval-local-failed` 单独查看本机 JSONL 评估样本，不写入 runtime 样本；全量 `unittest` 533 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.33.0.exe`。
 - 2026-06-01：发布 `0.32.0` 可安装测试包，收口 InnerBrain 评估失败过滤视图；新增 `/inner-brain-eval-failed` 只显示失败样本和显式修复建议，不写入 runtime 样本；全量 `unittest` 530 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.32.0.exe`。
@@ -80,7 +81,8 @@
 - [2026-06-01 周索引](verification/2026-06/week-2026-06-01.md)：2026-06-01 至 2026-06-07。
 - [2026-05-18 周索引](verification/2026-05/week-2026-05-18.md)：2026-05-18 至 2026-05-24。
 - [2026-05-25 周索引](verification/2026-05/week-2026-05-25.md)：2026-05-25 至 2026-05-31。
-- [2026-06-01 验证记录](verification/2026-06/2026-06-01.md)：最近一次验证明细。
+- [2026-06-02 验证记录](verification/2026-06/2026-06-02.md)：最近一次验证明细。
+- [2026-06-01 验证记录](verification/2026-06/2026-06-01.md)：2026-06-01 验证明细。
 
 ## 记录规则
 

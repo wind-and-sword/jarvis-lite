@@ -2081,6 +2081,55 @@ class AgentTests(unittest.TestCase):
         self.assertIn("slot 必须使用 key=value", response)
         self.assertFalse(sample_file.exists())
 
+    def test_inner_brain_eval_add_candidate_saves_selected_candidate_command_without_training(self):
+        self.agent.handle("火星基地预算需要外部判断")
+
+        response = self.agent.handle("/inner-brain-eval-add-candidate 1 => /kb")
+        status_after_save = self.agent.route_status_text()
+        candidates_after_save = self.agent.handle("/inner-brain-candidates")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "evaluation" / "runtime.jsonl"
+        self.assertTrue(sample_file.exists())
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertIn("已保存 InnerBrain 本机评估样本", response)
+        self.assertIn("用户说法：火星基地预算需要外部判断", response)
+        self.assertIn("目标命令：/kb", response)
+        self.assertEqual(saved_sample["text"], "火星基地预算需要外部判断")
+        self.assertEqual(saved_sample["expected_intent"], "knowledge.status")
+        self.assertEqual(saved_sample["expected_command"], "/kb")
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+        self.assertIn("1. 火星基地预算需要外部判断", candidates_after_save)
+        self.assertIn("最近路由：memory-fallback / profile", status_after_save)
+        self.assertNotIn("command / /inner-brain-eval-add-candidate", status_after_save)
+
+    def test_inner_brain_eval_label_candidate_saves_selected_candidate_label_without_training(self):
+        self.agent.handle("火星基地预算需要外部判断")
+
+        response = self.agent.handle("/inner-brain-eval-label-candidate 1 => knowledge.status command=/kb")
+        candidates_after_save = self.agent.handle("/inner-brain-candidates")
+
+        sample_file = self.paths.data_dir / "inner-brain" / "evaluation" / "runtime.jsonl"
+        self.assertTrue(sample_file.exists())
+        saved_sample = json.loads(sample_file.read_text(encoding="utf-8").strip())
+        self.assertIn("已保存 InnerBrain 本机评估样本", response)
+        self.assertIn("意图：knowledge.status", response)
+        self.assertIn("目标命令：/kb", response)
+        self.assertEqual(saved_sample["text"], "火星基地预算需要外部判断")
+        self.assertEqual(saved_sample["expected_intent"], "knowledge.status")
+        self.assertEqual(saved_sample["expected_command"], "/kb")
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+        self.assertIn("1. 火星基地预算需要外部判断", candidates_after_save)
+
+    def test_inner_brain_eval_add_candidate_reports_missing_candidate_without_writing_case(self):
+        self.agent.handle("火星基地预算需要外部判断")
+
+        response = self.agent.handle("/inner-brain-eval-add-candidate 2 => /kb")
+
+        self.assertIn("没有第 2 条 InnerBrain 训练候选", response)
+        self.assertIn("/inner-brain-candidates", response)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "evaluation" / "runtime.jsonl").exists())
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
     def test_llm_status_command_reports_router_state(self):
         provider = FakeLLMProvider('{"type":"answer","answer":"状态测试"}')
         router = LLMRouter(LLMSettings(provider="fake", model="intent-test"), provider)
@@ -2704,7 +2753,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.34.1",
+                    "version": "0.35.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -2715,7 +2764,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.34.1", response)
+        self.assertIn("发现新版本：0.35.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2730,7 +2779,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.34.1",
+                        "version": "0.35.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
