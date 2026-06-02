@@ -27,7 +27,10 @@ class DesktopAppTests(unittest.TestCase):
         self.assertIn("PySide6>=6,<7", pyproject["project"]["dependencies"])
 
     def test_smoke_mode_creates_desktop_pet_window(self):
+        from PySide6.QtWidgets import QApplication
+
         output = io.StringIO()
+        existing_widget_ids = {id(widget) for widget in QApplication.topLevelWidgets()}
 
         with redirect_stdout(output):
             exit_code = main(["--smoke"])
@@ -35,6 +38,12 @@ class DesktopAppTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertIn("Jarvis Lite 桌面助手", output.getvalue())
         self.assertIn("desktopPetWindow", output.getvalue())
+        self.assertFalse(
+            any(
+                id(widget) not in existing_widget_ids and widget.objectName() == "desktopPetWindow"
+                for widget in QApplication.topLevelWidgets()
+            )
+        )
 
     def test_desktop_app_applies_application_identity_and_icons(self):
         app, window = create_desktop_app()

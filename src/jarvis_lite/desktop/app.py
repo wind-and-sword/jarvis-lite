@@ -30,10 +30,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.smoke:
         os.environ.setdefault("QT_QPA_PLATFORM", "minimal")
+        from PySide6.QtCore import QCoreApplication, QEvent
+
         app, window = create_desktop_app()
         print(APP_TITLE)
         print(window.objectName())
+        window.panel.close()
+        window.panel.deleteLater()
         window.close()
+        window.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        app.processEvents()
         app.quit()
         return 0
 

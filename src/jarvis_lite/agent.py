@@ -1260,7 +1260,7 @@ class JarvisAgent:
             lines.append("- 导出全部待处理失败报告：/inner-brain-eval-local-report")
         else:
             lines.append("- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名")
-            lines.append("- 导出本机失败报告：/inner-brain-eval-local-report")
+            lines.append("- 导出待处理失败报告：/inner-brain-eval-local-report")
             lines.append("- 按文件导出失败报告：/inner-brain-eval-local-report 文件名")
         return "\n".join(lines)
 
