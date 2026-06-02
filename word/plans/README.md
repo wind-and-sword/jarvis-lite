@@ -80,6 +80,7 @@
 - [2026-06-02-v68-inner-brain-local-failed-file-report-shortcut-plan.md](2026-06-02-v68-inner-brain-local-failed-file-report-shortcut-plan.md)：明确 InnerBrain 本机失败视图失败文件分组报告入口。
 - [2026-06-02-v69-inner-brain-local-eval-file-report-shortcut-plan.md](2026-06-02-v69-inner-brain-local-eval-file-report-shortcut-plan.md)：明确 InnerBrain 本机评估全量视图文件候选报告入口。
 - [2026-06-02-v70-inner-brain-local-resolved-file-report-shortcut-plan.md](2026-06-02-v70-inner-brain-local-resolved-file-report-shortcut-plan.md)：明确 InnerBrain 本机已处理视图文件候选报告入口。
+- [2026-06-02-v71-inner-brain-local-file-report-shortcut-plan.md](2026-06-02-v71-inner-brain-local-file-report-shortcut-plan.md)：明确 InnerBrain 本机文件视图报告入口。
 
 ## 维护规则
 

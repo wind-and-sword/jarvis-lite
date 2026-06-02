@@ -1833,6 +1833,37 @@ class AgentTests(unittest.TestCase):
         self.assertIn("- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed real-log.jsonl", response)
         self.assertIn("- 查看当前文件已处理样本：/inner-brain-eval-local-resolved real-log.jsonl", response)
         self.assertIn("- 查看全部本机评估样本：/inner-brain-eval-local", response)
+        self.assertNotIn("- 导出当前文件失败报告：/inner-brain-eval-local-report real-log.jsonl", response)
+        self.assertNotIn("报告：/inner-brain-eval-local-report real-log.jsonl", response)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
+    def test_inner_brain_eval_local_file_command_suggests_report_for_failed_selected_file(self):
+        evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
+        evaluation_dir.mkdir(parents=True)
+        (evaluation_dir / "failed-log.jsonl").write_text(
+            json.dumps(
+                {
+                    "text": "请看看资料库状态",
+                    "expected_intent": "knowledge.summary",
+                    "expected_command": "/kb-summary",
+                },
+                ensure_ascii=False,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        response = self.agent.handle("/inner-brain-eval-local-file failed-log.jsonl")
+
+        self.assertIn("评估集：local_evaluation:failed-log.jsonl", response)
+        self.assertIn("评估文件：failed-log.jsonl", response)
+        self.assertIn("失败：1", response)
+        self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", response)
+        self.assertIn("后续处理：", response)
+        self.assertIn("- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed failed-log.jsonl", response)
+        self.assertIn("- 查看当前文件已处理样本：/inner-brain-eval-local-resolved failed-log.jsonl", response)
+        self.assertIn("- 导出当前文件失败报告：/inner-brain-eval-local-report failed-log.jsonl", response)
+        self.assertIn("- 查看全部本机评估样本：/inner-brain-eval-local", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_inner_brain_eval_local_file_failed_command_lists_only_selected_file_failures(self):
@@ -3243,7 +3274,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.66.1",
+                        "version": "0.67.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3254,7 +3285,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.66.1", response)
+        self.assertIn("发现新版本：0.67.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3269,7 +3300,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.66.1",
+                        "version": "0.67.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
