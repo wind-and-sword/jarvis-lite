@@ -1259,7 +1259,7 @@ class JarvisAgent:
             lines.append(f"- 导出当前文件待处理失败报告：/inner-brain-eval-local-report {report.source_file_filter}")
             lines.append("- 导出全部待处理失败报告：/inner-brain-eval-local-report")
         else:
-            lines.append("- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名")
+            lines.append("- 按文件聚焦待处理失败：/inner-brain-eval-local-file-failed 文件名")
             lines.append("- 导出待处理失败报告：/inner-brain-eval-local-report")
             lines.append("- 按文件导出待处理失败报告：/inner-brain-eval-local-report 文件名")
         return "\n".join(lines)
@@ -1357,7 +1357,7 @@ class JarvisAgent:
             lines.append("- 查看全部待处理失败样本：/inner-brain-eval-local-failed")
         else:
             lines.append("- 查看待处理失败样本：/inner-brain-eval-local-failed")
-            lines.append("- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名")
+            lines.append("- 按文件聚焦待处理失败：/inner-brain-eval-local-file-failed 文件名")
         lines.append("- 补命令评估样本：/inner-brain-eval-add 文本 => /命令")
         lines.append("- 补意图评估样本：/inner-brain-eval-label 文本 => intent [slot=value ...]")
         return "\n".join(lines)
