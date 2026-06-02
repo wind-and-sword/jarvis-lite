@@ -341,6 +341,42 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn(f"- {expected_reason}：2 条", description)
         self.assertIn("  典型样本：请看看资料库状态", description)
 
+    def test_inner_brain_failed_evaluation_summarizes_failure_reason_categories(self):
+        cases = (
+            InnerBrainEvaluationCase(
+                text="请看看资料库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+                source_file="runtime.jsonl",
+            ),
+            InnerBrainEvaluationCase(
+                text="删除桌面快捷方式",
+                expected_intent="desktop.delete_shortcut",
+                source="local_evaluation",
+                source_file="runtime.jsonl",
+            ),
+            InnerBrainEvaluationCase("早上好", "assistant.greeting", source="local_evaluation", source_file="runtime.jsonl"),
+        )
+
+        report = evaluate_inner_brain(InnerBrain(self.paths), cases=cases, name="local_evaluation")
+        description = describe_inner_brain_evaluation(report, failures_only=True)
+
+        self.assertEqual(
+            report.failed_reason_category_counts,
+            {
+                "意图不匹配": 1,
+                "命令不匹配": 1,
+                "策略不匹配": 1,
+            },
+        )
+        self.assertIn("失败类型汇总：", description)
+        self.assertIn("- 命令不匹配：1 条", description)
+        self.assertIn("- 意图不匹配：1 条", description)
+        self.assertIn("- 策略不匹配：1 条", description)
+        self.assertIn("  典型样本：请看看资料库状态", description)
+        self.assertIn("  典型样本：删除桌面快捷方式", description)
+
     def test_export_inner_brain_evaluation_report_writes_failed_markdown_without_training(self):
         evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
         evaluation_dir.mkdir(parents=True)
@@ -370,6 +406,9 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("> 执行者：Codex", content)
         self.assertIn("失败文件：", content)
         self.assertIn("- failed-log.jsonl：1 条", content)
+        self.assertIn("失败类型汇总：", content)
+        self.assertIn("- 命令不匹配：1 条", content)
+        self.assertIn("- 意图不匹配：1 条", content)
         self.assertIn("失败原因汇总：", content)
         self.assertIn("意图期望 knowledge.summary，实际 knowledge.status；命令期望 /kb-summary，实际 /kb：1 条", content)
         self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", content)

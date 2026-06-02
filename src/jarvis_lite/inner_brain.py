@@ -162,6 +162,14 @@ class InnerBrainEvaluationReport:
         return counts
 
     @property
+    def failed_reason_category_counts(self) -> Mapping[str, int]:
+        counts: dict[str, int] = {}
+        for case_result in self.failed_case_results:
+            for category in _failed_reason_categories(case_result.reason):
+                counts[category] = counts.get(category, 0) + 1
+        return counts
+
+    @property
     def failed_case_results(self) -> tuple[InnerBrainEvaluationCaseResult, ...]:
         return tuple(case_result for case_result in self.case_results if not case_result.passed)
 
@@ -562,6 +570,15 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
         for source_file, count in report.source_file_counts.items():
             lines.append(f"- {source_file}：{count} 条")
     if failures_only and report.failed_case_results:
+        category_examples: dict[str, str] = {}
+        for case_result in report.failed_case_results:
+            for category in _failed_reason_categories(case_result.reason):
+                category_examples.setdefault(category, case_result.case.text)
+        if category_examples:
+            lines.append("失败类型汇总：")
+            for category, count in sorted(report.failed_reason_category_counts.items(), key=lambda item: (-item[1], item[0])):
+                lines.append(f"- {category}：{count} 条")
+                lines.append(f"  典型样本：{category_examples[category]}")
         reason_examples: dict[str, str] = {}
         for case_result in report.failed_case_results:
             reason_examples.setdefault(case_result.reason, case_result.case.text)
@@ -641,6 +658,19 @@ def _evaluate_inner_brain_case(
             failures.append(f"命令期望 {case.expected_command}，实际 {command or '无'}")
     reason = "通过" if not failures else "；".join(failures)
     return InnerBrainEvaluationCaseResult(case=case, result=result, passed=not failures, reason=reason)
+
+
+def _failed_reason_categories(reason: str) -> tuple[str, ...]:
+    categories: list[str] = []
+    markers = (
+        ("意图期望", "意图不匹配"),
+        ("命令期望", "命令不匹配"),
+        ("策略期望", "策略不匹配"),
+    )
+    for marker, category in markers:
+        if marker in reason:
+            categories.append(category)
+    return tuple(categories)
 
 
 def _inner_brain_evaluation_fix_suggestion(case_result: InnerBrainEvaluationCaseResult) -> str:

@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-02-v43-inner-brain-failure-reason-summary-plan.md](2026-06-02-v43-inner-brain-failure-reason-summary-plan.md)：当前方案版本，明确 InnerBrain 本机评估失败原因汇总。
+- [2026-06-02-v44-inner-brain-failure-type-summary-plan.md](2026-06-02-v44-inner-brain-failure-type-summary-plan.md)：当前方案版本，明确 InnerBrain 本机评估失败类型汇总。
 
 ## 历史版本
 
@@ -53,6 +53,7 @@
 - [2026-06-02-v41-inner-brain-local-evaluation-failure-group-plan.md](2026-06-02-v41-inner-brain-local-evaluation-failure-group-plan.md)：明确 InnerBrain 本机评估失败按 JSONL 文件分组。
 - [2026-06-02-v42-inner-brain-local-evaluation-report-export-plan.md](2026-06-02-v42-inner-brain-local-evaluation-report-export-plan.md)：明确 InnerBrain 本机评估失败报告导出。
 - [2026-06-02-v43-inner-brain-failure-reason-summary-plan.md](2026-06-02-v43-inner-brain-failure-reason-summary-plan.md)：明确 InnerBrain 本机评估失败原因汇总。
+- [2026-06-02-v44-inner-brain-failure-type-summary-plan.md](2026-06-02-v44-inner-brain-failure-type-summary-plan.md)：明确 InnerBrain 本机评估失败类型汇总。
 
 ## 维护规则
 
