@@ -329,6 +329,41 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("- failed-log.jsonl：1 条", description)
         self.assertNotIn("- real-log.jsonl：", description)
 
+    def test_inner_brain_failed_evaluation_sorts_failure_files_by_failed_count(self):
+        cases = (
+            InnerBrainEvaluationCase(
+                text="请看看资料库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+                source_file="aaa-one-failure.jsonl",
+            ),
+            InnerBrainEvaluationCase(
+                text="知识库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+                source_file="zzz-two-failures.jsonl",
+            ),
+            InnerBrainEvaluationCase(
+                text="查看资料库状态",
+                expected_intent="knowledge.summary",
+                expected_command="/kb-summary",
+                source="local_evaluation",
+                source_file="zzz-two-failures.jsonl",
+            ),
+        )
+
+        report = evaluate_inner_brain(InnerBrain(self.paths), cases=cases, name="local_evaluation")
+        description = describe_inner_brain_evaluation(report, failures_only=True)
+
+        larger_file_line = "- zzz-two-failures.jsonl：2 条"
+        smaller_file_line = "- aaa-one-failure.jsonl：1 条"
+        self.assertIn("失败文件：", description)
+        self.assertIn(larger_file_line, description)
+        self.assertIn(smaller_file_line, description)
+        self.assertLess(description.index(larger_file_line), description.index(smaller_file_line))
+
     def test_inner_brain_failed_evaluation_summarizes_failure_reasons(self):
         cases = (
             InnerBrainEvaluationCase(
