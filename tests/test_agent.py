@@ -1632,7 +1632,7 @@ class AgentTests(unittest.TestCase):
             "- zzz-failed-log.jsonl：1 条，通过 0 条，失败 1 条："
             "总览：/inner-brain-eval-local-file zzz-failed-log.jsonl；"
             "待处理：/inner-brain-eval-local-file-failed zzz-failed-log.jsonl；"
-            "报告：/inner-brain-eval-local-report zzz-failed-log.jsonl"
+            "待处理报告：/inner-brain-eval-local-report zzz-failed-log.jsonl"
         )
         passed_file_line = (
             "- aaa-real-log.jsonl：1 条，通过 1 条，失败 0 条："
@@ -1645,7 +1645,7 @@ class AgentTests(unittest.TestCase):
             response,
         )
         self.assertNotIn(
-            "报告：/inner-brain-eval-local-report aaa-real-log.jsonl",
+            "待处理报告：/inner-brain-eval-local-report aaa-real-log.jsonl",
             response,
         )
         self.assertLess(response.index(failed_file_line), response.index(passed_file_line))
@@ -1731,7 +1731,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn(
             "- failed-log.jsonl：1 条：总览：/inner-brain-eval-local-file failed-log.jsonl；"
             "待处理：/inner-brain-eval-local-file-failed failed-log.jsonl；"
-            "报告：/inner-brain-eval-local-report failed-log.jsonl",
+            "待处理报告：/inner-brain-eval-local-report failed-log.jsonl",
             response,
         )
         self.assertNotIn("- real-log.jsonl：", response)
@@ -1783,12 +1783,12 @@ class AgentTests(unittest.TestCase):
         larger_file_line = (
             "- zzz-two-failures.jsonl：2 条：总览：/inner-brain-eval-local-file zzz-two-failures.jsonl；"
             "待处理：/inner-brain-eval-local-file-failed zzz-two-failures.jsonl；"
-            "报告：/inner-brain-eval-local-report zzz-two-failures.jsonl"
+            "待处理报告：/inner-brain-eval-local-report zzz-two-failures.jsonl"
         )
         smaller_file_line = (
             "- aaa-one-failure.jsonl：1 条：总览：/inner-brain-eval-local-file aaa-one-failure.jsonl；"
             "待处理：/inner-brain-eval-local-file-failed aaa-one-failure.jsonl；"
-            "报告：/inner-brain-eval-local-report aaa-one-failure.jsonl"
+            "待处理报告：/inner-brain-eval-local-report aaa-one-failure.jsonl"
         )
         self.assertIn("失败文件：", response)
         self.assertIn(larger_file_line, response)
@@ -1837,7 +1837,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("- 查看当前文件已处理样本：/inner-brain-eval-local-resolved real-log.jsonl", response)
         self.assertIn("- 查看全部本机评估样本：/inner-brain-eval-local", response)
         self.assertNotIn("- 导出当前文件待处理失败报告：/inner-brain-eval-local-report real-log.jsonl", response)
-        self.assertNotIn("报告：/inner-brain-eval-local-report real-log.jsonl", response)
+        self.assertNotIn("待处理报告：/inner-brain-eval-local-report real-log.jsonl", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_inner_brain_eval_local_file_command_suggests_report_for_failed_selected_file(self):
@@ -1983,7 +1983,7 @@ class AgentTests(unittest.TestCase):
             "总览：/inner-brain-eval-local-file real-log.jsonl；"
             "已处理：/inner-brain-eval-local-resolved real-log.jsonl；"
             "待处理：/inner-brain-eval-local-file-failed real-log.jsonl；"
-            "报告：/inner-brain-eval-local-report real-log.jsonl",
+            "待处理报告：/inner-brain-eval-local-report real-log.jsonl",
             response,
         )
         self.assertIn(
@@ -1997,7 +1997,7 @@ class AgentTests(unittest.TestCase):
             response,
         )
         self.assertNotIn(
-            "报告：/inner-brain-eval-local-report clean-log.jsonl",
+            "待处理报告：/inner-brain-eval-local-report clean-log.jsonl",
             response,
         )
         self.assertLess(response.index("- real-log.jsonl"), response.index("- clean-log.jsonl"))
@@ -3323,7 +3323,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.87.1",
+                        "version": "0.88.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3334,7 +3334,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.87.1", response)
+        self.assertIn("发现新版本：0.88.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3349,7 +3349,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.87.1",
+                        "version": "0.88.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

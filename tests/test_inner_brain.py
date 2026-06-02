@@ -329,7 +329,7 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn(
             "- failed-log.jsonl：1 条：总览：/inner-brain-eval-local-file failed-log.jsonl；"
             "待处理：/inner-brain-eval-local-file-failed failed-log.jsonl；"
-            "报告：/inner-brain-eval-local-report failed-log.jsonl",
+            "待处理报告：/inner-brain-eval-local-report failed-log.jsonl",
             description,
         )
         self.assertNotIn("- real-log.jsonl：", description)
@@ -365,12 +365,12 @@ class InnerBrainTests(unittest.TestCase):
         larger_file_line = (
             "- zzz-two-failures.jsonl：2 条：总览：/inner-brain-eval-local-file zzz-two-failures.jsonl；"
             "待处理：/inner-brain-eval-local-file-failed zzz-two-failures.jsonl；"
-            "报告：/inner-brain-eval-local-report zzz-two-failures.jsonl"
+            "待处理报告：/inner-brain-eval-local-report zzz-two-failures.jsonl"
         )
         smaller_file_line = (
             "- aaa-one-failure.jsonl：1 条：总览：/inner-brain-eval-local-file aaa-one-failure.jsonl；"
             "待处理：/inner-brain-eval-local-file-failed aaa-one-failure.jsonl；"
-            "报告：/inner-brain-eval-local-report aaa-one-failure.jsonl"
+            "待处理报告：/inner-brain-eval-local-report aaa-one-failure.jsonl"
         )
         self.assertIn("失败文件：", description)
         self.assertIn(larger_file_line, description)

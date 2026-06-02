@@ -1241,7 +1241,7 @@ class JarvisAgent:
                     )
                     if failed_count > 0:
                         candidate_line += f"；待处理：/inner-brain-eval-local-file-failed {source_file}"
-                        candidate_line += f"；报告：/inner-brain-eval-local-report {source_file}"
+                        candidate_line += f"；待处理报告：/inner-brain-eval-local-report {source_file}"
                     lines.append(candidate_line)
         return "\n".join(lines)
 
@@ -1315,7 +1315,7 @@ class JarvisAgent:
                     )
                     if failed_count > 0:
                         candidate_line += f"；待处理：/inner-brain-eval-local-file-failed {source_file}"
-                        candidate_line += f"；报告：/inner-brain-eval-local-report {source_file}"
+                        candidate_line += f"；待处理报告：/inner-brain-eval-local-report {source_file}"
                     lines.append(candidate_line)
         return "\n".join(lines)
 

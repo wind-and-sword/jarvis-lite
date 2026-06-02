@@ -621,7 +621,7 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
                 lines.append(
                     f"- {source_file}：{count} 条：总览：/inner-brain-eval-local-file {source_file}；"
                     f"待处理：/inner-brain-eval-local-file-failed {source_file}；"
-                    f"报告：/inner-brain-eval-local-report {source_file}"
+                    f"待处理报告：/inner-brain-eval-local-report {source_file}"
                 )
     elif report.source_file_filter is None:
         for source_file, count in report.source_file_counts.items():
