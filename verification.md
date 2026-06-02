@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-02：发布 `0.68.0` 可安装测试包，收口 InnerBrain 本机已处理指定文件视图报告入口；`/inner-brain-eval-local-resolved 文件名` 会在同文件仍有待处理失败时追加 `/inner-brain-eval-local-report 当前文件名`，纯通过文件不追加报告入口；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.68.0.exe`。
 - 2026-06-02：发布 `0.67.0` 可安装测试包，收口 InnerBrain 本机文件视图报告入口；`/inner-brain-eval-local-file 文件名` 的当前文件总览会在当前文件仍有失败时追加 `/inner-brain-eval-local-report 当前文件名`，纯通过文件不追加报告入口；全量 `unittest` 565 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.67.0.exe`。
 - 2026-06-02：发布 `0.66.0` 可安装测试包，收口 InnerBrain 本机已处理视图文件候选报告入口；`/inner-brain-eval-local-resolved` 的可查看文件候选会在同文件仍有待处理失败时追加 `/inner-brain-eval-local-report 当前文件名`，纯通过文件不追加报告入口；全量 `unittest` 564 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.66.0.exe`。
 - 2026-06-02：发布 `0.65.0` 可安装测试包，收口 InnerBrain 本机评估全量视图文件候选报告入口；`/inner-brain-eval-local` 的可聚焦文件候选会在同文件仍有失败时追加 `/inner-brain-eval-local-report 当前文件名`，纯通过文件不追加报告入口；全量 `unittest` 564 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.65.0.exe`。

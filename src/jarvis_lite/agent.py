@@ -1281,6 +1281,8 @@ class JarvisAgent:
         lines = [describe_inner_brain_resolved_evaluation(report), "后续处理："]
         if report.source_file_filter is not None:
             lines.append(f"- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed {report.source_file_filter}")
+            if report.failed_case_results:
+                lines.append(f"- 导出当前文件失败报告：/inner-brain-eval-local-report {report.source_file_filter}")
             lines.append("- 查看全部已处理样本：/inner-brain-eval-local-resolved")
             lines.append("- 查看全部待处理失败样本：/inner-brain-eval-local-failed")
         else:
