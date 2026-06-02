@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v81-inner-brain-local-file-failed-overview-label-plan.md](2026-06-03-v81-inner-brain-local-file-failed-overview-label-plan.md)：当前方案版本，明确 InnerBrain 本机文件失败视图当前文件总览标签。
+- [2026-06-03-v82-inner-brain-local-resolved-overview-label-plan.md](2026-06-03-v82-inner-brain-local-resolved-overview-label-plan.md)：当前方案版本，明确 InnerBrain 本机已处理指定文件视图当前文件总览标签。
 
 ## 历史版本
 
@@ -91,6 +91,7 @@
 - [2026-06-03-v79-inner-brain-local-resolved-file-overview-shortcut-plan.md](2026-06-03-v79-inner-brain-local-resolved-file-overview-shortcut-plan.md)：明确 InnerBrain 本机已处理视图文件候选当前文件总览入口。
 - [2026-06-03-v80-inner-brain-local-file-candidate-overview-label-plan.md](2026-06-03-v80-inner-brain-local-file-candidate-overview-label-plan.md)：明确 InnerBrain 本机评估全量视图文件候选总览标签。
 - [2026-06-03-v81-inner-brain-local-file-failed-overview-label-plan.md](2026-06-03-v81-inner-brain-local-file-failed-overview-label-plan.md)：明确 InnerBrain 本机文件失败视图当前文件总览标签。
+- [2026-06-03-v82-inner-brain-local-resolved-overview-label-plan.md](2026-06-03-v82-inner-brain-local-resolved-overview-label-plan.md)：明确 InnerBrain 本机已处理指定文件视图当前文件总览标签。
 
 ## 维护规则
 
