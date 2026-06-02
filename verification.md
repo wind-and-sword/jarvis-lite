@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-02：发布 `0.64.0` 可安装测试包，收口 InnerBrain 本机失败视图失败文件分组报告入口；`/inner-brain-eval-local-failed` 的 `失败文件：` 分组会为每个失败文件追加 `/inner-brain-eval-local-report 当前文件名`；全量 `unittest` 564 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.64.0.exe`。
 - 2026-06-02：发布 `0.63.0` 可安装测试包，收口 InnerBrain 本机失败视图失败文件分组聚焦入口；`/inner-brain-eval-local-failed` 的 `失败文件：` 分组会为每个失败文件追加 `/inner-brain-eval-local-file-failed 当前文件名`；全量 `unittest` 564 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.63.0.exe`。
 - 2026-06-02：发布 `0.62.0` 可安装测试包，收口 InnerBrain 本机评估全量视图文件候选待处理入口；`/inner-brain-eval-local` 的可聚焦文件候选会在同文件仍有失败时追加 `/inner-brain-eval-local-file-failed 当前文件名`，纯通过文件不追加失败入口；全量 `unittest` 564 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.62.0.exe`。
 - 2026-06-02：发布 `0.61.0` 可安装测试包，收口 InnerBrain 本机已处理视图文件候选待处理入口；`/inner-brain-eval-local-resolved` 的可查看文件候选会在同文件仍有待处理失败时追加 `/inner-brain-eval-local-file-failed 当前文件名`，纯已处理文件不追加失败入口；全量 `unittest` 564 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.61.0.exe`。
