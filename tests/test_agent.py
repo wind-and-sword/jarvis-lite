@@ -1631,7 +1631,8 @@ class AgentTests(unittest.TestCase):
         failed_file_line = (
             "- zzz-failed-log.jsonl：1 条，通过 0 条，失败 1 条："
             "/inner-brain-eval-local-file zzz-failed-log.jsonl；"
-            "待处理：/inner-brain-eval-local-file-failed zzz-failed-log.jsonl"
+            "待处理：/inner-brain-eval-local-file-failed zzz-failed-log.jsonl；"
+            "报告：/inner-brain-eval-local-report zzz-failed-log.jsonl"
         )
         passed_file_line = (
             "- aaa-real-log.jsonl：1 条，通过 1 条，失败 0 条："
@@ -1641,6 +1642,10 @@ class AgentTests(unittest.TestCase):
         self.assertIn(passed_file_line, response)
         self.assertNotIn(
             "待处理：/inner-brain-eval-local-file-failed aaa-real-log.jsonl",
+            response,
+        )
+        self.assertNotIn(
+            "报告：/inner-brain-eval-local-report aaa-real-log.jsonl",
             response,
         )
         self.assertLess(response.index(failed_file_line), response.index(passed_file_line))
@@ -3233,7 +3238,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.64.1",
+                        "version": "0.65.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3244,7 +3249,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.64.1", response)
+        self.assertIn("发现新版本：0.65.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3259,7 +3264,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.64.1",
+                        "version": "0.65.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
