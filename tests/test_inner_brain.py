@@ -235,6 +235,21 @@ class InnerBrainTests(unittest.TestCase):
         self.assertNotIn("seed_evaluation：", description)
         self.assertNotIn("早上好 -> assistant.greeting", description)
 
+    def test_inner_brain_local_evaluation_empty_state_suggests_evaluation_sample_commands(self):
+        report = evaluate_inner_brain(InnerBrain(self.paths), source_filter="local_evaluation")
+        description = describe_inner_brain_evaluation(report, failures_only=True)
+
+        self.assertEqual(report.total_count, 0)
+        self.assertIn("本机评估样本：", description)
+        self.assertIn("- 无", description)
+        self.assertIn("添加本机评估样本：", description)
+        self.assertIn("- /inner-brain-eval-add 文本 => /命令", description)
+        self.assertIn("- /inner-brain-eval-label 文本 => intent [slot=value ...]", description)
+        self.assertIn("- /inner-brain-eval-add-candidate 编号 => /命令", description)
+        self.assertIn("- /inner-brain-eval-label-candidate 编号 => intent [slot=value ...]", description)
+        self.assertIn("说明：这些命令只写入本机 evaluation 样本，不自动训练。", description)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
     def test_inner_brain_evaluation_can_filter_local_evaluation_file(self):
         evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
         evaluation_dir.mkdir(parents=True)

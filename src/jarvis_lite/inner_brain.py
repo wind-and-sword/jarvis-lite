@@ -596,6 +596,15 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
         lines.append(f"- 评估文件：{report.source_file_filter}")
     for source, count in report.source_counts.items():
         lines.append(f"- {source}：{count} 条")
+    if report.total_count == 0 and report.name.startswith("local_evaluation"):
+        lines.append("本机评估样本：")
+        lines.append("- 无")
+        lines.append("添加本机评估样本：")
+        lines.append("- /inner-brain-eval-add 文本 => /命令")
+        lines.append("- /inner-brain-eval-label 文本 => intent [slot=value ...]")
+        lines.append("- /inner-brain-eval-add-candidate 编号 => /命令")
+        lines.append("- /inner-brain-eval-label-candidate 编号 => intent [slot=value ...]")
+        lines.append("说明：这些命令只写入本机 evaluation 样本，不自动训练。")
     if failures_only and report.source_file_filter is None:
         failed_source_file_counts = report.failed_source_file_counts
         if failed_source_file_counts:

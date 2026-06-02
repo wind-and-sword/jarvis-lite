@@ -1614,6 +1614,18 @@ class AgentTests(unittest.TestCase):
         self.assertNotIn("早上好 -> assistant.greeting", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
+    def test_inner_brain_eval_local_failed_command_guides_empty_local_evaluation_samples(self):
+        response = self.agent.handle("/inner-brain-eval-local-failed")
+
+        self.assertIn("评估集：local_evaluation", response)
+        self.assertIn("本机评估样本：", response)
+        self.assertIn("- 无", response)
+        self.assertIn("添加本机评估样本：", response)
+        self.assertIn("- /inner-brain-eval-add 文本 => /命令", response)
+        self.assertIn("- /inner-brain-eval-label 文本 => intent [slot=value ...]", response)
+        self.assertIn("说明：这些命令只写入本机 evaluation 样本，不自动训练。", response)
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
     def test_inner_brain_eval_local_failed_command_lists_only_failed_local_cases(self):
         evaluation_dir = self.paths.data_dir / "inner-brain" / "evaluation"
         evaluation_dir.mkdir(parents=True)
@@ -2949,7 +2961,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.45.1",
+                        "version": "0.46.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -2960,7 +2972,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.45.1", response)
+        self.assertIn("发现新版本：0.46.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2975,7 +2987,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.45.1",
+                        "version": "0.46.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
