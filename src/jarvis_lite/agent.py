@@ -1290,7 +1290,16 @@ class JarvisAgent:
         if save_result.case.expected_command:
             lines.append(f"目标命令：{save_result.case.expected_command}")
         lines.append("说明：这里只保存评估样本，不执行命令、不训练。")
-        lines.append("查看本机评估：/inner-brain-eval-local")
+        source_file = save_result.path.name
+        lines.extend(
+            [
+                "后续验证：",
+                "- 复跑本机评估：/inner-brain-eval-local",
+                "- 只看失败样本：/inner-brain-eval-local-failed",
+                f"- 聚焦样本文件：/inner-brain-eval-local-file {source_file}",
+                "- 导出失败报告：/inner-brain-eval-local-report",
+            ]
+        )
         return "\n".join(lines)
 
     def _parse_inner_brain_label_candidate_body(self, body: str) -> tuple[int, str] | None:

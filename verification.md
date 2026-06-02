@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-02：发布 `0.47.0` 可安装测试包，收口 InnerBrain 本机 evaluation 样本保存后续验证提示；`/inner-brain-eval-add`、`/inner-brain-eval-label`、`/inner-brain-eval-add-candidate` 与 `/inner-brain-eval-label-candidate` 保存样本后会提示复跑本机评估、只看失败、聚焦 `runtime.jsonl` 和导出失败报告；全量 `unittest` 557 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.47.0.exe`。
 - 2026-06-02：发布 `0.46.0` 可安装测试包，收口 InnerBrain 本机 evaluation 空样本引导；当 `/inner-brain-eval-local` 或 `/inner-brain-eval-local-failed` 没有本机 JSONL 样本时，会明确显示 `本机评估样本：- 无` 并列出 `/inner-brain-eval-add`、`/inner-brain-eval-label`、`/inner-brain-eval-add-candidate` 与 `/inner-brain-eval-label-candidate`，说明这些命令只写本机 evaluation 样本、不自动训练；全量 `unittest` 557 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.46.0.exe`。
 - 2026-06-02：发布 `0.45.0` 可安装测试包，收口 InnerBrain 本机失败评估文件意图混淆修复建议分组；`/inner-brain-eval-local-report [文件名]` 未指定文件时会按 `source_file + expected_intent -> actual_intent` 集中列出显式 `/inner-brain-teach` 或 `/inner-brain-label` 建议，只读导出且不写入 runtime 训练样本；全量 `unittest` 555 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.45.0.exe`。
 - 2026-06-02：发布 `0.44.0` 可安装测试包，收口 InnerBrain 本机失败评估意图混淆修复建议分组；`/inner-brain-eval-local-report [文件名]` 导出的 `word/inner-brain-evaluation-report.md` 会按 `expected_intent -> actual_intent` 混淆方向集中列出显式 `/inner-brain-teach` 或 `/inner-brain-label` 建议，只读导出且不写入 runtime 训练样本；全量 `unittest` 554 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.44.0.exe`。
