@@ -1723,7 +1723,10 @@ class AgentTests(unittest.TestCase):
         response = self.agent.handle("/inner-brain-eval-local-failed")
 
         self.assertIn("失败文件：", response)
-        self.assertIn("- failed-log.jsonl：1 条", response)
+        self.assertIn(
+            "- failed-log.jsonl：1 条：/inner-brain-eval-local-file-failed failed-log.jsonl",
+            response,
+        )
         self.assertNotIn("- real-log.jsonl：", response)
         self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
@@ -1770,8 +1773,8 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle("/inner-brain-eval-local-failed")
 
-        larger_file_line = "- zzz-two-failures.jsonl：2 条"
-        smaller_file_line = "- aaa-one-failure.jsonl：1 条"
+        larger_file_line = "- zzz-two-failures.jsonl：2 条：/inner-brain-eval-local-file-failed zzz-two-failures.jsonl"
+        smaller_file_line = "- aaa-one-failure.jsonl：1 条：/inner-brain-eval-local-file-failed aaa-one-failure.jsonl"
         self.assertIn("失败文件：", response)
         self.assertIn(larger_file_line, response)
         self.assertIn(smaller_file_line, response)
@@ -3223,7 +3226,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.62.1",
+                        "version": "0.63.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3234,7 +3237,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.62.1", response)
+        self.assertIn("发现新版本：0.63.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3249,7 +3252,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.62.1",
+                        "version": "0.63.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

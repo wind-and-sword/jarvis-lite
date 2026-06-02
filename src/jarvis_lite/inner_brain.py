@@ -618,7 +618,7 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
                 key=lambda item: (-item[1], item[0]),
             )
             for source_file, count in sorted_failed_source_file_counts:
-                lines.append(f"- {source_file}：{count} 条")
+                lines.append(f"- {source_file}：{count} 条：/inner-brain-eval-local-file-failed {source_file}")
     elif report.source_file_filter is None:
         for source_file, count in report.source_file_counts.items():
             lines.append(f"- {source_file}：{count} 条")
