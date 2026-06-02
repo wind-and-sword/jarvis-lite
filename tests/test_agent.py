@@ -1612,6 +1612,10 @@ class AgentTests(unittest.TestCase):
         self.assertIn("请看看资料库状态 -> knowledge.status", response)
         self.assertNotIn("seed_evaluation：", response)
         self.assertNotIn("早上好 -> assistant.greeting", response)
+        self.assertIn("后续处理：", response)
+        self.assertIn("- 只看待处理失败样本：/inner-brain-eval-local-failed", response)
+        self.assertIn("- 查看已处理样本：/inner-brain-eval-local-resolved", response)
+        self.assertIn("- 按文件聚焦样本：/inner-brain-eval-local-file 文件名", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_inner_brain_eval_local_failed_command_guides_empty_local_evaluation_samples(self):
@@ -1624,6 +1628,8 @@ class AgentTests(unittest.TestCase):
         self.assertIn("- /inner-brain-eval-add 文本 => /命令", response)
         self.assertIn("- /inner-brain-eval-label 文本 => intent [slot=value ...]", response)
         self.assertIn("说明：这些命令只写入本机 evaluation 样本，不自动训练。", response)
+        self.assertNotIn("查看已处理样本", response)
+        self.assertNotIn("按文件聚焦样本", response)
         self.assertNotIn("导出本机失败报告", response)
         self.assertNotIn("按文件聚焦失败", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
@@ -1730,6 +1736,10 @@ class AgentTests(unittest.TestCase):
         self.assertIn("请看看资料库状态 -> knowledge.status", response)
         self.assertNotIn("FAIL 请看看资料库状态", response)
         self.assertNotIn("seed_evaluation：", response)
+        self.assertIn("后续处理：", response)
+        self.assertIn("- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed real-log.jsonl", response)
+        self.assertIn("- 查看当前文件已处理样本：/inner-brain-eval-local-resolved real-log.jsonl", response)
+        self.assertIn("- 查看全部本机评估样本：/inner-brain-eval-local", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_inner_brain_eval_local_file_failed_command_lists_only_selected_file_failures(self):
@@ -3088,7 +3098,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.51.1",
+                        "version": "0.52.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3099,7 +3109,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.51.1", response)
+        self.assertIn("发现新版本：0.52.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3114,7 +3124,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.51.1",
+                        "version": "0.52.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

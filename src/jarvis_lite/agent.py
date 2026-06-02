@@ -267,7 +267,8 @@ class JarvisAgent:
             return self._inner_brain_local_resolved_evaluation(args)
         if self._is_inner_brain_eval_local_prompt(prompt):
             self.tools.run("record_log", message="执行 InnerBrain 本机评估集")
-            return describe_inner_brain_evaluation(evaluate_inner_brain(self.inner_brain, source_filter="local_evaluation"))
+            report = evaluate_inner_brain(self.inner_brain, source_filter="local_evaluation")
+            return self._describe_inner_brain_local_evaluation(report)
         if self._is_inner_brain_eval_failures_prompt(prompt):
             self.tools.run("record_log", message="执行 InnerBrain 本地评估集并只显示失败样本")
             return describe_inner_brain_evaluation(evaluate_inner_brain(self.inner_brain), failures_only=True)
@@ -1195,7 +1196,24 @@ class JarvisAgent:
         )
         if failures_only:
             return self._describe_inner_brain_local_failed_evaluation(report)
-        return describe_inner_brain_evaluation(report, failures_only=False)
+        return self._describe_inner_brain_local_evaluation(report)
+
+    def _describe_inner_brain_local_evaluation(self, report: InnerBrainEvaluationReport) -> str:
+        """本机全量评估视图追加治理入口，不改评估主体。"""
+
+        description = describe_inner_brain_evaluation(report, failures_only=False)
+        if report.total_count == 0:
+            return description
+        lines = [description, "后续处理："]
+        if report.source_file_filter is not None:
+            lines.append(f"- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed {report.source_file_filter}")
+            lines.append(f"- 查看当前文件已处理样本：/inner-brain-eval-local-resolved {report.source_file_filter}")
+            lines.append("- 查看全部本机评估样本：/inner-brain-eval-local")
+        else:
+            lines.append("- 只看待处理失败样本：/inner-brain-eval-local-failed")
+            lines.append("- 查看已处理样本：/inner-brain-eval-local-resolved")
+            lines.append("- 按文件聚焦样本：/inner-brain-eval-local-file 文件名")
+        return "\n".join(lines)
 
     def _describe_inner_brain_local_failed_evaluation(self, report: InnerBrainEvaluationReport) -> str:
         """本机失败视图追加报告导出入口，不改评估主体。"""
