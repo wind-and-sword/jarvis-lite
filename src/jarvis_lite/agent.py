@@ -1349,7 +1349,7 @@ class JarvisAgent:
                 f"- 当前文件总览：/inner-brain-eval-local-file {save_result.source_file_filter}"
             )
             lines.append(
-                f"- 复查当前文件失败样本：/inner-brain-eval-local-file-failed {save_result.source_file_filter}"
+                f"- 查看当前文件待处理失败样本：/inner-brain-eval-local-file-failed {save_result.source_file_filter}"
             )
             lines.append(
                 f"- 查看当前文件已处理样本：/inner-brain-eval-local-resolved {save_result.source_file_filter}"
