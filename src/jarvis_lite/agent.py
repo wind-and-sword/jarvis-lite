@@ -1237,7 +1237,7 @@ class JarvisAgent:
                     failed_count = file_failed_counts.get(source_file, 0)
                     candidate_line = (
                         f"- {source_file}：{count} 条，通过 {passed_count} 条，失败 {failed_count} 条："
-                        f"/inner-brain-eval-local-file {source_file}"
+                        f"总览：/inner-brain-eval-local-file {source_file}"
                     )
                     if failed_count > 0:
                         candidate_line += f"；待处理：/inner-brain-eval-local-file-failed {source_file}"
