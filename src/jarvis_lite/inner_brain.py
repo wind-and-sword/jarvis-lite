@@ -669,6 +669,23 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
         if not case_result.passed:
             lines.append(f"  原因：{case_result.reason}")
     if report.failed_case_results:
+        intent_confusion_fix_suggestions: dict[str, list[str]] = {}
+        for case_result in report.failed_case_results:
+            if case_result.case.expected_intent == case_result.result.intent:
+                continue
+            confusion = f"{case_result.case.expected_intent} -> {case_result.result.intent}"
+            intent_confusion_fix_suggestions.setdefault(confusion, []).append(
+                _inner_brain_evaluation_fix_suggestion(case_result)
+            )
+        if intent_confusion_fix_suggestions:
+            lines.append("失败意图混淆修复建议：")
+            for confusion, suggestions in sorted(
+                intent_confusion_fix_suggestions.items(),
+                key=lambda item: (-len(item[1]), item[0]),
+            ):
+                lines.append(f"- {confusion}：{len(suggestions)} 条")
+                for suggestion in suggestions:
+                    lines.append(f"  - {suggestion}")
         lines.append("失败修复建议：")
         for case_result in report.failed_case_results:
             lines.append(f"- {_inner_brain_evaluation_fix_suggestion(case_result)}")

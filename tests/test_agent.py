@@ -1786,6 +1786,8 @@ class AgentTests(unittest.TestCase):
         self.assertIn("- knowledge.summary -> knowledge.status：1 条", content)
         self.assertIn("失败文件意图混淆汇总：", content)
         self.assertIn("- failed-log.jsonl：knowledge.summary -> knowledge.status：1 条", content)
+        self.assertIn("失败意图混淆修复建议：", content)
+        self.assertIn("  - 请看看资料库状态：/inner-brain-teach 请看看资料库状态 => /kb-summary", content)
         self.assertIn("失败原因汇总：", content)
         self.assertIn("意图期望 knowledge.summary，实际 knowledge.status；命令期望 /kb-summary，实际 /kb：1 条", content)
         self.assertIn("FAIL 请看看资料库状态 -> knowledge.status", content)
@@ -2944,7 +2946,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.43.1",
+                        "version": "0.44.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -2955,7 +2957,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.43.1", response)
+        self.assertIn("发现新版本：0.44.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -2970,7 +2972,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.43.1",
+                        "version": "0.44.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
