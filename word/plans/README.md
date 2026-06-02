@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v74-inner-brain-report-export-resolved-shortcut-plan.md](2026-06-03-v74-inner-brain-report-export-resolved-shortcut-plan.md)：当前方案版本，明确 InnerBrain 本机失败报告导出反馈当前文件已处理入口。
+- [2026-06-03-v75-inner-brain-report-export-file-overview-shortcut-plan.md](2026-06-03-v75-inner-brain-report-export-file-overview-shortcut-plan.md)：当前方案版本，明确 InnerBrain 本机失败报告导出反馈当前文件总览入口。
 
 ## 历史版本
 
@@ -84,6 +84,7 @@
 - [2026-06-02-v72-inner-brain-local-resolved-filtered-report-shortcut-plan.md](2026-06-02-v72-inner-brain-local-resolved-filtered-report-shortcut-plan.md)：明确 InnerBrain 本机已处理指定文件视图报告入口。
 - [2026-06-03-v73-inner-brain-eval-save-file-report-shortcut-plan.md](2026-06-03-v73-inner-brain-eval-save-file-report-shortcut-plan.md)：明确 InnerBrain 本机 evaluation 保存反馈按文件报告入口。
 - [2026-06-03-v74-inner-brain-report-export-resolved-shortcut-plan.md](2026-06-03-v74-inner-brain-report-export-resolved-shortcut-plan.md)：明确 InnerBrain 本机失败报告导出反馈当前文件已处理入口。
+- [2026-06-03-v75-inner-brain-report-export-file-overview-shortcut-plan.md](2026-06-03-v75-inner-brain-report-export-file-overview-shortcut-plan.md)：明确 InnerBrain 本机失败报告导出反馈当前文件总览入口。
 
 ## 维护规则
 
