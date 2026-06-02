@@ -1345,6 +1345,9 @@ class JarvisAgent:
             lines.append(
                 f"- 复查当前文件失败样本：/inner-brain-eval-local-file-failed {save_result.source_file_filter}"
             )
+            lines.append(
+                f"- 查看当前文件已处理样本：/inner-brain-eval-local-resolved {save_result.source_file_filter}"
+            )
             lines.append("- 查看全部本机失败样本：/inner-brain-eval-local-failed")
         else:
             lines.append("- 查看本机失败样本：/inner-brain-eval-local-failed")
