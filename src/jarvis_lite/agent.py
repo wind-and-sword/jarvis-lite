@@ -1346,7 +1346,7 @@ class JarvisAgent:
         lines.append("后续处理：")
         if save_result.source_file_filter is not None:
             lines.append(
-                f"- 查看当前文件全部样本：/inner-brain-eval-local-file {save_result.source_file_filter}"
+                f"- 当前文件总览：/inner-brain-eval-local-file {save_result.source_file_filter}"
             )
             lines.append(
                 f"- 复查当前文件失败样本：/inner-brain-eval-local-file-failed {save_result.source_file_filter}"

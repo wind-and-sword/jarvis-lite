@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.79.0` 可安装测试包，收口 InnerBrain 本机失败报告导出反馈当前文件总览标签；`/inner-brain-eval-local-report 文件名` 的导出反馈会用 `当前文件总览：/inner-brain-eval-local-file 当前文件名` 提示回到同文件全部样本；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.79.0.exe`。
 - 2026-06-03：发布 `0.78.0` 可安装测试包，收口 InnerBrain 本机已处理指定文件视图当前文件总览标签；`/inner-brain-eval-local-resolved 文件名` 的后续处理会用 `当前文件总览：/inner-brain-eval-local-file 当前文件名` 提示回到同文件全部样本；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.78.0.exe`。
 - 2026-06-03：发布 `0.77.0` 可安装测试包，收口 InnerBrain 本机文件失败视图当前文件总览标签；`/inner-brain-eval-local-file-failed 文件名` 的后续处理会用 `当前文件总览：/inner-brain-eval-local-file 当前文件名` 提示回到同文件全部样本；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.77.0.exe`。
 - 2026-06-03：发布 `0.76.0` 可安装测试包，收口 InnerBrain 本机评估全量视图文件候选总览标签；`/inner-brain-eval-local` 的 `可聚焦文件：` 候选会把同文件总览入口标注为 `总览：/inner-brain-eval-local-file 当前文件名`，有失败时继续提示待处理和报告入口；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.76.0.exe`。
