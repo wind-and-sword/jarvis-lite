@@ -2236,6 +2236,10 @@ class AgentTests(unittest.TestCase):
         self.assertIn("待处理失败样本：0", response)
         self.assertIn("评估文件：runtime.jsonl", response)
         self.assertIn("当前文件样本：0", response)
+        self.assertIn(
+            "提示：当前筛选文件暂无本机 evaluation 样本；补样本命令默认写入 runtime.jsonl。",
+            response,
+        )
         self.assertTrue(report_path.exists())
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
@@ -3362,7 +3366,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.98.1",
+                        "version": "0.99.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3373,7 +3377,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.98.1", response)
+        self.assertIn("发现新版本：0.99.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3388,7 +3392,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.98.1",
+                        "version": "0.99.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

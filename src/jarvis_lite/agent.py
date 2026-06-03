@@ -1343,6 +1343,8 @@ class JarvisAgent:
         if save_result.source_file_filter is not None:
             lines.append(f"评估文件：{save_result.source_file_filter}")
             lines.append(f"当前文件样本：{report.total_count}")
+            if report.total_count == 0:
+                lines.append("提示：当前筛选文件暂无本机 evaluation 样本；补样本命令默认写入 runtime.jsonl。")
         lines.append("说明：这里只导出评估报告，不写入 runtime 训练样本。")
         lines.append("后续处理：")
         if save_result.source_file_filter is not None:
