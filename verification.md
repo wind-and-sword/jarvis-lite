@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.102.0` 可安装测试包，收口 InnerBrain README 已处理空视图概要同步；README 顶部 `InnerBrain 样本闭环` 概要已说明暂无已处理样本时会提示这里只显示已通过样本，并引导查看待处理失败或补充本机 evaluation 样本；全量 `unittest` 570 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.102.0.exe`。
 - 2026-06-03：发布 `0.101.0` 可安装测试包，收口 InnerBrain 本机已处理空视图行动提示；`/inner-brain-eval-local-resolved [文件名]` 没有已通过样本时会提示这里只显示已通过样本，并引导查看待处理失败或补充本机 evaluation 样本；全量 `unittest` 569 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.101.0.exe`。
 - 2026-06-03：发布 `0.100.0` 可安装测试包，收口 InnerBrain 本机空评估视图补样本写入提示；`/inner-brain-eval-local` 与 `/inner-brain-eval-local-failed` 在本机 evaluation 样本为空时会提示补样本命令默认写入 `runtime.jsonl`；全量 `unittest` 569 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.100.0.exe`。
 - 2026-06-03：发布 `0.99.0` 可安装测试包，收口 InnerBrain 本机报告空筛选文件补样本写入提示；`/inner-brain-eval-local-report [文件名]` 的成功反馈会显示 `当前文件样本：N`，指定文件无样本时明确显示 `当前文件样本：0` 并提示补样本命令默认写入 `runtime.jsonl`；全量 `unittest` 568 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.99.0.exe`。
