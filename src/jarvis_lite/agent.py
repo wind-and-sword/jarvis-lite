@@ -99,6 +99,7 @@ from .runtime_context import (
 from .tools import ToolRegistry
 from .update import describe_update_download, describe_update_status, update_download_dir
 from .voice import describe_voice, speak_text
+from .window_state import describe_current_windows
 
 
 TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
@@ -134,6 +135,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/automation-status": "automation.status",
     "/apps": "desktop.apps.list",
     "/app-find": "desktop.apps.find",
+    "/windows": "desktop.windows.status",
     "/recent-files": "context.recent_files",
     "/tag-history": "tag.history",
     "/batch-tag-history": "tag.history",
@@ -571,6 +573,9 @@ class JarvisAgent:
             if not args:
                 return "用法：/app-find 应用名称或别名"
             return self._find_registered_app(" ".join(args))
+        if command == "/windows":
+            self.tools.run("record_log", message="查看只读窗口感知状态")
+            return describe_current_windows(self.paths)
         if command == "/inner-brain-preview":
             if not args:
                 return "用法：/inner-brain-preview 文本"
@@ -824,6 +829,7 @@ class JarvisAgent:
                 "/automation-status：查看阶段 4 自动化状态",
                 "/apps：查看首批常用应用注册表",
                 "/app-find 应用名称或别名：匹配已登记应用，不启动应用",
+                "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",
                 "/recent-files：查看常用目录、项目目录、桌面和下载目录中的最近文件",
                 "/tag-history：查看最近批量打标签历史",
                 "/update-status [清单路径或URL]：检查 Jarvis Lite 新版本",

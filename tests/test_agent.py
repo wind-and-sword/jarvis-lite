@@ -3404,12 +3404,20 @@ class AgentTests(unittest.TestCase):
         self.assertIn("没有找到应用：不存在的应用", response)
         self.assertIn("/apps", response)
 
+    def test_windows_command_reports_readonly_window_snapshot(self):
+        with patch("jarvis_lite.agent.describe_current_windows", return_value="窗口感知：\n- 可见窗口：1 个") as probe:
+            response = self.agent.handle("/windows")
+
+        self.assertIn("窗口感知", response)
+        self.assertIn("可见窗口：1 个", response)
+        probe.assert_called_once_with(self.agent.paths)
+
     def test_update_status_command_reports_available_update_from_manifest(self):
         manifest = Path(self.temp_dir.name) / "update.json"
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.104.1",
+                        "version": "0.105.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3420,7 +3428,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.104.1", response)
+        self.assertIn("发现新版本：0.105.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3435,7 +3443,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.104.1",
+                        "version": "0.105.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

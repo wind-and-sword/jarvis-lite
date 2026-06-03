@@ -119,6 +119,7 @@
 - [2026-06-03-v107-inner-brain-project-plan-resolved-empty-summary-plan.md](2026-06-03-v107-inner-brain-project-plan-resolved-empty-summary-plan.md)：明确 InnerBrain PROJECT-PLAN 已处理空视图主干同步。
 - [2026-06-03-v108-jarvis-lite-1-acceptance-plan.md](2026-06-03-v108-jarvis-lite-1-acceptance-plan.md)：明确 Jarvis Lite 1.0 验收线、P0/P1 能力、自动记忆配置边界和旧方案整理结论。
 - [2026-06-03-v109-app-registry-plan.md](2026-06-03-v109-app-registry-plan.md)：明确应用注册表第一阶段、`/apps` 和 `/app-find` 的只读验收范围。
+- [2026-06-03-v110-window-state-plan.md](2026-06-03-v110-window-state-plan.md)：明确只读窗口感知第一阶段、`/windows` 和窗口快照的只读验收范围。
 
 ## 维护规则
 

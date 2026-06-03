@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-RELEASE_VERSION = "0.104.0"
+RELEASE_VERSION = "0.105.0"
 
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 

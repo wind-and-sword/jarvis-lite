@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.105.0` 可安装测试包，完成只读窗口感知第一阶段；`/windows` 可查看当前 Windows 可见顶层窗口、前台窗口、标题、PID、进程名和 AppRegistry 应用匹配结果，当前阶段不切换窗口、不点击、不输入、不截图；全量 `unittest` 581 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.105.0.exe`。
 - 2026-06-03：发布 `0.104.0` 可安装测试包，完成应用注册表第一阶段；`/apps` 可查看 Chrome、QQ、微信、IntelliJ IDEA 和 Clash Verge 的只读注册表，`/app-find 名称或别名` 可按中英文别名匹配已登记应用，当前阶段不启动外部应用；全量 `unittest` 577 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.104.0.exe`。
 - 2026-06-03：发布 `0.103.0` 可安装测试包，收口 InnerBrain PROJECT-PLAN 已处理空视图主干同步；`word/PROJECT-PLAN.md` 主干 `InnerBrain 可观察与样本闭环` 概要已说明暂无已处理样本时会提示这里只显示已通过样本，并引导查看待处理失败或补充本机 evaluation 样本；全量 `unittest` 571 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.103.0.exe`。
 - 2026-06-03：发布 `0.102.0` 可安装测试包，收口 InnerBrain README 已处理空视图概要同步；README 顶部 `InnerBrain 样本闭环` 概要已说明暂无已处理样本时会提示这里只显示已通过样本，并引导查看待处理失败或补充本机 evaluation 样本；全量 `unittest` 570 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.102.0.exe`。
