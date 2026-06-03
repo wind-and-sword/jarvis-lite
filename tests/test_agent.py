@@ -851,7 +851,17 @@ class AgentTests(unittest.TestCase):
         self.assertIn("工具日志", response)
         self.assertIn("自然语言", response)
         self.assertIn("桌面能力", response)
+        self.assertIn("意图授权", response)
         self.assertIn("memory/profile.md", response)
+
+    def test_authorization_status_command_reports_policy(self):
+        response = self.agent.handle("/authorization-status")
+
+        self.assertIn("意图授权层状态", response)
+        self.assertIn("显式 slash command", response)
+        self.assertIn("准备后确认", response)
+        self.assertIn("LLM 外脑桌面动作", response)
+        self.assertIn("/hotkey", response)
 
     def test_help_command_lists_llm_usage_command(self):
         response = self.agent.handle("/help")
@@ -879,6 +889,7 @@ class AgentTests(unittest.TestCase):
             response,
         )
         self.assertIn("/llm-enable：查看外脑启用状态和本地配置路径", response)
+        self.assertIn("/authorization-status：查看意图授权层状态", response)
         self.assertIn("/search-status：查看联网搜索 provider 状态", response)
         self.assertIn("/search 关键词：联网搜索并返回来源", response)
 
@@ -3587,7 +3598,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.113.1",
+                        "version": "0.114.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3598,7 +3609,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.113.1", response)
+        self.assertIn("发现新版本：0.114.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3613,7 +3624,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.113.1",
+                        "version": "0.114.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
@@ -4655,6 +4666,18 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("LLM 外脑拒绝执行未列入白名单的命令：/unknown", response)
         self.assertNotIn("未知命令：/unknown", response)
+        self.assertEqual(len(provider.calls), 1)
+
+    def test_llm_desktop_action_command_is_downgraded_by_authorization_layer(self):
+        provider = FakeLLMProvider('{"type":"command","command":"/hotkey ctrl+l","reason":"用户想操作桌面"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+
+        response = agent.handle("帮我聚焦地址栏")
+
+        self.assertIn("授权层降级：LLM 外脑建议桌面动作命令", response)
+        self.assertIn("/hotkey ctrl+l", response)
+        self.assertIn("不会自动执行", response)
+        self.assertNotIn("快捷键执行：", response)
         self.assertEqual(len(provider.calls), 1)
 
     def test_llm_fallback_context_includes_recent_next_actions(self):

@@ -20,6 +20,11 @@ from .automation import (
     suggest_next_actions_from_context,
     write_daily_report,
 )
+from .authorization import (
+    authorize_intent_execution,
+    describe_authorization_status,
+    is_desktop_action_command,
+)
 from .app_registry import describe_app_launch, describe_registered_apps, match_registered_app
 from .config import ProjectPaths, build_project_paths
 from .knowledge import (
@@ -137,6 +142,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/kb-summary": "knowledge.summary",
     "/knowledge-summary": "knowledge.summary",
     "/voice-status": "voice.status",
+    "/authorization-status": "authorization.status",
     "/automation-status": "automation.status",
     "/hotkey": "desktop.hotkey",
     "/window-focus": "desktop.windows.focus",
@@ -313,6 +319,9 @@ class JarvisAgent:
         if prompt in {"/voice-status", "voice-status"}:
             self.tools.run("record_log", message="查看语音入口状态")
             return describe_voice(self.paths)
+        if prompt in {"/authorization-status", "authorization-status"}:
+            self.tools.run("record_log", message="查看意图授权层状态")
+            return describe_authorization_status()
         if prompt in {"/automation-status", "automation-status"}:
             self.tools.run("record_log", message="查看阶段 4 自动化状态")
             return describe_automation(self.paths)
@@ -911,6 +920,7 @@ class JarvisAgent:
                 "/voice-status：查看阶段 3 语音入口状态",
                 "/speak 文本：播报一段文本",
                 "/voice 已识别的语音文本：按语音入口处理文本并播报回答",
+                "/authorization-status：查看意图授权层状态",
                 "/automation-status：查看阶段 4 自动化状态",
                 "/hotkey key1+key2 [key3+key4 ...]：发送显式快捷键组合，不点击、不输入文本、不切换窗口",
                 "/mouse-click x y [button=left|right|middle]：执行显式坐标鼠标点击，不做目标识别、不拖动、不切换窗口",
@@ -2972,6 +2982,23 @@ class JarvisAgent:
             command = intent.command.strip()
             if not command.startswith("/"):
                 return f"LLM 外脑给出了非命令建议：{command}"
+            if is_desktop_action_command(command):
+                decision = authorize_intent_execution(
+                    intent_name=self._route_command_detail(command),
+                    command=command,
+                    source="llm",
+                    confidence=1.0,
+                )
+                if decision.action == "downgrade":
+                    return "\n".join(
+                        [
+                            "授权层降级：LLM 外脑建议桌面动作命令。",
+                            f"命令：{command}",
+                            f"原因：{decision.reason}",
+                            f"下一步：{decision.next_step}",
+                            "说明：不会自动执行；需要你显式输入 slash command 或通过建议确认链路执行。",
+                        ]
+                    )
             if not is_llm_allowed_command(command):
                 return f"LLM 外脑拒绝执行未列入白名单的命令：{command}"
             return "\n".join(
@@ -3722,11 +3749,12 @@ class JarvisAgent:
             "inner-brain-eval-local-file",
             "inner-brain-eval-local-file-failed",
             "inner-brain-eval-local-resolved",
-            "inner-brain-candidates",
-            "inner-brain-teach-candidate",
-            "inner-brain-label-candidate",
-            "brain-candidates",
-            "llm-usage",
+                "inner-brain-candidates",
+                "inner-brain-teach-candidate",
+                "inner-brain-label-candidate",
+                "brain-candidates",
+                "authorization-status",
+                "llm-usage",
             "llm-context-preview",
             "recent-context",
             "context",
@@ -4077,6 +4105,7 @@ class JarvisAgent:
                 f"- 工具日志：{self._project_path(self.paths.log_path)}",
                 "- 自然语言：已支持能力询问、身份询问、日报、知识库、更新和打开磁盘等第一批意图",
                 "- 语音入口：/voice、/speak、/voice-status",
+                "- 意图授权：/authorization-status 查看直接执行、准备确认、追问和降级策略",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",
                 "- 桌面能力：小助手窗口、面板、托盘、主题、开机启动、安装包、更新检查和下载",
                 "- 会话能力：/history、/save-summary、/clear",

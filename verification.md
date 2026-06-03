@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.114.0` 可安装测试包，完成意图授权层第一阶段；`/authorization-status` 可查看直接执行、准备后确认、追问补充和降级策略，LLM 外脑桌面动作命令会降级说明且不自动执行；全量 `unittest` 636 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.114.0.exe`。
 - 2026-06-03：发布 `0.113.0` 可安装测试包，完成应用启动自动化第一阶段；`/app-launch 应用名称或别名` 可启动 AppRegistry 中已登记且有可用路径的应用，当前阶段不自动切换窗口、不点击、不输入、不接入自然语言自动启动；全量 `unittest` 625 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.113.0.exe`。
 - 2026-06-03：发布 `0.112.0` 可安装测试包，完成窗口切换自动化第一阶段；`/window-focus 编号或标题/应用名` 可切换到当前已存在的显式窗口，当前阶段不启动应用、不点击、不输入，不接入自然语言自动切换；全量 `unittest` 618 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.112.0.exe`。
 - 2026-06-03：发布 `0.111.0` 可安装测试包，完成文本输入自动化第一阶段；`/type-text 文本` 可向当前焦点输入显式文本，当前阶段不做目标识别、不点击、不切换窗口、不启动应用，不接入自然语言自动输入；全量 `unittest` 611 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.111.0.exe`。
