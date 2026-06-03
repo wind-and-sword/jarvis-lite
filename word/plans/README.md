@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v104-inner-brain-empty-evaluation-runtime-guidance-plan.md](2026-06-03-v104-inner-brain-empty-evaluation-runtime-guidance-plan.md)：当前方案版本，明确 InnerBrain 本机空评估视图补样本写入提示。
+- [2026-06-03-v108-jarvis-lite-1-acceptance-plan.md](2026-06-03-v108-jarvis-lite-1-acceptance-plan.md)：当前方案版本，明确 Jarvis Lite 1.0 验收线、P0/P1 能力、自动记忆配置边界和旧方案整理结论。
 
 ## 历史版本
 
@@ -117,6 +117,7 @@
 - [2026-06-03-v105-inner-brain-resolved-empty-guidance-plan.md](2026-06-03-v105-inner-brain-resolved-empty-guidance-plan.md)：明确 InnerBrain 本机已处理空视图行动提示。
 - [2026-06-03-v106-inner-brain-readme-resolved-empty-summary-plan.md](2026-06-03-v106-inner-brain-readme-resolved-empty-summary-plan.md)：明确 InnerBrain README 已处理空视图概要同步。
 - [2026-06-03-v107-inner-brain-project-plan-resolved-empty-summary-plan.md](2026-06-03-v107-inner-brain-project-plan-resolved-empty-summary-plan.md)：明确 InnerBrain PROJECT-PLAN 已处理空视图主干同步。
+- [2026-06-03-v108-jarvis-lite-1-acceptance-plan.md](2026-06-03-v108-jarvis-lite-1-acceptance-plan.md)：明确 Jarvis Lite 1.0 验收线、P0/P1 能力、自动记忆配置边界和旧方案整理结论。
 
 ## 维护规则
 

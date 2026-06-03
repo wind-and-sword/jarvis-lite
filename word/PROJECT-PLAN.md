@@ -18,8 +18,24 @@ PC Agent 稳定
   -> 接入并打磨 LLM 外脑
   -> 接入 Agent 控制的联网搜索工具
   -> 打磨 PC + 内脑 + 外脑核心闭环
+  -> 进入 Jarvis Lite 1.0 验收路线：能听懂自然语言并真实操作常用电脑应用
   -> 再评估手机、手表、车机、AR 眼镜等多端入口
 ```
+
+## 1.0 验收线
+
+Jarvis Lite 1.0 的正式验收目标是：用户用中文、英文或中英混合自然语言表达常见电脑任务，Jarvis Lite 能理解意图、补齐缺失信息、判断是否具备执行授权、操作目标应用完成任务，并在失败时记录上下文和给出下一步建议。
+
+1.0 P0 能力包括：
+
+- 自然语言主入口：不要求用户记忆 slash command，高频任务由 InnerBrain 本地处理，复杂或低置信输入进入 LLM 外脑 fallback。
+- 意图授权层：区分询问、准备、执行和建议，并基于动作风险、授权明确度、缺失槽位、免确认规则和识别置信度决定直接执行、准备后确认、追问或拒绝。
+- 自动记忆与配置管家：通过日常对话沉淀应用别名、常用路径、联系人、免确认规则和真实自然语言样本；用户可查看、修改、删除和撤销，但不需要手工维护配置文件。
+- 常用应用能力：首批覆盖 Chrome、QQ、微信、IntelliJ IDEA 和 Clash Verge，支持打开、切换、窗口识别、截图、OCR 和第一批低风险工作流。
+- 桌面自动化基础：支持应用启动、窗口切换、快捷键、文本输入、点击目标和截图保存，并返回可复盘的执行结果。
+- 任务状态与失败复盘：多步骤任务能记录当前步骤、失败位置、屏幕/OCR 上下文、授权依据和下一步建议。
+
+详细验收清单见 [v108：Jarvis Lite 1.0 验收线方案](plans/2026-06-03-v108-jarvis-lite-1-acceptance-plan.md)。
 
 ## 当前主干
 
@@ -61,6 +77,9 @@ PC Agent 稳定
 
 后续目标：
 
+- 从 v108 起，下一阶段主线切换为 Jarvis Lite 1.0 验收路线。InnerBrain 本机 evaluation、LLM 外脑、联网搜索和桌面面板继续作为支撑能力维护，不再把报告文案、空状态和局部提示微调作为主线。
+- 优先实现应用注册与窗口感知、截图/OCR、键鼠自动化基础、意图授权层、自动记忆与配置管家、五个常用应用首批工作流和失败复盘。
+- 旧的真实 `runtime.jsonl` 观察与本机 evaluation 报告能力保留，用于为 1.0 的自然语言理解、失败复盘和用户习惯学习提供样本来源。
 - 继续扩展 InnerBrain seed/runtime 样本，把用户真实日志和现有命令能力持续沉淀为 `text -> intent -> slots` 数据。
 - 继续扩展 InnerBrain 固定评估集，再评估字符 n-gram、轻量 embedding 相似度或小型分类器，不从零训练通用 LLM。
 - 继续扩大缺失槽位的自然语言补全范围，把更多 `missing` 场景接入多轮澄清状态，并沉淀更细的用户纠错样本；`0.2.0` 已收口文件路径、编号资料、当前资料标签、标签组+新标签、经验搜索关键词和经验建议关键词。
@@ -188,3 +207,7 @@ PC Agent 稳定
 - [v102：InnerBrain 本机报告指定文件样本计数提示方案](plans/2026-06-03-v102-inner-brain-report-file-sample-count-plan.md)
 - [v103：InnerBrain 本机报告空筛选文件补样本写入提示方案](plans/2026-06-03-v103-inner-brain-report-empty-filter-guidance-plan.md)
 - [v104：InnerBrain 本机空评估视图补样本写入提示方案](plans/2026-06-03-v104-inner-brain-empty-evaluation-runtime-guidance-plan.md)
+- [v105：InnerBrain 本机已处理空视图行动提示方案](plans/2026-06-03-v105-inner-brain-resolved-empty-guidance-plan.md)
+- [v106：InnerBrain README 已处理空视图概要同步方案](plans/2026-06-03-v106-inner-brain-readme-resolved-empty-summary-plan.md)
+- [v107：InnerBrain PROJECT-PLAN 已处理空视图主干同步方案](plans/2026-06-03-v107-inner-brain-project-plan-resolved-empty-summary-plan.md)
+- [v108：Jarvis Lite 1.0 验收线方案](plans/2026-06-03-v108-jarvis-lite-1-acceptance-plan.md)
