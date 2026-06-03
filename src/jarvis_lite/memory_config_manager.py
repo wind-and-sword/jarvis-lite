@@ -7,6 +7,7 @@ from .app_registry import APP_REGISTRY_FILENAME
 from .automation import list_common_directories
 from .config import ProjectPaths
 from .llm import LLMSettings, llm_local_config_path
+from .memory_config_candidates import memory_config_candidate_counts
 from .search import SearchSettings, search_local_config_path
 
 
@@ -18,6 +19,7 @@ def describe_memory_config_manager(paths: ProjectPaths) -> str:
     app_override_count, app_override_error = _count_app_overrides(app_override_path)
     llm_settings = LLMSettings.from_sources(paths)
     search_settings = SearchSettings.from_sources(paths)
+    active_candidate_count, dismissed_candidate_count = memory_config_candidate_counts(paths)
 
     lines = [
         "记忆与配置管家：",
@@ -34,6 +36,7 @@ def describe_memory_config_manager(paths: ProjectPaths) -> str:
     )
     if app_override_error:
         lines.append(f"  读取状态：{app_override_error}")
+    lines.append(f"- 记忆与配置候选：{active_candidate_count} 条活跃，{dismissed_candidate_count} 条已忽略")
 
     lines.extend(_describe_llm_config(paths, llm_settings))
     lines.extend(_describe_search_config(paths, search_settings))
@@ -44,6 +47,7 @@ def describe_memory_config_manager(paths: ProjectPaths) -> str:
             "- /experience 经验内容：写入经验记忆",
             "- /dir-add 别名 目录路径：登记常用目录",
             "- /apps：查看应用注册表和本地覆盖提示",
+            "- /config-candidates：查看记忆与配置候选池",
             "- /llm-config-check：只读检查外脑本地配置",
             "- /search-config-check：只读检查联网搜索本地配置",
             "后续边界：明确保存指令可直接保存；普通对话先进入候选，不会无脑写入长期配置。",

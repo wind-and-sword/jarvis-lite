@@ -105,6 +105,11 @@ from .memory import (
     summarize_profile,
 )
 from .memory_config_manager import describe_memory_config_manager
+from .memory_config_candidates import (
+    describe_memory_config_candidates,
+    dismiss_memory_config_candidate,
+    record_memory_config_candidate,
+)
 from .idea_workflow import (
     describe_idea_focus,
     describe_idea_open,
@@ -314,6 +319,14 @@ class JarvisAgent:
         if prompt in {"/config-manager-status", "config-manager-status", "/memory-config-status", "memory-config-status"}:
             self.tools.run("record_log", message="查看记忆与配置管家状态")
             return describe_memory_config_manager(self.paths)
+        if prompt in {
+            "/config-candidates",
+            "config-candidates",
+            "/memory-config-candidates",
+            "memory-config-candidates",
+        }:
+            self.tools.run("record_log", message="查看记忆与配置候选池")
+            return describe_memory_config_candidates(self.paths)
         if prompt in {"/task-status", "task-status"}:
             self.tools.run("record_log", message="查看任务状态与失败复盘")
             return describe_task_status(self.paths)
@@ -1028,6 +1041,24 @@ class JarvisAgent:
                 authorization_summary="explicit_command direct_execute",
             )
 
+        if command == "/config-candidate-add":
+            if len(args) < 2:
+                return "用法：/config-candidate-add 类型 内容"
+            candidate_type = args[0]
+            content = " ".join(args[1:])
+            self.tools.run("record_log", message=f"记录记忆与配置候选：{candidate_type} {content}")
+            return record_memory_config_candidate(self.paths, candidate_type, content)
+
+        if command == "/config-candidate-dismiss":
+            if not args:
+                return "用法：/config-candidate-dismiss 编号"
+            try:
+                candidate_index = int(args[0])
+            except ValueError:
+                return "候选编号必须是数字。"
+            self.tools.run("record_log", message=f"忽略记忆与配置候选：{candidate_index}")
+            return dismiss_memory_config_candidate(self.paths, candidate_index)
+
         if command == "/task-resume":
             self.tools.run("record_log", message="恢复失败任务状态")
             return resume_task(self.paths)
@@ -1084,6 +1115,9 @@ class JarvisAgent:
                 "/memory：查看长期记忆",
                 "/experiences：查看经验记忆",
                 "/config-manager-status：查看记忆与配置管家状态",
+                "/config-candidates：查看记忆与配置候选池",
+                "/config-candidate-add 类型 内容：显式记录一条运行态记忆或配置候选",
+                "/config-candidate-dismiss 编号：忽略指定记忆与配置候选",
                 "/status：查看阶段 1 当前状态",
                 "/task-status：查看当前任务状态和最近失败复盘",
                 "/task-start 任务名称：开始记录一个显式多步骤任务",
@@ -3805,6 +3839,7 @@ class JarvisAgent:
             ),
             current_task=persisted_context.current_task,
             recent_task_failures=persisted_context.recent_task_failures,
+            memory_config_candidates=persisted_context.memory_config_candidates,
         )
 
     def _save_runtime_context(self) -> None:
@@ -4370,6 +4405,7 @@ class JarvisAgent:
                 "- 语音入口：/voice、/speak、/voice-status",
                 "- 意图授权：/authorization-status 查看直接执行、准备确认、追问和降级策略",
                 "- 配置管家：/config-manager-status 查看记忆、目录、应用覆盖和 provider 配置状态",
+                "- 候选池：/config-candidates 查看记忆与配置候选",
                 "- 任务状态：/task-status 查看当前任务、步骤、中断恢复和失败复盘",
                 "- 任务失败截图：/task-fail-capture 失败原因 [lang=chi_sim+eng]",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",

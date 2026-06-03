@@ -882,6 +882,40 @@ class AgentTests(unittest.TestCase):
         self.assertNotIn("secret-config-manager-key", response)
         self.assertEqual(response, alias_response)
 
+    def test_config_candidate_commands_record_restore_and_dismiss_candidates(self):
+        add_response = self.agent.handle("/config-candidate-add memory 以后称这个项目为 Jarvis Lite")
+        duplicate_response = self.agent.handle("/config-candidate-add 记忆 以后称这个项目为 Jarvis Lite")
+        list_response = self.agent.handle("/config-candidates")
+        alias_response = self.agent.handle("/memory-config-candidates")
+        restarted_agent = JarvisAgent(self.paths)
+        restored_response = restarted_agent.handle("/config-candidates")
+        dismiss_response = restarted_agent.handle("/config-candidate-dismiss 1")
+        after_dismiss = restarted_agent.handle("/config-candidates")
+
+        self.assertIn("已记录记忆与配置候选：长期记忆", add_response)
+        self.assertIn("出现次数：2", duplicate_response)
+        self.assertIn("1. 长期记忆：以后称这个项目为 Jarvis Lite", list_response)
+        self.assertIn("出现次数：2", list_response)
+        self.assertEqual(list_response, alias_response)
+        self.assertIn("以后称这个项目为 Jarvis Lite", restored_response)
+        self.assertIn("已忽略候选 1", dismiss_response)
+        self.assertIn("记忆与配置候选：暂无。", after_dismiss)
+        self.assertFalse(self.paths.profile_path.read_text(encoding="utf-8").count("Jarvis Lite") > 0)
+
+    def test_config_candidate_commands_require_arguments_and_are_listed(self):
+        no_add = self.agent.handle("/config-candidate-add")
+        no_dismiss = self.agent.handle("/config-candidate-dismiss")
+        invalid_dismiss = self.agent.handle("/config-candidate-dismiss abc")
+        help_text = self.agent.handle("/help")
+        status = self.agent.handle("/status")
+
+        self.assertIn("用法：/config-candidate-add 类型 内容", no_add)
+        self.assertIn("用法：/config-candidate-dismiss 编号", no_dismiss)
+        self.assertIn("候选编号必须是数字", invalid_dismiss)
+        self.assertIn("/config-candidates：查看记忆与配置候选池", help_text)
+        self.assertIn("/config-candidate-add 类型 内容", help_text)
+        self.assertIn("候选池：/config-candidates", status)
+
     def test_authorization_status_command_reports_policy(self):
         response = self.agent.handle("/authorization-status")
 
@@ -3972,7 +4006,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.121.1",
+                        "version": "0.122.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3983,7 +4017,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.121.1", response)
+        self.assertIn("发现新版本：0.122.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3998,7 +4032,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.121.1",
+                        "version": "0.122.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

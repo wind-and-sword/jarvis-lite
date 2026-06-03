@@ -9,13 +9,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from jarvis_lite.automation import add_common_directory
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.memory import append_experience, append_memory
+from jarvis_lite.memory_config_candidates import record_memory_config_candidate
 from jarvis_lite.memory_config_manager import describe_memory_config_manager
 
 
 class MemoryConfigManagerTests(unittest.TestCase):
     def test_describe_memory_config_manager_reports_empty_storage(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            paths = build_project_paths(Path(temp_dir))
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
 
             response = describe_memory_config_manager(paths)
 
@@ -26,18 +27,21 @@ class MemoryConfigManagerTests(unittest.TestCase):
             self.assertIn("应用本地覆盖：0 个", response)
             self.assertIn("LLM 本地配置：未创建", response)
             self.assertIn("联网搜索本地配置：未创建", response)
+            self.assertIn("记忆与配置候选：0 条活跃，0 条已忽略", response)
             self.assertIn("本阶段只做只读盘点", response)
             self.assertIn("/remember 记忆内容", response)
+            self.assertIn("/config-candidates", response)
 
     def test_describe_memory_config_manager_masks_provider_api_keys(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            paths = build_project_paths(Path(temp_dir))
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
             target = Path(temp_dir) / "project"
             target.mkdir()
             append_memory(paths, "用户姓名：欧阳")
             append_memory(paths, "用户偏好：中文回答")
             append_experience(paths, "导入资料后先打标签")
             add_common_directory(paths, "项目", target)
+            record_memory_config_candidate(paths, "app_alias", "代理面板 = Clash Verge")
             (paths.config_dir / "apps.local.json").write_text(
                 json.dumps(
                     {
@@ -83,6 +87,7 @@ class MemoryConfigManagerTests(unittest.TestCase):
             self.assertIn("常用目录：1 个", response)
             self.assertIn("目录别名：项目", response)
             self.assertIn("应用本地覆盖：1 个", response)
+            self.assertIn("记忆与配置候选：1 条活跃，0 条已忽略", response)
             self.assertIn("LLM 本地配置：存在", response)
             self.assertIn("Provider：qwen", response)
             self.assertIn("Model：qwen-plus", response)

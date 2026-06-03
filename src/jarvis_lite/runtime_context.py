@@ -12,6 +12,7 @@ CONTEXT_FILENAME = "agent-context.json"
 ROUTE_DECISION_HISTORY_LIMIT = 5
 INNER_BRAIN_CANDIDATE_LIMIT = 20
 TASK_FAILURE_HISTORY_LIMIT = 5
+MEMORY_CONFIG_CANDIDATE_LIMIT = 20
 
 
 @dataclass(frozen=True)
@@ -141,6 +142,18 @@ class RuntimeTaskFailureContext:
 
 
 @dataclass(frozen=True)
+class RuntimeMemoryConfigCandidateContext:
+    """保存记忆与配置候选的可序列化运行态信息。"""
+
+    candidate_type: str
+    content: str
+    status: str = "active"
+    count: int = 1
+    first_seen_at: str = ""
+    last_seen_at: str = ""
+
+
+@dataclass(frozen=True)
 class RuntimeContext:
     """保存可跨 Agent 实例恢复的轻量运行态上下文。"""
 
@@ -160,6 +173,7 @@ class RuntimeContext:
     inner_brain_candidates: tuple[RuntimeInnerBrainCandidateContext, ...] | None = None
     current_task: RuntimeTaskContext | None = None
     recent_task_failures: tuple[RuntimeTaskFailureContext, ...] = ()
+    memory_config_candidates: tuple[RuntimeMemoryConfigCandidateContext, ...] = ()
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -219,6 +233,7 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         inner_brain_candidates=_read_inner_brain_candidate_contexts(raw.get("inner_brain_candidates")),
         current_task=_read_task_context(raw.get("current_task")),
         recent_task_failures=_read_task_failure_contexts(raw.get("recent_task_failures")),
+        memory_config_candidates=_read_memory_config_candidate_contexts(raw.get("memory_config_candidates")),
     )
 
 
@@ -281,6 +296,10 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                 "recent_task_failures": [
                     _task_failure_context_to_json(failure)
                     for failure in context.recent_task_failures[:TASK_FAILURE_HISTORY_LIMIT]
+                ],
+                "memory_config_candidates": [
+                    _memory_config_candidate_context_to_json(candidate)
+                    for candidate in context.memory_config_candidates[:MEMORY_CONFIG_CANDIDATE_LIMIT]
                 ],
             },
             ensure_ascii=False,
@@ -535,6 +554,45 @@ def _read_task_failure_contexts(value: object) -> tuple[RuntimeTaskFailureContex
     return tuple(failures)
 
 
+def _read_memory_config_candidate_context(value: object) -> RuntimeMemoryConfigCandidateContext | None:
+    if not isinstance(value, dict):
+        return None
+    candidate_type = _read_optional_str(value.get("candidate_type"))
+    content = _read_optional_str(value.get("content"))
+    if candidate_type is None or content is None:
+        return None
+    status = _read_optional_str(value.get("status")) or "active"
+    if status not in {"active", "dismissed"}:
+        status = "active"
+    return RuntimeMemoryConfigCandidateContext(
+        candidate_type=candidate_type,
+        content=content,
+        status=status,
+        count=_read_positive_int(value.get("count"), 1),
+        first_seen_at=_read_optional_str(value.get("first_seen_at")) or "",
+        last_seen_at=_read_optional_str(value.get("last_seen_at")) or "",
+    )
+
+
+def _read_memory_config_candidate_contexts(value: object) -> tuple[RuntimeMemoryConfigCandidateContext, ...]:
+    if not isinstance(value, list):
+        return ()
+    candidates: list[RuntimeMemoryConfigCandidateContext] = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in value:
+        candidate = _read_memory_config_candidate_context(item)
+        if candidate is None:
+            continue
+        key = (candidate.candidate_type, candidate.content.strip(), candidate.status)
+        if key in seen:
+            continue
+        seen.add(key)
+        candidates.append(candidate)
+        if len(candidates) >= MEMORY_CONFIG_CANDIDATE_LIMIT:
+            break
+    return tuple(candidates)
+
+
 def _route_decision_history_with_latest(
     latest: RuntimeRouteDecisionContext | None,
     history: tuple[RuntimeRouteDecisionContext, ...],
@@ -757,6 +815,19 @@ def _task_failure_context_to_json(context: RuntimeTaskFailureContext) -> dict[st
         "screen_context": context.screen_context,
         "next_step": context.next_step,
         "created_at": context.created_at,
+    }
+
+
+def _memory_config_candidate_context_to_json(
+    context: RuntimeMemoryConfigCandidateContext,
+) -> dict[str, object]:
+    return {
+        "candidate_type": context.candidate_type,
+        "content": context.content,
+        "status": context.status,
+        "count": context.count,
+        "first_seen_at": context.first_seen_at,
+        "last_seen_at": context.last_seen_at,
     }
 
 
