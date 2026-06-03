@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.127.0` 可安装测试包，完成任务失败复盘样本建议第一阶段；失败复盘中的显式命令事件会生成可复制的 `/inner-brain-eval-add 原始输入 => /命令` 建议，`/task-status` 最近失败记录也会展示同一建议和样本建议边界；当前阶段不自动写入 evaluation、不训练、不重放外部动作、不点击、不输入；全量 `unittest` 727 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.127.0.exe`。
 - 2026-06-03：发布 `0.126.0` 可安装测试包，完成任务失败复盘行动建议第一阶段；普通 `/task-fail 失败原因` 在缺少屏幕/OCR 上下文时，会在下一步建议中提示使用 `/task-fail-capture 失败原因` 补充截图和 OCR，已经由 `/task-fail-capture` 记录的失败不再重复建议截图；当前阶段不自动截图、不自动 OCR、不自动重放外部动作、不点击、不输入；全量 `unittest` 727 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.126.0.exe`。
 - 2026-06-03：发布 `0.125.0` 可安装测试包，完成任务执行结果摘要采集第一阶段；当前任务运行中执行显式命令后，最近匹配任务事件会写回紧凑结果摘要，`/task-fail` 和 `/task-status` 的失败复盘可展示命令与结果；当前阶段不自动重放外部动作、不点击、不输入；全量 `unittest` 727 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.125.0.exe`。
 - 2026-06-03：发布 `0.124.0` 可安装测试包，完成任务状态自动采集第一阶段；当前任务运行中执行普通命令会自动记录最近任务事件，`/task-status` 展示输入原话、路由类型、命令详情、摘要和依据，`/task-fail` 与 `/task-fail-capture` 会把自动采集上下文写入失败复盘；当前阶段不自动重放外部动作、不点击、不输入；全量 `unittest` 726 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.124.0.exe`。

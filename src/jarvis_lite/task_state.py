@@ -186,6 +186,7 @@ def record_task_failure(
             "人工固化入口：可把失败原话整理为 /inner-brain-eval-add 或 /inner-brain-eval-label 样本。",
         ]
     )
+    lines.extend(_task_event_eval_suggestion_lines(task.recent_events))
     return "\n".join(lines)
 
 
@@ -364,6 +365,8 @@ def _append_recent_failures(lines: list[str], failures: tuple[RuntimeTaskFailure
             lines.append(f"   屏幕/OCR：{_compact_context(failure.screen_context)}")
         if failure.recent_events:
             lines.append(f"   自动采集：{_compact_context(_task_events_text(failure.recent_events))}")
+            for suggestion_line in _task_event_eval_suggestion_lines(failure.recent_events):
+                lines.append(f"   {suggestion_line}")
 
 
 def _save_context(
@@ -421,6 +424,38 @@ def _task_event_lines(events: tuple[RuntimeTaskEventContext, ...]) -> list[str]:
             parts.append(f"依据：{event.explanation}")
         lines.append(" | ".join(parts))
     return lines
+
+
+def _task_event_eval_suggestion_lines(events: tuple[RuntimeTaskEventContext, ...]) -> list[str]:
+    suggestions = _task_event_eval_suggestions(events)
+    if not suggestions:
+        return []
+    return [
+        *(f"样本建议：{suggestion}" for suggestion in suggestions),
+        "样本建议边界：只展示建议，不自动写入 evaluation、不训练、不自动重新执行外部动作。",
+    ]
+
+
+def _task_event_eval_suggestions(events: tuple[RuntimeTaskEventContext, ...]) -> list[str]:
+    suggestions: list[str] = []
+    seen: set[str] = set()
+    for event in events[:5]:
+        if event.route != "command":
+            continue
+        prompt = _compact_eval_token(event.prompt)
+        command = _compact_eval_token(event.detail)
+        if not prompt or not command.startswith("/"):
+            continue
+        suggestion = f"/inner-brain-eval-add {prompt} => {command}"
+        if suggestion in seen:
+            continue
+        seen.add(suggestion)
+        suggestions.append(suggestion)
+    return suggestions
+
+
+def _compact_eval_token(text: str) -> str:
+    return " ".join(text.split())
 
 
 def _status_label(status: str) -> str:

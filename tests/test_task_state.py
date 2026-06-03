@@ -61,9 +61,11 @@ class TaskStateTests(unittest.TestCase):
             self.assertIn("屏幕/OCR：未采集", failure_response)
             self.assertIn("下一步建议：补充截图/OCR：/task-fail-capture 目标测试失败", failure_response)
             self.assertIn("/task-resume", failure_response)
+            self.assertNotIn("样本建议：/inner-brain-eval-add", failure_response)
             self.assertIn("当前任务：发布 0.120.0（失败）", status)
             self.assertIn("最近失败记录：", status)
             self.assertIn("下一步：补充截图/OCR：/task-fail-capture 目标测试失败", status)
+            self.assertNotIn("样本建议：/inner-brain-eval-add", status)
             self.assertIsNotNone(runtime_context.current_task)
             self.assertEqual(runtime_context.current_task.title, "发布 0.120.0")
             self.assertEqual(runtime_context.current_task.status, "failed")
@@ -86,16 +88,19 @@ class TaskStateTests(unittest.TestCase):
                     created_at="2026-06-03T10:00:00",
                 ),
             )
-            status = describe_task_status(paths)
             failure_response = record_task_failure(paths, "目录打开失败")
+            status_after_failure = describe_task_status(paths)
             runtime_context = load_runtime_context(paths)
 
-            self.assertIn("最近任务事件：", status)
-            self.assertIn("command / /dir-open", status)
-            self.assertIn("输入：/dir-open 项目", status)
+            self.assertIn("最近任务事件：", status_after_failure)
+            self.assertIn("command / /dir-open", status_after_failure)
+            self.assertIn("输入：/dir-open 项目", status_after_failure)
             self.assertIn("自动采集上下文：", failure_response)
             self.assertIn("command / /dir-open", failure_response)
             self.assertIn("输入：/dir-open 项目", failure_response)
+            self.assertIn("样本建议：/inner-brain-eval-add /dir-open 项目 => /dir-open", failure_response)
+            self.assertIn("样本建议：/inner-brain-eval-add /dir-open 项目 => /dir-open", status_after_failure)
+            self.assertIn("样本建议边界：只展示建议，不自动写入 evaluation、不训练、不自动重新执行外部动作。", status_after_failure)
             self.assertEqual(len(runtime_context.recent_task_failures), 1)
             self.assertEqual(len(runtime_context.recent_task_failures[0].recent_events), 1)
 
@@ -121,6 +126,10 @@ class TaskStateTests(unittest.TestCase):
             runtime_context = load_runtime_context(paths)
 
             self.assertIn("结果：已登记常用目录：工作区 -> C:/demo", failure_response)
+            self.assertIn(
+                "样本建议：/inner-brain-eval-add /dir-add 工作区 C:/demo => /dir-add",
+                failure_response,
+            )
             self.assertEqual(runtime_context.recent_task_failures[0].recent_events[0].summary, "已登记常用目录：工作区 -> C:/demo")
 
     def test_failed_task_can_resume_complete_and_cancel(self):

@@ -3542,6 +3542,8 @@ class AgentTests(unittest.TestCase):
         self.assertIn("command / /dir-add", failure_response)
         self.assertIn("输入：/dir-add 工作区", failure_response)
         self.assertIn("结果：已登记常用目录：工作区 ->", failure_response)
+        self.assertIn("样本建议：/inner-brain-eval-add /dir-add 工作区", failure_response)
+        self.assertIn("=> /dir-add", failure_response)
         auto_context = failure_response.split("自动采集上下文：", 1)[1]
         self.assertNotIn("command / /task-fail", auto_context)
 
@@ -4066,9 +4068,9 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.126.1",
-                        "download_url": "https://example.com/JarvisLiteSetup.exe",
-                        "release_notes": "新增更新检查。",
+                    "version": "0.127.1",
+                    "download_url": "https://example.com/JarvisLiteSetup.exe",
+                    "release_notes": "新增更新检查。",
                 },
                 ensure_ascii=False,
             ),
@@ -4077,7 +4079,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.126.1", response)
+        self.assertIn("发现新版本：0.127.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4092,7 +4094,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.126.1",
+                        "version": "0.127.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
