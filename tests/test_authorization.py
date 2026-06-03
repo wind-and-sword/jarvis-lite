@@ -22,6 +22,11 @@ class AuthorizationTests(unittest.TestCase):
         self.assertTrue(is_desktop_action_command("/chrome-search Jarvis Lite"))
         self.assertTrue(is_desktop_action_command("/clash-open"))
         self.assertTrue(is_desktop_action_command("/clash-focus"))
+        self.assertTrue(is_desktop_action_command("/qq-open"))
+        self.assertTrue(is_desktop_action_command("/qq-focus"))
+        self.assertTrue(is_desktop_action_command("/wechat-open"))
+        self.assertTrue(is_desktop_action_command("/wechat-focus"))
+        self.assertFalse(is_desktop_action_command("/qq-prepare-message 张三 => 你好"))
         self.assertFalse(is_desktop_action_command("/kb-summary"))
         self.assertFalse(is_desktop_action_command("hotkey ctrl+l"))
 
@@ -126,6 +131,8 @@ class AuthorizationTests(unittest.TestCase):
         self.assertIn("/app-launch", status)
         self.assertIn("/chrome-open", status)
         self.assertIn("/clash-open", status)
+        self.assertIn("/qq-open", status)
+        self.assertIn("/wechat-open", status)
 
 
 if __name__ == "__main__":

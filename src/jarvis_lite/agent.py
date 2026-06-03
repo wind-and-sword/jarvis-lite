@@ -95,6 +95,12 @@ from .memory import (
     summarize_profile,
 )
 from .memory_config_manager import describe_memory_config_manager
+from .messaging_workflow import (
+    describe_message_prepare,
+    describe_messaging_focus,
+    describe_messaging_open,
+    describe_messaging_workflow_status,
+)
 from .runtime_context import (
     RuntimeContext,
     RuntimeDirectoryContext,
@@ -684,6 +690,40 @@ class JarvisAgent:
                 return f"Clash Verge 聚焦失败：{exc}"
             self.tools.run("record_log", message="聚焦 Clash Verge 代理面板")
             return response
+        if command == "/messaging-workflow-status":
+            self.tools.run("record_log", message="查看 QQ/微信准备式工作流状态")
+            return describe_messaging_workflow_status(self.paths)
+        if command in {"/qq-open", "/wechat-open"}:
+            app_id, display_name = ("qq", "QQ") if command == "/qq-open" else ("wechat", "微信")
+            if args:
+                return f"用法：{command}"
+            try:
+                response = describe_messaging_open(self.paths, app_id)
+            except (RuntimeError, ValueError, FileNotFoundError) as exc:
+                return f"{display_name}打开失败：{exc}"
+            self.tools.run("record_log", message=f"{display_name}打开")
+            return response
+        if command in {"/qq-focus", "/wechat-focus"}:
+            app_id, display_name = ("qq", "QQ") if command == "/qq-focus" else ("wechat", "微信")
+            if args:
+                return f"用法：{command}"
+            try:
+                response = describe_messaging_focus(self.paths, app_id)
+            except (RuntimeError, ValueError) as exc:
+                return f"{display_name}聚焦失败：{exc}"
+            self.tools.run("record_log", message=f"{display_name}聚焦")
+            return response
+        if command in {"/qq-prepare-message", "/wechat-prepare-message"}:
+            app_id, display_name = ("qq", "QQ") if command == "/qq-prepare-message" else ("wechat", "微信")
+            if not args:
+                return f"用法：{command} 联系人 => 消息"
+            raw_request = " ".join(args)
+            try:
+                response = describe_message_prepare(app_id, raw_request)
+            except ValueError as exc:
+                return f"{display_name}消息准备失败：{exc}"
+            self.tools.run("record_log", message=f"{display_name}消息准备单生成")
+            return response
         if command == "/windows":
             self.tools.run("record_log", message="查看只读窗口感知状态")
             return describe_current_windows(self.paths)
@@ -987,6 +1027,10 @@ class JarvisAgent:
                 "/clash-workflow-status：查看 Clash Verge 工作流第一阶段边界",
                 "/clash-open：打开 Clash Verge 代理面板，不切换节点、不开关系统代理",
                 "/clash-focus：聚焦已有 Clash Verge 窗口，不点击、不输入、不修改配置",
+                "/messaging-workflow-status：查看 QQ/微信准备式工作流第一阶段边界",
+                "/qq-open、/wechat-open：打开 QQ 或微信，不查找联系人、不发送消息",
+                "/qq-focus、/wechat-focus：聚焦已有 QQ 或微信窗口，不点击、不输入",
+                "/qq-prepare-message 联系人 => 消息、/wechat-prepare-message 联系人 => 消息：生成未发送消息准备单",
                 "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",
                 "/window-focus 编号或标题/应用名：切换到显式窗口，不点击、不输入、不启动应用",
                 "/screenshot [文件名]：保存当前屏幕截图到 logs/screenshots，不 OCR、不点击、不切换窗口",
@@ -4169,6 +4213,7 @@ class JarvisAgent:
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",
                 "- Chrome 工作流：/chrome-workflow-status、/chrome-open、/chrome-search",
                 "- Clash Verge 工作流：/clash-workflow-status、/clash-open、/clash-focus",
+                "- QQ/微信准备式工作流：/messaging-workflow-status、/qq-open、/qq-focus、/qq-prepare-message、/wechat-open、/wechat-focus、/wechat-prepare-message",
                 "- 桌面能力：小助手窗口、面板、托盘、主题、开机启动、安装包、更新检查和下载",
                 "- 会话能力：/history、/save-summary、/clear",
                 "- 批量标签：标签组预览、确认、恢复提示和 /tag-history 历史记录",

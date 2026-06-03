@@ -29,6 +29,7 @@ LLM_ALLOWED_COMMAND_SPECS = (
     "/config-manager-status",
     "/chrome-workflow-status",
     "/clash-workflow-status",
+    "/messaging-workflow-status",
     "/experience-advice 关键词",
     "/recent-files",
     "/tag-history",

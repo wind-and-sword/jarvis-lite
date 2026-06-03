@@ -3421,6 +3421,8 @@ class AgentTests(unittest.TestCase):
         self.assertIn("常用目录", response)
         self.assertIn("/chrome-open", response)
         self.assertIn("/clash-open", response)
+        self.assertIn("/qq-open", response)
+        self.assertIn("/wechat-open", response)
 
     def test_chrome_workflow_status_command_reports_boundary(self):
         response = self.agent.handle("/chrome-workflow-status")
@@ -3581,6 +3583,84 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("Clash Verge 聚焦失败：没有找到 Clash Verge 窗口", response)
 
+    def test_messaging_workflow_status_command_reports_boundary(self):
+        response = self.agent.handle("/messaging-workflow-status")
+
+        self.assertIn("QQ/微信准备式工作流状态：第一阶段", response)
+        self.assertIn("/qq-prepare-message 联系人 => 消息", response)
+        self.assertIn("不发送消息", response)
+
+    def test_qq_open_command_opens_registered_app(self):
+        with patch(
+            "jarvis_lite.agent.describe_messaging_open",
+            return_value="QQ打开执行",
+        ) as open_app:
+            response = self.agent.handle("/qq-open")
+
+        self.assertIn("QQ打开执行", response)
+        open_app.assert_called_once_with(self.agent.paths, "qq")
+
+    def test_wechat_open_command_rejects_arguments(self):
+        with patch("jarvis_lite.agent.describe_messaging_open") as open_app:
+            response = self.agent.handle("/wechat-open 张三")
+
+        self.assertIn("用法：/wechat-open", response)
+        open_app.assert_not_called()
+
+    def test_wechat_open_command_reports_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_messaging_open",
+            side_effect=FileNotFoundError("微信启动路径未找到"),
+        ):
+            response = self.agent.handle("/wechat-open")
+
+        self.assertIn("微信打开失败：微信启动路径未找到", response)
+
+    def test_qq_focus_command_focuses_existing_window(self):
+        with patch(
+            "jarvis_lite.agent.describe_messaging_focus",
+            return_value="QQ聚焦执行",
+        ) as focus_app:
+            response = self.agent.handle("/qq-focus")
+
+        self.assertIn("QQ聚焦执行", response)
+        focus_app.assert_called_once_with(self.agent.paths, "qq")
+
+    def test_wechat_focus_command_reports_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_messaging_focus",
+            side_effect=ValueError("没有找到微信窗口，可先执行 /wechat-open"),
+        ):
+            response = self.agent.handle("/wechat-focus")
+
+        self.assertIn("微信聚焦失败：没有找到微信窗口", response)
+
+    def test_qq_prepare_message_command_returns_unsent_draft(self):
+        with patch(
+            "jarvis_lite.agent.describe_message_prepare",
+            return_value="QQ 消息准备单：未发送",
+        ) as prepare:
+            response = self.agent.handle("/qq-prepare-message 张三 => 明天十点开会")
+
+        self.assertIn("QQ 消息准备单：未发送", response)
+        prepare.assert_called_once_with("qq", "张三 => 明天十点开会")
+
+    def test_wechat_prepare_message_command_requires_draft(self):
+        with patch("jarvis_lite.agent.describe_message_prepare") as prepare:
+            response = self.agent.handle("/wechat-prepare-message")
+
+        self.assertIn("用法：/wechat-prepare-message 联系人 => 消息", response)
+        prepare.assert_not_called()
+
+    def test_wechat_prepare_message_command_reports_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_message_prepare",
+            side_effect=ValueError("消息内容不能为空。"),
+        ):
+            response = self.agent.handle("/wechat-prepare-message 张三 =>")
+
+        self.assertIn("微信消息准备失败：消息内容不能为空。", response)
+
     def test_windows_command_reports_readonly_window_snapshot(self):
         with patch("jarvis_lite.agent.describe_current_windows", return_value="窗口感知：\n- 可见窗口：1 个") as probe:
             response = self.agent.handle("/windows")
@@ -3738,7 +3818,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.117.1",
+                        "version": "0.118.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3749,7 +3829,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.117.1", response)
+        self.assertIn("发现新版本：0.118.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3764,7 +3844,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.117.1",
+                        "version": "0.118.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
