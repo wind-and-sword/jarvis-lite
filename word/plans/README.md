@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v98-inner-brain-full-eval-output-label-plan.md](2026-06-03-v98-inner-brain-full-eval-output-label-plan.md)：当前方案版本，明确 InnerBrain 全量评估输出固定与本机评估集标签。
+- [2026-06-03-v104-inner-brain-empty-evaluation-runtime-guidance-plan.md](2026-06-03-v104-inner-brain-empty-evaluation-runtime-guidance-plan.md)：当前方案版本，明确 InnerBrain 本机空评估视图补样本写入提示。
 
 ## 历史版本
 
@@ -113,6 +113,7 @@
 - [2026-06-03-v101-inner-brain-doc-pending-label-plan.md](2026-06-03-v101-inner-brain-doc-pending-label-plan.md)：明确 InnerBrain 本机失败视图文档待处理失败标签。
 - [2026-06-03-v102-inner-brain-report-file-sample-count-plan.md](2026-06-03-v102-inner-brain-report-file-sample-count-plan.md)：明确 InnerBrain 本机报告指定文件样本计数提示。
 - [2026-06-03-v103-inner-brain-report-empty-filter-guidance-plan.md](2026-06-03-v103-inner-brain-report-empty-filter-guidance-plan.md)：明确 InnerBrain 本机报告空筛选文件补样本写入提示。
+- [2026-06-03-v104-inner-brain-empty-evaluation-runtime-guidance-plan.md](2026-06-03-v104-inner-brain-empty-evaluation-runtime-guidance-plan.md)：明确 InnerBrain 本机空评估视图补样本写入提示。
 
 ## 维护规则
 

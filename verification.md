@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.100.0` 可安装测试包，收口 InnerBrain 本机空评估视图补样本写入提示；`/inner-brain-eval-local` 与 `/inner-brain-eval-local-failed` 在本机 evaluation 样本为空时会提示补样本命令默认写入 `runtime.jsonl`；全量 `unittest` 569 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.100.0.exe`。
 - 2026-06-03：发布 `0.99.0` 可安装测试包，收口 InnerBrain 本机报告空筛选文件补样本写入提示；`/inner-brain-eval-local-report [文件名]` 的成功反馈会显示 `当前文件样本：N`，指定文件无样本时明确显示 `当前文件样本：0` 并提示补样本命令默认写入 `runtime.jsonl`；全量 `unittest` 568 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.99.0.exe`。
 - 2026-06-03：发布 `0.97.0` 可安装测试包，收口 InnerBrain 本机失败视图文档待处理失败标签；README 与 PROJECT-PLAN 的本机失败视图描述已统一为“待处理失败样本”；全量 `unittest` 567 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.97.0.exe`。
 - 2026-06-03：发布 `0.96.0` 可安装测试包，收口 InnerBrain 本机报告处理边界待处理失败标签；导出的 `word/inner-brain-evaluation-report.md` 会提示“需要修复待处理失败样本时”；全量 `unittest` 566 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.96.0.exe`。

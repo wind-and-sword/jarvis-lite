@@ -252,6 +252,7 @@ class InnerBrainTests(unittest.TestCase):
         self.assertIn("- /inner-brain-eval-add-candidate 编号 => /命令", description)
         self.assertIn("- /inner-brain-eval-label-candidate 编号 => intent [slot=value ...]", description)
         self.assertIn("说明：这些命令只写入本机 evaluation 样本，不自动训练。", description)
+        self.assertIn("提示：补样本命令默认写入 runtime.jsonl。", description)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
     def test_inner_brain_evaluation_can_filter_local_evaluation_file(self):

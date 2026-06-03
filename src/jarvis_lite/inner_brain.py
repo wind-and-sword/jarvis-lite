@@ -609,6 +609,7 @@ def describe_inner_brain_evaluation(report: InnerBrainEvaluationReport, failures
         lines.append("- /inner-brain-eval-add-candidate 编号 => /命令")
         lines.append("- /inner-brain-eval-label-candidate 编号 => intent [slot=value ...]")
         lines.append("说明：这些命令只写入本机 evaluation 样本，不自动训练。")
+        lines.append("提示：补样本命令默认写入 runtime.jsonl。")
     if failures_only and report.source_file_filter is None:
         failed_source_file_counts = report.failed_source_file_counts
         if failed_source_file_counts:
