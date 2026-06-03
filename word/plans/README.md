@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v111-screen-capture-plan.md](2026-06-03-v111-screen-capture-plan.md)：当前方案版本，明确 `0.106.0` 屏幕截图保存第一阶段、`/screenshot [文件名]` 和截图落盘边界。
+- [2026-06-03-v112-ocr-image-plan.md](2026-06-03-v112-ocr-image-plan.md)：当前方案版本，明确 `0.107.0` OCR 图片识别第一阶段、`/ocr-status`、`/ocr-image` 和 Tesseract CLI 适配边界。
 
 ## 历史版本
 
@@ -121,6 +121,7 @@
 - [2026-06-03-v109-app-registry-plan.md](2026-06-03-v109-app-registry-plan.md)：明确应用注册表第一阶段、`/apps` 和 `/app-find` 的只读验收范围。
 - [2026-06-03-v110-window-state-plan.md](2026-06-03-v110-window-state-plan.md)：明确只读窗口感知第一阶段、`/windows` 和窗口快照的只读验收范围。
 - [2026-06-03-v111-screen-capture-plan.md](2026-06-03-v111-screen-capture-plan.md)：明确屏幕截图保存第一阶段、`/screenshot [文件名]` 和只截图不操作的验收范围。
+- [2026-06-03-v112-ocr-image-plan.md](2026-06-03-v112-ocr-image-plan.md)：明确 OCR 图片识别第一阶段、`/ocr-status`、`/ocr-image` 和只识别指定图片的验收范围。
 
 ## 维护规则
 

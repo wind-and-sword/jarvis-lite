@@ -3422,12 +3422,32 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已保存屏幕截图：logs/screenshots/manual.png", response)
         capture.assert_called_once_with(self.agent.paths, "manual")
 
+    def test_ocr_status_command_reports_engine_availability(self):
+        with patch(
+            "jarvis_lite.agent.describe_ocr_status",
+            return_value="OCR 状态：可用",
+        ) as status:
+            response = self.agent.handle("/ocr-status")
+
+        self.assertIn("OCR 状态：可用", response)
+        status.assert_called_once_with(self.agent.paths)
+
+    def test_ocr_image_command_recognizes_image_path(self):
+        with patch(
+            "jarvis_lite.agent.describe_image_ocr",
+            return_value="OCR 图片识别：logs/screenshots/manual.png",
+        ) as ocr:
+            response = self.agent.handle("/ocr-image logs/screenshots/manual.png lang=eng")
+
+        self.assertIn("OCR 图片识别：logs/screenshots/manual.png", response)
+        ocr.assert_called_once_with(self.agent.paths, "logs/screenshots/manual.png", language="eng")
+
     def test_update_status_command_reports_available_update_from_manifest(self):
         manifest = Path(self.temp_dir.name) / "update.json"
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.106.1",
+                        "version": "0.107.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3438,7 +3458,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.106.1", response)
+        self.assertIn("发现新版本：0.107.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3453,7 +3473,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.106.1",
+                        "version": "0.107.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

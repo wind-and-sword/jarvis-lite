@@ -71,6 +71,7 @@ from .search import (
     write_search_local_config_values,
 )
 from .screen_capture import describe_screen_capture
+from .ocr import describe_image_ocr, describe_ocr_status
 from .memory import (
     append_experience,
     append_memory,
@@ -138,6 +139,8 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/app-find": "desktop.apps.find",
     "/windows": "desktop.windows.status",
     "/screenshot": "desktop.screenshot.save",
+    "/ocr-status": "desktop.ocr.status",
+    "/ocr-image": "desktop.ocr.image",
     "/recent-files": "context.recent_files",
     "/tag-history": "tag.history",
     "/batch-tag-history": "tag.history",
@@ -586,6 +589,18 @@ class JarvisAgent:
                 return f"屏幕截图失败：{exc}"
             self.tools.run("record_log", message="保存屏幕截图")
             return response
+        if command == "/ocr-status":
+            self.tools.run("record_log", message="查看 OCR 状态")
+            return describe_ocr_status(self.paths)
+        if command == "/ocr-image":
+            language = None
+            image_args = list(args)
+            if image_args and image_args[-1].startswith("lang="):
+                language = image_args[-1].split("=", 1)[1]
+                image_args = image_args[:-1]
+            image_path = " ".join(image_args)
+            self.tools.run("record_log", message="识别图片文字")
+            return describe_image_ocr(self.paths, image_path, language=language)
         if command == "/inner-brain-preview":
             if not args:
                 return "用法：/inner-brain-preview 文本"
@@ -841,6 +856,8 @@ class JarvisAgent:
                 "/app-find 应用名称或别名：匹配已登记应用，不启动应用",
                 "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",
                 "/screenshot [文件名]：保存当前屏幕截图到 logs/screenshots，不 OCR、不点击、不切换窗口",
+                "/ocr-status：查看 OCR 引擎状态，不读取图片、不截图",
+                "/ocr-image 图片路径 [lang=chi_sim+eng]：识别指定图片文字，不截图、不点击、不切换窗口",
                 "/recent-files：查看常用目录、项目目录、桌面和下载目录中的最近文件",
                 "/tag-history：查看最近批量打标签历史",
                 "/update-status [清单路径或URL]：检查 Jarvis Lite 新版本",

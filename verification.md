@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.107.0` 可安装测试包，完成 OCR 图片识别第一阶段；`/ocr-status` 可诊断 Tesseract CLI 状态，`/ocr-image 图片路径 [lang=chi_sim+eng]` 可在本机安装 Tesseract 时识别已存在图片，当前阶段不自动截图、不点击、不切换窗口、不输入；全量 `unittest` 590 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.107.0.exe`。
 - 2026-06-03：发布 `0.106.0` 可安装测试包，完成屏幕截图保存第一阶段；`/screenshot [文件名]` 可保存当前主屏幕 PNG 到 `logs/screenshots/` 并返回相对路径和图片尺寸，当前阶段不 OCR、不点击、不切换窗口、不输入；全量 `unittest` 585 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.106.0.exe`。
 - 2026-06-03：发布 `0.105.0` 可安装测试包，完成只读窗口感知第一阶段；`/windows` 可查看当前 Windows 可见顶层窗口、前台窗口、标题、PID、进程名和 AppRegistry 应用匹配结果，当前阶段不切换窗口、不点击、不输入、不截图；全量 `unittest` 581 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.105.0.exe`。
 - 2026-06-03：发布 `0.104.0` 可安装测试包，完成应用注册表第一阶段；`/apps` 可查看 Chrome、QQ、微信、IntelliJ IDEA 和 Clash Verge 的只读注册表，`/app-find 名称或别名` 可按中英文别名匹配已登记应用，当前阶段不启动外部应用；全量 `unittest` 577 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.104.0.exe`。
