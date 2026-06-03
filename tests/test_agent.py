@@ -2228,6 +2228,17 @@ class AgentTests(unittest.TestCase):
         self.assertNotIn("失败文件意图混淆修复建议：", content)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
+    def test_inner_brain_eval_local_report_command_marks_empty_filtered_file_sample_count(self):
+        response = self.agent.handle("/inner-brain-eval-local-report runtime")
+
+        report_path = self.paths.word_dir / "inner-brain-evaluation-report.md"
+        self.assertIn("已导出 InnerBrain 本机评估待处理失败报告。", response)
+        self.assertIn("待处理失败样本：0", response)
+        self.assertIn("评估文件：runtime.jsonl", response)
+        self.assertIn("当前文件样本：0", response)
+        self.assertTrue(report_path.exists())
+        self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
+
     def test_inner_brain_eval_add_command_saves_local_evaluation_case_without_training(self):
         response = self.agent.handle("/inner-brain-eval-add 请看看资料库状态 => /kb")
 
@@ -3351,7 +3362,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.97.1",
+                        "version": "0.98.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3362,7 +3373,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.97.1", response)
+        self.assertIn("发现新版本：0.98.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3377,7 +3388,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.97.1",
+                        "version": "0.98.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
