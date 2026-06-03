@@ -14,6 +14,8 @@ from .runtime_context import RuntimeContext, load_runtime_context
 
 DIRECTORIES_FILENAME = "directories.json"
 HotkeyExecutor = Callable[[tuple[str, ...]], None]
+MouseClickExecutor = Callable[[int, int, str], None]
+MOUSE_BUTTONS = {"left", "right", "middle"}
 
 
 @dataclass(frozen=True)
@@ -65,6 +67,19 @@ class HotkeyAutomationResult:
     executed_at: datetime
 
 
+@dataclass(frozen=True)
+class MouseClickRequest:
+    x: int
+    y: int
+    button: str
+
+
+@dataclass(frozen=True)
+class MouseClickAutomationResult:
+    request: MouseClickRequest
+    executed_at: datetime
+
+
 def describe_automation(paths: ProjectPaths) -> str:
     """输出阶段 4 工作台自动化状态。"""
 
@@ -73,7 +88,7 @@ def describe_automation(paths: ProjectPaths) -> str:
         "阶段 4 自动化状态：",
         f"- 常用目录：{len(directories)} 个",
         "- 日报目录：word",
-        "- 当前能力：/dir-add、/dirs、/recent-files、/daily-report、/organize-preview、/dir-open、/hotkey",
+        "- 当前能力：/dir-add、/dirs、/recent-files、/daily-report、/organize-preview、/dir-open、/hotkey、/mouse-click",
         "- 硬件入口：摄像头、麦克风暂缓",
     ]
     if directories:
@@ -129,6 +144,64 @@ def describe_hotkey_automation(
         lines.append(f"{index}. {'+'.join(hotkey)}")
     lines.append("说明：当前阶段只发送显式快捷键，不点击、不输入文本、不切换窗口。")
     return "\n".join(lines)
+
+
+def parse_mouse_click_request(command: str) -> MouseClickRequest:
+    """解析显式鼠标点击坐标和按钮参数。"""
+
+    parts = command.strip().split()
+    if len(parts) < 2:
+        raise ValueError("鼠标点击需要 x y 坐标。")
+    if len(parts) > 3:
+        raise ValueError("鼠标点击只支持 x y 和一个 button=... 参数。")
+
+    try:
+        x = int(parts[0])
+        y = int(parts[1])
+    except ValueError as exc:
+        raise ValueError("坐标必须是整数。") from exc
+
+    button = "left"
+    if len(parts) == 3:
+        raw_button = parts[2]
+        if not raw_button.casefold().startswith("button="):
+            raise ValueError("第三个参数必须是 button=left|right|middle。")
+        button = raw_button.split("=", 1)[1].strip().casefold()
+
+    if button not in MOUSE_BUTTONS:
+        raise ValueError(f"不支持的鼠标按钮：{button}")
+
+    return MouseClickRequest(x=x, y=y, button=button)
+
+
+def execute_mouse_click(
+    command: str,
+    *,
+    executor: MouseClickExecutor | None = None,
+) -> MouseClickAutomationResult:
+    """执行一次显式坐标鼠标点击。"""
+
+    request = parse_mouse_click_request(command)
+    mouse_executor = executor or _execute_mouse_click_with_pyautogui
+    mouse_executor(request.x, request.y, request.button)
+    return MouseClickAutomationResult(request=request, executed_at=datetime.now())
+
+
+def describe_mouse_click_automation(
+    paths: ProjectPaths,
+    command: str,
+    *,
+    executor: MouseClickExecutor | None = None,
+) -> str:
+    result = execute_mouse_click(command, executor=executor)
+    request = result.request
+    return "\n".join(
+        [
+            f"鼠标点击执行：{request.button} @ ({request.x}, {request.y})",
+            f"时间：{result.executed_at.isoformat(timespec='seconds')}",
+            "说明：当前阶段只执行显式坐标点击，不做目标识别、不拖动、不切换窗口。",
+        ]
+    )
 
 
 def add_common_directory(paths: ProjectPaths, alias: str, directory: str | Path) -> CommonDirectory:
@@ -295,6 +368,15 @@ def _execute_hotkey_with_pyautogui(keys: tuple[str, ...]) -> None:
         raise RuntimeError("未安装 pyautogui，无法发送快捷键。") from exc
 
     pyautogui.hotkey(*keys)
+
+
+def _execute_mouse_click_with_pyautogui(x: int, y: int, button: str) -> None:
+    try:
+        import pyautogui
+    except ModuleNotFoundError as exc:
+        raise RuntimeError("未安装 pyautogui，无法执行鼠标点击。") from exc
+
+    pyautogui.click(x=x, y=y, button=button)
 
 
 def _report_filename(filename: str | None) -> str:

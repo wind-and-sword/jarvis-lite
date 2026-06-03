@@ -10,6 +10,7 @@ from .automation import (
     CommonDirectory,
     add_common_directory,
     describe_hotkey_automation,
+    describe_mouse_click_automation,
     describe_automation,
     list_recent_files,
     list_common_directories,
@@ -583,6 +584,15 @@ class JarvisAgent:
                 return f"快捷键执行失败：{exc}"
             self.tools.run("record_log", message=f"发送快捷键：{' '.join(args)}")
             return response
+        if command == "/mouse-click":
+            if not args:
+                return "用法：/mouse-click x y [button=left|right|middle]"
+            try:
+                response = describe_mouse_click_automation(self.paths, " ".join(args))
+            except (RuntimeError, ValueError) as exc:
+                return f"鼠标点击失败：{exc}"
+            self.tools.run("record_log", message=f"鼠标点击：{' '.join(args)}")
+            return response
         if command == "/apps":
             self.tools.run("record_log", message="查看应用注册表")
             return describe_registered_apps(self.paths)
@@ -870,6 +880,7 @@ class JarvisAgent:
                 "/voice 已识别的语音文本：按语音入口处理文本并播报回答",
                 "/automation-status：查看阶段 4 自动化状态",
                 "/hotkey key1+key2 [key3+key4 ...]：发送显式快捷键组合，不点击、不输入文本、不切换窗口",
+                "/mouse-click x y [button=left|right|middle]：执行显式坐标鼠标点击，不做目标识别、不拖动、不切换窗口",
                 "/apps：查看首批常用应用注册表",
                 "/app-find 应用名称或别名：匹配已登记应用，不启动应用",
                 "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",

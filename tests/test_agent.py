@@ -3478,12 +3478,38 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("快捷键执行失败：模拟快捷键失败", response)
 
+    def test_mouse_click_command_executes_explicit_coordinate_click(self):
+        with patch(
+            "jarvis_lite.agent.describe_mouse_click_automation",
+            return_value="鼠标点击执行：right @ (100, 200)",
+        ) as mouse_click:
+            response = self.agent.handle("/mouse-click 100 200 button=right")
+
+        self.assertIn("鼠标点击执行：right @ (100, 200)", response)
+        mouse_click.assert_called_once_with(self.agent.paths, "100 200 button=right")
+
+    def test_mouse_click_command_requires_coordinates(self):
+        with patch("jarvis_lite.agent.describe_mouse_click_automation") as mouse_click:
+            response = self.agent.handle("/mouse-click")
+
+        self.assertIn("用法：/mouse-click x y", response)
+        mouse_click.assert_not_called()
+
+    def test_mouse_click_command_reports_execution_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_mouse_click_automation",
+            side_effect=ValueError("坐标必须是整数。"),
+        ):
+            response = self.agent.handle("/mouse-click x 200")
+
+        self.assertIn("鼠标点击失败：坐标必须是整数。", response)
+
     def test_update_status_command_reports_available_update_from_manifest(self):
         manifest = Path(self.temp_dir.name) / "update.json"
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.109.1",
+                        "version": "0.110.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3494,7 +3520,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.109.1", response)
+        self.assertIn("发现新版本：0.110.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3509,7 +3535,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.109.1",
+                        "version": "0.110.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

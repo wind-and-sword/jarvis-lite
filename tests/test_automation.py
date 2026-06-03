@@ -12,9 +12,11 @@ from jarvis_lite.automation import (
     CommonDirectory,
     add_common_directory,
     describe_hotkey_automation,
+    describe_mouse_click_automation,
     describe_automation,
     list_recent_files,
     list_common_directories,
+    parse_mouse_click_request,
     parse_hotkey_sequence,
     preview_file_organization,
     record_directory_open_request,
@@ -216,6 +218,40 @@ class AutomationTests(unittest.TestCase):
         self.assertIn("1. ctrl+l", description)
         self.assertIn("2. alt+tab", description)
         self.assertIn("当前阶段只发送显式快捷键", description)
+
+    def test_parse_mouse_click_request_defaults_left_button(self):
+        request = parse_mouse_click_request("100 200")
+
+        self.assertEqual(request.x, 100)
+        self.assertEqual(request.y, 200)
+        self.assertEqual(request.button, "left")
+
+    def test_parse_mouse_click_request_accepts_explicit_button_and_negative_coordinates(self):
+        request = parse_mouse_click_request("-10 240 button=right")
+
+        self.assertEqual(request.x, -10)
+        self.assertEqual(request.y, 240)
+        self.assertEqual(request.button, "right")
+
+    def test_parse_mouse_click_request_rejects_incomplete_coordinates_or_unknown_button(self):
+        with self.assertRaises(ValueError):
+            parse_mouse_click_request("100")
+        with self.assertRaises(ValueError):
+            parse_mouse_click_request("x 200")
+        with self.assertRaises(ValueError):
+            parse_mouse_click_request("100 200 button=invalid")
+
+    def test_describe_mouse_click_automation_invokes_executor_with_coordinates(self):
+        calls: list[tuple[int, int, str]] = []
+
+        def fake_executor(x: int, y: int, button: str) -> None:
+            calls.append((x, y, button))
+
+        description = describe_mouse_click_automation(self.paths, "100 200 button=middle", executor=fake_executor)
+
+        self.assertEqual(calls, [(100, 200, "middle")])
+        self.assertIn("鼠标点击执行：middle @ (100, 200)", description)
+        self.assertIn("当前阶段只执行显式坐标点击", description)
 
 
 if __name__ == "__main__":

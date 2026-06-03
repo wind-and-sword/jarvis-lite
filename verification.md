@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.110.0` 可安装测试包，完成鼠标点击自动化第一阶段；`/mouse-click x y [button=left|right|middle]` 可执行一次显式坐标点击，当前阶段不做目标识别、不拖动、不切换窗口、不启动应用，不接入自然语言自动点击；全量 `unittest` 605 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.110.0.exe`。
 - 2026-06-03：发布 `0.109.0` 可安装测试包，完成快捷键自动化第一阶段；`/hotkey key1+key2 [key3+key4 ...]` 可发送一个或多个显式快捷键组合，当前阶段不点击、不输入文本、不切换窗口、不启动应用，不接入自然语言自动执行；全量 `unittest` 598 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.109.0.exe`。
 - 2026-06-03：发布 `0.108.0` 可安装测试包，完成截图 OCR 串联第一阶段；`/screen-ocr [文件名] [lang=chi_sim+eng]` 可保存当前主屏幕截图并立即识别文字，当前阶段不点击、不切换窗口、不输入、不启动应用；全量 `unittest` 592 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.108.0.exe`。
 - 2026-06-03：发布 `0.107.0` 可安装测试包，完成 OCR 图片识别第一阶段；`/ocr-status` 可诊断 Tesseract CLI 状态，`/ocr-image 图片路径 [lang=chi_sim+eng]` 可在本机安装 Tesseract 时识别已存在图片，当前阶段不自动截图、不点击、不切换窗口、不输入；全量 `unittest` 590 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.107.0.exe`。
