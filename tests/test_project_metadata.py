@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-RELEASE_VERSION = "0.102.0"
+RELEASE_VERSION = "0.103.0"
 
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
@@ -44,6 +44,17 @@ class ProjectMetadataTests(unittest.TestCase):
             line
             for line in readme.splitlines()
             if line.startswith("- InnerBrain 样本闭环：")
+        )
+
+        self.assertIn("暂无已处理样本时会提示这里只显示已通过样本", inner_brain_summary)
+        self.assertIn("引导查看待处理失败或补充本机 evaluation 样本", inner_brain_summary)
+
+    def test_project_plan_inner_brain_summary_mentions_empty_resolved_guidance(self):
+        project_plan = (PROJECT_ROOT / "word" / "PROJECT-PLAN.md").read_text(encoding="utf-8")
+        inner_brain_summary = next(
+            line
+            for line in project_plan.splitlines()
+            if line.startswith("- InnerBrain 可观察与样本闭环：")
         )
 
         self.assertIn("暂无已处理样本时会提示这里只显示已通过样本", inner_brain_summary)
