@@ -26,6 +26,7 @@ from .authorization import (
     is_desktop_action_command,
 )
 from .app_registry import describe_app_launch, describe_registered_apps, match_registered_app
+from .chrome_workflow import describe_chrome_open, describe_chrome_search, describe_chrome_workflow_status
 from .config import ProjectPaths, build_project_paths
 from .knowledge import (
     KnowledgeIndex,
@@ -638,6 +639,29 @@ class JarvisAgent:
                 return f"应用启动失败：{exc}"
             self.tools.run("record_log", message=f"启动应用：{query}")
             return response
+        if command == "/chrome-workflow-status":
+            self.tools.run("record_log", message="查看 Chrome 工作流状态")
+            return describe_chrome_workflow_status(self.paths)
+        if command == "/chrome-open":
+            if not args:
+                return "用法：/chrome-open URL"
+            raw_url = " ".join(args)
+            try:
+                response = describe_chrome_open(self.paths, raw_url)
+            except (RuntimeError, ValueError, FileNotFoundError) as exc:
+                return f"Chrome 打开网页失败：{exc}"
+            self.tools.run("record_log", message=f"Chrome 打开网页：{raw_url}")
+            return response
+        if command == "/chrome-search":
+            if not args:
+                return "用法：/chrome-search 关键词"
+            query = " ".join(args)
+            try:
+                response = describe_chrome_search(self.paths, query)
+            except (RuntimeError, ValueError, FileNotFoundError) as exc:
+                return f"Chrome 搜索失败：{exc}"
+            self.tools.run("record_log", message=f"Chrome 搜索：{query}")
+            return response
         if command == "/windows":
             self.tools.run("record_log", message="查看只读窗口感知状态")
             return describe_current_windows(self.paths)
@@ -935,6 +959,9 @@ class JarvisAgent:
                 "/apps：查看首批常用应用注册表",
                 "/app-find 应用名称或别名：匹配已登记应用，匹配本身不启动应用",
                 "/app-launch 应用名称或别名：启动已登记应用，不切换窗口、不点击、不输入",
+                "/chrome-workflow-status：查看 Chrome 工作流第一阶段边界",
+                "/chrome-open URL：用 Chrome 打开明确网页，不读取网页、不点击页面",
+                "/chrome-search 关键词：用 Chrome 打开搜索结果页，不读取网页、不点击页面",
                 "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",
                 "/window-focus 编号或标题/应用名：切换到显式窗口，不点击、不输入、不启动应用",
                 "/screenshot [文件名]：保存当前屏幕截图到 logs/screenshots，不 OCR、不点击、不切换窗口",
@@ -4115,6 +4142,7 @@ class JarvisAgent:
                 "- 意图授权：/authorization-status 查看直接执行、准备确认、追问和降级策略",
                 "- 配置管家：/config-manager-status 查看记忆、目录、应用覆盖和 provider 配置状态",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",
+                "- Chrome 工作流：/chrome-workflow-status、/chrome-open、/chrome-search",
                 "- 桌面能力：小助手窗口、面板、托盘、主题、开机启动、安装包、更新检查和下载",
                 "- 会话能力：/history、/save-summary、/clear",
                 "- 批量标签：标签组预览、确认、恢复提示和 /tag-history 历史记录",

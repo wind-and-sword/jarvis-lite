@@ -3419,6 +3419,14 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("阶段 4 自动化状态", response)
         self.assertIn("常用目录", response)
+        self.assertIn("/chrome-open", response)
+
+    def test_chrome_workflow_status_command_reports_boundary(self):
+        response = self.agent.handle("/chrome-workflow-status")
+
+        self.assertIn("Chrome 工作流状态：第一阶段", response)
+        self.assertIn("/chrome-open URL", response)
+        self.assertIn("不读取网页", response)
 
     def test_apps_command_lists_registered_desktop_apps_without_launching(self):
         response = self.agent.handle("/apps")
@@ -3469,6 +3477,49 @@ class AgentTests(unittest.TestCase):
             response = self.agent.handle("/app-launch Chrome")
 
         self.assertIn("应用启动失败：应用启动路径未找到：Chrome", response)
+
+    def test_chrome_open_command_opens_explicit_url(self):
+        with patch(
+            "jarvis_lite.agent.describe_chrome_open",
+            return_value="Chrome 打开网页执行",
+        ) as chrome_open:
+            response = self.agent.handle("/chrome-open example.com")
+
+        self.assertIn("Chrome 打开网页执行", response)
+        chrome_open.assert_called_once_with(self.agent.paths, "example.com")
+
+    def test_chrome_open_command_requires_url(self):
+        with patch("jarvis_lite.agent.describe_chrome_open") as chrome_open:
+            response = self.agent.handle("/chrome-open")
+
+        self.assertIn("用法：/chrome-open URL", response)
+        chrome_open.assert_not_called()
+
+    def test_chrome_open_command_reports_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_chrome_open",
+            side_effect=FileNotFoundError("Chrome 启动路径未找到"),
+        ):
+            response = self.agent.handle("/chrome-open example.com")
+
+        self.assertIn("Chrome 打开网页失败：Chrome 启动路径未找到", response)
+
+    def test_chrome_search_command_opens_search_query(self):
+        with patch(
+            "jarvis_lite.agent.describe_chrome_search",
+            return_value="Chrome 搜索执行",
+        ) as chrome_search:
+            response = self.agent.handle("/chrome-search Jarvis Lite")
+
+        self.assertIn("Chrome 搜索执行", response)
+        chrome_search.assert_called_once_with(self.agent.paths, "Jarvis Lite")
+
+    def test_chrome_search_command_requires_query(self):
+        with patch("jarvis_lite.agent.describe_chrome_search") as chrome_search:
+            response = self.agent.handle("/chrome-search")
+
+        self.assertIn("用法：/chrome-search 关键词", response)
+        chrome_search.assert_not_called()
 
     def test_windows_command_reports_readonly_window_snapshot(self):
         with patch("jarvis_lite.agent.describe_current_windows", return_value="窗口感知：\n- 可见窗口：1 个") as probe:
@@ -3627,7 +3678,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.115.1",
+                        "version": "0.116.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3638,7 +3689,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.115.1", response)
+        self.assertIn("发现新版本：0.116.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3653,7 +3704,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.115.1",
+                        "version": "0.116.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

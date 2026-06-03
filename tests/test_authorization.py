@@ -18,6 +18,8 @@ class AuthorizationTests(unittest.TestCase):
         self.assertTrue(is_desktop_action_command("/type-text Hello Jarvis"))
         self.assertTrue(is_desktop_action_command("/window-focus Chrome"))
         self.assertTrue(is_desktop_action_command("/app-launch Chrome"))
+        self.assertTrue(is_desktop_action_command("/chrome-open https://example.com"))
+        self.assertTrue(is_desktop_action_command("/chrome-search Jarvis Lite"))
         self.assertFalse(is_desktop_action_command("/kb-summary"))
         self.assertFalse(is_desktop_action_command("hotkey ctrl+l"))
 
@@ -120,6 +122,7 @@ class AuthorizationTests(unittest.TestCase):
         self.assertIn("降级", status)
         self.assertIn("/hotkey", status)
         self.assertIn("/app-launch", status)
+        self.assertIn("/chrome-open", status)
 
 
 if __name__ == "__main__":

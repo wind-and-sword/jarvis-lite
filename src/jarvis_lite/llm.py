@@ -27,6 +27,7 @@ LLM_ALLOWED_COMMAND_SPECS = (
     "/memory",
     "/experiences",
     "/config-manager-status",
+    "/chrome-workflow-status",
     "/experience-advice 关键词",
     "/recent-files",
     "/tag-history",

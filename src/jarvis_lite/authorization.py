@@ -7,6 +7,8 @@ from typing import Iterable
 
 DESKTOP_ACTION_COMMANDS = (
     "/app-launch",
+    "/chrome-open",
+    "/chrome-search",
     "/window-focus",
     "/hotkey",
     "/mouse-click",

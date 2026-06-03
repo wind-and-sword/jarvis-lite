@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.116.0` 可安装测试包，完成 Chrome 低风险工作流第一阶段；`/chrome-workflow-status` 可查看边界，`/chrome-open URL` 与 `/chrome-search 关键词` 可显式用 Chrome 打开网页或搜索结果，当前阶段不读取网页、不点击页面、不接入自然语言自动执行；全量 `unittest` 653 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.116.0.exe`。
 - 2026-06-03：发布 `0.115.0` 可安装测试包，完成自动记忆与配置管家第一阶段；`/config-manager-status` 与 `/memory-config-status` 可只读汇总长期记忆、经验记忆、常用目录、应用本地覆盖、LLM 本地配置和联网搜索本地配置，API key 只显示已配置/未配置；全量 `unittest` 639 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.115.0.exe`。
 - 2026-06-03：发布 `0.114.0` 可安装测试包，完成意图授权层第一阶段；`/authorization-status` 可查看直接执行、准备后确认、追问补充和降级策略，LLM 外脑桌面动作命令会降级说明且不自动执行；全量 `unittest` 636 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.114.0.exe`。
 - 2026-06-03：发布 `0.113.0` 可安装测试包，完成应用启动自动化第一阶段；`/app-launch 应用名称或别名` 可启动 AppRegistry 中已登记且有可用路径的应用，当前阶段不自动切换窗口、不点击、不输入、不接入自然语言自动启动；全量 `unittest` 625 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.113.0.exe`。
