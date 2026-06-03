@@ -3425,6 +3425,66 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/wechat-open", response)
         self.assertIn("/idea-open", response)
 
+    def test_task_status_command_reports_empty_state(self):
+        response = self.agent.handle("/task-status")
+
+        self.assertIn("任务状态：还没有当前任务", response)
+        self.assertIn("/task-start 任务名称", response)
+        self.assertNotIn("command / /task-status", self.agent.route_status_text())
+
+    def test_task_commands_record_failure_and_restore_on_startup(self):
+        start_response = self.agent.handle("/task-start 发布 0.120.0")
+        first_step = self.agent.handle("/task-step 写失败测试")
+        second_step = self.agent.handle("/task-step 实现任务状态模块")
+        failure_response = self.agent.handle("/task-fail 目标测试失败")
+
+        restarted_agent = JarvisAgent(self.paths)
+        status = restarted_agent.handle("/task-status")
+
+        self.assertIn("已开始任务：发布 0.120.0", start_response)
+        self.assertIn("当前步骤：写失败测试", first_step)
+        self.assertIn("已完成上一步：写失败测试", second_step)
+        self.assertIn("任务失败复盘：发布 0.120.0", failure_response)
+        self.assertIn("失败步骤：实现任务状态模块", failure_response)
+        self.assertIn("失败原因：目标测试失败", failure_response)
+        self.assertIn("当前任务：发布 0.120.0（失败）", status)
+        self.assertIn("最近失败记录：", status)
+        self.assertIn("不自动截图、不自动 OCR、不自动重新执行外部动作", status)
+
+    def test_task_resume_complete_and_cancel_commands(self):
+        self.agent.handle("/task-start 整理资料")
+        self.agent.handle("/task-step 导入资料")
+        self.agent.handle("/task-fail 文件不存在")
+
+        resume_response = self.agent.handle("/task-resume")
+        complete_response = self.agent.handle("/task-complete")
+        empty_after_complete = self.agent.handle("/task-status")
+        self.agent.handle("/task-start 临时任务")
+        cancel_response = self.agent.handle("/task-cancel")
+        empty_after_cancel = self.agent.handle("/task-status")
+
+        self.assertIn("已恢复任务：整理资料", resume_response)
+        self.assertIn("已完成任务：整理资料", complete_response)
+        self.assertIn("任务状态：还没有当前任务", empty_after_complete)
+        self.assertIn("已取消任务：临时任务", cancel_response)
+        self.assertIn("任务状态：还没有当前任务", empty_after_cancel)
+
+    def test_task_commands_require_arguments_and_are_listed(self):
+        no_start_name = self.agent.handle("/task-start")
+        no_step = self.agent.handle("/task-step")
+        no_failure = self.agent.handle("/task-fail")
+        help_text = self.agent.handle("/help")
+        status = self.agent.handle("/status")
+        recent_context = self.agent.handle("/recent-context")
+
+        self.assertIn("用法：/task-start 任务名称", no_start_name)
+        self.assertIn("用法：/task-step 步骤说明", no_step)
+        self.assertIn("用法：/task-fail 失败原因", no_failure)
+        self.assertIn("/task-status：查看当前任务状态和最近失败复盘", help_text)
+        self.assertIn("/task-start 任务名称", help_text)
+        self.assertIn("任务状态：/task-status", status)
+        self.assertIn("- 当前任务：无", recent_context)
+
     def test_chrome_workflow_status_command_reports_boundary(self):
         response = self.agent.handle("/chrome-workflow-status")
 
@@ -3889,7 +3949,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.119.1",
+                        "version": "0.120.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3900,7 +3960,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.119.1", response)
+        self.assertIn("发现新版本：0.120.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3915,7 +3975,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.119.1",
+                        "version": "0.120.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

@@ -11,6 +11,7 @@ RUNTIME_DIRNAME = "jarvis-lite-runtime"
 CONTEXT_FILENAME = "agent-context.json"
 ROUTE_DECISION_HISTORY_LIMIT = 5
 INNER_BRAIN_CANDIDATE_LIMIT = 20
+TASK_FAILURE_HISTORY_LIMIT = 5
 
 
 @dataclass(frozen=True)
@@ -110,6 +111,36 @@ class RuntimeInnerBrainCandidateContext:
 
 
 @dataclass(frozen=True)
+class RuntimeTaskContext:
+    """保存当前任务的可序列化运行态信息。"""
+
+    title: str
+    status: str = "running"
+    origin_prompt: str = ""
+    current_step: str = ""
+    completed_steps: tuple[str, ...] = ()
+    failure_reason: str = ""
+    created_at: str = ""
+    updated_at: str = ""
+
+
+@dataclass(frozen=True)
+class RuntimeTaskFailureContext:
+    """保存最近任务失败复盘的可序列化运行态信息。"""
+
+    title: str
+    failed_step: str
+    reason: str
+    origin_prompt: str = ""
+    route_summary: str = ""
+    authorization_summary: str = ""
+    completed_steps: tuple[str, ...] = ()
+    screen_context: str = ""
+    next_step: str = ""
+    created_at: str = ""
+
+
+@dataclass(frozen=True)
 class RuntimeContext:
     """保存可跨 Agent 实例恢复的轻量运行态上下文。"""
 
@@ -127,6 +158,8 @@ class RuntimeContext:
     recent_route_decision: RuntimeRouteDecisionContext | None = None
     recent_route_decisions: tuple[RuntimeRouteDecisionContext, ...] = ()
     inner_brain_candidates: tuple[RuntimeInnerBrainCandidateContext, ...] | None = None
+    current_task: RuntimeTaskContext | None = None
+    recent_task_failures: tuple[RuntimeTaskFailureContext, ...] = ()
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -184,6 +217,8 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         recent_route_decision=recent_route_decision,
         recent_route_decisions=recent_route_decisions,
         inner_brain_candidates=_read_inner_brain_candidate_contexts(raw.get("inner_brain_candidates")),
+        current_task=_read_task_context(raw.get("current_task")),
+        recent_task_failures=_read_task_failure_contexts(raw.get("recent_task_failures")),
     )
 
 
@@ -242,6 +277,11 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                 "inner_brain_candidates": _inner_brain_candidate_contexts_to_json(
                     context.inner_brain_candidates
                 ),
+                "current_task": _task_context_to_json(context.current_task),
+                "recent_task_failures": [
+                    _task_failure_context_to_json(failure)
+                    for failure in context.recent_task_failures[:TASK_FAILURE_HISTORY_LIMIT]
+                ],
             },
             ensure_ascii=False,
             indent=2,
@@ -439,6 +479,62 @@ def _read_inner_brain_candidate_contexts(value: object) -> tuple[RuntimeInnerBra
     return tuple(candidates)
 
 
+def _read_task_context(value: object) -> RuntimeTaskContext | None:
+    if not isinstance(value, dict):
+        return None
+    title = _read_optional_str(value.get("title"))
+    if title is None:
+        return None
+    status = _read_optional_str(value.get("status")) or "running"
+    if status not in {"running", "failed"}:
+        status = "running"
+    return RuntimeTaskContext(
+        title=title,
+        status=status,
+        origin_prompt=_read_optional_str(value.get("origin_prompt")) or "",
+        current_step=_read_optional_str(value.get("current_step")) or "",
+        completed_steps=_read_str_tuple(value.get("completed_steps")),
+        failure_reason=_read_optional_str(value.get("failure_reason")) or "",
+        created_at=_read_optional_str(value.get("created_at")) or "",
+        updated_at=_read_optional_str(value.get("updated_at")) or "",
+    )
+
+
+def _read_task_failure_context(value: object) -> RuntimeTaskFailureContext | None:
+    if not isinstance(value, dict):
+        return None
+    title = _read_optional_str(value.get("title"))
+    failed_step = _read_optional_str(value.get("failed_step"))
+    reason = _read_optional_str(value.get("reason"))
+    if title is None or failed_step is None or reason is None:
+        return None
+    return RuntimeTaskFailureContext(
+        title=title,
+        failed_step=failed_step,
+        reason=reason,
+        origin_prompt=_read_optional_str(value.get("origin_prompt")) or "",
+        route_summary=_read_optional_str(value.get("route_summary")) or "",
+        authorization_summary=_read_optional_str(value.get("authorization_summary")) or "",
+        completed_steps=_read_str_tuple(value.get("completed_steps")),
+        screen_context=_read_optional_str(value.get("screen_context")) or "",
+        next_step=_read_optional_str(value.get("next_step")) or "",
+        created_at=_read_optional_str(value.get("created_at")) or "",
+    )
+
+
+def _read_task_failure_contexts(value: object) -> tuple[RuntimeTaskFailureContext, ...]:
+    if not isinstance(value, list):
+        return ()
+    failures: list[RuntimeTaskFailureContext] = []
+    for item in value:
+        failure = _read_task_failure_context(item)
+        if failure is not None:
+            failures.append(failure)
+        if len(failures) >= TASK_FAILURE_HISTORY_LIMIT:
+            break
+    return tuple(failures)
+
+
 def _route_decision_history_with_latest(
     latest: RuntimeRouteDecisionContext | None,
     history: tuple[RuntimeRouteDecisionContext, ...],
@@ -631,6 +727,36 @@ def _inner_brain_candidate_context_to_json(context: RuntimeInnerBrainCandidateCo
         "count": context.count,
         "first_seen_at": context.first_seen_at,
         "last_seen_at": context.last_seen_at,
+    }
+
+
+def _task_context_to_json(context: RuntimeTaskContext | None) -> dict[str, object] | None:
+    if context is None:
+        return None
+    return {
+        "title": context.title,
+        "status": context.status,
+        "origin_prompt": context.origin_prompt,
+        "current_step": context.current_step,
+        "completed_steps": list(context.completed_steps),
+        "failure_reason": context.failure_reason,
+        "created_at": context.created_at,
+        "updated_at": context.updated_at,
+    }
+
+
+def _task_failure_context_to_json(context: RuntimeTaskFailureContext) -> dict[str, object]:
+    return {
+        "title": context.title,
+        "failed_step": context.failed_step,
+        "reason": context.reason,
+        "origin_prompt": context.origin_prompt,
+        "route_summary": context.route_summary,
+        "authorization_summary": context.authorization_summary,
+        "completed_steps": list(context.completed_steps),
+        "screen_context": context.screen_context,
+        "next_step": context.next_step,
+        "created_at": context.created_at,
     }
 
 

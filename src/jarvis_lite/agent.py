@@ -82,6 +82,15 @@ from .search import (
 )
 from .screen_capture import describe_screen_capture, describe_screen_ocr
 from .ocr import describe_image_ocr, describe_ocr_status
+from .task_state import (
+    cancel_task,
+    complete_task,
+    describe_task_status,
+    record_task_failure,
+    record_task_step,
+    resume_task,
+    start_task,
+)
 from .memory import (
     append_experience,
     append_memory,
@@ -135,6 +144,13 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/experiences": "experience.status",
     "/config-manager-status": "memory_config.status",
     "/memory-config-status": "memory_config.status",
+    "/task-status": "task.status",
+    "/task-start": "task.start",
+    "/task-step": "task.step",
+    "/task-fail": "task.fail",
+    "/task-resume": "task.resume",
+    "/task-complete": "task.complete",
+    "/task-cancel": "task.cancel",
     "/llm-status": "llm.status",
     "/llm-enable": "llm.enable",
     "/llm-config-init": "llm.config_init",
@@ -296,6 +312,9 @@ class JarvisAgent:
         if prompt in {"/config-manager-status", "config-manager-status", "/memory-config-status", "memory-config-status"}:
             self.tools.run("record_log", message="查看记忆与配置管家状态")
             return describe_memory_config_manager(self.paths)
+        if prompt in {"/task-status", "task-status"}:
+            self.tools.run("record_log", message="查看任务状态与失败复盘")
+            return describe_task_status(self.paths)
         if prompt in {"/tools", "tools"}:
             return "\n".join(sorted(self.tools.allowed_tool_names))
         if prompt in {"/status", "status"}:
@@ -967,6 +986,44 @@ class JarvisAgent:
                 return "用法：/dir-open 常用目录别名"
             return self._open_directory(args[0])
 
+        if command == "/task-start":
+            if not args:
+                return "用法：/task-start 任务名称"
+            title = " ".join(args)
+            self.tools.run("record_log", message=f"开始任务状态记录：{title}")
+            return start_task(self.paths, title, origin_prompt=prompt)
+
+        if command == "/task-step":
+            if not args:
+                return "用法：/task-step 步骤说明"
+            step = " ".join(args)
+            self.tools.run("record_log", message=f"记录任务步骤：{step}")
+            return record_task_step(self.paths, step)
+
+        if command == "/task-fail":
+            if not args:
+                return "用法：/task-fail 失败原因"
+            reason = " ".join(args)
+            self.tools.run("record_log", message=f"记录任务失败：{reason}")
+            return record_task_failure(
+                self.paths,
+                reason,
+                route_summary=self._task_route_summary(),
+                authorization_summary="explicit_command direct_execute",
+            )
+
+        if command == "/task-resume":
+            self.tools.run("record_log", message="恢复失败任务状态")
+            return resume_task(self.paths)
+
+        if command == "/task-complete":
+            self.tools.run("record_log", message="完成当前任务状态")
+            return complete_task(self.paths)
+
+        if command == "/task-cancel":
+            self.tools.run("record_log", message="取消当前任务状态")
+            return cancel_task(self.paths)
+
         if command == "/update-status":
             source = self._strip_quotes(args[0]) if args else None
             self.tools.run("record_log", message=f"检查更新状态：{source or '默认更新源'}")
@@ -1012,6 +1069,11 @@ class JarvisAgent:
                 "/experiences：查看经验记忆",
                 "/config-manager-status：查看记忆与配置管家状态",
                 "/status：查看阶段 1 当前状态",
+                "/task-status：查看当前任务状态和最近失败复盘",
+                "/task-start 任务名称：开始记录一个显式多步骤任务",
+                "/task-step 步骤说明：记录当前任务步骤",
+                "/task-fail 失败原因：记录当前任务失败复盘",
+                "/task-resume、/task-complete、/task-cancel：恢复、完成或取消当前任务",
                 "/llm-status：查看 LLM 外脑 provider 状态",
                 "/llm-enable：查看外脑启用状态和本地配置路径",
                 "/inner-brain-status：查看 InnerBrain 本地内脑状态",
@@ -2139,6 +2201,7 @@ class JarvisAgent:
 
     def _recent_context_status(self) -> str:
         self.tools.run("record_log", message="查看最近上下文状态")
+        runtime_context = self._runtime_context()
         has_document = self._recent_document_path is not None
         has_document_list = bool(self._recent_document_paths)
         has_directory = self._recent_directory is not None
@@ -2151,6 +2214,7 @@ class JarvisAgent:
         has_recent_tagged_documents_operation = self._recent_tagged_documents_operation_tag is not None
         has_pending_llm_clarification = self._pending_llm_clarification is not None
         has_route_history = bool(self._recent_route_decisions)
+        has_task_context = runtime_context.current_task is not None or bool(runtime_context.recent_task_failures)
         if (
             not has_document
             and not has_document_list
@@ -2164,6 +2228,7 @@ class JarvisAgent:
             and not has_recent_tagged_documents_operation
             and not has_pending_llm_clarification
             and not has_route_history
+            and not has_task_context
         ):
             return "\n".join(
                 [
@@ -2225,6 +2290,22 @@ class JarvisAgent:
             lines.append(f"- 待确认建议命令：{self._pending_advice_command}")
         else:
             lines.append("- 待确认建议命令：无")
+        if runtime_context.current_task is not None:
+            task = runtime_context.current_task
+            status_label = "失败" if task.status == "failed" else "进行中"
+            lines.append(f"- 当前任务：{task.title}（{status_label}）")
+            if task.current_step:
+                lines.append(f"  当前步骤：{task.current_step}")
+            if task.failure_reason:
+                lines.append(f"  失败原因：{task.failure_reason}")
+        else:
+            lines.append("- 当前任务：无")
+        if runtime_context.recent_task_failures:
+            lines.append(f"- 最近任务失败：{len(runtime_context.recent_task_failures)} 条")
+            for index, failure in enumerate(runtime_context.recent_task_failures, start=1):
+                lines.append(f"  {index}. {failure.title} | 步骤：{failure.failed_step} | 原因：{failure.reason}")
+        else:
+            lines.append("- 最近任务失败：无")
         if has_route_history:
             latest_route = self._recent_route_decisions[0]
             lines.append(f"- 最近路由：{latest_route.route} / {latest_route.detail}")
@@ -2267,7 +2348,7 @@ class JarvisAgent:
         else:
             lines.append("- 最近批量打标签：无")
         lines.append("下一步建议：")
-        for suggestion in suggest_next_actions_from_context(self._runtime_context(), list_recent_experiences(self.paths)):
+        for suggestion in suggest_next_actions_from_context(runtime_context, list_recent_experiences(self.paths)):
             lines.append(f"- {suggestion}")
         return "\n".join(lines)
 
@@ -3681,6 +3762,7 @@ class JarvisAgent:
         return CommonDirectory(context.alias, Path(context.path))
 
     def _runtime_context(self) -> RuntimeContext:
+        persisted_context = load_runtime_context(self.paths)
         recent_directory = None
         if self._recent_directory is not None:
             recent_directory = RuntimeDirectoryContext(
@@ -3704,6 +3786,8 @@ class JarvisAgent:
             inner_brain_candidates=(
                 self._inner_brain_candidate_stats if self._inner_brain_candidate_stats_initialized else None
             ),
+            current_task=persisted_context.current_task,
+            recent_task_failures=persisted_context.recent_task_failures,
         )
 
     def _save_runtime_context(self) -> None:
@@ -3832,6 +3916,11 @@ class JarvisAgent:
             return "unknown"
         return parts[0]
 
+    def _task_route_summary(self) -> str:
+        if self._recent_route_decision is None:
+            return "无"
+        return f"{self._recent_route_decision.route} / {self._recent_route_decision.detail}"
+
     def _route_history_line(self, index: int, decision: RuntimeRouteDecisionContext) -> str:
         parts = [
             f"{index}. {decision.route} / {decision.detail}",
@@ -3915,6 +4004,7 @@ class JarvisAgent:
             "context",
             "route-history",
             "routes",
+            "task-status",
             "kb",
             "knowledge",
             "kb-summary",
@@ -4008,6 +4098,7 @@ class JarvisAgent:
         return (
             self._is_recent_context_prompt(prompt)
             or self._is_route_history_prompt(prompt)
+            or prompt in {"/task-status", "task-status"}
             or self._is_inner_brain_eval_local_report_prompt(prompt)
             or self._is_inner_brain_eval_local_file_failures_prompt(prompt)
             or self._is_inner_brain_eval_local_file_prompt(prompt)
@@ -4262,6 +4353,7 @@ class JarvisAgent:
                 "- 语音入口：/voice、/speak、/voice-status",
                 "- 意图授权：/authorization-status 查看直接执行、准备确认、追问和降级策略",
                 "- 配置管家：/config-manager-status 查看记忆、目录、应用覆盖和 provider 配置状态",
+                "- 任务状态：/task-status 查看当前任务、步骤、中断恢复和失败复盘",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",
                 "- Chrome 工作流：/chrome-workflow-status、/chrome-open、/chrome-search",
                 "- Clash Verge 工作流：/clash-workflow-status、/clash-open、/clash-focus",

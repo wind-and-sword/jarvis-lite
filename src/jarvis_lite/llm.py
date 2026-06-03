@@ -27,6 +27,7 @@ LLM_ALLOWED_COMMAND_SPECS = (
     "/memory",
     "/experiences",
     "/config-manager-status",
+    "/task-status",
     "/chrome-workflow-status",
     "/clash-workflow-status",
     "/messaging-workflow-status",
