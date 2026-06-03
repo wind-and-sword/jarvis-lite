@@ -3504,12 +3504,38 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("鼠标点击失败：坐标必须是整数。", response)
 
+    def test_type_text_command_inputs_explicit_text(self):
+        with patch(
+            "jarvis_lite.agent.describe_text_input_automation",
+            return_value="文本输入执行：12 个字符",
+        ) as text_input:
+            response = self.agent.handle("/type-text Hello Jarvis")
+
+        self.assertIn("文本输入执行：12 个字符", response)
+        text_input.assert_called_once_with(self.agent.paths, "Hello Jarvis")
+
+    def test_type_text_command_requires_text(self):
+        with patch("jarvis_lite.agent.describe_text_input_automation") as text_input:
+            response = self.agent.handle("/type-text")
+
+        self.assertIn("用法：/type-text 文本", response)
+        text_input.assert_not_called()
+
+    def test_type_text_command_reports_execution_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_text_input_automation",
+            side_effect=RuntimeError("模拟文本输入失败"),
+        ):
+            response = self.agent.handle("/type-text Hello")
+
+        self.assertIn("文本输入失败：模拟文本输入失败", response)
+
     def test_update_status_command_reports_available_update_from_manifest(self):
         manifest = Path(self.temp_dir.name) / "update.json"
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.110.1",
+                        "version": "0.111.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3520,7 +3546,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.110.1", response)
+        self.assertIn("发现新版本：0.111.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3535,7 +3561,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.110.1",
+                        "version": "0.111.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v115-mouse-click-automation-plan.md](2026-06-03-v115-mouse-click-automation-plan.md)：当前方案版本，明确 `0.110.0` 鼠标点击自动化第一阶段、`/mouse-click x y [button=left|right|middle]` 和显式坐标点击边界。
+- [2026-06-03-v116-text-input-automation-plan.md](2026-06-03-v116-text-input-automation-plan.md)：当前方案版本，明确 `0.111.0` 文本输入自动化第一阶段、`/type-text 文本` 和显式文本输入边界。
 
 ## 历史版本
 
@@ -125,6 +125,7 @@
 - [2026-06-03-v113-screen-ocr-plan.md](2026-06-03-v113-screen-ocr-plan.md)：明确截图 OCR 串联第一阶段、`/screen-ocr [文件名] [lang=chi_sim+eng]` 和只观察不操作的验收范围。
 - [2026-06-03-v114-hotkey-automation-plan.md](2026-06-03-v114-hotkey-automation-plan.md)：明确快捷键自动化第一阶段、`/hotkey key1+key2 [key3+key4 ...]` 和显式快捷键执行的验收范围。
 - [2026-06-03-v115-mouse-click-automation-plan.md](2026-06-03-v115-mouse-click-automation-plan.md)：明确鼠标点击自动化第一阶段、`/mouse-click x y [button=left|right|middle]` 和显式坐标点击的验收范围。
+- [2026-06-03-v116-text-input-automation-plan.md](2026-06-03-v116-text-input-automation-plan.md)：明确文本输入自动化第一阶段、`/type-text 文本` 和显式文本输入的验收范围。
 
 ## 维护规则
 

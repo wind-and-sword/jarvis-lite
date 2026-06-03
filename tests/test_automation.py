@@ -13,11 +13,13 @@ from jarvis_lite.automation import (
     add_common_directory,
     describe_hotkey_automation,
     describe_mouse_click_automation,
+    describe_text_input_automation,
     describe_automation,
     list_recent_files,
     list_common_directories,
     parse_mouse_click_request,
     parse_hotkey_sequence,
+    parse_text_input_request,
     preview_file_organization,
     record_directory_open_request,
     write_daily_report,
@@ -252,6 +254,28 @@ class AutomationTests(unittest.TestCase):
         self.assertEqual(calls, [(100, 200, "middle")])
         self.assertIn("鼠标点击执行：middle @ (100, 200)", description)
         self.assertIn("当前阶段只执行显式坐标点击", description)
+
+    def test_parse_text_input_request_preserves_explicit_text(self):
+        request = parse_text_input_request("  Hello Jarvis  ")
+
+        self.assertEqual(request.text, "Hello Jarvis")
+        self.assertEqual(request.character_count, 12)
+
+    def test_parse_text_input_request_rejects_empty_text(self):
+        with self.assertRaises(ValueError):
+            parse_text_input_request("   ")
+
+    def test_describe_text_input_automation_invokes_executor_without_real_typing(self):
+        calls: list[str] = []
+
+        def fake_executor(text: str) -> None:
+            calls.append(text)
+
+        description = describe_text_input_automation(self.paths, "你好 Jarvis", executor=fake_executor)
+
+        self.assertEqual(calls, ["你好 Jarvis"])
+        self.assertIn("文本输入执行：9 个字符", description)
+        self.assertIn("当前阶段只向当前焦点输入显式文本", description)
 
 
 if __name__ == "__main__":

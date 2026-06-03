@@ -15,6 +15,7 @@ from .runtime_context import RuntimeContext, load_runtime_context
 DIRECTORIES_FILENAME = "directories.json"
 HotkeyExecutor = Callable[[tuple[str, ...]], None]
 MouseClickExecutor = Callable[[int, int, str], None]
+TextInputExecutor = Callable[[str], None]
 MOUSE_BUTTONS = {"left", "right", "middle"}
 
 
@@ -80,6 +81,21 @@ class MouseClickAutomationResult:
     executed_at: datetime
 
 
+@dataclass(frozen=True)
+class TextInputRequest:
+    text: str
+
+    @property
+    def character_count(self) -> int:
+        return len(self.text)
+
+
+@dataclass(frozen=True)
+class TextInputAutomationResult:
+    request: TextInputRequest
+    executed_at: datetime
+
+
 def describe_automation(paths: ProjectPaths) -> str:
     """输出阶段 4 工作台自动化状态。"""
 
@@ -88,7 +104,7 @@ def describe_automation(paths: ProjectPaths) -> str:
         "阶段 4 自动化状态：",
         f"- 常用目录：{len(directories)} 个",
         "- 日报目录：word",
-        "- 当前能力：/dir-add、/dirs、/recent-files、/daily-report、/organize-preview、/dir-open、/hotkey、/mouse-click",
+        "- 当前能力：/dir-add、/dirs、/recent-files、/daily-report、/organize-preview、/dir-open、/hotkey、/mouse-click、/type-text",
         "- 硬件入口：摄像头、麦克风暂缓",
     ]
     if directories:
@@ -200,6 +216,45 @@ def describe_mouse_click_automation(
             f"鼠标点击执行：{request.button} @ ({request.x}, {request.y})",
             f"时间：{result.executed_at.isoformat(timespec='seconds')}",
             "说明：当前阶段只执行显式坐标点击，不做目标识别、不拖动、不切换窗口。",
+        ]
+    )
+
+
+def parse_text_input_request(command: str) -> TextInputRequest:
+    """解析显式文本输入内容。"""
+
+    text = command.strip()
+    if not text:
+        raise ValueError("文本输入内容不能为空。")
+    return TextInputRequest(text=text)
+
+
+def execute_text_input(
+    command: str,
+    *,
+    executor: TextInputExecutor | None = None,
+) -> TextInputAutomationResult:
+    """向当前焦点输入显式文本。"""
+
+    request = parse_text_input_request(command)
+    text_executor = executor or _execute_text_input_with_pyautogui
+    text_executor(request.text)
+    return TextInputAutomationResult(request=request, executed_at=datetime.now())
+
+
+def describe_text_input_automation(
+    paths: ProjectPaths,
+    command: str,
+    *,
+    executor: TextInputExecutor | None = None,
+) -> str:
+    result = execute_text_input(command, executor=executor)
+    request = result.request
+    return "\n".join(
+        [
+            f"文本输入执行：{request.character_count} 个字符",
+            f"时间：{result.executed_at.isoformat(timespec='seconds')}",
+            "说明：当前阶段只向当前焦点输入显式文本，不点击、不切换窗口、不启动应用。",
         ]
     )
 
@@ -377,6 +432,17 @@ def _execute_mouse_click_with_pyautogui(x: int, y: int, button: str) -> None:
         raise RuntimeError("未安装 pyautogui，无法执行鼠标点击。") from exc
 
     pyautogui.click(x=x, y=y, button=button)
+
+
+def _execute_text_input_with_pyautogui(text: str) -> None:
+    try:
+        import pyautogui
+        import pyperclip
+    except ModuleNotFoundError as exc:
+        raise RuntimeError("未安装 pyautogui 或 pyperclip，无法输入文本。") from exc
+
+    pyperclip.copy(text)
+    pyautogui.hotkey("ctrl", "v")
 
 
 def _report_filename(filename: str | None) -> str:
