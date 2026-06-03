@@ -95,6 +95,13 @@ from .memory import (
     summarize_profile,
 )
 from .memory_config_manager import describe_memory_config_manager
+from .idea_workflow import (
+    describe_idea_focus,
+    describe_idea_open,
+    describe_idea_open_project,
+    describe_idea_project_status,
+    describe_idea_workflow_status,
+)
 from .messaging_workflow import (
     describe_message_prepare,
     describe_messaging_focus,
@@ -160,6 +167,11 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/apps": "desktop.apps.list",
     "/app-find": "desktop.apps.find",
     "/app-launch": "desktop.apps.launch",
+    "/idea-workflow-status": "desktop.idea.status",
+    "/idea-open": "desktop.idea.open",
+    "/idea-focus": "desktop.idea.focus",
+    "/idea-open-project": "desktop.idea.open_project",
+    "/idea-project-status": "desktop.idea.project_status",
     "/windows": "desktop.windows.status",
     "/screenshot": "desktop.screenshot.save",
     "/screen-ocr": "desktop.screen_ocr",
@@ -724,6 +736,41 @@ class JarvisAgent:
                 return f"{display_name}消息准备失败：{exc}"
             self.tools.run("record_log", message=f"{display_name}消息准备单生成")
             return response
+        if command == "/idea-workflow-status":
+            self.tools.run("record_log", message="查看 IDEA 工作流状态")
+            return describe_idea_workflow_status(self.paths)
+        if command == "/idea-open":
+            if args:
+                return "用法：/idea-open"
+            try:
+                response = describe_idea_open(self.paths)
+            except (RuntimeError, ValueError, FileNotFoundError) as exc:
+                return f"IDEA 打开失败：{exc}"
+            self.tools.run("record_log", message="打开 IDEA")
+            return response
+        if command == "/idea-focus":
+            if args:
+                return "用法：/idea-focus"
+            try:
+                response = describe_idea_focus(self.paths)
+            except (RuntimeError, ValueError) as exc:
+                return f"IDEA 聚焦失败：{exc}"
+            self.tools.run("record_log", message="聚焦 IDEA")
+            return response
+        if command == "/idea-open-project":
+            if not args:
+                return "用法：/idea-open-project 项目路径"
+            project_path = " ".join(args)
+            try:
+                response = describe_idea_open_project(self.paths, project_path)
+            except (RuntimeError, ValueError, FileNotFoundError) as exc:
+                return f"IDEA 打开项目失败：{exc}"
+            self.tools.run("record_log", message=f"IDEA 打开项目：{project_path}")
+            return response
+        if command == "/idea-project-status":
+            project_path = " ".join(args)
+            self.tools.run("record_log", message="查看 IDEA 项目状态")
+            return describe_idea_project_status(self.paths, project_path)
         if command == "/windows":
             self.tools.run("record_log", message="查看只读窗口感知状态")
             return describe_current_windows(self.paths)
@@ -1031,6 +1078,11 @@ class JarvisAgent:
                 "/qq-open、/wechat-open：打开 QQ 或微信，不查找联系人、不发送消息",
                 "/qq-focus、/wechat-focus：聚焦已有 QQ 或微信窗口，不点击、不输入",
                 "/qq-prepare-message 联系人 => 消息、/wechat-prepare-message 联系人 => 消息：生成未发送消息准备单",
+                "/idea-workflow-status：查看 IDEA 工作流第一阶段边界",
+                "/idea-open：打开 IDEA，不打开项目、不运行测试、不打开终端",
+                "/idea-focus：聚焦已有 IDEA 窗口，不点击、不输入、不运行测试",
+                "/idea-open-project 项目路径：用 IDEA 打开显式项目目录，不运行测试、不打开终端",
+                "/idea-project-status [项目路径]：只读检查本地项目目录状态，不写项目文件",
                 "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",
                 "/window-focus 编号或标题/应用名：切换到显式窗口，不点击、不输入、不启动应用",
                 "/screenshot [文件名]：保存当前屏幕截图到 logs/screenshots，不 OCR、不点击、不切换窗口",
@@ -4214,6 +4266,7 @@ class JarvisAgent:
                 "- Chrome 工作流：/chrome-workflow-status、/chrome-open、/chrome-search",
                 "- Clash Verge 工作流：/clash-workflow-status、/clash-open、/clash-focus",
                 "- QQ/微信准备式工作流：/messaging-workflow-status、/qq-open、/qq-focus、/qq-prepare-message、/wechat-open、/wechat-focus、/wechat-prepare-message",
+                "- IDEA 工作流：/idea-workflow-status、/idea-open、/idea-focus、/idea-open-project、/idea-project-status",
                 "- 桌面能力：小助手窗口、面板、托盘、主题、开机启动、安装包、更新检查和下载",
                 "- 会话能力：/history、/save-summary、/clear",
                 "- 批量标签：标签组预览、确认、恢复提示和 /tag-history 历史记录",

@@ -104,7 +104,7 @@ def describe_automation(paths: ProjectPaths) -> str:
         "阶段 4 自动化状态：",
         f"- 常用目录：{len(directories)} 个",
         "- 日报目录：word",
-        "- 当前能力：/dir-add、/dirs、/recent-files、/daily-report、/organize-preview、/dir-open、/hotkey、/mouse-click、/type-text、/window-focus、/app-launch、/chrome-open、/chrome-search、/clash-open、/clash-focus、/qq-open、/qq-focus、/wechat-open、/wechat-focus",
+        "- 当前能力：/dir-add、/dirs、/recent-files、/daily-report、/organize-preview、/dir-open、/hotkey、/mouse-click、/type-text、/window-focus、/app-launch、/chrome-open、/chrome-search、/clash-open、/clash-focus、/qq-open、/qq-focus、/wechat-open、/wechat-focus、/idea-open、/idea-focus、/idea-open-project",
         "- 硬件入口：摄像头、麦克风暂缓",
     ]
     if directories:

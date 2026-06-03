@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.119.0` 可安装测试包，完成 IDEA 项目状态第一阶段；`/idea-workflow-status` 可查看边界，`/idea-open`、`/idea-focus`、`/idea-open-project 项目路径` 可显式打开 IDEA、聚焦已有 IDEA 窗口或用 IDEA 打开项目目录，`/idea-project-status [项目路径]` 可只读检查项目目录状态；当前阶段不运行测试、不打开终端、不点击、不输入、不编辑项目文件、不接入自然语言自动执行；全量 `unittest` 702 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.119.0.exe`。
 - 2026-06-03：发布 `0.118.0` 可安装测试包，完成 QQ/微信准备式工作流第一阶段；`/messaging-workflow-status` 可查看边界，`/qq-open`、`/qq-focus`、`/wechat-open`、`/wechat-focus` 可显式打开或聚焦聊天应用，`/qq-prepare-message 联系人 => 消息` 与 `/wechat-prepare-message 联系人 => 消息` 只生成本地未发送草稿；当前阶段不查找真实联系人、不点击、不输入到聊天窗口、不读取聊天内容、不发送消息、不接入自然语言自动执行；全量 `unittest` 683 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.118.0.exe`。
 - 2026-06-03：发布 `0.117.0` 可安装测试包，完成 Clash Verge 低风险工作流第一阶段；`/clash-workflow-status` 可查看边界，`/clash-open` 可显式打开代理面板，`/clash-focus` 可聚焦已有代理面板窗口，当前阶段不切换节点、不开关系统代理、不修改配置、不接入自然语言自动执行；全量 `unittest` 666 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.117.0.exe`。
 - 2026-06-03：发布 `0.116.0` 可安装测试包，完成 Chrome 低风险工作流第一阶段；`/chrome-workflow-status` 可查看边界，`/chrome-open URL` 与 `/chrome-search 关键词` 可显式用 Chrome 打开网页或搜索结果，当前阶段不读取网页、不点击页面、不接入自然语言自动执行；全量 `unittest` 653 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.116.0.exe`。

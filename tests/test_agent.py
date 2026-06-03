@@ -3423,6 +3423,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/clash-open", response)
         self.assertIn("/qq-open", response)
         self.assertIn("/wechat-open", response)
+        self.assertIn("/idea-open", response)
 
     def test_chrome_workflow_status_command_reports_boundary(self):
         response = self.agent.handle("/chrome-workflow-status")
@@ -3661,6 +3662,76 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("微信消息准备失败：消息内容不能为空。", response)
 
+    def test_idea_workflow_status_command_reports_boundary(self):
+        response = self.agent.handle("/idea-workflow-status")
+
+        self.assertIn("IDEA 工作流状态：第一阶段", response)
+        self.assertIn("/idea-open-project 项目路径", response)
+        self.assertIn("不运行测试", response)
+
+    def test_idea_open_command_opens_registered_app(self):
+        with patch(
+            "jarvis_lite.agent.describe_idea_open",
+            return_value="IDEA 打开执行",
+        ) as idea_open:
+            response = self.agent.handle("/idea-open")
+
+        self.assertIn("IDEA 打开执行", response)
+        idea_open.assert_called_once_with(self.agent.paths)
+
+    def test_idea_open_command_rejects_arguments(self):
+        with patch("jarvis_lite.agent.describe_idea_open") as idea_open:
+            response = self.agent.handle("/idea-open jarvis-lite")
+
+        self.assertIn("用法：/idea-open", response)
+        idea_open.assert_not_called()
+
+    def test_idea_focus_command_reports_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_idea_focus",
+            side_effect=ValueError("没有找到 IntelliJ IDEA 窗口，可先执行 /idea-open"),
+        ):
+            response = self.agent.handle("/idea-focus")
+
+        self.assertIn("IDEA 聚焦失败：没有找到 IntelliJ IDEA 窗口", response)
+
+    def test_idea_open_project_command_opens_explicit_project(self):
+        with patch(
+            "jarvis_lite.agent.describe_idea_open_project",
+            return_value="IDEA 打开项目执行",
+        ) as open_project:
+            response = self.agent.handle("/idea-open-project E:/work/jarvis-lite")
+
+        self.assertIn("IDEA 打开项目执行", response)
+        open_project.assert_called_once_with(self.agent.paths, "E:/work/jarvis-lite")
+
+    def test_idea_open_project_command_requires_path(self):
+        with patch("jarvis_lite.agent.describe_idea_open_project") as open_project:
+            response = self.agent.handle("/idea-open-project")
+
+        self.assertIn("用法：/idea-open-project 项目路径", response)
+        open_project.assert_not_called()
+
+    def test_idea_project_status_command_reports_default_project(self):
+        with patch(
+            "jarvis_lite.agent.describe_idea_project_status",
+            return_value="IDEA 项目状态：",
+        ) as project_status:
+            response = self.agent.handle("/idea-project-status")
+
+        self.assertIn("IDEA 项目状态：", response)
+        project_status.assert_called_once_with(self.agent.paths, "")
+
+    def test_idea_project_status_command_reports_explicit_project(self):
+        with patch(
+            "jarvis_lite.agent.describe_idea_project_status",
+            return_value="IDEA 项目状态：E:/work/jarvis-lite",
+        ) as project_status:
+            response = self.agent.handle("/idea-project-status E:/work/jarvis-lite")
+
+        self.assertIn("IDEA 项目状态：E:/work/jarvis-lite", response)
+        project_status.assert_called_once_with(self.agent.paths, "E:/work/jarvis-lite")
+
     def test_windows_command_reports_readonly_window_snapshot(self):
         with patch("jarvis_lite.agent.describe_current_windows", return_value="窗口感知：\n- 可见窗口：1 个") as probe:
             response = self.agent.handle("/windows")
@@ -3818,7 +3889,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.118.1",
+                        "version": "0.119.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3829,7 +3900,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.118.1", response)
+        self.assertIn("发现新版本：0.119.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3844,7 +3915,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.118.1",
+                        "version": "0.119.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
