@@ -3525,8 +3525,10 @@ class AgentTests(unittest.TestCase):
         self.assertIn("任务失败复盘：发布 0.120.0", failure_response)
         self.assertIn("失败步骤：实现任务状态模块", failure_response)
         self.assertIn("失败原因：目标测试失败", failure_response)
+        self.assertIn("补充截图/OCR：/task-fail-capture 目标测试失败", failure_response)
         self.assertIn("当前任务：发布 0.120.0（失败）", status)
         self.assertIn("最近失败记录：", status)
+        self.assertIn("下一步：补充截图/OCR：/task-fail-capture 目标测试失败", status)
         self.assertIn("不自动截图、不自动 OCR、不自动重新执行外部动作", status)
 
     def test_task_failure_replay_includes_auto_captured_command_context(self):
@@ -4064,7 +4066,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.125.1",
+                        "version": "0.126.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -4075,7 +4077,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.125.1", response)
+        self.assertIn("发现新版本：0.126.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4090,7 +4092,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.125.1",
+                        "version": "0.126.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

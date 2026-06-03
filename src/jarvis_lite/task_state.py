@@ -146,6 +146,7 @@ def record_task_failure(
         created_at=task.created_at,
         updated_at=now,
     )
+    next_step = _failure_next_step(reason_text, screen_context)
     failure = RuntimeTaskFailureContext(
         title=task.title,
         failed_step=failed_step,
@@ -156,7 +157,7 @@ def record_task_failure(
         completed_steps=task.completed_steps,
         recent_events=task.recent_events,
         screen_context=screen_context,
-        next_step=DEFAULT_FAILURE_NEXT_STEP,
+        next_step=next_step,
         created_at=now,
     )
     _save_context(
@@ -181,7 +182,7 @@ def record_task_failure(
     lines.extend(
         [
             f"屏幕/OCR：{screen_context}",
-            f"下一步建议：{DEFAULT_FAILURE_NEXT_STEP}",
+            f"下一步建议：{next_step}",
             "人工固化入口：可把失败原话整理为 /inner-brain-eval-add 或 /inner-brain-eval-label 样本。",
         ]
     )
@@ -438,6 +439,12 @@ def _compact_event_result(text: str, max_length: int = 180) -> str:
     if len(compacted) <= max_length:
         return compacted
     return compacted[: max_length - 1].rstrip() + "…"
+
+
+def _failure_next_step(reason: str, screen_context: str) -> str:
+    if screen_context.strip() == DEFAULT_SCREEN_CONTEXT:
+        return f"补充截图/OCR：/task-fail-capture {reason}；然后 {DEFAULT_FAILURE_NEXT_STEP}"
+    return DEFAULT_FAILURE_NEXT_STEP
 
 
 def _now_iso() -> str:

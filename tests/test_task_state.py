@@ -59,13 +59,16 @@ class TaskStateTests(unittest.TestCase):
             self.assertIn("路由摘要：command / /task-fail", failure_response)
             self.assertIn("授权摘要：explicit_command direct_execute", failure_response)
             self.assertIn("屏幕/OCR：未采集", failure_response)
+            self.assertIn("下一步建议：补充截图/OCR：/task-fail-capture 目标测试失败", failure_response)
             self.assertIn("/task-resume", failure_response)
             self.assertIn("当前任务：发布 0.120.0（失败）", status)
             self.assertIn("最近失败记录：", status)
+            self.assertIn("下一步：补充截图/OCR：/task-fail-capture 目标测试失败", status)
             self.assertIsNotNone(runtime_context.current_task)
             self.assertEqual(runtime_context.current_task.title, "发布 0.120.0")
             self.assertEqual(runtime_context.current_task.status, "failed")
             self.assertEqual(len(runtime_context.recent_task_failures), 1)
+            self.assertIn("/task-fail-capture 目标测试失败", runtime_context.recent_task_failures[0].next_step)
 
     def test_task_route_events_persist_and_feed_failure_replay(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -194,6 +197,7 @@ class TaskStateTests(unittest.TestCase):
             self.assertEqual(runtime_context.current_task.status, "failed")
             self.assertEqual(len(runtime_context.recent_task_failures), 1)
             self.assertIn("错误弹窗文字", runtime_context.recent_task_failures[0].screen_context)
+            self.assertNotIn("/task-fail-capture 打包后 smoke 失败", runtime_context.recent_task_failures[0].next_step)
 
     def test_task_failure_with_screen_ocr_records_ocr_error_after_capture(self):
         with tempfile.TemporaryDirectory() as temp_dir:
