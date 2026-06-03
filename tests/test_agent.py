@@ -3469,10 +3469,30 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已取消任务：临时任务", cancel_response)
         self.assertIn("任务状态：还没有当前任务", empty_after_cancel)
 
+    def test_task_fail_capture_command_records_screen_ocr_context(self):
+        self.agent.handle("/task-start 发布 0.121.0")
+        self.agent.handle("/task-step 打包后 smoke")
+        with (
+            patch("jarvis_lite.agent.record_task_failure_with_screen_ocr") as record_failure,
+        ):
+            record_failure.return_value = "任务失败复盘：发布 0.121.0\n截图：logs/screenshots/fail.png"
+
+            response = self.agent.handle("/task-fail-capture smoke 失败 lang=eng")
+
+        self.assertIn("任务失败复盘：发布 0.121.0", response)
+        record_failure.assert_called_once_with(
+            self.agent.paths,
+            "smoke 失败",
+            language="eng",
+            route_summary=self.agent._task_route_summary(),
+            authorization_summary="explicit_command direct_execute",
+        )
+
     def test_task_commands_require_arguments_and_are_listed(self):
         no_start_name = self.agent.handle("/task-start")
         no_step = self.agent.handle("/task-step")
         no_failure = self.agent.handle("/task-fail")
+        no_capture_failure = self.agent.handle("/task-fail-capture")
         help_text = self.agent.handle("/help")
         status = self.agent.handle("/status")
         recent_context = self.agent.handle("/recent-context")
@@ -3480,9 +3500,12 @@ class AgentTests(unittest.TestCase):
         self.assertIn("用法：/task-start 任务名称", no_start_name)
         self.assertIn("用法：/task-step 步骤说明", no_step)
         self.assertIn("用法：/task-fail 失败原因", no_failure)
+        self.assertIn("用法：/task-fail-capture 失败原因 [lang=chi_sim+eng]", no_capture_failure)
         self.assertIn("/task-status：查看当前任务状态和最近失败复盘", help_text)
+        self.assertIn("/task-fail-capture 失败原因", help_text)
         self.assertIn("/task-start 任务名称", help_text)
         self.assertIn("任务状态：/task-status", status)
+        self.assertIn("/task-fail-capture", status)
         self.assertIn("- 当前任务：无", recent_context)
 
     def test_chrome_workflow_status_command_reports_boundary(self):
@@ -3949,7 +3972,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.120.1",
+                        "version": "0.121.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3960,7 +3983,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.120.1", response)
+        self.assertIn("发现新版本：0.121.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3975,7 +3998,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.120.1",
+                        "version": "0.121.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

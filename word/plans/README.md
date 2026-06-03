@@ -9,7 +9,8 @@
 - [2026-06-03-v122-clash-workflow-plan.md](2026-06-03-v122-clash-workflow-plan.md)：明确 `0.117.0` Clash Verge 低风险工作流第一阶段、`/clash-workflow-status`、`/clash-open` 和 `/clash-focus` 的显式执行边界。
 - [2026-06-03-v123-messaging-workflow-plan.md](2026-06-03-v123-messaging-workflow-plan.md)：明确 `0.118.0` QQ/微信准备式工作流第一阶段、`/messaging-workflow-status`、QQ/微信 open/focus 和未发送消息准备单的显式执行边界。
 - [2026-06-03-v124-idea-workflow-plan.md](2026-06-03-v124-idea-workflow-plan.md)：明确 `0.119.0` IDEA 项目状态第一阶段、`/idea-workflow-status`、IDEA open/focus/open-project 和只读项目状态的显式执行边界。
-- [2026-06-03-v125-task-state-failure-replay-plan.md](2026-06-03-v125-task-state-failure-replay-plan.md)：当前方案版本，明确 `0.120.0` 任务状态与失败复盘第一阶段、显式任务状态命令、运行态恢复和不自动重放外部动作边界。
+- [2026-06-03-v125-task-state-failure-replay-plan.md](2026-06-03-v125-task-state-failure-replay-plan.md)：明确 `0.120.0` 任务状态与失败复盘第一阶段、显式任务状态命令、运行态恢复和不自动重放外部动作边界。
+- [2026-06-03-v126-task-failure-screen-ocr-plan.md](2026-06-03-v126-task-failure-screen-ocr-plan.md)：当前方案版本，明确 `0.121.0` 任务失败截图 OCR 复盘第一阶段、显式失败截图采集和不自动重放外部动作边界。
 
 ## 历史版本
 

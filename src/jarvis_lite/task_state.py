@@ -4,6 +4,7 @@ from dataclasses import replace
 from datetime import datetime
 
 from .config import ProjectPaths
+from .ocr import ImageRecognizer, describe_image_ocr
 from .runtime_context import (
     RuntimeContext,
     RuntimeTaskContext,
@@ -11,11 +12,13 @@ from .runtime_context import (
     load_runtime_context,
     save_runtime_context,
 )
+from .screen_capture import ScreenCapturer, save_screen_capture
 
 
 TASK_BOUNDARY_TEXT = "不自动截图、不自动 OCR、不自动重新执行外部动作"
 DEFAULT_SCREEN_CONTEXT = "未采集（第一阶段不自动截图、不自动 OCR）。"
 DEFAULT_FAILURE_NEXT_STEP = "/task-resume 继续，/task-cancel 取消，或 /task-start 任务名称 重新开始。"
+TASK_FAILURE_CAPTURE_BOUNDARY = "当前阶段只记录失败上下文，不自动重新执行外部动作、不点击、不输入。"
 
 
 def describe_task_status(paths: ProjectPaths) -> str:
@@ -178,6 +181,58 @@ def record_task_failure(
     return "\n".join(lines)
 
 
+def record_task_failure_with_screen_ocr(
+    paths: ProjectPaths,
+    reason: str,
+    *,
+    language: str | None = None,
+    route_summary: str = "",
+    authorization_summary: str = "",
+    capturer: ScreenCapturer | None = None,
+    recognizer: ImageRecognizer | None = None,
+) -> str:
+    """显式采集截图和 OCR 结果后记录任务失败复盘。"""
+
+    reason_text = reason.strip()
+    if not reason_text:
+        return "失败原因不能为空。用法：/task-fail-capture 失败原因 [lang=chi_sim+eng]"
+    context = load_runtime_context(paths)
+    if context.current_task is None:
+        return "还没有当前任务。请先使用 /task-start 任务名称。"
+
+    try:
+        capture = save_screen_capture(
+            paths,
+            filename=f"task-failure-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+            capturer=capturer,
+        )
+    except (RuntimeError, ValueError) as exc:
+        screen_context = f"截图失败：{exc}"
+    else:
+        ocr_description = describe_image_ocr(
+            paths,
+            capture.relative_path,
+            language=language,
+            recognizer=recognizer,
+        )
+        screen_context = "\n".join(
+            [
+                f"截图：{capture.relative_path}",
+                f"尺寸：{capture.width}x{capture.height}",
+                ocr_description,
+            ]
+        )
+
+    failure_response = record_task_failure(
+        paths,
+        reason_text,
+        route_summary=route_summary,
+        authorization_summary=authorization_summary,
+        screen_context=screen_context,
+    )
+    return f"{failure_response}\n边界：{TASK_FAILURE_CAPTURE_BOUNDARY}"
+
+
 def resume_task(paths: ProjectPaths) -> str:
     """恢复失败中的当前任务，但不自动执行任何外部动作。"""
 
@@ -244,6 +299,8 @@ def _append_recent_failures(lines: list[str], failures: tuple[RuntimeTaskFailure
         lines.append(" | ".join(parts))
         if failure.next_step:
             lines.append(f"   下一步：{failure.next_step}")
+        if failure.screen_context:
+            lines.append(f"   屏幕/OCR：{_compact_context(failure.screen_context)}")
 
 
 def _save_context(
@@ -275,6 +332,11 @@ def _status_label(status: str) -> str:
     if status == "failed":
         return "失败"
     return "进行中"
+
+
+def _compact_context(text: str) -> str:
+    parts = [line.strip() for line in text.splitlines() if line.strip()]
+    return " | ".join(parts)
 
 
 def _now_iso() -> str:

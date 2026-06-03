@@ -12,6 +12,7 @@ from jarvis_lite.task_state import (
     complete_task,
     describe_task_status,
     record_task_failure,
+    record_task_failure_with_screen_ocr,
     record_task_step,
     resume_task,
     start_task,
@@ -94,6 +95,74 @@ class TaskStateTests(unittest.TestCase):
             self.assertIn("还没有可恢复的失败任务", resume_task(paths))
             self.assertIn("还没有当前任务", complete_task(paths))
             self.assertIn("还没有当前任务", cancel_task(paths))
+
+    def test_task_failure_with_screen_ocr_records_capture_context(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            calls: list[tuple[Path, str]] = []
+
+            def fake_capturer(target_path: Path) -> tuple[int, int]:
+                target_path.write_bytes(b"png")
+                return (1280, 720)
+
+            def fake_recognizer(image_path: Path, language: str) -> str:
+                calls.append((image_path, language))
+                return "错误弹窗文字"
+
+            start_task(paths, "发布 0.121.0", origin_prompt="用户要求继续")
+            record_task_step(paths, "运行打包 smoke")
+
+            response = record_task_failure_with_screen_ocr(
+                paths,
+                "打包后 smoke 失败",
+                language="eng",
+                route_summary="command / /task-fail-capture",
+                authorization_summary="explicit_command direct_execute",
+                capturer=fake_capturer,
+                recognizer=fake_recognizer,
+            )
+            status = describe_task_status(paths)
+            runtime_context = load_runtime_context(paths)
+
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(calls[0][1], "eng")
+            self.assertIn("任务失败复盘：发布 0.121.0", response)
+            self.assertIn("失败步骤：运行打包 smoke", response)
+            self.assertIn("截图：logs/screenshots/", response)
+            self.assertIn("尺寸：1280x720", response)
+            self.assertIn("OCR 图片识别：logs/screenshots/", response)
+            self.assertIn("语言：eng", response)
+            self.assertIn("错误弹窗文字", response)
+            self.assertIn("当前阶段只记录失败上下文，不自动重新执行外部动作", response)
+            self.assertIn("屏幕/OCR：截图：logs/screenshots/", status)
+            self.assertIn("错误弹窗文字", status)
+            self.assertEqual(runtime_context.current_task.status, "failed")
+            self.assertEqual(len(runtime_context.recent_task_failures), 1)
+            self.assertIn("错误弹窗文字", runtime_context.recent_task_failures[0].screen_context)
+
+    def test_task_failure_with_screen_ocr_records_ocr_error_after_capture(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+
+            def fake_capturer(target_path: Path) -> tuple[int, int]:
+                target_path.write_bytes(b"png")
+                return (800, 600)
+
+            def fake_recognizer(image_path: Path, language: str) -> str:
+                raise RuntimeError("未找到 tesseract.exe")
+
+            start_task(paths, "检查屏幕")
+            response = record_task_failure_with_screen_ocr(
+                paths,
+                "OCR 不可用",
+                capturer=fake_capturer,
+                recognizer=fake_recognizer,
+            )
+
+            self.assertIn("截图：logs/screenshots/", response)
+            self.assertIn("尺寸：800x600", response)
+            self.assertIn("OCR 图片识别失败：未找到 tesseract.exe", response)
+            self.assertIn("当前阶段只记录失败上下文，不自动重新执行外部动作", response)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.121.0` 可安装测试包，完成任务失败截图 OCR 复盘第一阶段；`/task-fail-capture 失败原因 [lang=chi_sim+eng]` 可在显式失败记录时保存截图并尝试 OCR，把截图路径、尺寸、OCR 文本或 OCR 失败诊断写入最近失败复盘；当前阶段不自动重新执行外部动作、不点击、不输入，不接入自然语言自动任务编排；全量 `unittest` 713 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.121.0.exe`。
 - 2026-06-03：发布 `0.120.0` 可安装测试包，完成任务状态与失败复盘第一阶段；`/task-status` 可查看当前任务、当前步骤、已完成步骤和最近失败记录，`/task-start 任务名称`、`/task-step 步骤说明`、`/task-fail 失败原因`、`/task-resume`、`/task-complete` 和 `/task-cancel` 可显式记录、恢复、完成或取消任务；当前阶段不自动截图、不自动 OCR、不自动重新执行外部动作，不接入自然语言自动任务编排；全量 `unittest` 710 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.120.0.exe`。
 - 2026-06-03：发布 `0.119.0` 可安装测试包，完成 IDEA 项目状态第一阶段；`/idea-workflow-status` 可查看边界，`/idea-open`、`/idea-focus`、`/idea-open-project 项目路径` 可显式打开 IDEA、聚焦已有 IDEA 窗口或用 IDEA 打开项目目录，`/idea-project-status [项目路径]` 可只读检查项目目录状态；当前阶段不运行测试、不打开终端、不点击、不输入、不编辑项目文件、不接入自然语言自动执行；全量 `unittest` 702 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.119.0.exe`。
 - 2026-06-03：发布 `0.118.0` 可安装测试包，完成 QQ/微信准备式工作流第一阶段；`/messaging-workflow-status` 可查看边界，`/qq-open`、`/qq-focus`、`/wechat-open`、`/wechat-focus` 可显式打开或聚焦聊天应用，`/qq-prepare-message 联系人 => 消息` 与 `/wechat-prepare-message 联系人 => 消息` 只生成本地未发送草稿；当前阶段不查找真实联系人、不点击、不输入到聊天窗口、不读取聊天内容、不发送消息、不接入自然语言自动执行；全量 `unittest` 683 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.118.0.exe`。

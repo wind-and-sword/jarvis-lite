@@ -87,6 +87,7 @@ from .task_state import (
     complete_task,
     describe_task_status,
     record_task_failure,
+    record_task_failure_with_screen_ocr,
     record_task_step,
     resume_task,
     start_task,
@@ -148,6 +149,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/task-start": "task.start",
     "/task-step": "task.step",
     "/task-fail": "task.fail",
+    "/task-fail-capture": "task.fail_capture",
     "/task-resume": "task.resume",
     "/task-complete": "task.complete",
     "/task-cancel": "task.cancel",
@@ -1012,6 +1014,20 @@ class JarvisAgent:
                 authorization_summary="explicit_command direct_execute",
             )
 
+        if command == "/task-fail-capture":
+            language, reason_args = self._split_trailing_language_arg(args)
+            if not reason_args:
+                return "用法：/task-fail-capture 失败原因 [lang=chi_sim+eng]"
+            reason = " ".join(reason_args)
+            self.tools.run("record_log", message=f"记录任务失败截图 OCR 复盘：{reason}")
+            return record_task_failure_with_screen_ocr(
+                self.paths,
+                reason,
+                language=language,
+                route_summary=self._task_route_summary(),
+                authorization_summary="explicit_command direct_execute",
+            )
+
         if command == "/task-resume":
             self.tools.run("record_log", message="恢复失败任务状态")
             return resume_task(self.paths)
@@ -1073,6 +1089,7 @@ class JarvisAgent:
                 "/task-start 任务名称：开始记录一个显式多步骤任务",
                 "/task-step 步骤说明：记录当前任务步骤",
                 "/task-fail 失败原因：记录当前任务失败复盘",
+                "/task-fail-capture 失败原因 [lang=chi_sim+eng]：截图 OCR 后记录失败复盘",
                 "/task-resume、/task-complete、/task-cancel：恢复、完成或取消当前任务",
                 "/llm-status：查看 LLM 外脑 provider 状态",
                 "/llm-enable：查看外脑启用状态和本地配置路径",
@@ -4354,6 +4371,7 @@ class JarvisAgent:
                 "- 意图授权：/authorization-status 查看直接执行、准备确认、追问和降级策略",
                 "- 配置管家：/config-manager-status 查看记忆、目录、应用覆盖和 provider 配置状态",
                 "- 任务状态：/task-status 查看当前任务、步骤、中断恢复和失败复盘",
+                "- 任务失败截图：/task-fail-capture 失败原因 [lang=chi_sim+eng]",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",
                 "- Chrome 工作流：/chrome-workflow-status、/chrome-open、/chrome-search",
                 "- Clash Verge 工作流：/clash-workflow-status、/clash-open、/clash-focus",
