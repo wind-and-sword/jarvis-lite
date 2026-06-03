@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v109-app-registry-plan.md](2026-06-03-v109-app-registry-plan.md)：当前方案版本，明确 `0.104.0` 应用注册表第一阶段、五个首批常用应用和只读匹配入口。
+- [2026-06-03-v111-screen-capture-plan.md](2026-06-03-v111-screen-capture-plan.md)：当前方案版本，明确 `0.106.0` 屏幕截图保存第一阶段、`/screenshot [文件名]` 和截图落盘边界。
 
 ## 历史版本
 
@@ -120,6 +120,7 @@
 - [2026-06-03-v108-jarvis-lite-1-acceptance-plan.md](2026-06-03-v108-jarvis-lite-1-acceptance-plan.md)：明确 Jarvis Lite 1.0 验收线、P0/P1 能力、自动记忆配置边界和旧方案整理结论。
 - [2026-06-03-v109-app-registry-plan.md](2026-06-03-v109-app-registry-plan.md)：明确应用注册表第一阶段、`/apps` 和 `/app-find` 的只读验收范围。
 - [2026-06-03-v110-window-state-plan.md](2026-06-03-v110-window-state-plan.md)：明确只读窗口感知第一阶段、`/windows` 和窗口快照的只读验收范围。
+- [2026-06-03-v111-screen-capture-plan.md](2026-06-03-v111-screen-capture-plan.md)：明确屏幕截图保存第一阶段、`/screenshot [文件名]` 和只截图不操作的验收范围。
 
 ## 维护规则
 

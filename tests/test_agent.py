@@ -3412,12 +3412,22 @@ class AgentTests(unittest.TestCase):
         self.assertIn("可见窗口：1 个", response)
         probe.assert_called_once_with(self.agent.paths)
 
+    def test_screenshot_command_saves_screen_capture(self):
+        with patch(
+            "jarvis_lite.agent.describe_screen_capture",
+            return_value="已保存屏幕截图：logs/screenshots/manual.png",
+        ) as capture:
+            response = self.agent.handle("/screenshot manual")
+
+        self.assertIn("已保存屏幕截图：logs/screenshots/manual.png", response)
+        capture.assert_called_once_with(self.agent.paths, "manual")
+
     def test_update_status_command_reports_available_update_from_manifest(self):
         manifest = Path(self.temp_dir.name) / "update.json"
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.105.1",
+                        "version": "0.106.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3428,7 +3438,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.105.1", response)
+        self.assertIn("发现新版本：0.106.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3443,7 +3453,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.105.1",
+                        "version": "0.106.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

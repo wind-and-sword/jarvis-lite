@@ -70,6 +70,7 @@ from .search import (
     write_search_local_config_draft,
     write_search_local_config_values,
 )
+from .screen_capture import describe_screen_capture
 from .memory import (
     append_experience,
     append_memory,
@@ -136,6 +137,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/apps": "desktop.apps.list",
     "/app-find": "desktop.apps.find",
     "/windows": "desktop.windows.status",
+    "/screenshot": "desktop.screenshot.save",
     "/recent-files": "context.recent_files",
     "/tag-history": "tag.history",
     "/batch-tag-history": "tag.history",
@@ -576,6 +578,14 @@ class JarvisAgent:
         if command == "/windows":
             self.tools.run("record_log", message="查看只读窗口感知状态")
             return describe_current_windows(self.paths)
+        if command == "/screenshot":
+            filename = " ".join(args) if args else None
+            try:
+                response = describe_screen_capture(self.paths, filename)
+            except (RuntimeError, ValueError) as exc:
+                return f"屏幕截图失败：{exc}"
+            self.tools.run("record_log", message="保存屏幕截图")
+            return response
         if command == "/inner-brain-preview":
             if not args:
                 return "用法：/inner-brain-preview 文本"
@@ -830,6 +840,7 @@ class JarvisAgent:
                 "/apps：查看首批常用应用注册表",
                 "/app-find 应用名称或别名：匹配已登记应用，不启动应用",
                 "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",
+                "/screenshot [文件名]：保存当前屏幕截图到 logs/screenshots，不 OCR、不点击、不切换窗口",
                 "/recent-files：查看常用目录、项目目录、桌面和下载目录中的最近文件",
                 "/tag-history：查看最近批量打标签历史",
                 "/update-status [清单路径或URL]：检查 Jarvis Lite 新版本",
