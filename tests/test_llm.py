@@ -255,7 +255,9 @@ class LLMTests(unittest.TestCase):
         self.assertIn("/ask 问题", instructions)
         self.assertIn("/config-manager-status", instructions)
         self.assertIn("/chrome-workflow-status", instructions)
+        self.assertIn("/clash-workflow-status", instructions)
         self.assertNotIn("/chrome-open URL", instructions)
+        self.assertNotIn("/clash-open", instructions)
         self.assertIn("不要返回列表之外的命令", instructions)
 
     def test_openai_provider_formats_401_error_without_leaking_api_key(self):

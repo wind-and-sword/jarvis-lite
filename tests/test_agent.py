@@ -3420,6 +3420,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("阶段 4 自动化状态", response)
         self.assertIn("常用目录", response)
         self.assertIn("/chrome-open", response)
+        self.assertIn("/clash-open", response)
 
     def test_chrome_workflow_status_command_reports_boundary(self):
         response = self.agent.handle("/chrome-workflow-status")
@@ -3520,6 +3521,65 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("用法：/chrome-search 关键词", response)
         chrome_search.assert_not_called()
+
+    def test_clash_workflow_status_command_reports_boundary(self):
+        response = self.agent.handle("/clash-workflow-status")
+
+        self.assertIn("Clash Verge 工作流状态：第一阶段", response)
+        self.assertIn("/clash-open", response)
+        self.assertIn("不切换节点", response)
+
+    def test_clash_open_command_opens_proxy_panel(self):
+        with patch(
+            "jarvis_lite.agent.describe_clash_open",
+            return_value="Clash Verge 打开代理面板执行",
+        ) as clash_open:
+            response = self.agent.handle("/clash-open")
+
+        self.assertIn("Clash Verge 打开代理面板执行", response)
+        clash_open.assert_called_once_with(self.agent.paths)
+
+    def test_clash_open_command_rejects_arguments(self):
+        with patch("jarvis_lite.agent.describe_clash_open") as clash_open:
+            response = self.agent.handle("/clash-open 节点A")
+
+        self.assertIn("用法：/clash-open", response)
+        clash_open.assert_not_called()
+
+    def test_clash_open_command_reports_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_clash_open",
+            side_effect=FileNotFoundError("Clash Verge 启动路径未找到"),
+        ):
+            response = self.agent.handle("/clash-open")
+
+        self.assertIn("Clash Verge 打开失败：Clash Verge 启动路径未找到", response)
+
+    def test_clash_focus_command_focuses_existing_proxy_panel(self):
+        with patch(
+            "jarvis_lite.agent.describe_clash_focus",
+            return_value="Clash Verge 聚焦执行",
+        ) as clash_focus:
+            response = self.agent.handle("/clash-focus")
+
+        self.assertIn("Clash Verge 聚焦执行", response)
+        clash_focus.assert_called_once_with(self.agent.paths)
+
+    def test_clash_focus_command_rejects_arguments(self):
+        with patch("jarvis_lite.agent.describe_clash_focus") as clash_focus:
+            response = self.agent.handle("/clash-focus 代理面板")
+
+        self.assertIn("用法：/clash-focus", response)
+        clash_focus.assert_not_called()
+
+    def test_clash_focus_command_reports_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_clash_focus",
+            side_effect=ValueError("没有找到 Clash Verge 窗口，可先执行 /clash-open"),
+        ):
+            response = self.agent.handle("/clash-focus")
+
+        self.assertIn("Clash Verge 聚焦失败：没有找到 Clash Verge 窗口", response)
 
     def test_windows_command_reports_readonly_window_snapshot(self):
         with patch("jarvis_lite.agent.describe_current_windows", return_value="窗口感知：\n- 可见窗口：1 个") as probe:
@@ -3678,7 +3738,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.116.1",
+                        "version": "0.117.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3689,7 +3749,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.116.1", response)
+        self.assertIn("发现新版本：0.117.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3704,7 +3764,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.116.1",
+                        "version": "0.117.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

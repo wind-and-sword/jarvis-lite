@@ -27,6 +27,7 @@ from .authorization import (
 )
 from .app_registry import describe_app_launch, describe_registered_apps, match_registered_app
 from .chrome_workflow import describe_chrome_open, describe_chrome_search, describe_chrome_workflow_status
+from .clash_workflow import describe_clash_focus, describe_clash_open, describe_clash_workflow_status
 from .config import ProjectPaths, build_project_paths
 from .knowledge import (
     KnowledgeIndex,
@@ -662,6 +663,27 @@ class JarvisAgent:
                 return f"Chrome 搜索失败：{exc}"
             self.tools.run("record_log", message=f"Chrome 搜索：{query}")
             return response
+        if command == "/clash-workflow-status":
+            self.tools.run("record_log", message="查看 Clash Verge 工作流状态")
+            return describe_clash_workflow_status(self.paths)
+        if command == "/clash-open":
+            if args:
+                return "用法：/clash-open"
+            try:
+                response = describe_clash_open(self.paths)
+            except (RuntimeError, ValueError, FileNotFoundError) as exc:
+                return f"Clash Verge 打开失败：{exc}"
+            self.tools.run("record_log", message="打开 Clash Verge 代理面板")
+            return response
+        if command == "/clash-focus":
+            if args:
+                return "用法：/clash-focus"
+            try:
+                response = describe_clash_focus(self.paths)
+            except (RuntimeError, ValueError) as exc:
+                return f"Clash Verge 聚焦失败：{exc}"
+            self.tools.run("record_log", message="聚焦 Clash Verge 代理面板")
+            return response
         if command == "/windows":
             self.tools.run("record_log", message="查看只读窗口感知状态")
             return describe_current_windows(self.paths)
@@ -962,6 +984,9 @@ class JarvisAgent:
                 "/chrome-workflow-status：查看 Chrome 工作流第一阶段边界",
                 "/chrome-open URL：用 Chrome 打开明确网页，不读取网页、不点击页面",
                 "/chrome-search 关键词：用 Chrome 打开搜索结果页，不读取网页、不点击页面",
+                "/clash-workflow-status：查看 Clash Verge 工作流第一阶段边界",
+                "/clash-open：打开 Clash Verge 代理面板，不切换节点、不开关系统代理",
+                "/clash-focus：聚焦已有 Clash Verge 窗口，不点击、不输入、不修改配置",
                 "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",
                 "/window-focus 编号或标题/应用名：切换到显式窗口，不点击、不输入、不启动应用",
                 "/screenshot [文件名]：保存当前屏幕截图到 logs/screenshots，不 OCR、不点击、不切换窗口",
@@ -4143,6 +4168,7 @@ class JarvisAgent:
                 "- 配置管家：/config-manager-status 查看记忆、目录、应用覆盖和 provider 配置状态",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",
                 "- Chrome 工作流：/chrome-workflow-status、/chrome-open、/chrome-search",
+                "- Clash Verge 工作流：/clash-workflow-status、/clash-open、/clash-focus",
                 "- 桌面能力：小助手窗口、面板、托盘、主题、开机启动、安装包、更新检查和下载",
                 "- 会话能力：/history、/save-summary、/clear",
                 "- 批量标签：标签组预览、确认、恢复提示和 /tag-history 历史记录",

@@ -9,6 +9,8 @@ DESKTOP_ACTION_COMMANDS = (
     "/app-launch",
     "/chrome-open",
     "/chrome-search",
+    "/clash-open",
+    "/clash-focus",
     "/window-focus",
     "/hotkey",
     "/mouse-click",
