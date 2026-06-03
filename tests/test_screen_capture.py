@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.screen_capture import describe_screen_capture, save_screen_capture
+from jarvis_lite.screen_capture import describe_screen_capture, describe_screen_ocr, save_screen_capture
 
 
 class ScreenCaptureTests(unittest.TestCase):
@@ -50,6 +50,34 @@ class ScreenCaptureTests(unittest.TestCase):
         self.assertIn("已保存屏幕截图：logs/screenshots/smoke.png", description)
         self.assertIn("尺寸：1366x768", description)
         self.assertIn("当前阶段只截图保存，不 OCR、不点击、不切换窗口", description)
+
+    def test_describe_screen_ocr_captures_then_recognizes_saved_image(self):
+        calls: list[tuple[Path, str]] = []
+
+        def fake_capturer(target_path: Path) -> tuple[int, int]:
+            target_path.write_bytes(b"png")
+            return (1280, 720)
+
+        def fake_recognizer(image_path: Path, language: str) -> str:
+            calls.append((image_path, language))
+            return "屏幕文字"
+
+        description = describe_screen_ocr(
+            self.paths,
+            filename="screen-now",
+            language="eng",
+            capturer=fake_capturer,
+            recognizer=fake_recognizer,
+        )
+
+        expected_path = self.paths.root / "logs" / "screenshots" / "screen-now.png"
+        self.assertEqual(calls, [(expected_path, "eng")])
+        self.assertIn("截图 OCR：logs/screenshots/screen-now.png", description)
+        self.assertIn("尺寸：1280x720", description)
+        self.assertIn("OCR 图片识别：logs/screenshots/screen-now.png", description)
+        self.assertIn("语言：eng", description)
+        self.assertIn("屏幕文字", description)
+        self.assertIn("当前阶段只截图并识别文字，不点击、不切换窗口、不输入", description)
 
 
 if __name__ == "__main__":

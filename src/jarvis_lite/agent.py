@@ -70,7 +70,7 @@ from .search import (
     write_search_local_config_draft,
     write_search_local_config_values,
 )
-from .screen_capture import describe_screen_capture
+from .screen_capture import describe_screen_capture, describe_screen_ocr
 from .ocr import describe_image_ocr, describe_ocr_status
 from .memory import (
     append_experience,
@@ -139,6 +139,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/app-find": "desktop.apps.find",
     "/windows": "desktop.windows.status",
     "/screenshot": "desktop.screenshot.save",
+    "/screen-ocr": "desktop.screen_ocr",
     "/ocr-status": "desktop.ocr.status",
     "/ocr-image": "desktop.ocr.image",
     "/recent-files": "context.recent_files",
@@ -589,15 +590,20 @@ class JarvisAgent:
                 return f"屏幕截图失败：{exc}"
             self.tools.run("record_log", message="保存屏幕截图")
             return response
+        if command == "/screen-ocr":
+            language, screen_args = self._split_trailing_language_arg(args)
+            filename = " ".join(screen_args) if screen_args else None
+            try:
+                response = describe_screen_ocr(self.paths, filename, language=language)
+            except (RuntimeError, ValueError) as exc:
+                return f"截图 OCR 失败：{exc}"
+            self.tools.run("record_log", message="截图并识别文字")
+            return response
         if command == "/ocr-status":
             self.tools.run("record_log", message="查看 OCR 状态")
             return describe_ocr_status(self.paths)
         if command == "/ocr-image":
-            language = None
-            image_args = list(args)
-            if image_args and image_args[-1].startswith("lang="):
-                language = image_args[-1].split("=", 1)[1]
-                image_args = image_args[:-1]
+            language, image_args = self._split_trailing_language_arg(args)
             image_path = " ".join(image_args)
             self.tools.run("record_log", message="识别图片文字")
             return describe_image_ocr(self.paths, image_path, language=language)
@@ -856,6 +862,7 @@ class JarvisAgent:
                 "/app-find 应用名称或别名：匹配已登记应用，不启动应用",
                 "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",
                 "/screenshot [文件名]：保存当前屏幕截图到 logs/screenshots，不 OCR、不点击、不切换窗口",
+                "/screen-ocr [文件名] [lang=chi_sim+eng]：截图并识别当前屏幕文字，不点击、不切换窗口、不输入",
                 "/ocr-status：查看 OCR 引擎状态，不读取图片、不截图",
                 "/ocr-image 图片路径 [lang=chi_sim+eng]：识别指定图片文字，不截图、不点击、不切换窗口",
                 "/recent-files：查看常用目录、项目目录、桌面和下载目录中的最近文件",
@@ -905,6 +912,12 @@ class JarvisAgent:
             lines.append("路径：未配置")
         lines.append("说明：当前阶段只做注册和匹配，不启动应用。")
         return "\n".join(lines)
+
+    def _split_trailing_language_arg(self, args: list[str]) -> tuple[str | None, list[str]]:
+        content_args = list(args)
+        if content_args and content_args[-1].startswith("lang="):
+            return content_args[-1].split("=", 1)[1], content_args[:-1]
+        return None, content_args
 
     def _knowledge_summary(self) -> str:
         summary = summarize_knowledge_base(self.paths)

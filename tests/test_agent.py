@@ -3442,12 +3442,22 @@ class AgentTests(unittest.TestCase):
         self.assertIn("OCR 图片识别：logs/screenshots/manual.png", response)
         ocr.assert_called_once_with(self.agent.paths, "logs/screenshots/manual.png", language="eng")
 
+    def test_screen_ocr_command_captures_then_recognizes_current_screen(self):
+        with patch(
+            "jarvis_lite.agent.describe_screen_ocr",
+            return_value="截图 OCR：logs/screenshots/current.png",
+        ) as screen_ocr:
+            response = self.agent.handle("/screen-ocr current lang=eng")
+
+        self.assertIn("截图 OCR：logs/screenshots/current.png", response)
+        screen_ocr.assert_called_once_with(self.agent.paths, "current", language="eng")
+
     def test_update_status_command_reports_available_update_from_manifest(self):
         manifest = Path(self.temp_dir.name) / "update.json"
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.107.1",
+                        "version": "0.108.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3458,7 +3468,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.107.1", response)
+        self.assertIn("发现新版本：0.108.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3473,7 +3483,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.107.1",
+                        "version": "0.108.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

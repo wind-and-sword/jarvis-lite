@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .config import ProjectPaths
+from .ocr import ImageRecognizer, describe_image_ocr
 
 
 ScreenCapturer = Callable[[Path], tuple[int, int]]
@@ -56,6 +57,33 @@ def describe_screen_capture(
             f"已保存屏幕截图：{result.relative_path}",
             f"尺寸：{result.width}x{result.height}",
             "说明：当前阶段只截图保存，不 OCR、不点击、不切换窗口。",
+        ]
+    )
+
+
+def describe_screen_ocr(
+    paths: ProjectPaths,
+    filename: str | None = None,
+    *,
+    language: str | None = None,
+    capturer: ScreenCapturer | None = None,
+    recognizer: ImageRecognizer | None = None,
+) -> str:
+    """保存当前主屏幕截图，并对刚保存的图片执行 OCR。"""
+
+    result = save_screen_capture(paths, filename, capturer=capturer)
+    ocr_description = describe_image_ocr(
+        paths,
+        result.relative_path,
+        language=language,
+        recognizer=recognizer,
+    )
+    return "\n".join(
+        [
+            f"截图 OCR：{result.relative_path}",
+            f"尺寸：{result.width}x{result.height}",
+            ocr_description,
+            "说明：当前阶段只截图并识别文字，不点击、不切换窗口、不输入。",
         ]
     )
 
