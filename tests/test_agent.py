@@ -3380,12 +3380,36 @@ class AgentTests(unittest.TestCase):
         self.assertIn("阶段 4 自动化状态", response)
         self.assertIn("常用目录", response)
 
+    def test_apps_command_lists_registered_desktop_apps_without_launching(self):
+        response = self.agent.handle("/apps")
+
+        self.assertIn("应用注册表", response)
+        self.assertIn("Chrome (chrome)", response)
+        self.assertIn("QQ (qq)", response)
+        self.assertIn("微信 (wechat)", response)
+        self.assertIn("IntelliJ IDEA (idea)", response)
+        self.assertIn("Clash Verge (clash_verge)", response)
+        self.assertIn("当前阶段只做注册和匹配，不启动应用", response)
+
+    def test_app_find_command_matches_registered_app_alias(self):
+        response = self.agent.handle("/app-find 代理面板")
+
+        self.assertIn("应用匹配：Clash Verge (clash_verge)", response)
+        self.assertIn("命中别名：代理面板", response)
+        self.assertIn("当前阶段只做注册和匹配，不启动应用", response)
+
+    def test_app_find_command_reports_unknown_app(self):
+        response = self.agent.handle("/app-find 不存在的应用")
+
+        self.assertIn("没有找到应用：不存在的应用", response)
+        self.assertIn("/apps", response)
+
     def test_update_status_command_reports_available_update_from_manifest(self):
         manifest = Path(self.temp_dir.name) / "update.json"
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.103.1",
+                        "version": "0.104.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3396,7 +3420,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.103.1", response)
+        self.assertIn("发现新版本：0.104.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3411,7 +3435,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.103.1",
+                        "version": "0.104.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

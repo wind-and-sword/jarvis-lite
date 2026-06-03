@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.104.0` 可安装测试包，完成应用注册表第一阶段；`/apps` 可查看 Chrome、QQ、微信、IntelliJ IDEA 和 Clash Verge 的只读注册表，`/app-find 名称或别名` 可按中英文别名匹配已登记应用，当前阶段不启动外部应用；全量 `unittest` 577 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.104.0.exe`。
 - 2026-06-03：发布 `0.103.0` 可安装测试包，收口 InnerBrain PROJECT-PLAN 已处理空视图主干同步；`word/PROJECT-PLAN.md` 主干 `InnerBrain 可观察与样本闭环` 概要已说明暂无已处理样本时会提示这里只显示已通过样本，并引导查看待处理失败或补充本机 evaluation 样本；全量 `unittest` 571 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.103.0.exe`。
 - 2026-06-03：发布 `0.102.0` 可安装测试包，收口 InnerBrain README 已处理空视图概要同步；README 顶部 `InnerBrain 样本闭环` 概要已说明暂无已处理样本时会提示这里只显示已通过样本，并引导查看待处理失败或补充本机 evaluation 样本；全量 `unittest` 570 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.102.0.exe`。
 - 2026-06-03：发布 `0.101.0` 可安装测试包，收口 InnerBrain 本机已处理空视图行动提示；`/inner-brain-eval-local-resolved [文件名]` 没有已通过样本时会提示这里只显示已通过样本，并引导查看待处理失败或补充本机 evaluation 样本；全量 `unittest` 569 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.101.0.exe`。

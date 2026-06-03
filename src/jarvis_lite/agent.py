@@ -17,6 +17,7 @@ from .automation import (
     suggest_next_actions_from_context,
     write_daily_report,
 )
+from .app_registry import describe_registered_apps, match_registered_app
 from .config import ProjectPaths, build_project_paths
 from .knowledge import (
     KnowledgeIndex,
@@ -131,6 +132,8 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/knowledge-summary": "knowledge.summary",
     "/voice-status": "voice.status",
     "/automation-status": "automation.status",
+    "/apps": "desktop.apps.list",
+    "/app-find": "desktop.apps.find",
     "/recent-files": "context.recent_files",
     "/tag-history": "tag.history",
     "/batch-tag-history": "tag.history",
@@ -561,6 +564,13 @@ class JarvisAgent:
             return self._save_recent_web_search_summary(" ".join(args))
         if command == "/search-import-summary":
             return self._import_recent_web_search_summary(" ".join(args))
+        if command == "/apps":
+            self.tools.run("record_log", message="查看应用注册表")
+            return describe_registered_apps(self.paths)
+        if command == "/app-find":
+            if not args:
+                return "用法：/app-find 应用名称或别名"
+            return self._find_registered_app(" ".join(args))
         if command == "/inner-brain-preview":
             if not args:
                 return "用法：/inner-brain-preview 文本"
@@ -812,6 +822,8 @@ class JarvisAgent:
                 "/speak 文本：播报一段文本",
                 "/voice 已识别的语音文本：按语音入口处理文本并播报回答",
                 "/automation-status：查看阶段 4 自动化状态",
+                "/apps：查看首批常用应用注册表",
+                "/app-find 应用名称或别名：匹配已登记应用，不启动应用",
                 "/recent-files：查看常用目录、项目目录、桌面和下载目录中的最近文件",
                 "/tag-history：查看最近批量打标签历史",
                 "/update-status [清单路径或URL]：检查 Jarvis Lite 新版本",
@@ -839,6 +851,26 @@ class JarvisAgent:
                 "/exit：退出命令行助手",
             ]
         )
+
+    def _find_registered_app(self, query: str) -> str:
+        match = match_registered_app(self.paths, query)
+        if match is None:
+            return f"没有找到应用：{query}。可用 /apps 查看已登记应用。"
+
+        app = match.app
+        lines = [
+            f"应用匹配：{app.display_name} ({app.app_id})",
+            f"命中别名：{match.alias}",
+        ]
+        launch_path = app.launch_path
+        if launch_path is not None:
+            lines.append(f"路径：{launch_path}")
+        elif app.configured_path is not None:
+            lines.append(f"路径：未找到（已配置 {app.configured_path}）")
+        else:
+            lines.append("路径：未配置")
+        lines.append("说明：当前阶段只做注册和匹配，不启动应用。")
+        return "\n".join(lines)
 
     def _knowledge_summary(self) -> str:
         summary = summarize_knowledge_base(self.paths)
