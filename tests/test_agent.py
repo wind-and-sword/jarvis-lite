@@ -3412,6 +3412,32 @@ class AgentTests(unittest.TestCase):
         self.assertIn("可见窗口：1 个", response)
         probe.assert_called_once_with(self.agent.paths)
 
+    def test_window_focus_command_switches_explicit_target(self):
+        with patch(
+            "jarvis_lite.agent.describe_window_focus",
+            return_value="窗口切换执行：代理面板",
+        ) as focus:
+            response = self.agent.handle("/window-focus 2")
+
+        self.assertIn("窗口切换执行：代理面板", response)
+        focus.assert_called_once_with(self.agent.paths, "2")
+
+    def test_window_focus_command_requires_target(self):
+        with patch("jarvis_lite.agent.describe_window_focus") as focus:
+            response = self.agent.handle("/window-focus")
+
+        self.assertIn("用法：/window-focus 编号或标题/应用名", response)
+        focus.assert_not_called()
+
+    def test_window_focus_command_reports_execution_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_window_focus",
+            side_effect=ValueError("匹配到多个窗口"),
+        ):
+            response = self.agent.handle("/window-focus Chrome")
+
+        self.assertIn("窗口切换失败：匹配到多个窗口", response)
+
     def test_screenshot_command_saves_screen_capture(self):
         with patch(
             "jarvis_lite.agent.describe_screen_capture",
@@ -3535,7 +3561,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.111.1",
+                        "version": "0.112.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3546,7 +3572,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.111.1", response)
+        self.assertIn("发现新版本：0.112.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3561,7 +3587,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.111.1",
+                        "version": "0.112.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

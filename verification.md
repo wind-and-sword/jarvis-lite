@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.112.0` 可安装测试包，完成窗口切换自动化第一阶段；`/window-focus 编号或标题/应用名` 可切换到当前已存在的显式窗口，当前阶段不启动应用、不点击、不输入，不接入自然语言自动切换；全量 `unittest` 618 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.112.0.exe`。
 - 2026-06-03：发布 `0.111.0` 可安装测试包，完成文本输入自动化第一阶段；`/type-text 文本` 可向当前焦点输入显式文本，当前阶段不做目标识别、不点击、不切换窗口、不启动应用，不接入自然语言自动输入；全量 `unittest` 611 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.111.0.exe`。
 - 2026-06-03：发布 `0.110.0` 可安装测试包，完成鼠标点击自动化第一阶段；`/mouse-click x y [button=left|right|middle]` 可执行一次显式坐标点击，当前阶段不做目标识别、不拖动、不切换窗口、不启动应用，不接入自然语言自动点击；全量 `unittest` 605 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.110.0.exe`。
 - 2026-06-03：发布 `0.109.0` 可安装测试包，完成快捷键自动化第一阶段；`/hotkey key1+key2 [key3+key4 ...]` 可发送一个或多个显式快捷键组合，当前阶段不点击、不输入文本、不切换窗口、不启动应用，不接入自然语言自动执行；全量 `unittest` 598 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.109.0.exe`。

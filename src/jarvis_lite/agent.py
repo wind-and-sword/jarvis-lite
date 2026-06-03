@@ -104,7 +104,7 @@ from .runtime_context import (
 from .tools import ToolRegistry
 from .update import describe_update_download, describe_update_status, update_download_dir
 from .voice import describe_voice, speak_text
-from .window_state import describe_current_windows
+from .window_state import describe_current_windows, describe_window_focus
 
 
 TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
@@ -139,6 +139,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/voice-status": "voice.status",
     "/automation-status": "automation.status",
     "/hotkey": "desktop.hotkey",
+    "/window-focus": "desktop.windows.focus",
     "/apps": "desktop.apps.list",
     "/app-find": "desktop.apps.find",
     "/windows": "desktop.windows.status",
@@ -614,6 +615,16 @@ class JarvisAgent:
         if command == "/windows":
             self.tools.run("record_log", message="查看只读窗口感知状态")
             return describe_current_windows(self.paths)
+        if command == "/window-focus":
+            if not args:
+                return "用法：/window-focus 编号或标题/应用名"
+            target = " ".join(args)
+            try:
+                response = describe_window_focus(self.paths, target)
+            except (RuntimeError, ValueError) as exc:
+                return f"窗口切换失败：{exc}"
+            self.tools.run("record_log", message=f"切换窗口：{target}")
+            return response
         if command == "/screenshot":
             filename = " ".join(args) if args else None
             try:
@@ -896,6 +907,7 @@ class JarvisAgent:
                 "/apps：查看首批常用应用注册表",
                 "/app-find 应用名称或别名：匹配已登记应用，不启动应用",
                 "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",
+                "/window-focus 编号或标题/应用名：切换到显式窗口，不点击、不输入、不启动应用",
                 "/screenshot [文件名]：保存当前屏幕截图到 logs/screenshots，不 OCR、不点击、不切换窗口",
                 "/screen-ocr [文件名] [lang=chi_sim+eng]：截图并识别当前屏幕文字，不点击、不切换窗口、不输入",
                 "/ocr-status：查看 OCR 引擎状态，不读取图片、不截图",

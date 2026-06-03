@@ -11,6 +11,8 @@ from jarvis_lite.window_state import (
     build_unsupported_window_snapshot,
     build_window_snapshot,
     describe_window_snapshot,
+    describe_window_focus,
+    select_window_focus_target,
 )
 
 
@@ -71,6 +73,82 @@ class WindowStateTests(unittest.TestCase):
         self.assertIn("平台：Linux", description)
         self.assertIn("原因：当前仅支持 Windows 窗口枚举。", description)
         self.assertIn("当前阶段只做只读观察", description)
+
+    def test_select_window_focus_target_accepts_window_list_index(self):
+        snapshot = build_window_snapshot(
+            self.paths,
+            (
+                NativeWindow(handle=100, title="Jarvis Lite - Google Chrome", process_id=10, process_name="chrome.exe"),
+                NativeWindow(handle=200, title="代理面板", process_id=20, process_name="Clash Verge.exe"),
+            ),
+            foreground_handle=100,
+            platform_name="Windows",
+        )
+
+        selection = select_window_focus_target(self.paths, snapshot, "2")
+
+        self.assertEqual(selection.window.handle, 200)
+        self.assertEqual(selection.match_reason, "窗口编号：2")
+
+    def test_select_window_focus_target_matches_registered_app_and_title(self):
+        snapshot = build_window_snapshot(
+            self.paths,
+            (
+                NativeWindow(handle=100, title="Jarvis Lite - Google Chrome", process_id=10, process_name="chrome.exe"),
+                NativeWindow(handle=200, title="代理面板", process_id=20, process_name="unknown.exe"),
+                NativeWindow(handle=300, title="项目 - IntelliJ IDEA", process_id=30, process_name="idea64.exe"),
+            ),
+            foreground_handle=100,
+            platform_name="Windows",
+        )
+
+        app_selection = select_window_focus_target(self.paths, snapshot, "JetBrains IDEA")
+        title_selection = select_window_focus_target(self.paths, snapshot, "面板")
+
+        self.assertEqual(app_selection.window.handle, 300)
+        self.assertEqual(app_selection.match_reason, "应用：IntelliJ IDEA (idea)")
+        self.assertEqual(title_selection.window.handle, 200)
+        self.assertEqual(title_selection.match_reason, "标题包含：面板")
+
+    def test_select_window_focus_target_rejects_ambiguous_or_missing_query(self):
+        snapshot = build_window_snapshot(
+            self.paths,
+            (
+                NativeWindow(handle=100, title="Jarvis Lite - Google Chrome", process_id=10, process_name="chrome.exe"),
+                NativeWindow(handle=200, title="Docs - Google Chrome", process_id=20, process_name="chrome.exe"),
+            ),
+            foreground_handle=100,
+            platform_name="Windows",
+        )
+
+        with self.assertRaisesRegex(ValueError, "匹配到多个窗口"):
+            select_window_focus_target(self.paths, snapshot, "Chrome")
+        with self.assertRaisesRegex(ValueError, "没有找到可切换窗口"):
+            select_window_focus_target(self.paths, snapshot, "不存在的窗口")
+
+    def test_describe_window_focus_invokes_executor_without_real_switching(self):
+        snapshot = build_window_snapshot(
+            self.paths,
+            (
+                NativeWindow(handle=100, title="Jarvis Lite - Google Chrome", process_id=10, process_name="chrome.exe"),
+                NativeWindow(handle=200, title="代理面板", process_id=20, process_name="Clash Verge.exe"),
+            ),
+            foreground_handle=100,
+            platform_name="Windows",
+        )
+        calls: list[int] = []
+
+        description = describe_window_focus(
+            self.paths,
+            "2",
+            snapshot=snapshot,
+            executor=lambda handle: calls.append(handle),
+        )
+
+        self.assertEqual(calls, [200])
+        self.assertIn("窗口切换执行：代理面板", description)
+        self.assertIn("匹配：窗口编号：2", description)
+        self.assertIn("当前阶段只切换显式窗口", description)
 
 
 if __name__ == "__main__":

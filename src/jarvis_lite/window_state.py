@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import ctypes
 import platform
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
-from .app_registry import RegisteredApp, list_registered_apps
+from .app_registry import RegisteredApp, list_registered_apps, match_registered_app
 from .config import ProjectPaths
+
+
+WindowFocusExecutor = Callable[[int], None]
 
 
 @dataclass(frozen=True)
@@ -35,6 +40,18 @@ class WindowSnapshot:
     foreground_window: WindowInfo | None
     windows: tuple[WindowInfo, ...]
     message: str = ""
+
+
+@dataclass(frozen=True)
+class WindowFocusSelection:
+    window: WindowInfo
+    match_reason: str
+
+
+@dataclass(frozen=True)
+class WindowFocusResult:
+    selection: WindowFocusSelection
+    executed_at: datetime
 
 
 def describe_current_windows(paths: ProjectPaths, limit: int = 10) -> str:
@@ -118,6 +135,84 @@ def describe_window_snapshot(snapshot: WindowSnapshot, limit: int = 10) -> str:
         if len(snapshot.windows) > limit:
             lines.append(f"  ... 还有 {len(snapshot.windows) - limit} 个窗口")
     return "\n".join(lines)
+
+
+def select_window_focus_target(
+    paths: ProjectPaths,
+    snapshot: WindowSnapshot,
+    target: str,
+) -> WindowFocusSelection:
+    """从窗口快照中选择一个显式窗口切换目标。"""
+
+    query = target.strip()
+    if not query:
+        raise ValueError("窗口切换目标不能为空。")
+    if not snapshot.supported:
+        raise RuntimeError(snapshot.message or "当前平台不支持窗口切换。")
+    if not snapshot.windows:
+        raise ValueError("没有可切换窗口。请先用 /windows 查看当前窗口状态。")
+
+    if query.isdecimal():
+        index = int(query)
+        if 1 <= index <= len(snapshot.windows):
+            return WindowFocusSelection(snapshot.windows[index - 1], f"窗口编号：{index}")
+        raise ValueError(f"窗口编号超出范围：{index}。请先用 /windows 查看当前窗口编号。")
+
+    app_match = match_registered_app(paths, query)
+    if app_match is not None:
+        app_candidates = [
+            WindowFocusSelection(window, f"应用：{app_match.app.display_name} ({app_match.app.app_id})")
+            for window in snapshot.windows
+            if window.app_id == app_match.app.app_id
+        ]
+        if app_candidates:
+            return _single_window_focus_selection(snapshot, tuple(app_candidates))
+
+    normalized_query = _normalize_text(query)
+    title_candidates = tuple(
+        WindowFocusSelection(window, f"标题包含：{query}")
+        for window in snapshot.windows
+        if normalized_query and normalized_query in _normalize_text(window.title)
+    )
+    if title_candidates:
+        return _single_window_focus_selection(snapshot, title_candidates)
+
+    process_candidates = tuple(
+        WindowFocusSelection(window, f"进程包含：{query}")
+        for window in snapshot.windows
+        if window.process_name and normalized_query in _normalize_text(window.process_name)
+    )
+    if process_candidates:
+        return _single_window_focus_selection(snapshot, process_candidates)
+
+    raise ValueError(f"没有找到可切换窗口：{query}。请先用 /windows 查看当前窗口。")
+
+
+def describe_window_focus(
+    paths: ProjectPaths,
+    target: str,
+    *,
+    snapshot: WindowSnapshot | None = None,
+    executor: WindowFocusExecutor | None = None,
+) -> str:
+    """切换到显式指定窗口，并返回可复盘结果。"""
+
+    current_snapshot = snapshot or capture_window_snapshot(paths)
+    selection = select_window_focus_target(paths, current_snapshot, target)
+    focus_executor = executor or _focus_window_with_user32
+    focus_executor(selection.window.handle)
+    result = WindowFocusResult(selection=selection, executed_at=datetime.now())
+    window = result.selection.window
+    return "\n".join(
+        [
+            f"窗口切换执行：{window.title}",
+            f"匹配：{result.selection.match_reason}",
+            f"进程：{_process_label(window)}",
+            f"应用：{_app_label(window)}",
+            f"时间：{result.executed_at.isoformat(timespec='seconds')}",
+            "说明：当前阶段只切换显式窗口，不点击、不输入、不启动应用。",
+        ]
+    )
 
 
 def _enrich_window(
@@ -226,6 +321,22 @@ def _foreground_handle() -> int | None:
     return int(hwnd) if hwnd else None
 
 
+def _focus_window_with_user32(handle: int) -> None:
+    if platform.system().lower() != "windows":
+        raise RuntimeError("当前仅支持 Windows 窗口切换。")
+    if handle <= 0:
+        raise ValueError("窗口句柄无效。")
+
+    from ctypes import wintypes
+
+    user32 = ctypes.windll.user32
+    hwnd = wintypes.HWND(handle)
+    sw_restore = 9
+    user32.ShowWindow(hwnd, sw_restore)
+    if not user32.SetForegroundWindow(hwnd):
+        raise RuntimeError("Windows 拒绝将目标窗口切到前台。")
+
+
 def _process_name(process_id: int) -> str | None:
     from ctypes import wintypes
 
@@ -254,3 +365,24 @@ def _normalize_executable_name(value: str | None) -> str:
 
 def _normalize_text(value: str) -> str:
     return "".join(value.strip().casefold().split())
+
+
+def _single_window_focus_selection(
+    snapshot: WindowSnapshot,
+    selections: tuple[WindowFocusSelection, ...],
+) -> WindowFocusSelection:
+    if len(selections) == 1:
+        return selections[0]
+
+    lines = ["匹配到多个窗口，请使用 /window-focus 编号 或更具体标题："]
+    for selection in selections:
+        lines.append(f"  {_window_focus_candidate_line(snapshot, selection.window)}")
+    raise ValueError("\n".join(lines))
+
+
+def _window_focus_candidate_line(snapshot: WindowSnapshot, window: WindowInfo) -> str:
+    index = next(
+        (candidate_index for candidate_index, candidate in enumerate(snapshot.windows, start=1) if candidate == window),
+        0,
+    )
+    return f"{index}. {_window_line(window)}"
