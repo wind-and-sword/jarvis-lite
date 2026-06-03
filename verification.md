@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.125.0` 可安装测试包，完成任务执行结果摘要采集第一阶段；当前任务运行中执行显式命令后，最近匹配任务事件会写回紧凑结果摘要，`/task-fail` 和 `/task-status` 的失败复盘可展示命令与结果；当前阶段不自动重放外部动作、不点击、不输入；全量 `unittest` 727 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.125.0.exe`。
 - 2026-06-03：发布 `0.124.0` 可安装测试包，完成任务状态自动采集第一阶段；当前任务运行中执行普通命令会自动记录最近任务事件，`/task-status` 展示输入原话、路由类型、命令详情、摘要和依据，`/task-fail` 与 `/task-fail-capture` 会把自动采集上下文写入失败复盘；当前阶段不自动重放外部动作、不点击、不输入；全量 `unittest` 726 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.124.0.exe`。
 - 2026-06-03：发布 `0.123.0` 可安装测试包，完成记忆与配置候选固化第一阶段；`/config-candidate-apply 编号` 可显式固化当前活跃候选中的长期记忆、经验记忆和常用目录，固化后候选标记为 applied 并从活跃列表隐藏；联系人别名、授权规则、应用路径、偏好和其他候选不会自动写入长期配置，候选固化命令不加入 LLM 白名单；全量 `unittest` 724 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.123.0.exe`。
 - 2026-06-03：发布 `0.122.0` 可安装测试包，完成记忆与配置候选池第一阶段；`/config-candidate-add 类型 内容` 可显式记录运行态候选，`/config-candidates` 与 `/memory-config-candidates` 可查看候选，`/config-candidate-dismiss 编号` 可忽略候选，`/config-manager-status` 显示活跃/已忽略候选统计；当前阶段不自动写入长期记忆、经验记忆、目录、应用配置、联系人或授权规则，候选写入和忽略命令不加入 LLM 白名单；全量 `unittest` 718 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.122.0.exe`。

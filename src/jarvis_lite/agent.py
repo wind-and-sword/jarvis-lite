@@ -88,6 +88,7 @@ from .task_state import (
     describe_task_status,
     record_task_failure,
     record_task_failure_with_screen_ocr,
+    record_task_event_result,
     record_task_route_event,
     record_task_step,
     resume_task,
@@ -422,7 +423,9 @@ class JarvisAgent:
             return "我还不知道你是谁。你可以说“我叫张三”或使用 /remember 用户姓名：张三。"
 
         if prompt.startswith("/"):
-            return self._handle_command(prompt)
+            response = self._handle_command(prompt)
+            record_task_event_result(self.paths, self._compact_status_text(prompt), response)
+            return response
 
         fact = parse_identity_fact(prompt)
         if fact:

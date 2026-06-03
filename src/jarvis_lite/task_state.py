@@ -263,6 +263,35 @@ def record_task_route_event(paths: ProjectPaths, decision: RuntimeRouteDecisionC
     _save_context(paths, context, current_task=updated_task)
 
 
+def record_task_event_result(paths: ProjectPaths, prompt: str, result: str) -> None:
+    """把显式命令返回摘要写回最近匹配的任务事件。"""
+
+    prompt_text = prompt.strip()
+    result_text = _compact_event_result(result)
+    if not prompt_text or not result_text:
+        return
+    context = load_runtime_context(paths)
+    task = context.current_task
+    if task is None or task.status != "running" or not task.recent_events:
+        return
+
+    updated_events: list[RuntimeTaskEventContext] = []
+    changed = False
+    for event in task.recent_events:
+        if not changed and event.prompt == prompt_text:
+            updated_events.append(replace(event, summary=result_text))
+            changed = True
+        else:
+            updated_events.append(event)
+    if not changed:
+        return
+    _save_context(
+        paths,
+        context,
+        current_task=replace(task, recent_events=tuple(updated_events), updated_at=_now_iso()),
+    )
+
+
 def resume_task(paths: ProjectPaths) -> str:
     """恢复失败中的当前任务，但不自动执行任何外部动作。"""
 
@@ -402,6 +431,13 @@ def _status_label(status: str) -> str:
 def _compact_context(text: str) -> str:
     parts = [line.strip() for line in text.splitlines() if line.strip()]
     return " | ".join(parts)
+
+
+def _compact_event_result(text: str, max_length: int = 180) -> str:
+    compacted = _compact_context(text)
+    if len(compacted) <= max_length:
+        return compacted
+    return compacted[: max_length - 1].rstrip() + "…"
 
 
 def _now_iso() -> str:

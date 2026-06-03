@@ -13,6 +13,7 @@ from jarvis_lite.task_state import (
     describe_task_status,
     record_task_failure,
     record_task_failure_with_screen_ocr,
+    record_task_event_result,
     record_task_route_event,
     record_task_step,
     resume_task,
@@ -94,6 +95,30 @@ class TaskStateTests(unittest.TestCase):
             self.assertIn("输入：/dir-open 项目", failure_response)
             self.assertEqual(len(runtime_context.recent_task_failures), 1)
             self.assertEqual(len(runtime_context.recent_task_failures[0].recent_events), 1)
+
+    def test_task_route_event_result_updates_latest_matching_event(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+
+            start_task(paths, "登记常用目录")
+            record_task_route_event(
+                paths,
+                RuntimeRouteDecisionContext(
+                    route="command",
+                    detail="/dir-add",
+                    prompt="/dir-add 工作区 C:/demo",
+                    summary="显式命令",
+                    explanation="source=explicit-command action=direct-dispatch",
+                    created_at="2026-06-03T10:00:00",
+                ),
+            )
+
+            record_task_event_result(paths, "/dir-add 工作区 C:/demo", "已登记常用目录：工作区 -> C:/demo")
+            failure_response = record_task_failure(paths, "后续步骤失败")
+            runtime_context = load_runtime_context(paths)
+
+            self.assertIn("结果：已登记常用目录：工作区 -> C:/demo", failure_response)
+            self.assertEqual(runtime_context.recent_task_failures[0].recent_events[0].summary, "已登记常用目录：工作区 -> C:/demo")
 
     def test_failed_task_can_resume_complete_and_cancel(self):
         with tempfile.TemporaryDirectory() as temp_dir:
