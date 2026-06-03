@@ -114,6 +114,7 @@
 - [2026-06-03-v102-inner-brain-report-file-sample-count-plan.md](2026-06-03-v102-inner-brain-report-file-sample-count-plan.md)：明确 InnerBrain 本机报告指定文件样本计数提示。
 - [2026-06-03-v103-inner-brain-report-empty-filter-guidance-plan.md](2026-06-03-v103-inner-brain-report-empty-filter-guidance-plan.md)：明确 InnerBrain 本机报告空筛选文件补样本写入提示。
 - [2026-06-03-v104-inner-brain-empty-evaluation-runtime-guidance-plan.md](2026-06-03-v104-inner-brain-empty-evaluation-runtime-guidance-plan.md)：明确 InnerBrain 本机空评估视图补样本写入提示。
+- [2026-06-03-v105-inner-brain-resolved-empty-guidance-plan.md](2026-06-03-v105-inner-brain-resolved-empty-guidance-plan.md)：明确 InnerBrain 本机已处理空视图行动提示。
 
 ## 维护规则
 

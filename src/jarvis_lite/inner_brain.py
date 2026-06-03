@@ -767,6 +767,7 @@ def describe_inner_brain_resolved_evaluation(report: InnerBrainEvaluationReport)
     lines.append("已处理样例：")
     if not report.passed_case_results:
         lines.append("- 无")
+        lines.append("提示：这里只显示已通过样本；暂无已处理样本时，请先查看待处理失败样本或补充本机 evaluation 样本。")
     for case_result in report.passed_case_results:
         lines.append(
             f"- PASS {case_result.case.text} -> {case_result.result.intent} "

@@ -724,6 +724,10 @@ class InnerBrainTests(unittest.TestCase):
         self.assertNotIn("评估集：local_evaluation", description)
         self.assertIn("已处理样例：", description)
         self.assertIn("- 无", description)
+        self.assertIn(
+            "提示：这里只显示已通过样本；暂无已处理样本时，请先查看待处理失败样本或补充本机 evaluation 样本。",
+            description,
+        )
         self.assertNotIn("FAIL 请看看资料库状态", description)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 

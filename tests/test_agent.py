@@ -2144,6 +2144,10 @@ class AgentTests(unittest.TestCase):
         self.assertIn("评估文件：failed-log.jsonl", response)
         self.assertIn("已处理样例：", response)
         self.assertIn("- 无", response)
+        self.assertIn(
+            "提示：这里只显示已通过样本；暂无已处理样本时，请先查看待处理失败样本或补充本机 evaluation 样本。",
+            response,
+        )
         self.assertNotIn("FAIL 请看看资料库状态", response)
         self.assertFalse((self.paths.data_dir / "inner-brain" / "training" / "runtime.jsonl").exists())
 
@@ -3381,7 +3385,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.100.1",
+                        "version": "0.101.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3392,7 +3396,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.100.1", response)
+        self.assertIn("发现新版本：0.101.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3407,7 +3411,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.100.1",
+                        "version": "0.101.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
