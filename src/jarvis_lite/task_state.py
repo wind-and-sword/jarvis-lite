@@ -7,7 +7,9 @@ from .config import ProjectPaths
 from .ocr import ImageRecognizer, describe_image_ocr
 from .runtime_context import (
     RuntimeContext,
+    RuntimeRouteDecisionContext,
     RuntimeTaskContext,
+    RuntimeTaskEventContext,
     RuntimeTaskFailureContext,
     load_runtime_context,
     save_runtime_context,
@@ -43,6 +45,7 @@ def describe_task_status(paths: ProjectPaths) -> str:
             lines.append(f"失败原因：{task.failure_reason}")
         if task.updated_at:
             lines.append(f"更新时间：{task.updated_at}")
+        _append_task_events(lines, task.recent_events)
         lines.append("下一步建议：/task-step 步骤说明、/task-fail 失败原因、/task-complete、/task-cancel")
 
     _append_recent_failures(lines, context.recent_task_failures)
@@ -97,6 +100,7 @@ def record_task_step(paths: ProjectPaths, step: str) -> str:
         origin_prompt=task.origin_prompt,
         current_step=step_text,
         completed_steps=completed_steps,
+        recent_events=task.recent_events,
         failure_reason="",
         created_at=task.created_at,
         updated_at=_now_iso(),
@@ -137,6 +141,7 @@ def record_task_failure(
         origin_prompt=task.origin_prompt,
         current_step=task.current_step,
         completed_steps=task.completed_steps,
+        recent_events=task.recent_events,
         failure_reason=reason_text,
         created_at=task.created_at,
         updated_at=now,
@@ -149,6 +154,7 @@ def record_task_failure(
         route_summary=route_summary,
         authorization_summary=authorization_summary,
         completed_steps=task.completed_steps,
+        recent_events=task.recent_events,
         screen_context=screen_context,
         next_step=DEFAULT_FAILURE_NEXT_STEP,
         created_at=now,
@@ -171,6 +177,7 @@ def record_task_failure(
         lines.append(f"路由摘要：{route_summary}")
     if authorization_summary:
         lines.append(f"授权摘要：{authorization_summary}")
+    _append_task_events(lines, task.recent_events, header="自动采集上下文：")
     lines.extend(
         [
             f"屏幕/OCR：{screen_context}",
@@ -233,6 +240,29 @@ def record_task_failure_with_screen_ocr(
     return f"{failure_response}\n边界：{TASK_FAILURE_CAPTURE_BOUNDARY}"
 
 
+def record_task_route_event(paths: ProjectPaths, decision: RuntimeRouteDecisionContext) -> None:
+    """把当前任务期间的路由决策自动追加到任务上下文。"""
+
+    context = load_runtime_context(paths)
+    task = context.current_task
+    if task is None or task.status != "running":
+        return
+    event = RuntimeTaskEventContext(
+        route=decision.route,
+        detail=decision.detail,
+        prompt=decision.prompt,
+        summary=decision.summary,
+        explanation=decision.explanation,
+        created_at=decision.created_at,
+    )
+    updated_task = replace(
+        task,
+        recent_events=(event, *task.recent_events)[:5],
+        updated_at=_now_iso(),
+    )
+    _save_context(paths, context, current_task=updated_task)
+
+
 def resume_task(paths: ProjectPaths) -> str:
     """恢复失败中的当前任务，但不自动执行任何外部动作。"""
 
@@ -246,6 +276,7 @@ def resume_task(paths: ProjectPaths) -> str:
         origin_prompt=task.origin_prompt,
         current_step=task.current_step,
         completed_steps=task.completed_steps,
+        recent_events=task.recent_events,
         failure_reason="",
         created_at=task.created_at,
         updated_at=_now_iso(),
@@ -301,6 +332,8 @@ def _append_recent_failures(lines: list[str], failures: tuple[RuntimeTaskFailure
             lines.append(f"   下一步：{failure.next_step}")
         if failure.screen_context:
             lines.append(f"   屏幕/OCR：{_compact_context(failure.screen_context)}")
+        if failure.recent_events:
+            lines.append(f"   自动采集：{_compact_context(_task_events_text(failure.recent_events))}")
 
 
 def _save_context(
@@ -326,6 +359,38 @@ def _save_context(
 
 def _completed_steps_text(steps: tuple[str, ...]) -> str:
     return "、".join(steps) if steps else "无"
+
+
+def _append_task_events(
+    lines: list[str],
+    events: tuple[RuntimeTaskEventContext, ...],
+    *,
+    header: str = "最近任务事件：",
+) -> None:
+    if not events:
+        lines.append(f"{header}无")
+        return
+    lines.append(header)
+    lines.extend(_task_event_lines(events))
+
+
+def _task_events_text(events: tuple[RuntimeTaskEventContext, ...]) -> str:
+    return "\n".join(_task_event_lines(events))
+
+
+def _task_event_lines(events: tuple[RuntimeTaskEventContext, ...]) -> list[str]:
+    lines: list[str] = []
+    for index, event in enumerate(events[:5], start=1):
+        parts = [
+            f"{index}. {event.route} / {event.detail}",
+            f"输入：{event.prompt}",
+        ]
+        if event.summary:
+            parts.append(f"结果：{event.summary}")
+        if event.explanation:
+            parts.append(f"依据：{event.explanation}")
+        lines.append(" | ".join(parts))
+    return lines
 
 
 def _status_label(status: str) -> str:

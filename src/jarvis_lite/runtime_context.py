@@ -12,6 +12,7 @@ CONTEXT_FILENAME = "agent-context.json"
 ROUTE_DECISION_HISTORY_LIMIT = 5
 INNER_BRAIN_CANDIDATE_LIMIT = 20
 TASK_FAILURE_HISTORY_LIMIT = 5
+TASK_EVENT_HISTORY_LIMIT = 5
 MEMORY_CONFIG_CANDIDATE_LIMIT = 20
 
 
@@ -112,6 +113,18 @@ class RuntimeInnerBrainCandidateContext:
 
 
 @dataclass(frozen=True)
+class RuntimeTaskEventContext:
+    """保存当前任务中自动采集到的最近路由事件。"""
+
+    route: str
+    detail: str
+    prompt: str
+    summary: str = ""
+    explanation: str = ""
+    created_at: str = ""
+
+
+@dataclass(frozen=True)
 class RuntimeTaskContext:
     """保存当前任务的可序列化运行态信息。"""
 
@@ -120,6 +133,7 @@ class RuntimeTaskContext:
     origin_prompt: str = ""
     current_step: str = ""
     completed_steps: tuple[str, ...] = ()
+    recent_events: tuple[RuntimeTaskEventContext, ...] = ()
     failure_reason: str = ""
     created_at: str = ""
     updated_at: str = ""
@@ -136,6 +150,7 @@ class RuntimeTaskFailureContext:
     route_summary: str = ""
     authorization_summary: str = ""
     completed_steps: tuple[str, ...] = ()
+    recent_events: tuple[RuntimeTaskEventContext, ...] = ()
     screen_context: str = ""
     next_step: str = ""
     created_at: str = ""
@@ -513,6 +528,7 @@ def _read_task_context(value: object) -> RuntimeTaskContext | None:
         origin_prompt=_read_optional_str(value.get("origin_prompt")) or "",
         current_step=_read_optional_str(value.get("current_step")) or "",
         completed_steps=_read_str_tuple(value.get("completed_steps")),
+        recent_events=_read_task_event_contexts(value.get("recent_events")),
         failure_reason=_read_optional_str(value.get("failure_reason")) or "",
         created_at=_read_optional_str(value.get("created_at")) or "",
         updated_at=_read_optional_str(value.get("updated_at")) or "",
@@ -535,6 +551,7 @@ def _read_task_failure_context(value: object) -> RuntimeTaskFailureContext | Non
         route_summary=_read_optional_str(value.get("route_summary")) or "",
         authorization_summary=_read_optional_str(value.get("authorization_summary")) or "",
         completed_steps=_read_str_tuple(value.get("completed_steps")),
+        recent_events=_read_task_event_contexts(value.get("recent_events")),
         screen_context=_read_optional_str(value.get("screen_context")) or "",
         next_step=_read_optional_str(value.get("next_step")) or "",
         created_at=_read_optional_str(value.get("created_at")) or "",
@@ -552,6 +569,37 @@ def _read_task_failure_contexts(value: object) -> tuple[RuntimeTaskFailureContex
         if len(failures) >= TASK_FAILURE_HISTORY_LIMIT:
             break
     return tuple(failures)
+
+
+def _read_task_event_context(value: object) -> RuntimeTaskEventContext | None:
+    if not isinstance(value, dict):
+        return None
+    route = _read_optional_str(value.get("route"))
+    detail = _read_optional_str(value.get("detail"))
+    prompt = _read_optional_str(value.get("prompt"))
+    if route is None or detail is None or prompt is None:
+        return None
+    return RuntimeTaskEventContext(
+        route=route,
+        detail=detail,
+        prompt=prompt,
+        summary=_read_optional_str(value.get("summary")) or "",
+        explanation=_read_optional_str(value.get("explanation")) or "",
+        created_at=_read_optional_str(value.get("created_at")) or "",
+    )
+
+
+def _read_task_event_contexts(value: object) -> tuple[RuntimeTaskEventContext, ...]:
+    if not isinstance(value, list):
+        return ()
+    events: list[RuntimeTaskEventContext] = []
+    for item in value:
+        event = _read_task_event_context(item)
+        if event is not None:
+            events.append(event)
+        if len(events) >= TASK_EVENT_HISTORY_LIMIT:
+            break
+    return tuple(events)
 
 
 def _read_memory_config_candidate_context(value: object) -> RuntimeMemoryConfigCandidateContext | None:
@@ -797,6 +845,10 @@ def _task_context_to_json(context: RuntimeTaskContext | None) -> dict[str, objec
         "origin_prompt": context.origin_prompt,
         "current_step": context.current_step,
         "completed_steps": list(context.completed_steps),
+        "recent_events": [
+            _task_event_context_to_json(event)
+            for event in context.recent_events[:TASK_EVENT_HISTORY_LIMIT]
+        ],
         "failure_reason": context.failure_reason,
         "created_at": context.created_at,
         "updated_at": context.updated_at,
@@ -812,8 +864,23 @@ def _task_failure_context_to_json(context: RuntimeTaskFailureContext) -> dict[st
         "route_summary": context.route_summary,
         "authorization_summary": context.authorization_summary,
         "completed_steps": list(context.completed_steps),
+        "recent_events": [
+            _task_event_context_to_json(event)
+            for event in context.recent_events[:TASK_EVENT_HISTORY_LIMIT]
+        ],
         "screen_context": context.screen_context,
         "next_step": context.next_step,
+        "created_at": context.created_at,
+    }
+
+
+def _task_event_context_to_json(context: RuntimeTaskEventContext) -> dict[str, str]:
+    return {
+        "route": context.route,
+        "detail": context.detail,
+        "prompt": context.prompt,
+        "summary": context.summary,
+        "explanation": context.explanation,
         "created_at": context.created_at,
     }
 

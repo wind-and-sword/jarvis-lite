@@ -88,6 +88,7 @@ from .task_state import (
     describe_task_status,
     record_task_failure,
     record_task_failure_with_screen_ocr,
+    record_task_route_event,
     record_task_step,
     resume_task,
     start_task,
@@ -3920,6 +3921,8 @@ class JarvisAgent:
         self._recent_route_decisions = (decision, *self._recent_route_decisions)[:5]
         if self._is_inner_brain_candidate_decision(decision):
             self._remember_inner_brain_candidate_observation(decision)
+        if not self._is_task_state_management_decision(decision):
+            record_task_route_event(self.paths, decision)
         self._save_runtime_context()
 
     def _remember_inner_brain_candidate_observation(self, decision: RuntimeRouteDecisionContext) -> None:
@@ -3979,6 +3982,19 @@ class JarvisAgent:
         if not parts:
             return "unknown"
         return parts[0]
+
+    def _is_task_state_management_decision(self, decision: RuntimeRouteDecisionContext) -> bool:
+        return decision.detail in {
+            "/task-status",
+            "/task-start",
+            "/task-step",
+            "/task-fail",
+            "/task-fail-capture",
+            "/task-resume",
+            "/task-complete",
+            "/task-cancel",
+            "task-status",
+        }
 
     def _task_route_summary(self) -> str:
         if self._recent_route_decision is None:

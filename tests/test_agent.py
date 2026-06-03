@@ -3529,6 +3529,19 @@ class AgentTests(unittest.TestCase):
         self.assertIn("最近失败记录：", status)
         self.assertIn("不自动截图、不自动 OCR、不自动重新执行外部动作", status)
 
+    def test_task_failure_replay_includes_auto_captured_command_context(self):
+        self.agent.handle("/task-start 整理项目资料")
+        self.agent.handle(f"/dir-add 工作区 {self.paths.root}")
+
+        failure_response = self.agent.handle("/task-fail 常用目录登记后复盘")
+
+        self.assertIn("任务失败复盘：整理项目资料", failure_response)
+        self.assertIn("自动采集上下文：", failure_response)
+        self.assertIn("command / /dir-add", failure_response)
+        self.assertIn("输入：/dir-add 工作区", failure_response)
+        auto_context = failure_response.split("自动采集上下文：", 1)[1]
+        self.assertNotIn("command / /task-fail", auto_context)
+
     def test_task_resume_complete_and_cancel_commands(self):
         self.agent.handle("/task-start 整理资料")
         self.agent.handle("/task-step 导入资料")
@@ -4050,7 +4063,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.123.1",
+                        "version": "0.124.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -4061,7 +4074,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.123.1", response)
+        self.assertIn("发现新版本：0.124.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4076,7 +4089,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.123.1",
+                        "version": "0.124.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

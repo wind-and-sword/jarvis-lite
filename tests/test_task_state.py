@@ -6,13 +6,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
-from jarvis_lite.runtime_context import load_runtime_context
+from jarvis_lite.runtime_context import RuntimeRouteDecisionContext, load_runtime_context
 from jarvis_lite.task_state import (
     cancel_task,
     complete_task,
     describe_task_status,
     record_task_failure,
     record_task_failure_with_screen_ocr,
+    record_task_route_event,
     record_task_step,
     resume_task,
     start_task,
@@ -64,6 +65,35 @@ class TaskStateTests(unittest.TestCase):
             self.assertEqual(runtime_context.current_task.title, "发布 0.120.0")
             self.assertEqual(runtime_context.current_task.status, "failed")
             self.assertEqual(len(runtime_context.recent_task_failures), 1)
+
+    def test_task_route_events_persist_and_feed_failure_replay(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+
+            start_task(paths, "整理项目资料", origin_prompt="帮我整理这个项目")
+            record_task_route_event(
+                paths,
+                RuntimeRouteDecisionContext(
+                    route="command",
+                    detail="/dir-open",
+                    prompt="/dir-open 项目",
+                    summary="显式命令",
+                    explanation="source=explicit-command action=direct-dispatch",
+                    created_at="2026-06-03T10:00:00",
+                ),
+            )
+            status = describe_task_status(paths)
+            failure_response = record_task_failure(paths, "目录打开失败")
+            runtime_context = load_runtime_context(paths)
+
+            self.assertIn("最近任务事件：", status)
+            self.assertIn("command / /dir-open", status)
+            self.assertIn("输入：/dir-open 项目", status)
+            self.assertIn("自动采集上下文：", failure_response)
+            self.assertIn("command / /dir-open", failure_response)
+            self.assertIn("输入：/dir-open 项目", failure_response)
+            self.assertEqual(len(runtime_context.recent_task_failures), 1)
+            self.assertEqual(len(runtime_context.recent_task_failures[0].recent_events), 1)
 
     def test_failed_task_can_resume_complete_and_cancel(self):
         with tempfile.TemporaryDirectory() as temp_dir:
