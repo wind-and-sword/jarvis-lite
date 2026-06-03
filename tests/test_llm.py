@@ -260,6 +260,7 @@ class LLMTests(unittest.TestCase):
         self.assertIn("/messaging-workflow-status", instructions)
         self.assertIn("/idea-workflow-status", instructions)
         self.assertNotIn("/config-candidate-add", instructions)
+        self.assertNotIn("/config-candidate-apply", instructions)
         self.assertNotIn("/config-candidate-dismiss", instructions)
         self.assertNotIn("/task-fail-capture", instructions)
         self.assertNotIn("/chrome-open URL", instructions)

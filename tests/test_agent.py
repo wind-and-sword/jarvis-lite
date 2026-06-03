@@ -916,6 +916,50 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/config-candidate-add 类型 内容", help_text)
         self.assertIn("候选池：/config-candidates", status)
 
+    def test_config_candidate_apply_command_persists_low_risk_candidates(self):
+        self.agent.handle("/config-candidate-add memory 项目简称：Jarvis Lite")
+        self.agent.handle("/config-candidate-add experience 失败复盘后先补本机 evaluation 样本")
+
+        memory_response = self.agent.handle("/config-candidate-apply 1")
+        experience_response = self.agent.handle("/config-candidate-apply 1")
+        list_response = self.agent.handle("/config-candidates")
+
+        self.assertIn("已固化记忆与配置候选 1：长期记忆", memory_response)
+        self.assertIn("memory/profile.md", memory_response)
+        self.assertIn("已固化记忆与配置候选 1：经验记忆", experience_response)
+        self.assertIn("memory/experiences.md", experience_response)
+        self.assertIn("项目简称：Jarvis Lite", self.paths.profile_path.read_text(encoding="utf-8"))
+        self.assertIn("失败复盘后先补本机 evaluation 样本", (self.paths.memory_dir / "experiences.md").read_text(encoding="utf-8"))
+        self.assertIn("记忆与配置候选：暂无。", list_response)
+
+    def test_config_candidate_apply_command_registers_directory_and_guards_arguments(self):
+        work_dir = self.paths.root / "work"
+        work_dir.mkdir()
+        self.agent.handle(f"/config-candidate-add directory 工作区 => {work_dir}")
+
+        apply_response = self.agent.handle("/config-candidate-apply 1")
+        no_apply = self.agent.handle("/config-candidate-apply")
+        invalid_apply = self.agent.handle("/config-candidate-apply abc")
+        help_text = self.agent.handle("/help")
+        status = self.agent.handle("/status")
+
+        self.assertIn("已固化记忆与配置候选 1：常用目录", apply_response)
+        self.assertIn("memory/directories.json", apply_response)
+        self.assertIn("用法：/config-candidate-apply 编号", no_apply)
+        self.assertIn("候选编号必须是数字", invalid_apply)
+        self.assertIn("/config-candidate-apply 编号", help_text)
+        self.assertIn("固化候选：/config-candidate-apply 编号", status)
+
+    def test_config_candidate_apply_command_keeps_unsupported_candidate_active(self):
+        self.agent.handle("/config-candidate-add contact_alias 小王 => 微信联系人王工")
+
+        apply_response = self.agent.handle("/config-candidate-apply 1")
+        list_response = self.agent.handle("/config-candidates")
+
+        self.assertIn("暂不支持固化联系人别名候选", apply_response)
+        self.assertIn("不会写入长期配置", apply_response)
+        self.assertIn("联系人别名：小王 => 微信联系人王工", list_response)
+
     def test_authorization_status_command_reports_policy(self):
         response = self.agent.handle("/authorization-status")
 
@@ -4006,7 +4050,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.122.1",
+                        "version": "0.123.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -4017,7 +4061,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.122.1", response)
+        self.assertIn("发现新版本：0.123.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4032,7 +4076,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.122.1",
+                        "version": "0.123.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

@@ -562,7 +562,7 @@ def _read_memory_config_candidate_context(value: object) -> RuntimeMemoryConfigC
     if candidate_type is None or content is None:
         return None
     status = _read_optional_str(value.get("status")) or "active"
-    if status not in {"active", "dismissed"}:
+    if status not in {"active", "dismissed", "applied"}:
         status = "active"
     return RuntimeMemoryConfigCandidateContext(
         candidate_type=candidate_type,

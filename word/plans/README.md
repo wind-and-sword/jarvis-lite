@@ -11,7 +11,8 @@
 - [2026-06-03-v124-idea-workflow-plan.md](2026-06-03-v124-idea-workflow-plan.md)：明确 `0.119.0` IDEA 项目状态第一阶段、`/idea-workflow-status`、IDEA open/focus/open-project 和只读项目状态的显式执行边界。
 - [2026-06-03-v125-task-state-failure-replay-plan.md](2026-06-03-v125-task-state-failure-replay-plan.md)：明确 `0.120.0` 任务状态与失败复盘第一阶段、显式任务状态命令、运行态恢复和不自动重放外部动作边界。
 - [2026-06-03-v126-task-failure-screen-ocr-plan.md](2026-06-03-v126-task-failure-screen-ocr-plan.md)：明确 `0.121.0` 任务失败截图 OCR 复盘第一阶段、显式失败截图采集和不自动重放外部动作边界。
-- [2026-06-03-v127-memory-config-candidates-plan.md](2026-06-03-v127-memory-config-candidates-plan.md)：当前方案版本，明确 `0.122.0` 记忆与配置候选池第一阶段、显式候选记录/查看/忽略和不自动写入长期配置边界。
+- [2026-06-03-v127-memory-config-candidates-plan.md](2026-06-03-v127-memory-config-candidates-plan.md)：明确 `0.122.0` 记忆与配置候选池第一阶段、显式候选记录/查看/忽略和不自动写入长期配置边界。
+- [2026-06-03-v128-memory-config-candidate-apply-plan.md](2026-06-03-v128-memory-config-candidate-apply-plan.md)：当前方案版本，明确 `0.123.0` 记忆与配置候选固化第一阶段、显式固化长期记忆/经验记忆/常用目录和不自动写入高风险配置边界。
 
 ## 历史版本
 

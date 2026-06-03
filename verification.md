@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-03：发布 `0.123.0` 可安装测试包，完成记忆与配置候选固化第一阶段；`/config-candidate-apply 编号` 可显式固化当前活跃候选中的长期记忆、经验记忆和常用目录，固化后候选标记为 applied 并从活跃列表隐藏；联系人别名、授权规则、应用路径、偏好和其他候选不会自动写入长期配置，候选固化命令不加入 LLM 白名单；全量 `unittest` 724 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.123.0.exe`。
 - 2026-06-03：发布 `0.122.0` 可安装测试包，完成记忆与配置候选池第一阶段；`/config-candidate-add 类型 内容` 可显式记录运行态候选，`/config-candidates` 与 `/memory-config-candidates` 可查看候选，`/config-candidate-dismiss 编号` 可忽略候选，`/config-manager-status` 显示活跃/已忽略候选统计；当前阶段不自动写入长期记忆、经验记忆、目录、应用配置、联系人或授权规则，候选写入和忽略命令不加入 LLM 白名单；全量 `unittest` 718 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.122.0.exe`。
 - 2026-06-03：发布 `0.121.0` 可安装测试包，完成任务失败截图 OCR 复盘第一阶段；`/task-fail-capture 失败原因 [lang=chi_sim+eng]` 可在显式失败记录时保存截图并尝试 OCR，把截图路径、尺寸、OCR 文本或 OCR 失败诊断写入最近失败复盘；当前阶段不自动重新执行外部动作、不点击、不输入，不接入自然语言自动任务编排；全量 `unittest` 713 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.121.0.exe`。
 - 2026-06-03：发布 `0.120.0` 可安装测试包，完成任务状态与失败复盘第一阶段；`/task-status` 可查看当前任务、当前步骤、已完成步骤和最近失败记录，`/task-start 任务名称`、`/task-step 步骤说明`、`/task-fail 失败原因`、`/task-resume`、`/task-complete` 和 `/task-cancel` 可显式记录、恢复、完成或取消任务；当前阶段不自动截图、不自动 OCR、不自动重新执行外部动作，不接入自然语言自动任务编排；全量 `unittest` 710 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.120.0.exe`。

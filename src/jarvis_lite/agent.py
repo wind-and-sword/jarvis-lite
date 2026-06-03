@@ -106,6 +106,7 @@ from .memory import (
 )
 from .memory_config_manager import describe_memory_config_manager
 from .memory_config_candidates import (
+    apply_memory_config_candidate,
     describe_memory_config_candidates,
     dismiss_memory_config_candidate,
     record_memory_config_candidate,
@@ -1059,6 +1060,16 @@ class JarvisAgent:
             self.tools.run("record_log", message=f"忽略记忆与配置候选：{candidate_index}")
             return dismiss_memory_config_candidate(self.paths, candidate_index)
 
+        if command == "/config-candidate-apply":
+            if not args:
+                return "用法：/config-candidate-apply 编号"
+            try:
+                candidate_index = int(args[0])
+            except ValueError:
+                return "候选编号必须是数字。"
+            self.tools.run("record_log", message=f"固化记忆与配置候选：{candidate_index}")
+            return apply_memory_config_candidate(self.paths, candidate_index)
+
         if command == "/task-resume":
             self.tools.run("record_log", message="恢复失败任务状态")
             return resume_task(self.paths)
@@ -1117,6 +1128,7 @@ class JarvisAgent:
                 "/config-manager-status：查看记忆与配置管家状态",
                 "/config-candidates：查看记忆与配置候选池",
                 "/config-candidate-add 类型 内容：显式记录一条运行态记忆或配置候选",
+                "/config-candidate-apply 编号：固化低风险记忆或配置候选",
                 "/config-candidate-dismiss 编号：忽略指定记忆与配置候选",
                 "/status：查看阶段 1 当前状态",
                 "/task-status：查看当前任务状态和最近失败复盘",
@@ -4406,6 +4418,7 @@ class JarvisAgent:
                 "- 意图授权：/authorization-status 查看直接执行、准备确认、追问和降级策略",
                 "- 配置管家：/config-manager-status 查看记忆、目录、应用覆盖和 provider 配置状态",
                 "- 候选池：/config-candidates 查看记忆与配置候选",
+                "- 固化候选：/config-candidate-apply 编号 固化长期记忆、经验记忆或常用目录候选",
                 "- 任务状态：/task-status 查看当前任务、步骤、中断恢复和失败复盘",
                 "- 任务失败截图：/task-fail-capture 失败原因 [lang=chi_sim+eng]",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",
