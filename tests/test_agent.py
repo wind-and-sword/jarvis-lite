@@ -3389,20 +3389,46 @@ class AgentTests(unittest.TestCase):
         self.assertIn("微信 (wechat)", response)
         self.assertIn("IntelliJ IDEA (idea)", response)
         self.assertIn("Clash Verge (clash_verge)", response)
-        self.assertIn("当前阶段只做注册和匹配，不启动应用", response)
+        self.assertIn("可用 /app-launch 启动已登记且有路径的应用", response)
 
     def test_app_find_command_matches_registered_app_alias(self):
         response = self.agent.handle("/app-find 代理面板")
 
         self.assertIn("应用匹配：Clash Verge (clash_verge)", response)
         self.assertIn("命中别名：代理面板", response)
-        self.assertIn("当前阶段只做注册和匹配，不启动应用", response)
+        self.assertIn("匹配本身不启动应用", response)
 
     def test_app_find_command_reports_unknown_app(self):
         response = self.agent.handle("/app-find 不存在的应用")
 
         self.assertIn("没有找到应用：不存在的应用", response)
         self.assertIn("/apps", response)
+
+    def test_app_launch_command_launches_registered_app(self):
+        with patch(
+            "jarvis_lite.agent.describe_app_launch",
+            return_value="应用启动执行：Chrome (chrome)",
+        ) as launch:
+            response = self.agent.handle("/app-launch 我的浏览器")
+
+        self.assertIn("应用启动执行：Chrome (chrome)", response)
+        launch.assert_called_once_with(self.agent.paths, "我的浏览器")
+
+    def test_app_launch_command_requires_query(self):
+        with patch("jarvis_lite.agent.describe_app_launch") as launch:
+            response = self.agent.handle("/app-launch")
+
+        self.assertIn("用法：/app-launch 应用名称或别名", response)
+        launch.assert_not_called()
+
+    def test_app_launch_command_reports_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_app_launch",
+            side_effect=FileNotFoundError("应用启动路径未找到：Chrome"),
+        ):
+            response = self.agent.handle("/app-launch Chrome")
+
+        self.assertIn("应用启动失败：应用启动路径未找到：Chrome", response)
 
     def test_windows_command_reports_readonly_window_snapshot(self):
         with patch("jarvis_lite.agent.describe_current_windows", return_value="窗口感知：\n- 可见窗口：1 个") as probe:
@@ -3561,7 +3587,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.112.1",
+                        "version": "0.113.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3572,7 +3598,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.112.1", response)
+        self.assertIn("发现新版本：0.113.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3587,7 +3613,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.112.1",
+                        "version": "0.113.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

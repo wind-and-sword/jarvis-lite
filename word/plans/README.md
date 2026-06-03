@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v117-window-focus-automation-plan.md](2026-06-03-v117-window-focus-automation-plan.md)：当前方案版本，明确 `0.112.0` 窗口切换自动化第一阶段、`/window-focus 编号或标题/应用名` 和显式窗口切换边界。
+- [2026-06-03-v118-app-launch-automation-plan.md](2026-06-03-v118-app-launch-automation-plan.md)：当前方案版本，明确 `0.113.0` 应用启动自动化第一阶段、`/app-launch 应用名称或别名` 和显式应用启动边界。
 
 ## 历史版本
 
@@ -127,6 +127,7 @@
 - [2026-06-03-v115-mouse-click-automation-plan.md](2026-06-03-v115-mouse-click-automation-plan.md)：明确鼠标点击自动化第一阶段、`/mouse-click x y [button=left|right|middle]` 和显式坐标点击的验收范围。
 - [2026-06-03-v116-text-input-automation-plan.md](2026-06-03-v116-text-input-automation-plan.md)：明确文本输入自动化第一阶段、`/type-text 文本` 和显式文本输入的验收范围。
 - [2026-06-03-v117-window-focus-automation-plan.md](2026-06-03-v117-window-focus-automation-plan.md)：明确窗口切换自动化第一阶段、`/window-focus 编号或标题/应用名` 和显式窗口切换的验收范围。
+- [2026-06-03-v118-app-launch-automation-plan.md](2026-06-03-v118-app-launch-automation-plan.md)：明确应用启动自动化第一阶段、`/app-launch 应用名称或别名` 和显式应用启动的验收范围。
 
 ## 维护规则
 

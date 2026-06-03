@@ -3,13 +3,17 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from .config import ProjectPaths
 
 
 APP_REGISTRY_FILENAME = "apps.local.json"
+AppLaunchExecutor = Callable[[Path], None]
 
 
 @dataclass(frozen=True)
@@ -33,6 +37,14 @@ class RegisteredApp:
 class RegisteredAppMatch:
     app: RegisteredApp
     alias: str
+
+
+@dataclass(frozen=True)
+class AppLaunchResult:
+    app: RegisteredApp
+    alias: str
+    path: Path
+    executed_at: datetime
 
 
 def list_registered_apps(paths: ProjectPaths) -> tuple[RegisteredApp, ...]:
@@ -81,7 +93,7 @@ def match_registered_app(paths: ProjectPaths, query: str) -> RegisteredAppMatch 
 def describe_registered_apps(paths: ProjectPaths) -> str:
     lines = [
         "应用注册表：",
-        "说明：当前阶段只做注册和匹配，不启动应用。",
+        "说明：可用 /app-launch 启动已登记且有路径的应用；当前列表只展示注册和路径状态。",
     ]
     for app in list_registered_apps(paths):
         lines.append(f"- {app.display_name} ({app.app_id})")
@@ -95,6 +107,51 @@ def describe_registered_apps(paths: ProjectPaths) -> str:
         lines.append(f"  别名：{'、'.join(app.aliases)}")
     lines.append("本地覆盖：config/apps.local.json")
     return "\n".join(lines)
+
+
+def launch_registered_app(
+    paths: ProjectPaths,
+    query: str,
+    *,
+    executor: AppLaunchExecutor | None = None,
+) -> AppLaunchResult:
+    """启动一个已登记且有可用路径的应用。"""
+
+    normalized_query = query.strip()
+    if not normalized_query:
+        raise ValueError("应用名称或别名不能为空。")
+
+    match = match_registered_app(paths, normalized_query)
+    if match is None:
+        raise ValueError(f"没有找到应用：{normalized_query}。可用 /apps 查看已登记应用。")
+
+    launch_path = match.app.launch_path
+    if launch_path is None:
+        raise FileNotFoundError(
+            f"应用启动路径未找到：{match.app.display_name}。可在 config/apps.local.json 配置 path。"
+        )
+
+    launcher = executor or _launch_app_with_subprocess
+    launcher(launch_path)
+    return AppLaunchResult(app=match.app, alias=match.alias, path=launch_path, executed_at=datetime.now())
+
+
+def describe_app_launch(
+    paths: ProjectPaths,
+    query: str,
+    *,
+    executor: AppLaunchExecutor | None = None,
+) -> str:
+    result = launch_registered_app(paths, query, executor=executor)
+    return "\n".join(
+        [
+            f"应用启动执行：{result.app.display_name} ({result.app.app_id})",
+            f"命中别名：{result.alias}",
+            f"路径：{result.path}",
+            f"时间：{result.executed_at.isoformat(timespec='seconds')}",
+            "说明：当前阶段只启动已登记应用，不切换窗口、不点击、不输入。",
+        ]
+    )
 
 
 def _read_local_registry(paths: ProjectPaths) -> dict[str, dict[str, object]]:
@@ -194,3 +251,10 @@ def _candidate_paths(*relative_parts: tuple[str, ...]) -> tuple[Path, ...]:
 
 def _normalize_match_text(text: str) -> str:
     return re.sub(r"[\s_\-]+", "", text.strip().casefold())
+
+
+def _launch_app_with_subprocess(path: Path) -> None:
+    try:
+        subprocess.Popen([str(path)], cwd=str(path.parent))
+    except OSError as exc:
+        raise RuntimeError(f"应用启动失败：{path}：{exc}") from exc

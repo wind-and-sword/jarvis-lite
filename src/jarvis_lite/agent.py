@@ -20,7 +20,7 @@ from .automation import (
     suggest_next_actions_from_context,
     write_daily_report,
 )
-from .app_registry import describe_registered_apps, match_registered_app
+from .app_registry import describe_app_launch, describe_registered_apps, match_registered_app
 from .config import ProjectPaths, build_project_paths
 from .knowledge import (
     KnowledgeIndex,
@@ -142,6 +142,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/window-focus": "desktop.windows.focus",
     "/apps": "desktop.apps.list",
     "/app-find": "desktop.apps.find",
+    "/app-launch": "desktop.apps.launch",
     "/windows": "desktop.windows.status",
     "/screenshot": "desktop.screenshot.save",
     "/screen-ocr": "desktop.screen_ocr",
@@ -612,6 +613,16 @@ class JarvisAgent:
             if not args:
                 return "用法：/app-find 应用名称或别名"
             return self._find_registered_app(" ".join(args))
+        if command == "/app-launch":
+            if not args:
+                return "用法：/app-launch 应用名称或别名"
+            query = " ".join(args)
+            try:
+                response = describe_app_launch(self.paths, query)
+            except (RuntimeError, ValueError, FileNotFoundError) as exc:
+                return f"应用启动失败：{exc}"
+            self.tools.run("record_log", message=f"启动应用：{query}")
+            return response
         if command == "/windows":
             self.tools.run("record_log", message="查看只读窗口感知状态")
             return describe_current_windows(self.paths)
@@ -905,7 +916,8 @@ class JarvisAgent:
                 "/mouse-click x y [button=left|right|middle]：执行显式坐标鼠标点击，不做目标识别、不拖动、不切换窗口",
                 "/type-text 文本：向当前焦点输入显式文本，不点击、不切换窗口、不启动应用",
                 "/apps：查看首批常用应用注册表",
-                "/app-find 应用名称或别名：匹配已登记应用，不启动应用",
+                "/app-find 应用名称或别名：匹配已登记应用，匹配本身不启动应用",
+                "/app-launch 应用名称或别名：启动已登记应用，不切换窗口、不点击、不输入",
                 "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",
                 "/window-focus 编号或标题/应用名：切换到显式窗口，不点击、不输入、不启动应用",
                 "/screenshot [文件名]：保存当前屏幕截图到 logs/screenshots，不 OCR、不点击、不切换窗口",
@@ -957,7 +969,7 @@ class JarvisAgent:
             lines.append(f"路径：未找到（已配置 {app.configured_path}）")
         else:
             lines.append("路径：未配置")
-        lines.append("说明：当前阶段只做注册和匹配，不启动应用。")
+        lines.append("说明：匹配本身不启动应用；可用 /app-launch 应用名称或别名启动已登记应用。")
         return "\n".join(lines)
 
     def _split_trailing_language_arg(self, args: list[str]) -> tuple[str | None, list[str]]:
