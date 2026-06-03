@@ -852,7 +852,35 @@ class AgentTests(unittest.TestCase):
         self.assertIn("自然语言", response)
         self.assertIn("桌面能力", response)
         self.assertIn("意图授权", response)
+        self.assertIn("配置管家", response)
         self.assertIn("memory/profile.md", response)
+
+    def test_config_manager_status_command_reports_memory_and_config_without_secrets(self):
+        local_config = self.paths.config_dir / "llm.local.json"
+        local_config.write_text(
+            json.dumps(
+                {
+                    "provider": "qwen",
+                    "model": "qwen-plus",
+                    "base_url": "https://qwen.example/v1/responses",
+                    "api_key": "secret-config-manager-key",
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        self.agent.handle("/remember 用户姓名：欧阳")
+
+        response = self.agent.handle("/config-manager-status")
+        alias_response = self.agent.handle("/memory-config-status")
+
+        self.assertIn("记忆与配置管家：", response)
+        self.assertIn("长期记忆：2 条", response)
+        self.assertIn("LLM 本地配置：存在", response)
+        self.assertIn("API key：已配置", response)
+        self.assertIn("/llm-config-check", response)
+        self.assertNotIn("secret-config-manager-key", response)
+        self.assertEqual(response, alias_response)
 
     def test_authorization_status_command_reports_policy(self):
         response = self.agent.handle("/authorization-status")
@@ -870,6 +898,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/llm-smoke [prompt]：强制调用 LLM 做一次配置验证", response)
         self.assertIn("/llm-context-preview：预览 LLM fallback 上下文，不调用 provider", response)
         self.assertIn("/llm-config-example [provider]：查看 LLM 环境变量配置模板", response)
+        self.assertIn("/config-manager-status：查看记忆与配置管家状态", response)
         self.assertIn("/inner-brain-status：查看 InnerBrain 本地内脑状态", response)
         self.assertIn("/inner-brain-preview 文本：预览 InnerBrain 识别结果，不执行动作", response)
         self.assertIn("/inner-brain-adopt 文本：采纳 InnerBrain 识别结果为运行态样本", response)
@@ -3598,7 +3627,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.114.1",
+                        "version": "0.115.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3609,7 +3638,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.114.1", response)
+        self.assertIn("发现新版本：0.115.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3624,7 +3653,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.114.1",
+                        "version": "0.115.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

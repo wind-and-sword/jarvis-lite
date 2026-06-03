@@ -92,6 +92,7 @@ from .memory import (
     search_experiences,
     summarize_profile,
 )
+from .memory_config_manager import describe_memory_config_manager
 from .runtime_context import (
     RuntimeContext,
     RuntimeDirectoryContext,
@@ -117,6 +118,8 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/status": "assistant.status",
     "/memory": "memory.status",
     "/experiences": "experience.status",
+    "/config-manager-status": "memory_config.status",
+    "/memory-config-status": "memory_config.status",
     "/llm-status": "llm.status",
     "/llm-enable": "llm.enable",
     "/llm-config-init": "llm.config_init",
@@ -270,6 +273,9 @@ class JarvisAgent:
         if prompt in {"/experiences", "experiences"}:
             self.tools.run("record_log", message="查看经验记忆")
             return read_experiences(self.paths)
+        if prompt in {"/config-manager-status", "config-manager-status", "/memory-config-status", "memory-config-status"}:
+            self.tools.run("record_log", message="查看记忆与配置管家状态")
+            return describe_memory_config_manager(self.paths)
         if prompt in {"/tools", "tools"}:
             return "\n".join(sorted(self.tools.allowed_tool_names))
         if prompt in {"/status", "status"}:
@@ -871,6 +877,7 @@ class JarvisAgent:
                 "Jarvis Lite 可用命令：",
                 "/memory：查看长期记忆",
                 "/experiences：查看经验记忆",
+                "/config-manager-status：查看记忆与配置管家状态",
                 "/status：查看阶段 1 当前状态",
                 "/llm-status：查看 LLM 外脑 provider 状态",
                 "/llm-enable：查看外脑启用状态和本地配置路径",
@@ -4106,6 +4113,7 @@ class JarvisAgent:
                 "- 自然语言：已支持能力询问、身份询问、日报、知识库、更新和打开磁盘等第一批意图",
                 "- 语音入口：/voice、/speak、/voice-status",
                 "- 意图授权：/authorization-status 查看直接执行、准备确认、追问和降级策略",
+                "- 配置管家：/config-manager-status 查看记忆、目录、应用覆盖和 provider 配置状态",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",
                 "- 桌面能力：小助手窗口、面板、托盘、主题、开机启动、安装包、更新检查和下载",
                 "- 会话能力：/history、/save-summary、/clear",

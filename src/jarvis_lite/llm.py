@@ -26,6 +26,7 @@ LLM_ALLOWED_COMMAND_SPECS = (
     "/tag 文件名 标签...",
     "/memory",
     "/experiences",
+    "/config-manager-status",
     "/experience-advice 关键词",
     "/recent-files",
     "/tag-history",

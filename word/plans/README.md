@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v119-intent-authorization-layer-plan.md](2026-06-03-v119-intent-authorization-layer-plan.md)：当前方案版本，明确 `0.114.0` 意图授权层第一阶段、`/authorization-status` 和 LLM 桌面动作降级边界。
+- [2026-06-03-v120-memory-config-manager-status-plan.md](2026-06-03-v120-memory-config-manager-status-plan.md)：当前方案版本，明确 `0.115.0` 自动记忆与配置管家第一阶段、`/config-manager-status` 和 API key 脱敏状态边界。
 
 ## 历史版本
 
@@ -129,6 +129,7 @@
 - [2026-06-03-v117-window-focus-automation-plan.md](2026-06-03-v117-window-focus-automation-plan.md)：明确窗口切换自动化第一阶段、`/window-focus 编号或标题/应用名` 和显式窗口切换的验收范围。
 - [2026-06-03-v118-app-launch-automation-plan.md](2026-06-03-v118-app-launch-automation-plan.md)：明确应用启动自动化第一阶段、`/app-launch 应用名称或别名` 和显式应用启动的验收范围。
 - [2026-06-03-v119-intent-authorization-layer-plan.md](2026-06-03-v119-intent-authorization-layer-plan.md)：明确意图授权层第一阶段、`/authorization-status`、直接执行、准备确认、追问和 LLM 桌面动作降级的验收范围。
+- [2026-06-03-v120-memory-config-manager-status-plan.md](2026-06-03-v120-memory-config-manager-status-plan.md)：明确自动记忆与配置管家第一阶段、`/config-manager-status` 和 API key 脱敏状态边界。
 
 ## 维护规则
 
