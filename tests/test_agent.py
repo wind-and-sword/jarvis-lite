@@ -3452,12 +3452,38 @@ class AgentTests(unittest.TestCase):
         self.assertIn("截图 OCR：logs/screenshots/current.png", response)
         screen_ocr.assert_called_once_with(self.agent.paths, "current", language="eng")
 
+    def test_hotkey_command_sends_explicit_keyboard_shortcut(self):
+        with patch(
+            "jarvis_lite.agent.describe_hotkey_automation",
+            return_value="快捷键执行：2 组",
+        ) as hotkey:
+            response = self.agent.handle("/hotkey ctrl+l alt+tab")
+
+        self.assertIn("快捷键执行：2 组", response)
+        hotkey.assert_called_once_with(self.agent.paths, "ctrl+l alt+tab")
+
+    def test_hotkey_command_requires_explicit_shortcut(self):
+        with patch("jarvis_lite.agent.describe_hotkey_automation") as hotkey:
+            response = self.agent.handle("/hotkey")
+
+        self.assertIn("用法：/hotkey key1+key2", response)
+        hotkey.assert_not_called()
+
+    def test_hotkey_command_reports_execution_failure(self):
+        with patch(
+            "jarvis_lite.agent.describe_hotkey_automation",
+            side_effect=RuntimeError("模拟快捷键失败"),
+        ):
+            response = self.agent.handle("/hotkey ctrl+l")
+
+        self.assertIn("快捷键执行失败：模拟快捷键失败", response)
+
     def test_update_status_command_reports_available_update_from_manifest(self):
         manifest = Path(self.temp_dir.name) / "update.json"
         manifest.write_text(
             json.dumps(
                 {
-                        "version": "0.108.1",
+                        "version": "0.109.1",
                         "download_url": "https://example.com/JarvisLiteSetup.exe",
                         "release_notes": "新增更新检查。",
                 },
@@ -3468,7 +3494,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.108.1", response)
+        self.assertIn("发现新版本：0.109.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -3483,7 +3509,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.108.1",
+                        "version": "0.109.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

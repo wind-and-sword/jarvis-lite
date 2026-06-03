@@ -11,9 +11,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from jarvis_lite.automation import (
     CommonDirectory,
     add_common_directory,
+    describe_hotkey_automation,
     describe_automation,
     list_recent_files,
     list_common_directories,
+    parse_hotkey_sequence,
     preview_file_organization,
     record_directory_open_request,
     write_daily_report,
@@ -189,6 +191,31 @@ class AutomationTests(unittest.TestCase):
         self.assertIn("open_directory", content)
         self.assertIn("项目", content)
         self.assertIn(str(target.resolve()), content)
+
+    def test_parse_hotkey_sequence_normalizes_multiple_combinations(self):
+        hotkeys = parse_hotkey_sequence(" Ctrl+L  alt+TAB ")
+
+        self.assertEqual(hotkeys, (("ctrl", "l"), ("alt", "tab")))
+
+    def test_parse_hotkey_sequence_rejects_empty_or_incomplete_combinations(self):
+        with self.assertRaises(ValueError):
+            parse_hotkey_sequence("   ")
+        with self.assertRaises(ValueError):
+            parse_hotkey_sequence("ctrl+")
+
+    def test_describe_hotkey_automation_invokes_executor_with_each_combination(self):
+        calls: list[tuple[str, ...]] = []
+
+        def fake_executor(keys: tuple[str, ...]) -> None:
+            calls.append(keys)
+
+        description = describe_hotkey_automation(self.paths, "ctrl+l alt+tab", executor=fake_executor)
+
+        self.assertEqual(calls, [("ctrl", "l"), ("alt", "tab")])
+        self.assertIn("快捷键执行：2 组", description)
+        self.assertIn("1. ctrl+l", description)
+        self.assertIn("2. alt+tab", description)
+        self.assertIn("当前阶段只发送显式快捷键", description)
 
 
 if __name__ == "__main__":

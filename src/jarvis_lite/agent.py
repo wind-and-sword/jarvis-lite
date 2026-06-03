@@ -9,6 +9,7 @@ from pathlib import Path
 from .automation import (
     CommonDirectory,
     add_common_directory,
+    describe_hotkey_automation,
     describe_automation,
     list_recent_files,
     list_common_directories,
@@ -135,6 +136,7 @@ TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
     "/knowledge-summary": "knowledge.summary",
     "/voice-status": "voice.status",
     "/automation-status": "automation.status",
+    "/hotkey": "desktop.hotkey",
     "/apps": "desktop.apps.list",
     "/app-find": "desktop.apps.find",
     "/windows": "desktop.windows.status",
@@ -572,6 +574,15 @@ class JarvisAgent:
             return self._save_recent_web_search_summary(" ".join(args))
         if command == "/search-import-summary":
             return self._import_recent_web_search_summary(" ".join(args))
+        if command == "/hotkey":
+            if not args:
+                return "用法：/hotkey key1+key2 [key3+key4 ...]"
+            try:
+                response = describe_hotkey_automation(self.paths, " ".join(args))
+            except (RuntimeError, ValueError) as exc:
+                return f"快捷键执行失败：{exc}"
+            self.tools.run("record_log", message=f"发送快捷键：{' '.join(args)}")
+            return response
         if command == "/apps":
             self.tools.run("record_log", message="查看应用注册表")
             return describe_registered_apps(self.paths)
@@ -858,6 +869,7 @@ class JarvisAgent:
                 "/speak 文本：播报一段文本",
                 "/voice 已识别的语音文本：按语音入口处理文本并播报回答",
                 "/automation-status：查看阶段 4 自动化状态",
+                "/hotkey key1+key2 [key3+key4 ...]：发送显式快捷键组合，不点击、不输入文本、不切换窗口",
                 "/apps：查看首批常用应用注册表",
                 "/app-find 应用名称或别名：匹配已登记应用，不启动应用",
                 "/windows：查看只读窗口感知状态，不切换窗口、不点击、不输入",

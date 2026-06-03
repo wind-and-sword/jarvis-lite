@@ -6,7 +6,7 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-03-v113-screen-ocr-plan.md](2026-06-03-v113-screen-ocr-plan.md)：当前方案版本，明确 `0.108.0` 截图 OCR 串联第一阶段、`/screen-ocr [文件名] [lang=chi_sim+eng]` 和只观察不操作边界。
+- [2026-06-03-v114-hotkey-automation-plan.md](2026-06-03-v114-hotkey-automation-plan.md)：当前方案版本，明确 `0.109.0` 快捷键自动化第一阶段、`/hotkey key1+key2 [key3+key4 ...]` 和显式快捷键执行边界。
 
 ## 历史版本
 
@@ -123,6 +123,7 @@
 - [2026-06-03-v111-screen-capture-plan.md](2026-06-03-v111-screen-capture-plan.md)：明确屏幕截图保存第一阶段、`/screenshot [文件名]` 和只截图不操作的验收范围。
 - [2026-06-03-v112-ocr-image-plan.md](2026-06-03-v112-ocr-image-plan.md)：明确 OCR 图片识别第一阶段、`/ocr-status`、`/ocr-image` 和只识别指定图片的验收范围。
 - [2026-06-03-v113-screen-ocr-plan.md](2026-06-03-v113-screen-ocr-plan.md)：明确截图 OCR 串联第一阶段、`/screen-ocr [文件名] [lang=chi_sim+eng]` 和只观察不操作的验收范围。
+- [2026-06-03-v114-hotkey-automation-plan.md](2026-06-03-v114-hotkey-automation-plan.md)：明确快捷键自动化第一阶段、`/hotkey key1+key2 [key3+key4 ...]` 和显式快捷键执行的验收范围。
 
 ## 维护规则
 

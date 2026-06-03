@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
@@ -12,6 +13,7 @@ from .runtime_context import RuntimeContext, load_runtime_context
 
 
 DIRECTORIES_FILENAME = "directories.json"
+HotkeyExecutor = Callable[[tuple[str, ...]], None]
 
 
 @dataclass(frozen=True)
@@ -57,6 +59,12 @@ class RecentFile:
     modified_at: datetime
 
 
+@dataclass(frozen=True)
+class HotkeyAutomationResult:
+    hotkeys: tuple[tuple[str, ...], ...]
+    executed_at: datetime
+
+
 def describe_automation(paths: ProjectPaths) -> str:
     """输出阶段 4 工作台自动化状态。"""
 
@@ -65,13 +73,61 @@ def describe_automation(paths: ProjectPaths) -> str:
         "阶段 4 自动化状态：",
         f"- 常用目录：{len(directories)} 个",
         "- 日报目录：word",
-        "- 当前能力：/dir-add、/dirs、/recent-files、/daily-report、/organize-preview、/dir-open",
+        "- 当前能力：/dir-add、/dirs、/recent-files、/daily-report、/organize-preview、/dir-open、/hotkey",
         "- 硬件入口：摄像头、麦克风暂缓",
     ]
     if directories:
         lines.append("- 常用目录列表：")
         for directory in directories:
             lines.append(f"  - {directory.alias}：{directory.path}")
+    return "\n".join(lines)
+
+
+def parse_hotkey_sequence(sequence: str) -> tuple[tuple[str, ...], ...]:
+    """解析一个或多个快捷键组合，例如 ctrl+l alt+tab。"""
+
+    raw_sequence = sequence.strip()
+    if not raw_sequence:
+        raise ValueError("快捷键不能为空。")
+
+    hotkeys: list[tuple[str, ...]] = []
+    for raw_hotkey in raw_sequence.split():
+        raw_parts = raw_hotkey.split("+")
+        keys = tuple(part.strip().casefold() for part in raw_parts if part.strip())
+        if not keys or len(keys) != len(raw_parts):
+            raise ValueError(f"快捷键组合不完整：{raw_hotkey}")
+        hotkeys.append(keys)
+    return tuple(hotkeys)
+
+
+def execute_hotkey_sequence(
+    sequence: str,
+    *,
+    executor: HotkeyExecutor | None = None,
+) -> HotkeyAutomationResult:
+    """按顺序发送显式快捷键组合。"""
+
+    hotkeys = parse_hotkey_sequence(sequence)
+    hotkey_executor = executor or _execute_hotkey_with_pyautogui
+    for hotkey in hotkeys:
+        hotkey_executor(hotkey)
+    return HotkeyAutomationResult(hotkeys=hotkeys, executed_at=datetime.now())
+
+
+def describe_hotkey_automation(
+    paths: ProjectPaths,
+    sequence: str,
+    *,
+    executor: HotkeyExecutor | None = None,
+) -> str:
+    result = execute_hotkey_sequence(sequence, executor=executor)
+    lines = [
+        f"快捷键执行：{len(result.hotkeys)} 组",
+        f"时间：{result.executed_at.isoformat(timespec='seconds')}",
+    ]
+    for index, hotkey in enumerate(result.hotkeys, start=1):
+        lines.append(f"{index}. {'+'.join(hotkey)}")
+    lines.append("说明：当前阶段只发送显式快捷键，不点击、不输入文本、不切换窗口。")
     return "\n".join(lines)
 
 
@@ -230,6 +286,15 @@ def _normalize_alias(alias: str) -> str:
     if not normalized:
         raise ValueError("目录别名不能为空。")
     return normalized
+
+
+def _execute_hotkey_with_pyautogui(keys: tuple[str, ...]) -> None:
+    try:
+        import pyautogui
+    except ModuleNotFoundError as exc:
+        raise RuntimeError("未安装 pyautogui，无法发送快捷键。") from exc
+
+    pyautogui.hotkey(*keys)
 
 
 def _report_filename(filename: str | None) -> str:
