@@ -981,8 +981,11 @@ class AgentTests(unittest.TestCase):
         apply_response = self.agent.handle("/config-candidate-apply 1")
         list_response = self.agent.handle("/config-candidates")
 
-        self.assertIn("暂不支持固化联系人别名候选", apply_response)
-        self.assertIn("不会写入长期配置", apply_response)
+        self.assertIn("需要确认后再固化联系人别名候选", apply_response)
+        self.assertIn("确认草稿：联系人别名：小王 => 微信联系人王工", apply_response)
+        self.assertIn("当前阶段只生成确认草稿，不写入长期配置", apply_response)
+        self.assertIn("撤销候选：/config-candidate-dismiss 1", apply_response)
+        self.assertIn("候选仍保持活跃", apply_response)
         self.assertIn("联系人别名：小王 => 微信联系人王工", list_response)
 
     def test_authorization_status_command_reports_policy(self):
@@ -4093,7 +4096,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.128.1",
+                    "version": "0.129.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4104,7 +4107,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.128.1", response)
+        self.assertIn("发现新版本：0.129.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4119,7 +4122,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.128.1",
+                        "version": "0.129.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

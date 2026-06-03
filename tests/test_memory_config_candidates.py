@@ -158,10 +158,40 @@ class MemoryConfigCandidateTests(unittest.TestCase):
             self.assertEqual(directories[0].alias, "工作区")
             self.assertEqual(directories[0].path, target_dir.resolve())
 
-    def test_apply_rejects_unsupported_or_invalid_candidates_without_hiding_them(self):
+    def test_apply_high_risk_candidates_returns_confirmation_draft_without_writing_config(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
             record_memory_config_candidate(paths, "contact_alias", "小王 => 微信联系人王工")
+            record_memory_config_candidate(paths, "authorization_rule", "微信发消息前需要确认")
+
+            contact_response = apply_memory_config_candidate(paths, 1)
+            authorization_response = apply_memory_config_candidate(paths, 2)
+            list_response = describe_memory_config_candidates(paths)
+            runtime_context = load_runtime_context(paths)
+
+            self.assertIn("需要确认后再固化联系人别名候选", contact_response)
+            self.assertIn("确认草稿：联系人别名：小王 => 微信联系人王工", contact_response)
+            self.assertIn("当前阶段只生成确认草稿，不写入长期配置", contact_response)
+            self.assertIn("撤销候选：/config-candidate-dismiss 1", contact_response)
+            self.assertIn("候选仍保持活跃", contact_response)
+            self.assertIn("需要确认后再固化授权规则候选", authorization_response)
+            self.assertIn("确认草稿：授权规则：微信发消息前需要确认", authorization_response)
+            self.assertIn("撤销候选：/config-candidate-dismiss 2", authorization_response)
+            self.assertIn("联系人别名：小王 => 微信联系人王工", list_response)
+            self.assertIn("授权规则：微信发消息前需要确认", list_response)
+            self.assertEqual(
+                [candidate.status for candidate in runtime_context.memory_config_candidates],
+                ["active", "active"],
+            )
+            self.assertFalse((paths.config_dir / "contacts.local.json").exists())
+            self.assertFalse((paths.config_dir / "authorization.local.json").exists())
+            self.assertFalse((paths.config_dir / "apps.local.json").exists())
+            self.assertFalse((paths.config_dir / "preferences.local.json").exists())
+
+    def test_apply_rejects_unsupported_or_invalid_candidates_without_hiding_them(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            record_memory_config_candidate(paths, "other", "未知配置")
             record_memory_config_candidate(paths, "directory", "缺少路径")
 
             unsupported_response = apply_memory_config_candidate(paths, 1)
@@ -169,10 +199,10 @@ class MemoryConfigCandidateTests(unittest.TestCase):
             list_response = describe_memory_config_candidates(paths)
             runtime_context = load_runtime_context(paths)
 
-            self.assertIn("暂不支持固化联系人别名候选", unsupported_response)
+            self.assertIn("暂不支持固化其他候选", unsupported_response)
             self.assertIn("不会写入长期配置", unsupported_response)
             self.assertIn("目录候选格式", invalid_directory_response)
-            self.assertIn("联系人别名：小王 => 微信联系人王工", list_response)
+            self.assertIn("其他：未知配置", list_response)
             self.assertIn("常用目录：缺少路径", list_response)
             self.assertEqual(
                 [candidate.status for candidate in runtime_context.memory_config_candidates],

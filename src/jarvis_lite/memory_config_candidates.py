@@ -44,6 +44,7 @@ _TYPE_ALIASES = {
     "other": ("other", "其他"),
     "其他": ("other", "其他"),
 }
+_HIGH_RISK_CANDIDATE_TYPES = {"app_alias", "contact_alias", "authorization_rule", "preference"}
 
 
 def describe_memory_config_candidates(paths: ProjectPaths) -> str:
@@ -248,6 +249,9 @@ def apply_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
 
     candidate_index = active_indices[index - 1]
     candidate = candidates[candidate_index]
+    if candidate.candidate_type in _HIGH_RISK_CANDIDATE_TYPES:
+        return _confirmation_draft_message(index, candidate)
+
     try:
         target = _apply_candidate_to_storage(paths, candidate)
     except ValueError as exc:
@@ -365,6 +369,19 @@ def _unsupported_candidate_message(label: str) -> str:
             f"暂不支持固化{label}候选。",
             "说明：本阶段只固化长期记忆、经验记忆和常用目录，不会写入长期配置。",
             "候选仍保持活跃，可用 /config-candidate-dismiss 编号 忽略。",
+        ]
+    )
+
+
+def _confirmation_draft_message(index: int, candidate: RuntimeMemoryConfigCandidateContext) -> str:
+    label = _candidate_type_label(candidate.candidate_type)
+    return "\n".join(
+        [
+            f"需要确认后再固化{label}候选。",
+            f"确认草稿：{label}：{candidate.content}",
+            "说明：当前阶段只生成确认草稿，不写入长期配置。",
+            f"撤销候选：/config-candidate-dismiss {index}",
+            "候选仍保持活跃，可继续查看：/config-candidates",
         ]
     )
 
