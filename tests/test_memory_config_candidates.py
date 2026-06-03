@@ -8,9 +8,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.memory_config_candidates import (
     apply_memory_config_candidate,
+    describe_memory_config_candidate_history,
     describe_memory_config_candidates,
     dismiss_memory_config_candidate,
     record_memory_config_candidate,
+    restore_memory_config_candidate,
 )
 from jarvis_lite.automation import list_common_directories
 from jarvis_lite.memory import read_experiences, read_profile
@@ -66,6 +68,27 @@ class MemoryConfigCandidateTests(unittest.TestCase):
                 ["dismissed", "active"],
             )
 
+    def test_restore_dismissed_candidate_returns_it_to_active_list(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            record_memory_config_candidate(paths, "memory", "以后称这个项目为 Jarvis Lite")
+            dismiss_memory_config_candidate(paths, 1)
+
+            history_response = describe_memory_config_candidate_history(paths)
+            restore_response = restore_memory_config_candidate(paths, 1)
+            list_response = describe_memory_config_candidates(paths)
+            history_after_restore = describe_memory_config_candidate_history(paths)
+            runtime_context = load_runtime_context(paths)
+
+            self.assertIn("记忆与配置候选历史：", history_response)
+            self.assertIn("1. 已忽略 长期记忆：以后称这个项目为 Jarvis Lite", history_response)
+            self.assertIn("恢复候选：/config-candidate-restore 编号", history_response)
+            self.assertIn("已恢复候选 1：长期记忆：以后称这个项目为 Jarvis Lite", restore_response)
+            self.assertIn("只恢复候选状态", restore_response)
+            self.assertIn("1. 长期记忆：以后称这个项目为 Jarvis Lite", list_response)
+            self.assertIn("记忆与配置候选历史：暂无已忽略或已固化候选。", history_after_restore)
+            self.assertEqual(runtime_context.memory_config_candidates[0].status, "active")
+
     def test_apply_memory_and_experience_candidates_persist_and_mark_applied(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
@@ -87,6 +110,36 @@ class MemoryConfigCandidateTests(unittest.TestCase):
             self.assertEqual(
                 [candidate.status for candidate in runtime_context.memory_config_candidates],
                 ["applied", "applied"],
+            )
+
+    def test_restore_applied_candidates_does_not_delete_persisted_content(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            target_dir = Path(temp_dir) / "work"
+            target_dir.mkdir()
+            record_memory_config_candidate(paths, "memory", "项目简称：Jarvis Lite")
+            record_memory_config_candidate(paths, "directory", f"工作区 => {target_dir}")
+            apply_memory_config_candidate(paths, 1)
+            apply_memory_config_candidate(paths, 1)
+
+            history_response = describe_memory_config_candidate_history(paths)
+            memory_restore_response = restore_memory_config_candidate(paths, 1)
+            directory_restore_response = restore_memory_config_candidate(paths, 1)
+            list_response = describe_memory_config_candidates(paths)
+            runtime_context = load_runtime_context(paths)
+
+            self.assertIn("1. 已固化 长期记忆：项目简称：Jarvis Lite", history_response)
+            self.assertIn("2. 已固化 常用目录：工作区 =>", history_response)
+            self.assertIn("已恢复候选 1：长期记忆：项目简称：Jarvis Lite", memory_restore_response)
+            self.assertIn("已写入内容不会自动删除", memory_restore_response)
+            self.assertIn("已恢复候选 1：常用目录：工作区 =>", directory_restore_response)
+            self.assertIn("1. 长期记忆：项目简称：Jarvis Lite", list_response)
+            self.assertIn("2. 常用目录：工作区 =>", list_response)
+            self.assertIn("- 项目简称：Jarvis Lite", read_profile(paths))
+            self.assertEqual(len(list_common_directories(paths)), 1)
+            self.assertEqual(
+                [candidate.status for candidate in runtime_context.memory_config_candidates],
+                ["active", "active"],
             )
 
     def test_apply_directory_candidate_registers_common_directory(self):

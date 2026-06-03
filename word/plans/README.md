@@ -12,7 +12,8 @@
 - [2026-06-03-v125-task-state-failure-replay-plan.md](2026-06-03-v125-task-state-failure-replay-plan.md)：明确 `0.120.0` 任务状态与失败复盘第一阶段、显式任务状态命令、运行态恢复和不自动重放外部动作边界。
 - [2026-06-03-v126-task-failure-screen-ocr-plan.md](2026-06-03-v126-task-failure-screen-ocr-plan.md)：明确 `0.121.0` 任务失败截图 OCR 复盘第一阶段、显式失败截图采集和不自动重放外部动作边界。
 - [2026-06-03-v127-memory-config-candidates-plan.md](2026-06-03-v127-memory-config-candidates-plan.md)：明确 `0.122.0` 记忆与配置候选池第一阶段、显式候选记录/查看/忽略和不自动写入长期配置边界。
-- [2026-06-03-v132-task-failure-eval-suggestion-plan.md](2026-06-03-v132-task-failure-eval-suggestion-plan.md)：当前方案版本，明确 `0.127.0` 任务失败复盘样本建议第一阶段、从显式命令事件生成 evaluation 样本建议和不自动写入/训练边界。
+- [2026-06-03-v133-memory-config-candidate-restore-plan.md](2026-06-03-v133-memory-config-candidate-restore-plan.md)：当前方案版本，明确 `0.128.0` 记忆与配置候选恢复第一阶段、已忽略/已固化候选历史和只恢复候选状态边界。
+- [2026-06-03-v132-task-failure-eval-suggestion-plan.md](2026-06-03-v132-task-failure-eval-suggestion-plan.md)：明确 `0.127.0` 任务失败复盘样本建议第一阶段、从显式命令事件生成 evaluation 样本建议和不自动写入/训练边界。
 - [2026-06-03-v131-task-failure-next-step-plan.md](2026-06-03-v131-task-failure-next-step-plan.md)：明确 `0.126.0` 任务失败复盘行动建议第一阶段、缺少屏幕/OCR 时提示显式补采集和不自动重放外部动作边界。
 - [2026-06-03-v130-task-event-result-summary-plan.md](2026-06-03-v130-task-event-result-summary-plan.md)：明确 `0.125.0` 任务执行结果摘要采集第一阶段、最近任务事件结果写回和不自动重放外部动作边界。
 - [2026-06-03-v129-task-state-auto-capture-plan.md](2026-06-03-v129-task-state-auto-capture-plan.md)：明确 `0.124.0` 任务状态自动采集第一阶段、最近任务事件、失败复盘自动采集上下文和不自动重放外部动作边界。

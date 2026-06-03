@@ -916,6 +916,31 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/config-candidate-add 类型 内容", help_text)
         self.assertIn("候选池：/config-candidates", status)
 
+    def test_config_candidate_restore_command_reactivates_history_candidates(self):
+        self.agent.handle("/config-candidate-add memory 以后称这个项目为 Jarvis Lite")
+        self.agent.handle("/config-candidate-dismiss 1")
+
+        history_response = self.agent.handle("/config-candidate-history")
+        alias_response = self.agent.handle("/memory-config-candidate-history")
+        restore_response = self.agent.handle("/config-candidate-restore 1")
+        list_response = self.agent.handle("/config-candidates")
+        no_restore = self.agent.handle("/config-candidate-restore")
+        invalid_restore = self.agent.handle("/config-candidate-restore abc")
+        help_text = self.agent.handle("/help")
+        status = self.agent.handle("/status")
+
+        self.assertIn("记忆与配置候选历史：", history_response)
+        self.assertIn("1. 已忽略 长期记忆：以后称这个项目为 Jarvis Lite", history_response)
+        self.assertEqual(history_response, alias_response)
+        self.assertIn("已恢复候选 1：长期记忆：以后称这个项目为 Jarvis Lite", restore_response)
+        self.assertIn("只恢复候选状态", restore_response)
+        self.assertIn("1. 长期记忆：以后称这个项目为 Jarvis Lite", list_response)
+        self.assertIn("用法：/config-candidate-restore 编号", no_restore)
+        self.assertIn("候选编号必须是数字", invalid_restore)
+        self.assertIn("/config-candidate-history", help_text)
+        self.assertIn("/config-candidate-restore 编号", help_text)
+        self.assertIn("候选历史：/config-candidate-history", status)
+
     def test_config_candidate_apply_command_persists_low_risk_candidates(self):
         self.agent.handle("/config-candidate-add memory 项目简称：Jarvis Lite")
         self.agent.handle("/config-candidate-add experience 失败复盘后先补本机 evaluation 样本")
@@ -4068,7 +4093,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.127.1",
+                    "version": "0.128.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4079,7 +4104,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.127.1", response)
+        self.assertIn("发现新版本：0.128.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4094,7 +4119,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.127.1",
+                        "version": "0.128.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

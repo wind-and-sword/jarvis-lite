@@ -59,6 +59,7 @@ def describe_memory_config_candidates(paths: ProjectPaths) -> str:
                 "添加候选：/config-candidate-add 类型 内容",
                 "固化候选：/config-candidate-apply 编号",
                 "忽略候选：/config-candidate-dismiss 编号",
+                "候选历史：/config-candidate-history",
             ]
         )
 
@@ -74,6 +75,40 @@ def describe_memory_config_candidates(paths: ProjectPaths) -> str:
             "添加候选：/config-candidate-add 类型 内容",
             "固化候选：/config-candidate-apply 编号",
             "忽略候选：/config-candidate-dismiss 编号",
+            "候选历史：/config-candidate-history",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def describe_memory_config_candidate_history(paths: ProjectPaths) -> str:
+    """只读展示已忽略或已固化候选，供用户显式恢复。"""
+
+    context = load_runtime_context(paths)
+    history_candidates = _history_candidates(context.memory_config_candidates)
+    if not history_candidates:
+        return "\n".join(
+            [
+                "记忆与配置候选历史：暂无已忽略或已固化候选。",
+                "说明：这里只读展示历史候选；恢复候选不会自动删除已写入长期存储。",
+                "查看活跃候选：/config-candidates",
+            ]
+        )
+
+    lines = [
+        "记忆与配置候选历史：",
+        "说明：这里只读展示已忽略/已固化候选；恢复候选不会自动删除已写入长期存储。",
+    ]
+    for index, candidate in enumerate(history_candidates, start=1):
+        lines.append(
+            f"{index}. {_candidate_status_label(candidate.status)} "
+            f"{_candidate_type_label(candidate.candidate_type)}：{candidate.content}"
+        )
+        lines.append(f"   出现次数：{candidate.count}")
+    lines.extend(
+        [
+            "恢复候选：/config-candidate-restore 编号",
+            "查看活跃候选：/config-candidates",
         ]
     )
     return "\n".join(lines)
@@ -156,6 +191,44 @@ def dismiss_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
     return f"已忽略候选 {index}：{_candidate_type_label(candidate.candidate_type)}：{candidate.content}"
 
 
+def restore_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
+    """按历史候选编号恢复为活跃候选，不回滚已写入的长期存储。"""
+
+    if index < 1:
+        return "候选编号必须从 1 开始。"
+
+    context = load_runtime_context(paths)
+    candidates = list(context.memory_config_candidates)
+    history_indices = _history_candidate_indices(candidates)
+    if index > len(history_indices):
+        return "\n".join(
+            [
+                f"没有第 {index} 条可恢复候选。",
+                "请先运行 /config-candidate-history 查看已忽略或已固化候选编号。",
+            ]
+        )
+
+    candidate_index = history_indices[index - 1]
+    candidate = candidates[candidate_index]
+    restored_candidate = RuntimeMemoryConfigCandidateContext(
+        candidate_type=candidate.candidate_type,
+        content=candidate.content,
+        status="active",
+        count=candidate.count,
+        first_seen_at=candidate.first_seen_at,
+        last_seen_at=_now_iso(),
+    )
+    candidates[candidate_index] = restored_candidate
+    save_runtime_context(paths, replace(context, memory_config_candidates=_limit_candidates(tuple(candidates))))
+    return "\n".join(
+        [
+            f"已恢复候选 {index}：{_candidate_type_label(candidate.candidate_type)}：{candidate.content}",
+            "说明：只恢复候选状态；如果该候选曾经固化，已写入内容不会自动删除。",
+            "查看活跃候选：/config-candidates",
+        ]
+    )
+
+
 def apply_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
     """按当前活跃候选编号固化低风险候选。"""
 
@@ -228,8 +301,18 @@ def _active_candidates(
     return tuple(candidate for candidate in candidates if candidate.status == "active")
 
 
+def _history_candidates(
+    candidates: tuple[RuntimeMemoryConfigCandidateContext, ...],
+) -> tuple[RuntimeMemoryConfigCandidateContext, ...]:
+    return tuple(candidate for candidate in candidates if candidate.status != "active")
+
+
 def _active_candidate_indices(candidates: list[RuntimeMemoryConfigCandidateContext]) -> list[int]:
     return [candidate_index for candidate_index, candidate in enumerate(candidates) if candidate.status == "active"]
+
+
+def _history_candidate_indices(candidates: list[RuntimeMemoryConfigCandidateContext]) -> list[int]:
+    return [candidate_index for candidate_index, candidate in enumerate(candidates) if candidate.status != "active"]
 
 
 def _find_candidate_index(
@@ -284,6 +367,14 @@ def _unsupported_candidate_message(label: str) -> str:
             "候选仍保持活跃，可用 /config-candidate-dismiss 编号 忽略。",
         ]
     )
+
+
+def _candidate_status_label(status: str) -> str:
+    if status == "dismissed":
+        return "已忽略"
+    if status == "applied":
+        return "已固化"
+    return status
 
 
 def _limit_candidates(

@@ -262,6 +262,8 @@ class LLMTests(unittest.TestCase):
         self.assertNotIn("/config-candidate-add", instructions)
         self.assertNotIn("/config-candidate-apply", instructions)
         self.assertNotIn("/config-candidate-dismiss", instructions)
+        self.assertNotIn("/config-candidate-history", instructions)
+        self.assertNotIn("/config-candidate-restore", instructions)
         self.assertNotIn("/task-fail-capture", instructions)
         self.assertNotIn("/chrome-open URL", instructions)
         self.assertNotIn("/clash-open", instructions)
