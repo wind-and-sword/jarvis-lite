@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-04：发布 `0.131.0` 可安装测试包，完成联系人别名确认固化与撤销第一阶段；`/config-candidate-confirm 编号` 可把活跃联系人别名候选写入 `config/contacts.local.json` 并标记已固化，`/config-candidate-undo 编号` 可从历史中撤销已固化联系人别名、删除对应别名并恢复候选；当前阶段不查找真实联系人、不点击、不输入、不发送消息，不把确认/撤销命令加入 LLM 白名单；全量 `unittest` 739 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.131.0.exe`。
 - 2026-06-04：发布 `0.130.0` 可安装测试包，完成任务失败复盘窗口与授权摘要第一阶段；`/task-fail` 和 `/task-fail-capture` 会在失败复盘中记录当前只读窗口摘要、路由摘要和授权摘要，`/task-status` 最近失败记录展示同一批复盘上下文；当前阶段不切换窗口、不点击、不输入、不自动重新执行外部动作；全量 `unittest` 734 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.130.0.exe`。
 - 2026-06-03：发布 `0.129.0` 可安装测试包，完成高风险记忆与配置候选确认草稿第一阶段；联系人别名、授权规则、应用别名和偏好候选执行 `/config-candidate-apply 编号` 时只生成确认草稿、撤销入口和不写入长期配置边界，候选仍保持活跃；当前阶段不创建联系人、授权、应用别名或偏好长期配置文件，候选命令不加入 LLM 白名单；全量 `unittest` 731 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.129.0.exe`。
 - 2026-06-03：发布 `0.128.0` 可安装测试包，完成记忆与配置候选恢复第一阶段；`/config-candidate-history` 可只读查看已忽略或已固化候选，`/config-candidate-restore 编号` 可把历史候选恢复为活跃候选；恢复只改变候选运行态状态，不自动删除已经写入的长期记忆、经验记忆或常用目录，不自动写入高风险配置；全量 `unittest` 730 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.128.0.exe`。

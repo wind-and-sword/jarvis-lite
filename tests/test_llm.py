@@ -261,6 +261,8 @@ class LLMTests(unittest.TestCase):
         self.assertIn("/idea-workflow-status", instructions)
         self.assertNotIn("/config-candidate-add", instructions)
         self.assertNotIn("/config-candidate-apply", instructions)
+        self.assertNotIn("/config-candidate-confirm", instructions)
+        self.assertNotIn("/config-candidate-undo", instructions)
         self.assertNotIn("/config-candidate-dismiss", instructions)
         self.assertNotIn("/config-candidate-history", instructions)
         self.assertNotIn("/config-candidate-restore", instructions)

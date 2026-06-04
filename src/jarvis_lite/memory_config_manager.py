@@ -6,6 +6,7 @@ from pathlib import Path
 from .app_registry import APP_REGISTRY_FILENAME
 from .automation import list_common_directories
 from .config import ProjectPaths
+from .contacts import contact_alias_count
 from .llm import LLMSettings, llm_local_config_path
 from .memory_config_candidates import memory_config_candidate_counts
 from .search import SearchSettings, search_local_config_path
@@ -27,6 +28,7 @@ def describe_memory_config_manager(paths: ProjectPaths) -> str:
         f"- 长期记忆：{_count_markdown_bullets(paths.profile_path)} 条（memory/profile.md）",
         f"- 经验记忆：{_count_markdown_bullets(paths.memory_dir / 'experiences.md')} 条（memory/experiences.md）",
         f"- 常用目录：{len(directories)} 个（memory/directories.json）",
+        f"- 联系人别名：{contact_alias_count(paths)} 个（config/contacts.local.json）",
     ]
     if directories:
         lines.append(f"  目录别名：{'、'.join(directory.alias for directory in directories)}")

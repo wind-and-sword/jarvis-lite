@@ -905,16 +905,28 @@ class AgentTests(unittest.TestCase):
     def test_config_candidate_commands_require_arguments_and_are_listed(self):
         no_add = self.agent.handle("/config-candidate-add")
         no_dismiss = self.agent.handle("/config-candidate-dismiss")
+        no_confirm = self.agent.handle("/config-candidate-confirm")
+        no_undo = self.agent.handle("/config-candidate-undo")
         invalid_dismiss = self.agent.handle("/config-candidate-dismiss abc")
+        invalid_confirm = self.agent.handle("/config-candidate-confirm abc")
+        invalid_undo = self.agent.handle("/config-candidate-undo abc")
         help_text = self.agent.handle("/help")
         status = self.agent.handle("/status")
 
         self.assertIn("用法：/config-candidate-add 类型 内容", no_add)
         self.assertIn("用法：/config-candidate-dismiss 编号", no_dismiss)
+        self.assertIn("用法：/config-candidate-confirm 编号", no_confirm)
+        self.assertIn("用法：/config-candidate-undo 编号", no_undo)
         self.assertIn("候选编号必须是数字", invalid_dismiss)
+        self.assertIn("候选编号必须是数字", invalid_confirm)
+        self.assertIn("候选编号必须是数字", invalid_undo)
         self.assertIn("/config-candidates：查看记忆与配置候选池", help_text)
         self.assertIn("/config-candidate-add 类型 内容", help_text)
+        self.assertIn("/config-candidate-confirm 编号", help_text)
+        self.assertIn("/config-candidate-undo 编号", help_text)
         self.assertIn("候选池：/config-candidates", status)
+        self.assertIn("确认候选：/config-candidate-confirm 编号", status)
+        self.assertIn("撤销固化：/config-candidate-undo 编号", status)
 
     def test_config_candidate_restore_command_reactivates_history_candidates(self):
         self.agent.handle("/config-candidate-add memory 以后称这个项目为 Jarvis Lite")
@@ -984,9 +996,31 @@ class AgentTests(unittest.TestCase):
         self.assertIn("需要确认后再固化联系人别名候选", apply_response)
         self.assertIn("确认草稿：联系人别名：小王 => 微信联系人王工", apply_response)
         self.assertIn("当前阶段只生成确认草稿，不写入长期配置", apply_response)
+        self.assertIn("确认固化：/config-candidate-confirm 1", apply_response)
         self.assertIn("撤销候选：/config-candidate-dismiss 1", apply_response)
         self.assertIn("候选仍保持活跃", apply_response)
         self.assertIn("联系人别名：小王 => 微信联系人王工", list_response)
+
+    def test_config_candidate_confirm_and_undo_contact_alias(self):
+        self.agent.handle("/config-candidate-add contact_alias 小王 => 微信联系人王工")
+
+        confirm_response = self.agent.handle("/config-candidate-confirm 1")
+        manager_status = self.agent.handle("/config-manager-status")
+        history_response = self.agent.handle("/config-candidate-history")
+        undo_response = self.agent.handle("/config-candidate-undo 1")
+        list_response = self.agent.handle("/config-candidates")
+
+        contacts_path = self.paths.config_dir / "contacts.local.json"
+        self.assertIn("已确认并固化记忆与配置候选 1：联系人别名", confirm_response)
+        self.assertIn("联系人别名：小王 -> 微信联系人王工", confirm_response)
+        self.assertIn("写入：config/contacts.local.json", confirm_response)
+        self.assertIn("撤销固化：/config-candidate-undo 1", confirm_response)
+        self.assertIn("联系人别名：1 个", manager_status)
+        self.assertIn("1. 已固化 联系人别名：小王 => 微信联系人王工", history_response)
+        self.assertIn("已撤销固化候选 1：联系人别名：小王 -> 微信联系人王工", undo_response)
+        self.assertIn("候选已恢复为活跃", undo_response)
+        self.assertIn("1. 联系人别名：小王 => 微信联系人王工", list_response)
+        self.assertNotIn("小王", contacts_path.read_text(encoding="utf-8"))
 
     def test_authorization_status_command_reports_policy(self):
         response = self.agent.handle("/authorization-status")
@@ -4115,7 +4149,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.130.1",
+                    "version": "0.131.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4126,7 +4160,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.130.1", response)
+        self.assertIn("发现新版本：0.131.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4141,7 +4175,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.130.1",
+                        "version": "0.131.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

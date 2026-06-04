@@ -5,6 +5,7 @@ from datetime import datetime
 
 from .automation import add_common_directory
 from .config import ProjectPaths
+from .contacts import CONTACTS_FILENAME, parse_contact_alias_candidate, remove_contact_alias, save_contact_alias
 from .memory import append_experience, append_memory
 from .runtime_context import (
     MEMORY_CONFIG_CANDIDATE_LIMIT,
@@ -109,6 +110,7 @@ def describe_memory_config_candidate_history(paths: ProjectPaths) -> str:
     lines.extend(
         [
             "恢复候选：/config-candidate-restore 编号",
+            "撤销固化：/config-candidate-undo 编号",
             "查看活跃候选：/config-candidates",
         ]
     )
@@ -279,6 +281,117 @@ def apply_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
     )
 
 
+def confirm_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
+    """按活跃候选编号确认固化联系人别名候选。"""
+
+    if index < 1:
+        return "候选编号必须从 1 开始。"
+
+    context = load_runtime_context(paths)
+    candidates = list(context.memory_config_candidates)
+    active_indices = _active_candidate_indices(candidates)
+    if index > len(active_indices):
+        return "\n".join(
+            [
+                f"没有第 {index} 条候选。",
+                "请先运行 /config-candidates 查看当前候选编号。",
+            ]
+        )
+
+    candidate_index = active_indices[index - 1]
+    candidate = candidates[candidate_index]
+    label = _candidate_type_label(candidate.candidate_type)
+    if candidate.candidate_type != "contact_alias":
+        return "\n".join(
+            [
+                f"暂不支持确认固化{label}候选。",
+                "当前阶段只支持联系人别名确认固化，不写入其他高风险长期配置。",
+                "候选仍保持活跃，可用 /config-candidate-dismiss 编号 忽略。",
+            ]
+        )
+
+    try:
+        alias, target = parse_contact_alias_candidate(candidate.content)
+    except ValueError as exc:
+        return str(exc)
+
+    save_contact_alias(paths, alias, target, source="config-candidate")
+    applied_candidate = RuntimeMemoryConfigCandidateContext(
+        candidate_type=candidate.candidate_type,
+        content=candidate.content,
+        status="applied",
+        count=candidate.count,
+        first_seen_at=candidate.first_seen_at,
+        last_seen_at=_now_iso(),
+    )
+    candidates[candidate_index] = applied_candidate
+    save_runtime_context(paths, replace(context, memory_config_candidates=_limit_candidates(tuple(candidates))))
+    return "\n".join(
+        [
+            f"已确认并固化记忆与配置候选 {index}：{label}",
+            f"联系人别名：{alias} -> {target}",
+            f"写入：config/{CONTACTS_FILENAME}",
+            f"撤销固化：/config-candidate-undo {index}",
+            "查看候选历史：/config-candidate-history",
+        ]
+    )
+
+
+def undo_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
+    """按历史候选编号撤销已固化联系人别名，并恢复候选为活跃。"""
+
+    if index < 1:
+        return "候选编号必须从 1 开始。"
+
+    context = load_runtime_context(paths)
+    candidates = list(context.memory_config_candidates)
+    history_indices = _history_candidate_indices(candidates)
+    if index > len(history_indices):
+        return "\n".join(
+            [
+                f"没有第 {index} 条可撤销固化候选。",
+                "请先运行 /config-candidate-history 查看已忽略或已固化候选编号。",
+            ]
+        )
+
+    candidate_index = history_indices[index - 1]
+    candidate = candidates[candidate_index]
+    label = _candidate_type_label(candidate.candidate_type)
+    if candidate.candidate_type != "contact_alias" or candidate.status != "applied":
+        return "\n".join(
+            [
+                f"暂不支持撤销固化{label}候选。",
+                "当前阶段只支持已固化联系人别名候选撤销。",
+                "如需恢复候选状态，可用 /config-candidate-restore 编号。",
+            ]
+        )
+
+    try:
+        alias, target = parse_contact_alias_candidate(candidate.content)
+    except ValueError as exc:
+        return str(exc)
+
+    remove_contact_alias(paths, alias)
+    restored_candidate = RuntimeMemoryConfigCandidateContext(
+        candidate_type=candidate.candidate_type,
+        content=candidate.content,
+        status="active",
+        count=candidate.count,
+        first_seen_at=candidate.first_seen_at,
+        last_seen_at=_now_iso(),
+    )
+    candidates[candidate_index] = restored_candidate
+    save_runtime_context(paths, replace(context, memory_config_candidates=_limit_candidates(tuple(candidates))))
+    return "\n".join(
+        [
+            f"已撤销固化候选 {index}：{label}：{alias} -> {target}",
+            f"删除：config/{CONTACTS_FILENAME}",
+            "候选已恢复为活跃。",
+            "查看活跃候选：/config-candidates",
+        ]
+    )
+
+
 def memory_config_candidate_counts(paths: ProjectPaths) -> tuple[int, int]:
     """返回活跃和已忽略候选数量。"""
 
@@ -380,6 +493,7 @@ def _confirmation_draft_message(index: int, candidate: RuntimeMemoryConfigCandid
             f"需要确认后再固化{label}候选。",
             f"确认草稿：{label}：{candidate.content}",
             "说明：当前阶段只生成确认草稿，不写入长期配置。",
+            f"确认固化：/config-candidate-confirm {index}",
             f"撤销候选：/config-candidate-dismiss {index}",
             "候选仍保持活跃，可继续查看：/config-candidates",
         ]

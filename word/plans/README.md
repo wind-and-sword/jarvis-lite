@@ -6,13 +6,14 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
+- [2026-06-04-v136-contact-alias-confirmation-plan.md](2026-06-04-v136-contact-alias-confirmation-plan.md)：当前方案版本，明确 `0.131.0` 联系人别名确认固化与撤销第一阶段、显式确认、撤销恢复和不查找/不发送联系人边界。
 - [2026-06-03-v122-clash-workflow-plan.md](2026-06-03-v122-clash-workflow-plan.md)：明确 `0.117.0` Clash Verge 低风险工作流第一阶段、`/clash-workflow-status`、`/clash-open` 和 `/clash-focus` 的显式执行边界。
 - [2026-06-03-v123-messaging-workflow-plan.md](2026-06-03-v123-messaging-workflow-plan.md)：明确 `0.118.0` QQ/微信准备式工作流第一阶段、`/messaging-workflow-status`、QQ/微信 open/focus 和未发送消息准备单的显式执行边界。
 - [2026-06-03-v124-idea-workflow-plan.md](2026-06-03-v124-idea-workflow-plan.md)：明确 `0.119.0` IDEA 项目状态第一阶段、`/idea-workflow-status`、IDEA open/focus/open-project 和只读项目状态的显式执行边界。
 - [2026-06-03-v125-task-state-failure-replay-plan.md](2026-06-03-v125-task-state-failure-replay-plan.md)：明确 `0.120.0` 任务状态与失败复盘第一阶段、显式任务状态命令、运行态恢复和不自动重放外部动作边界。
 - [2026-06-03-v126-task-failure-screen-ocr-plan.md](2026-06-03-v126-task-failure-screen-ocr-plan.md)：明确 `0.121.0` 任务失败截图 OCR 复盘第一阶段、显式失败截图采集和不自动重放外部动作边界。
 - [2026-06-03-v127-memory-config-candidates-plan.md](2026-06-03-v127-memory-config-candidates-plan.md)：明确 `0.122.0` 记忆与配置候选池第一阶段、显式候选记录/查看/忽略和不自动写入长期配置边界。
-- [2026-06-04-v135-task-failure-window-context-plan.md](2026-06-04-v135-task-failure-window-context-plan.md)：当前方案版本，明确 `0.130.0` 任务失败复盘窗口与授权摘要第一阶段、当前只读窗口摘要、路由摘要、授权摘要和不重放外部动作边界。
+- [2026-06-04-v135-task-failure-window-context-plan.md](2026-06-04-v135-task-failure-window-context-plan.md)：明确 `0.130.0` 任务失败复盘窗口与授权摘要第一阶段、当前只读窗口摘要、路由摘要、授权摘要和不重放外部动作边界。
 - [2026-06-03-v134-memory-config-high-risk-candidate-draft-plan.md](2026-06-03-v134-memory-config-high-risk-candidate-draft-plan.md)：明确 `0.129.0` 高风险记忆与配置候选确认草稿第一阶段、确认草稿、撤销入口和不写入长期配置边界。
 - [2026-06-03-v133-memory-config-candidate-restore-plan.md](2026-06-03-v133-memory-config-candidate-restore-plan.md)：明确 `0.128.0` 记忆与配置候选恢复第一阶段、已忽略/已固化候选历史和只恢复候选状态边界。
 - [2026-06-03-v132-task-failure-eval-suggestion-plan.md](2026-06-03-v132-task-failure-eval-suggestion-plan.md)：明确 `0.127.0` 任务失败复盘样本建议第一阶段、从显式命令事件生成 evaluation 样本建议和不自动写入/训练边界。
