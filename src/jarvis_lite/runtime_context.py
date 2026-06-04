@@ -149,6 +149,7 @@ class RuntimeTaskFailureContext:
     origin_prompt: str = ""
     route_summary: str = ""
     authorization_summary: str = ""
+    window_context: str = ""
     completed_steps: tuple[str, ...] = ()
     recent_events: tuple[RuntimeTaskEventContext, ...] = ()
     screen_context: str = ""
@@ -550,6 +551,7 @@ def _read_task_failure_context(value: object) -> RuntimeTaskFailureContext | Non
         origin_prompt=_read_optional_str(value.get("origin_prompt")) or "",
         route_summary=_read_optional_str(value.get("route_summary")) or "",
         authorization_summary=_read_optional_str(value.get("authorization_summary")) or "",
+        window_context=_read_optional_str(value.get("window_context")) or "",
         completed_steps=_read_str_tuple(value.get("completed_steps")),
         recent_events=_read_task_event_contexts(value.get("recent_events")),
         screen_context=_read_optional_str(value.get("screen_context")) or "",
@@ -863,6 +865,7 @@ def _task_failure_context_to_json(context: RuntimeTaskFailureContext) -> dict[st
         "origin_prompt": context.origin_prompt,
         "route_summary": context.route_summary,
         "authorization_summary": context.authorization_summary,
+        "window_context": context.window_context,
         "completed_steps": list(context.completed_steps),
         "recent_events": [
             _task_event_context_to_json(event)

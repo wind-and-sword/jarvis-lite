@@ -72,6 +72,31 @@ class TaskStateTests(unittest.TestCase):
             self.assertEqual(len(runtime_context.recent_task_failures), 1)
             self.assertIn("/task-fail-capture 目标测试失败", runtime_context.recent_task_failures[0].next_step)
 
+    def test_task_failure_records_window_route_and_authorization_context(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            window_context = "当前窗口：项目 - IntelliJ IDEA | 进程：idea64.exe (PID 30) | 应用：IntelliJ IDEA (idea)"
+
+            start_task(paths, "检查 IDEA 状态", origin_prompt="帮我看看项目")
+            record_task_step(paths, "读取当前窗口")
+            failure_response = record_task_failure(
+                paths,
+                "窗口不是目标项目",
+                route_summary="command / /idea-project-status",
+                authorization_summary="explicit_command direct_execute",
+                window_context=window_context,
+            )
+            status = describe_task_status(paths)
+            runtime_context = load_runtime_context(paths)
+
+            self.assertIn("路由摘要：command / /idea-project-status", failure_response)
+            self.assertIn("授权摘要：explicit_command direct_execute", failure_response)
+            self.assertIn(f"窗口上下文：{window_context}", failure_response)
+            self.assertIn("路由：command / /idea-project-status", status)
+            self.assertIn("授权：explicit_command direct_execute", status)
+            self.assertIn(f"窗口：{window_context}", status)
+            self.assertEqual(runtime_context.recent_task_failures[0].window_context, window_context)
+
     def test_task_route_events_persist_and_feed_failure_replay(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = build_project_paths(Path(temp_dir) / "jarvis-lite")

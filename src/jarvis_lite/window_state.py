@@ -137,6 +137,19 @@ def describe_window_snapshot(snapshot: WindowSnapshot, limit: int = 10) -> str:
     return "\n".join(lines)
 
 
+def describe_task_window_context(paths: ProjectPaths, *, snapshot: WindowSnapshot | None = None) -> str:
+    """返回任务失败复盘使用的紧凑前台窗口摘要。"""
+
+    current_snapshot = snapshot or capture_window_snapshot(paths)
+    if not current_snapshot.supported:
+        reason = current_snapshot.message or "窗口枚举不可用。"
+        return f"当前窗口：不可用（{reason}）"
+    if current_snapshot.foreground_window is None:
+        return f"当前窗口：未获取（平台：{current_snapshot.platform}，可见窗口：{len(current_snapshot.windows)} 个）"
+    window = current_snapshot.foreground_window
+    return f"当前窗口：{window.title} | 进程：{_process_label(window)} | 应用：{_app_label(window)}"
+
+
 def select_window_focus_target(
     paths: ProjectPaths,
     snapshot: WindowSnapshot,

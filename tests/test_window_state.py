@@ -10,6 +10,7 @@ from jarvis_lite.window_state import (
     NativeWindow,
     build_unsupported_window_snapshot,
     build_window_snapshot,
+    describe_task_window_context,
     describe_window_snapshot,
     describe_window_focus,
     select_window_focus_target,
@@ -73,6 +74,24 @@ class WindowStateTests(unittest.TestCase):
         self.assertIn("平台：Linux", description)
         self.assertIn("原因：当前仅支持 Windows 窗口枚举。", description)
         self.assertIn("当前阶段只做只读观察", description)
+
+    def test_describe_task_window_context_returns_compact_foreground_summary(self):
+        snapshot = build_window_snapshot(
+            self.paths,
+            (
+                NativeWindow(handle=100, title="Jarvis Lite - Google Chrome", process_id=10, process_name="chrome.exe"),
+                NativeWindow(handle=200, title="代理面板", process_id=20, process_name="unknown.exe"),
+            ),
+            foreground_handle=100,
+            platform_name="Windows",
+        )
+
+        description = describe_task_window_context(self.paths, snapshot=snapshot)
+
+        self.assertEqual(
+            description,
+            "当前窗口：Jarvis Lite - Google Chrome | 进程：chrome.exe (PID 10) | 应用：Chrome (chrome)",
+        )
 
     def test_select_window_focus_target_accepts_window_list_index(self):
         snapshot = build_window_snapshot(

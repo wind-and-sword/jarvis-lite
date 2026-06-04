@@ -145,7 +145,7 @@ from .runtime_context import (
 from .tools import ToolRegistry
 from .update import describe_update_download, describe_update_status, update_download_dir
 from .voice import describe_voice, speak_text
-from .window_state import describe_current_windows, describe_window_focus
+from .window_state import describe_current_windows, describe_task_window_context, describe_window_focus
 
 
 TEACHABLE_INNER_BRAIN_COMMAND_INTENTS = {
@@ -1040,6 +1040,7 @@ class JarvisAgent:
                 reason,
                 route_summary=self._task_route_summary(),
                 authorization_summary="explicit_command direct_execute",
+                window_context=describe_task_window_context(self.paths),
             )
 
         if command == "/task-fail-capture":
@@ -1054,6 +1055,7 @@ class JarvisAgent:
                 language=language,
                 route_summary=self._task_route_summary(),
                 authorization_summary="explicit_command direct_execute",
+                window_context=describe_task_window_context(self.paths),
             )
 
         if command == "/config-candidate-add":

@@ -3575,6 +3575,23 @@ class AgentTests(unittest.TestCase):
         auto_context = failure_response.split("自动采集上下文：", 1)[1]
         self.assertNotIn("command / /task-fail", auto_context)
 
+    def test_task_fail_command_records_window_context_in_replay(self):
+        self.agent.handle("/task-start 检查 IDEA 状态")
+        with patch(
+            "jarvis_lite.agent.describe_task_window_context",
+            return_value="当前窗口：项目 - IntelliJ IDEA | 进程：idea64.exe (PID 30) | 应用：IntelliJ IDEA (idea)",
+        ) as window_context:
+            failure_response = self.agent.handle("/task-fail 当前窗口不对")
+
+        status = self.agent.handle("/task-status")
+
+        self.assertIn("窗口上下文：当前窗口：项目 - IntelliJ IDEA", failure_response)
+        self.assertIn("授权摘要：explicit_command direct_execute", failure_response)
+        self.assertIn("路由摘要：command / /task-fail", failure_response)
+        self.assertIn("窗口：当前窗口：项目 - IntelliJ IDEA", status)
+        self.assertIn("授权：explicit_command direct_execute", status)
+        window_context.assert_called_once_with(self.agent.paths)
+
     def test_task_resume_complete_and_cancel_commands(self):
         self.agent.handle("/task-start 整理资料")
         self.agent.handle("/task-step 导入资料")
@@ -3597,6 +3614,7 @@ class AgentTests(unittest.TestCase):
         self.agent.handle("/task-start 发布 0.121.0")
         self.agent.handle("/task-step 打包后 smoke")
         with (
+            patch("jarvis_lite.agent.describe_task_window_context", return_value="当前窗口：打包窗口"),
             patch("jarvis_lite.agent.record_task_failure_with_screen_ocr") as record_failure,
         ):
             record_failure.return_value = "任务失败复盘：发布 0.121.0\n截图：logs/screenshots/fail.png"
@@ -3610,6 +3628,7 @@ class AgentTests(unittest.TestCase):
             language="eng",
             route_summary=self.agent._task_route_summary(),
             authorization_summary="explicit_command direct_execute",
+            window_context="当前窗口：打包窗口",
         )
 
     def test_task_commands_require_arguments_and_are_listed(self):
@@ -4096,7 +4115,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.129.1",
+                    "version": "0.130.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4107,7 +4126,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.129.1", response)
+        self.assertIn("发现新版本：0.130.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4122,7 +4141,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.129.1",
+                        "version": "0.130.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

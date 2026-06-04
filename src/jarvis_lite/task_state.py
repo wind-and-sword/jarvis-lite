@@ -121,6 +121,7 @@ def record_task_failure(
     *,
     route_summary: str = "",
     authorization_summary: str = "",
+    window_context: str = "",
     screen_context: str = DEFAULT_SCREEN_CONTEXT,
 ) -> str:
     """将当前任务标记为失败，并写入最近失败复盘。"""
@@ -154,6 +155,7 @@ def record_task_failure(
         origin_prompt=task.origin_prompt,
         route_summary=route_summary,
         authorization_summary=authorization_summary,
+        window_context=window_context,
         completed_steps=task.completed_steps,
         recent_events=task.recent_events,
         screen_context=screen_context,
@@ -178,6 +180,8 @@ def record_task_failure(
         lines.append(f"路由摘要：{route_summary}")
     if authorization_summary:
         lines.append(f"授权摘要：{authorization_summary}")
+    if window_context:
+        lines.append(f"窗口上下文：{window_context}")
     _append_task_events(lines, task.recent_events, header="自动采集上下文：")
     lines.extend(
         [
@@ -197,6 +201,7 @@ def record_task_failure_with_screen_ocr(
     language: str | None = None,
     route_summary: str = "",
     authorization_summary: str = "",
+    window_context: str = "",
     capturer: ScreenCapturer | None = None,
     recognizer: ImageRecognizer | None = None,
 ) -> str:
@@ -237,6 +242,7 @@ def record_task_failure_with_screen_ocr(
         reason_text,
         route_summary=route_summary,
         authorization_summary=authorization_summary,
+        window_context=window_context,
         screen_context=screen_context,
     )
     return f"{failure_response}\n边界：{TASK_FAILURE_CAPTURE_BOUNDARY}"
@@ -359,6 +365,12 @@ def _append_recent_failures(lines: list[str], failures: tuple[RuntimeTaskFailure
         if failure.created_at:
             parts.append(f"时间：{failure.created_at}")
         lines.append(" | ".join(parts))
+        if failure.route_summary:
+            lines.append(f"   路由：{failure.route_summary}")
+        if failure.authorization_summary:
+            lines.append(f"   授权：{failure.authorization_summary}")
+        if failure.window_context:
+            lines.append(f"   窗口：{_compact_context(failure.window_context)}")
         if failure.next_step:
             lines.append(f"   下一步：{failure.next_step}")
         if failure.screen_context:
