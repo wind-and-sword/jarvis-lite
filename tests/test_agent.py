@@ -1022,6 +1022,28 @@ class AgentTests(unittest.TestCase):
         self.assertIn("1. 联系人别名：小王 => 微信联系人王工", list_response)
         self.assertNotIn("小王", contacts_path.read_text(encoding="utf-8"))
 
+    def test_config_candidate_confirm_and_undo_app_alias(self):
+        self.agent.handle("/config-candidate-add app_alias 晨会入口 => chrome")
+
+        confirm_response = self.agent.handle("/config-candidate-confirm 1")
+        find_response = self.agent.handle("/app-find 晨会入口")
+        manager_status = self.agent.handle("/config-manager-status")
+        history_response = self.agent.handle("/config-candidate-history")
+        undo_response = self.agent.handle("/config-candidate-undo 1")
+        find_after_undo = self.agent.handle("/app-find 晨会入口")
+        list_response = self.agent.handle("/config-candidates")
+
+        self.assertIn("已确认并固化记忆与配置候选 1：应用别名", confirm_response)
+        self.assertIn("应用别名：晨会入口 -> Chrome (chrome)", confirm_response)
+        self.assertIn("写入：config/apps.local.json", confirm_response)
+        self.assertIn("应用匹配：Chrome (chrome)", find_response)
+        self.assertIn("命中别名：晨会入口", find_response)
+        self.assertIn("应用本地覆盖：1 个", manager_status)
+        self.assertIn("1. 已固化 应用别名：晨会入口 => chrome", history_response)
+        self.assertIn("已撤销固化候选 1：应用别名：晨会入口 -> Chrome (chrome)", undo_response)
+        self.assertIn("没有找到应用：晨会入口", find_after_undo)
+        self.assertIn("1. 应用别名：晨会入口 => chrome", list_response)
+
     def test_authorization_status_command_reports_policy(self):
         response = self.agent.handle("/authorization-status")
 
@@ -4149,7 +4171,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.131.1",
+                    "version": "0.132.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4160,7 +4182,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.131.1", response)
+        self.assertIn("发现新版本：0.132.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4175,7 +4197,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.131.1",
+                        "version": "0.132.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

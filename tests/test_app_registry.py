@@ -14,6 +14,9 @@ from jarvis_lite.app_registry import (
     describe_registered_apps,
     describe_app_launch,
     launch_registered_app,
+    parse_app_alias_candidate,
+    remove_app_alias,
+    save_app_alias,
 )
 from jarvis_lite.config import build_project_paths
 
@@ -69,6 +72,57 @@ class AppRegistryTests(unittest.TestCase):
         self.assertIn("我的浏览器", app.aliases)
         self.assertIn(f"路径：{executable.resolve()}", description)
         self.assertIn("可用 /app-launch 启动已登记且有路径的应用", description)
+
+    def test_app_alias_store_writes_matches_and_removes_alias_without_deleting_path(self):
+        executable = self.paths.root / "tools" / "chrome.exe"
+        executable.parent.mkdir(parents=True)
+        executable.write_text("fake executable", encoding="utf-8")
+        (self.paths.config_dir / "apps.local.json").write_text(
+            json.dumps(
+                {
+                    "apps": {
+                        "chrome": {
+                            "path": str(executable),
+                            "aliases": ["工作浏览器"],
+                        }
+                    }
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        alias, app_query = parse_app_alias_candidate("晨会入口 => chrome")
+        saved = save_app_alias(self.paths, alias, app_query)
+        app_after_save = find_registered_app(self.paths, "晨会入口")
+        removed = remove_app_alias(self.paths, alias, app_query)
+        app_after_remove = find_registered_app(self.paths, "晨会入口")
+        chrome_after_remove = find_registered_app(self.paths, "工作浏览器")
+        payload_after_remove = json.loads((self.paths.config_dir / "apps.local.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(alias, "晨会入口")
+        self.assertEqual(app_query, "chrome")
+        self.assertEqual(saved.app_id, "chrome")
+        self.assertEqual(app_after_save.app_id, "chrome")
+        self.assertTrue(removed)
+        self.assertIsNone(app_after_remove)
+        self.assertEqual(chrome_after_remove.configured_path, executable.resolve())
+        self.assertIn("工作浏览器", chrome_after_remove.aliases)
+        self.assertNotIn("aliases", payload_after_remove)
+        self.assertNotIn("path", payload_after_remove)
+        self.assertEqual(payload_after_remove["apps"]["chrome"]["path"], str(executable))
+        self.assertEqual(payload_after_remove["apps"]["chrome"]["aliases"], ["工作浏览器"])
+
+    def test_app_alias_candidate_requires_alias_and_registered_app_query(self):
+        with self.assertRaises(ValueError) as missing_target:
+            parse_app_alias_candidate("晨会入口")
+
+        with self.assertRaises(ValueError) as missing_alias:
+            parse_app_alias_candidate("=> chrome")
+
+        self.assertIn("应用别名候选格式", str(missing_target.exception))
+        self.assertIn("应用别名候选格式", str(missing_alias.exception))
 
     def test_launch_registered_app_uses_configured_path_and_injected_executor(self):
         executable = self.paths.root / "tools" / "browser.exe"

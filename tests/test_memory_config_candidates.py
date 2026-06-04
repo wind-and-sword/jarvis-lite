@@ -6,6 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
+from jarvis_lite.app_registry import find_registered_app
 from jarvis_lite.contacts import contact_alias_count, read_contact_aliases
 from jarvis_lite.memory_config_candidates import (
     apply_memory_config_candidate,
@@ -221,7 +222,32 @@ class MemoryConfigCandidateTests(unittest.TestCase):
             self.assertIn("1. 联系人别名：小王 => 微信联系人王工", list_response)
             self.assertEqual(load_runtime_context(paths).memory_config_candidates[0].status, "active")
 
-    def test_confirm_only_supports_contact_alias_in_first_stage(self):
+    def test_confirm_app_alias_candidate_persists_and_undo_removes_alias(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            record_memory_config_candidate(paths, "app_alias", "晨会入口 => chrome")
+
+            confirm_response = confirm_memory_config_candidate(paths, 1)
+            app_after_confirm = find_registered_app(paths, "晨会入口")
+            runtime_context_after_confirm = load_runtime_context(paths)
+            history_response = describe_memory_config_candidate_history(paths)
+            undo_response = undo_memory_config_candidate(paths, 1)
+            list_response = describe_memory_config_candidates(paths)
+
+            self.assertIn("已确认并固化记忆与配置候选 1：应用别名", confirm_response)
+            self.assertIn("应用别名：晨会入口 -> Chrome (chrome)", confirm_response)
+            self.assertIn("写入：config/apps.local.json", confirm_response)
+            self.assertIn("撤销固化：/config-candidate-undo 1", confirm_response)
+            self.assertEqual(app_after_confirm.app_id, "chrome")
+            self.assertEqual(runtime_context_after_confirm.memory_config_candidates[0].status, "applied")
+            self.assertIn("1. 已固化 应用别名：晨会入口 => chrome", history_response)
+            self.assertIn("已撤销固化候选 1：应用别名：晨会入口 -> Chrome (chrome)", undo_response)
+            self.assertIn("候选已恢复为活跃", undo_response)
+            self.assertIsNone(find_registered_app(paths, "晨会入口"))
+            self.assertIn("1. 应用别名：晨会入口 => chrome", list_response)
+            self.assertEqual(load_runtime_context(paths).memory_config_candidates[0].status, "active")
+
+    def test_confirm_supports_only_confirmed_high_risk_candidate_types(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
             record_memory_config_candidate(paths, "authorization_rule", "微信发消息前需要确认")
@@ -230,7 +256,7 @@ class MemoryConfigCandidateTests(unittest.TestCase):
             runtime_context = load_runtime_context(paths)
 
             self.assertIn("暂不支持确认固化授权规则候选", response)
-            self.assertIn("当前阶段只支持联系人别名确认固化", response)
+            self.assertIn("当前阶段只支持联系人别名和应用别名确认固化", response)
             self.assertEqual(runtime_context.memory_config_candidates[0].status, "active")
             self.assertFalse((paths.config_dir / "authorization.local.json").exists())
 

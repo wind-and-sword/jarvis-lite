@@ -109,6 +109,73 @@ def describe_registered_apps(paths: ProjectPaths) -> str:
     return "\n".join(lines)
 
 
+def parse_app_alias_candidate(content: str) -> tuple[str, str]:
+    """解析应用别名候选，格式为别名到已登记应用标识或名称。"""
+
+    normalized = content.strip()
+    for separator in ("=>", "->", "="):
+        if separator in normalized:
+            alias, app_query = normalized.split(separator, 1)
+            return _normalize_app_alias(alias), _normalize_app_query(app_query)
+    raise ValueError(_app_alias_format_message())
+
+
+def save_app_alias(paths: ProjectPaths, alias: str, app_query: str) -> RegisteredApp:
+    """把应用别名保存到本地覆盖，不写入应用路径。"""
+
+    normalized_alias = _normalize_app_alias(alias)
+    app = _resolve_registered_app(paths, app_query)
+    payload = _read_local_registry_payload(paths)
+    apps = payload["apps"]
+    app_payload = dict(apps.get(app.app_id, {}))
+    aliases = _valid_aliases(app_payload.get("aliases"))
+    alias_key = _normalize_match_text(normalized_alias)
+    if all(_normalize_match_text(existing_alias) != alias_key for existing_alias in aliases):
+        aliases.append(normalized_alias)
+    app_payload["aliases"] = aliases
+    apps[app.app_id] = app_payload
+    payload["apps"] = apps
+    _write_local_registry_payload(paths, payload)
+    return app
+
+
+def remove_app_alias(paths: ProjectPaths, alias: str, app_query: str) -> bool:
+    """从本地覆盖中删除应用别名；保留同一应用已有 path 等其他覆盖。"""
+
+    normalized_alias = _normalize_app_alias(alias)
+    app = _resolve_registered_app(paths, app_query)
+    payload = _read_local_registry_payload(paths)
+    apps = payload["apps"]
+    raw_app_payload = apps.get(app.app_id)
+    if not isinstance(raw_app_payload, dict):
+        return False
+
+    app_payload = dict(raw_app_payload)
+    aliases = _valid_aliases(app_payload.get("aliases"))
+    alias_key = _normalize_match_text(normalized_alias)
+    updated_aliases = [
+        existing_alias
+        for existing_alias in aliases
+        if _normalize_match_text(existing_alias) != alias_key
+    ]
+    removed = len(updated_aliases) != len(aliases)
+    if not removed:
+        return False
+
+    if updated_aliases:
+        app_payload["aliases"] = updated_aliases
+    else:
+        app_payload.pop("aliases", None)
+
+    if app_payload:
+        apps[app.app_id] = app_payload
+    else:
+        apps.pop(app.app_id, None)
+    payload["apps"] = apps
+    _write_local_registry_payload(paths, payload)
+    return True
+
+
 def launch_registered_app(
     paths: ProjectPaths,
     query: str,
@@ -155,23 +222,42 @@ def describe_app_launch(
 
 
 def _read_local_registry(paths: ProjectPaths) -> dict[str, dict[str, object]]:
+    apps = _read_local_registry_payload(paths).get("apps")
+    if isinstance(apps, dict):
+        return apps
+    return {}
+
+
+def _read_local_registry_payload(paths: ProjectPaths) -> dict[str, object]:
     registry_path = paths.config_dir / APP_REGISTRY_FILENAME
     if not registry_path.exists():
-        return {}
+        return {"apps": {}}
 
     try:
         raw = json.loads(registry_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return {}
-    apps = raw.get("apps") if isinstance(raw, dict) else None
+    except (json.JSONDecodeError, OSError):
+        return {"apps": {}}
+    if not isinstance(raw, dict):
+        return {"apps": {}}
+
+    payload = dict(raw)
+    apps = payload.get("apps")
     if not isinstance(apps, dict):
-        return {}
+        payload["apps"] = {}
+        return payload
 
     registry: dict[str, dict[str, object]] = {}
-    for app_id, payload in apps.items():
-        if isinstance(app_id, str) and isinstance(payload, dict):
-            registry[app_id] = payload
-    return registry
+    for app_id, app_payload in apps.items():
+        if isinstance(app_id, str) and isinstance(app_payload, dict) and app_id.strip():
+            registry[app_id] = dict(app_payload)
+    payload["apps"] = registry
+    return payload
+
+
+def _write_local_registry_payload(paths: ProjectPaths, payload: dict[str, object]) -> None:
+    registry_path = paths.config_dir / APP_REGISTRY_FILENAME
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+    registry_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def _configured_path(payload: dict[str, object]) -> Path | None:
@@ -194,6 +280,49 @@ def _merge_aliases(default_aliases: tuple[str, ...], extra_aliases: object) -> t
             unique_aliases.append(alias.strip())
             seen.add(normalized)
     return tuple(unique_aliases)
+
+
+def _valid_aliases(raw_aliases: object) -> list[str]:
+    if not isinstance(raw_aliases, list):
+        return []
+
+    aliases: list[str] = []
+    seen: set[str] = set()
+    for alias in raw_aliases:
+        if not isinstance(alias, str):
+            continue
+        normalized_alias = alias.strip()
+        alias_key = _normalize_match_text(normalized_alias)
+        if alias_key and alias_key not in seen:
+            aliases.append(normalized_alias)
+            seen.add(alias_key)
+    return aliases
+
+
+def _normalize_app_alias(alias: str) -> str:
+    normalized = alias.strip()
+    if not normalized:
+        raise ValueError(_app_alias_format_message())
+    return normalized
+
+
+def _normalize_app_query(app_query: str) -> str:
+    normalized = app_query.strip()
+    if not normalized:
+        raise ValueError(_app_alias_format_message())
+    return normalized
+
+
+def _resolve_registered_app(paths: ProjectPaths, app_query: str) -> RegisteredApp:
+    normalized_query = _normalize_app_query(app_query)
+    app = find_registered_app(paths, normalized_query)
+    if app is None:
+        raise ValueError(f"没有找到应用：{normalized_query}。可用 /apps 查看已登记应用。")
+    return app
+
+
+def _app_alias_format_message() -> str:
+    return "应用别名候选格式：别名 => 应用标识或已登记应用名。"
 
 
 def _builtin_apps() -> tuple[RegisteredApp, ...]:

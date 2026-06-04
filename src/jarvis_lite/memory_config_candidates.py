@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime
 
+from .app_registry import APP_REGISTRY_FILENAME, find_registered_app, parse_app_alias_candidate, remove_app_alias, save_app_alias
 from .automation import add_common_directory
 from .config import ProjectPaths
 from .contacts import CONTACTS_FILENAME, parse_contact_alias_candidate, remove_contact_alias, save_contact_alias
@@ -282,7 +283,7 @@ def apply_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
 
 
 def confirm_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
-    """按活跃候选编号确认固化联系人别名候选。"""
+    """按活跃候选编号确认固化支持的高风险候选。"""
 
     if index < 1:
         return "候选编号必须从 1 开始。"
@@ -301,21 +302,29 @@ def confirm_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
     candidate_index = active_indices[index - 1]
     candidate = candidates[candidate_index]
     label = _candidate_type_label(candidate.candidate_type)
-    if candidate.candidate_type != "contact_alias":
+    if candidate.candidate_type not in {"contact_alias", "app_alias"}:
         return "\n".join(
             [
                 f"暂不支持确认固化{label}候选。",
-                "当前阶段只支持联系人别名确认固化，不写入其他高风险长期配置。",
+                "当前阶段只支持联系人别名和应用别名确认固化，不写入其他高风险长期配置。",
                 "候选仍保持活跃，可用 /config-candidate-dismiss 编号 忽略。",
             ]
         )
 
     try:
-        alias, target = parse_contact_alias_candidate(candidate.content)
+        if candidate.candidate_type == "contact_alias":
+            alias, target = parse_contact_alias_candidate(candidate.content)
+            save_contact_alias(paths, alias, target, source="config-candidate")
+            persisted_summary = f"联系人别名：{alias} -> {target}"
+            storage_target = f"config/{CONTACTS_FILENAME}"
+        else:
+            alias, app_query = parse_app_alias_candidate(candidate.content)
+            app = save_app_alias(paths, alias, app_query)
+            persisted_summary = f"应用别名：{alias} -> {app.display_name} ({app.app_id})"
+            storage_target = f"config/{APP_REGISTRY_FILENAME}"
     except ValueError as exc:
         return str(exc)
 
-    save_contact_alias(paths, alias, target, source="config-candidate")
     applied_candidate = RuntimeMemoryConfigCandidateContext(
         candidate_type=candidate.candidate_type,
         content=candidate.content,
@@ -329,8 +338,8 @@ def confirm_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
     return "\n".join(
         [
             f"已确认并固化记忆与配置候选 {index}：{label}",
-            f"联系人别名：{alias} -> {target}",
-            f"写入：config/{CONTACTS_FILENAME}",
+            persisted_summary,
+            f"写入：{storage_target}",
             f"撤销固化：/config-candidate-undo {index}",
             "查看候选历史：/config-candidate-history",
         ]
@@ -338,7 +347,7 @@ def confirm_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
 
 
 def undo_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
-    """按历史候选编号撤销已固化联系人别名，并恢复候选为活跃。"""
+    """按历史候选编号撤销已固化的支持候选，并恢复为活跃。"""
 
     if index < 1:
         return "候选编号必须从 1 开始。"
@@ -357,21 +366,32 @@ def undo_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
     candidate_index = history_indices[index - 1]
     candidate = candidates[candidate_index]
     label = _candidate_type_label(candidate.candidate_type)
-    if candidate.candidate_type != "contact_alias" or candidate.status != "applied":
+    if candidate.candidate_type not in {"contact_alias", "app_alias"} or candidate.status != "applied":
         return "\n".join(
             [
                 f"暂不支持撤销固化{label}候选。",
-                "当前阶段只支持已固化联系人别名候选撤销。",
+                "当前阶段只支持已固化联系人别名和应用别名候选撤销。",
                 "如需恢复候选状态，可用 /config-candidate-restore 编号。",
             ]
         )
 
     try:
-        alias, target = parse_contact_alias_candidate(candidate.content)
+        if candidate.candidate_type == "contact_alias":
+            alias, target = parse_contact_alias_candidate(candidate.content)
+            remove_contact_alias(paths, alias)
+            removed_summary = f"{alias} -> {target}"
+            storage_target = f"config/{CONTACTS_FILENAME}"
+        else:
+            alias, app_query = parse_app_alias_candidate(candidate.content)
+            app = find_registered_app(paths, app_query)
+            if app is None:
+                return f"没有找到应用：{app_query}。可用 /apps 查看已登记应用。"
+            remove_app_alias(paths, alias, app_query)
+            removed_summary = f"{alias} -> {app.display_name} ({app.app_id})"
+            storage_target = f"config/{APP_REGISTRY_FILENAME}"
     except ValueError as exc:
         return str(exc)
 
-    remove_contact_alias(paths, alias)
     restored_candidate = RuntimeMemoryConfigCandidateContext(
         candidate_type=candidate.candidate_type,
         content=candidate.content,
@@ -384,8 +404,8 @@ def undo_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
     save_runtime_context(paths, replace(context, memory_config_candidates=_limit_candidates(tuple(candidates))))
     return "\n".join(
         [
-            f"已撤销固化候选 {index}：{label}：{alias} -> {target}",
-            f"删除：config/{CONTACTS_FILENAME}",
+            f"已撤销固化候选 {index}：{label}：{removed_summary}",
+            f"删除：{storage_target}",
             "候选已恢复为活跃。",
             "查看活跃候选：/config-candidates",
         ]
