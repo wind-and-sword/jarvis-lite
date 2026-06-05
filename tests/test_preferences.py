@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.preferences import (
     PREFERENCES_FILENAME,
+    describe_preference_preview,
     describe_preferences,
     parse_preference_candidate,
     preference_count,
@@ -91,6 +92,34 @@ class PreferenceTests(unittest.TestCase):
 
             self.assertIn("偏好编号不存在", str(context.exception))
             self.assertFalse(read_preferences(paths)[0].enabled)
+
+    def test_preference_preview_lists_only_enabled_preferences_for_input(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            save_preference(paths, "回答尽量简洁", source="test")
+            save_preference(paths, "优先使用中文", source="test")
+            set_preference_enabled(paths, 2, True)
+
+            preview = describe_preference_preview(paths, "帮我总结知识库")
+
+            self.assertIn("偏好应用预览", preview)
+            self.assertIn("预览输入：帮我总结知识库", preview)
+            self.assertIn("已启用偏好：1 条", preview)
+            self.assertIn("1. 优先使用中文", preview)
+            self.assertNotIn("回答尽量简洁", preview)
+            self.assertIn("不自动改变回复风格、LLM prompt、路由或执行决策", preview)
+
+    def test_preference_preview_reports_empty_enabled_preferences(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            save_preference(paths, "回答尽量简洁", source="test")
+
+            preview = describe_preference_preview(paths)
+
+            self.assertIn("偏好应用预览", preview)
+            self.assertIn("已启用偏好：0 条", preview)
+            self.assertIn("暂无已启用偏好", preview)
+            self.assertIn("可用 /preference-enable 编号 启用", preview)
 
 
 if __name__ == "__main__":

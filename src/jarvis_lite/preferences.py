@@ -137,6 +137,12 @@ def preference_count(paths: ProjectPaths) -> int:
     return len(read_preferences(paths))
 
 
+def enabled_preferences(paths: ProjectPaths) -> tuple[Preference, ...]:
+    """返回已显式启用的偏好；调用方仍需显式决定是否应用。"""
+
+    return tuple(preference for preference in read_preferences(paths) if preference.enabled)
+
+
 def describe_preferences(paths: ProjectPaths) -> str:
     """展示本地偏好，只读展示，不触发回复或执行策略变更。"""
 
@@ -155,6 +161,32 @@ def describe_preferences(paths: ProjectPaths) -> str:
         [
             "说明：启用状态只用于本地可审计管理，不自动改变回复风格、LLM prompt、路由或执行决策。",
             "可用 /preference-enable 编号 启用，/preference-disable 编号 停用。",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def describe_preference_preview(paths: ProjectPaths, user_input: str = "") -> str:
+    """预览已启用偏好的应用草案；不自动改变任何回复或执行路径。"""
+
+    preview_input = user_input.strip()
+    preferences = enabled_preferences(paths)
+    lines = [
+        "偏好应用预览",
+        f"已启用偏好：{len(preferences)} 条",
+    ]
+    if preview_input:
+        lines.append(f"预览输入：{preview_input}")
+    if preferences:
+        lines.append("将参考的偏好：")
+        for index, preference in enumerate(preferences, 1):
+            lines.append(f"{index}. {preference.preference}")
+    else:
+        lines.append("暂无已启用偏好。可用 /preference-enable 编号 启用。")
+    lines.extend(
+        [
+            "应用策略草案：已启用偏好只作为显式预览内容展示。",
+            "说明：当前不自动改变回复风格、LLM prompt、路由或执行决策。",
         ]
     )
     return "\n".join(lines)
@@ -183,11 +215,11 @@ def _write_preferences_payload(paths: ProjectPaths, payload: dict[str, Any]) -> 
     target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def _valid_preference_records(records: object) -> list[dict[str, str]]:
+def _valid_preference_records(records: object) -> list[dict[str, object]]:
     if not isinstance(records, list):
         return []
 
-    valid_records: list[dict[str, str]] = []
+    valid_records: list[dict[str, object]] = []
     for record in records:
         preference = _preference_from_record(record)
         if preference is not None:

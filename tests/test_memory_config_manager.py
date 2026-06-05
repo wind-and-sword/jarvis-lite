@@ -38,6 +38,7 @@ class MemoryConfigManagerTests(unittest.TestCase):
             self.assertIn("/remember 记忆内容", response)
             self.assertIn("/authorization-status", response)
             self.assertIn("/preference-status", response)
+            self.assertIn("/preference-preview", response)
             self.assertIn("/config-candidates", response)
 
     def test_describe_memory_config_manager_masks_provider_api_keys(self):
