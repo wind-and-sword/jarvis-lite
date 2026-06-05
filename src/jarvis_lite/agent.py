@@ -1114,38 +1114,32 @@ class JarvisAgent:
 
         if command == "/preference-enable":
             if not args:
-                return "用法：/preference-enable 编号"
+                return "用法：/preference-enable 编号或ID"
+            preference_reference = args[0]
             try:
-                preference_index = int(args[0])
-            except ValueError:
-                return "偏好编号必须是数字。"
-            try:
-                preference = set_preference_enabled(self.paths, preference_index, True)
+                preference = set_preference_enabled(self.paths, preference_reference, True)
             except ValueError as exc:
                 return str(exc)
-            self.tools.run("record_log", message=f"启用本地偏好：{preference_index}")
+            self.tools.run("record_log", message=f"启用本地偏好：{preference_reference}")
             return "\n".join(
                 [
-                    f"已启用偏好 {preference_index}：{preference.preference}",
+                    f"已启用偏好 {preference.preference_id}：{preference.preference}",
                     "说明：本阶段只记录启用状态，不自动改变回复风格、LLM prompt、路由或执行决策。",
                 ]
             )
 
         if command == "/preference-disable":
             if not args:
-                return "用法：/preference-disable 编号"
+                return "用法：/preference-disable 编号或ID"
+            preference_reference = args[0]
             try:
-                preference_index = int(args[0])
-            except ValueError:
-                return "偏好编号必须是数字。"
-            try:
-                preference = set_preference_enabled(self.paths, preference_index, False)
+                preference = set_preference_enabled(self.paths, preference_reference, False)
             except ValueError as exc:
                 return str(exc)
-            self.tools.run("record_log", message=f"停用本地偏好：{preference_index}")
+            self.tools.run("record_log", message=f"停用本地偏好：{preference_reference}")
             return "\n".join(
                 [
-                    f"已停用偏好 {preference_index}：{preference.preference}",
+                    f"已停用偏好 {preference.preference_id}：{preference.preference}",
                     "说明：本阶段只记录启用状态，不自动改变回复风格、LLM prompt、路由或执行决策。",
                 ]
             )
@@ -1228,8 +1222,8 @@ class JarvisAgent:
                 "/config-candidate-confirm 编号：确认固化联系人别名、应用别名、授权规则或偏好候选",
                 "/config-candidate-undo 编号：撤销已固化联系人别名、应用别名、授权规则或偏好候选",
                 "/preference-status：查看本地偏好启用状态",
-                "/preference-enable 编号：启用已保存偏好",
-                "/preference-disable 编号：停用已保存偏好",
+                "/preference-enable 编号或ID：启用已保存偏好",
+                "/preference-disable 编号或ID：停用已保存偏好",
                 "/preference-preview [输入文本]：预览已启用偏好的应用草案",
                 "/config-candidate-restore 编号：把已忽略或已固化候选恢复为活跃候选",
                 "/config-candidate-dismiss 编号：忽略指定记忆与配置候选",

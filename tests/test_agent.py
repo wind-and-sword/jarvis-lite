@@ -1074,16 +1074,17 @@ class AgentTests(unittest.TestCase):
         preference_status = self.agent.handle("/preference-status")
         manager_status = self.agent.handle("/config-manager-status")
         history_response = self.agent.handle("/config-candidate-history")
+        preferences_path = self.paths.config_dir / "preferences.local.json"
+        preference_id = json.loads(preferences_path.read_text(encoding="utf-8"))["preferences"][0]["id"]
         undo_response = self.agent.handle("/config-candidate-undo 1")
         manager_status_after_undo = self.agent.handle("/config-manager-status")
         list_response = self.agent.handle("/config-candidates")
 
-        preferences_path = self.paths.config_dir / "preferences.local.json"
         self.assertIn("已确认并固化记忆与配置候选 1：偏好", confirm_response)
         self.assertIn("偏好：回答尽量简洁", confirm_response)
         self.assertIn("写入：config/preferences.local.json", confirm_response)
         self.assertIn("本地偏好：1 条", preference_status)
-        self.assertIn("1. 未启用 回答尽量简洁", preference_status)
+        self.assertIn(f"1. 未启用 [{preference_id}] 回答尽量简洁", preference_status)
         self.assertIn("说明：启用状态只用于本地可审计管理", preference_status)
         self.assertIn("偏好：1 条", manager_status)
         self.assertIn("1. 已固化 偏好：回答尽量简洁", history_response)
@@ -1099,9 +1100,11 @@ class AgentTests(unittest.TestCase):
         self.agent.handle("/config-candidate-confirm 1")
 
         initial_status = self.agent.handle("/preference-status")
-        enable_response = self.agent.handle("/preference-enable 1")
+        preferences_payload = json.loads((self.paths.config_dir / "preferences.local.json").read_text(encoding="utf-8"))
+        preference_id = preferences_payload["preferences"][0]["id"]
+        enable_response = self.agent.handle(f"/preference-enable {preference_id}")
         status_after_enable = self.agent.handle("/preference-status")
-        disable_response = self.agent.handle("/preference-disable 1")
+        disable_response = self.agent.handle(f"/preference-disable {preference_id}")
         status_after_disable = self.agent.handle("/preference-status")
         no_enable = self.agent.handle("/preference-enable")
         invalid_enable = self.agent.handle("/preference-enable abc")
@@ -1110,20 +1113,20 @@ class AgentTests(unittest.TestCase):
         status = self.agent.handle("/status")
         preferences_payload = json.loads((self.paths.config_dir / "preferences.local.json").read_text(encoding="utf-8"))
 
-        self.assertIn("1. 未启用 回答尽量简洁", initial_status)
-        self.assertIn("已启用偏好 1：回答尽量简洁", enable_response)
+        self.assertIn(f"1. 未启用 [{preference_id}] 回答尽量简洁", initial_status)
+        self.assertIn(f"已启用偏好 {preference_id}：回答尽量简洁", enable_response)
         self.assertIn("不自动改变回复风格、LLM prompt、路由或执行决策", enable_response)
         self.assertIn("已启用：1 条", status_after_enable)
-        self.assertIn("1. 已启用 回答尽量简洁", status_after_enable)
-        self.assertIn("已停用偏好 1：回答尽量简洁", disable_response)
+        self.assertIn(f"1. 已启用 [{preference_id}] 回答尽量简洁", status_after_enable)
+        self.assertIn(f"已停用偏好 {preference_id}：回答尽量简洁", disable_response)
         self.assertIn("已启用：0 条", status_after_disable)
-        self.assertIn("1. 未启用 回答尽量简洁", status_after_disable)
-        self.assertIn("用法：/preference-enable 编号", no_enable)
-        self.assertIn("偏好编号必须是数字", invalid_enable)
-        self.assertIn("偏好编号不存在", missing_disable)
+        self.assertIn(f"1. 未启用 [{preference_id}] 回答尽量简洁", status_after_disable)
+        self.assertIn("用法：/preference-enable 编号或ID", no_enable)
+        self.assertIn("偏好引用必须是编号或ID", invalid_enable)
+        self.assertIn("偏好引用不存在", missing_disable)
         self.assertIn("/preference-status：查看本地偏好启用状态", help_text)
-        self.assertIn("/preference-enable 编号：启用已保存偏好", help_text)
-        self.assertIn("/preference-disable 编号：停用已保存偏好", help_text)
+        self.assertIn("/preference-enable 编号或ID：启用已保存偏好", help_text)
+        self.assertIn("/preference-disable 编号或ID：停用已保存偏好", help_text)
         self.assertIn("偏好状态：/preference-status", status)
         self.assertFalse(preferences_payload["preferences"][0]["enabled"])
 
@@ -1137,12 +1140,15 @@ class AgentTests(unittest.TestCase):
         help_text = self.agent.handle("/help")
         status = self.agent.handle("/status")
         manager_status = self.agent.handle("/config-manager-status")
+        preference_id = json.loads((self.paths.config_dir / "preferences.local.json").read_text(encoding="utf-8"))[
+            "preferences"
+        ][0]["id"]
 
         self.assertIn("暂无已启用偏好", empty_preview)
         self.assertIn("偏好应用预览", preview)
         self.assertIn("预览输入：帮我总结知识库", preview)
         self.assertIn("已启用偏好：1 条", preview)
-        self.assertIn("1. 回答尽量简洁", preview)
+        self.assertIn(f"1. [{preference_id}] 回答尽量简洁", preview)
         self.assertIn("不自动改变回复风格、LLM prompt、路由或执行决策", preview)
         self.assertIn("/preference-preview [输入文本]：预览已启用偏好的应用草案", help_text)
         self.assertIn("偏好预览：/preference-preview", status)
@@ -4275,7 +4281,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.136.1",
+                    "version": "0.137.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4286,7 +4292,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.136.1", response)
+        self.assertIn("发现新版本：0.137.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4301,7 +4307,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.136.1",
+                        "version": "0.137.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
@@ -16,6 +17,7 @@ class Preference:
     """本地偏好记录；第一阶段只做持久化和展示，不自动改变回复策略。"""
 
     preference: str
+    preference_id: str = ""
     enabled: bool = False
     source: str = ""
     created_at: str = ""
@@ -60,19 +62,22 @@ def save_preference(
 
     saved = Preference(
         preference=normalized_preference,
+        preference_id=_preference_id_for(normalized_preference),
         enabled=bool(enabled) if enabled is not None else False,
         source=source.strip(),
         created_at=now,
         updated_at=now,
     )
     preference_key = _preference_key(normalized_preference)
-    updated_records: list[dict[str, str]] = []
+    updated_records: list[dict[str, object]] = []
     replaced = False
     for record in records:
         existing_preference = str(record.get("preference") or "").strip()
         if _preference_key(existing_preference) == preference_key:
+            existing_id = _coerce_preference_id(record.get("id"), existing_preference)
             saved = Preference(
                 preference=normalized_preference,
+                preference_id=existing_id,
                 enabled=_coerce_enabled(record.get("enabled")) if enabled is None else bool(enabled),
                 source=source.strip() or str(record.get("source") or "").strip(),
                 created_at=str(record.get("created_at") or now),
@@ -90,24 +95,27 @@ def save_preference(
     return saved
 
 
-def set_preference_enabled(paths: ProjectPaths, index: int, enabled: bool) -> Preference:
-    """按 1 基编号切换偏好启用状态；不自动应用到回复或执行路径。"""
+def set_preference_enabled(paths: ProjectPaths, reference: int | str, enabled: bool) -> Preference:
+    """按 1 基编号或稳定 ID 切换偏好启用状态；不自动应用到回复或执行路径。"""
 
     payload = _read_preferences_payload(paths)
     records = _valid_preference_records(payload.get("preferences"))
-    if index < 1 or index > len(records):
-        raise ValueError("偏好编号不存在。可用 /preference-status 查看本地偏好。")
+    record_index = _resolve_preference_record_index(records, reference)
+    if record_index is None:
+        raise ValueError("偏好引用不存在。可用 /preference-status 查看本地偏好 ID。")
 
     now = _now_iso()
-    target_record = records[index - 1]
+    target_record = records[record_index]
+    preference_text = str(target_record.get("preference") or "").strip()
     updated = Preference(
-        preference=str(target_record.get("preference") or "").strip(),
+        preference=preference_text,
+        preference_id=_coerce_preference_id(target_record.get("id"), preference_text),
         enabled=enabled,
         source=str(target_record.get("source") or "").strip(),
         created_at=str(target_record.get("created_at") or now),
         updated_at=now,
     )
-    records[index - 1] = _preference_to_record(updated)
+    records[record_index] = _preference_to_record(updated)
     payload["preferences"] = records
     _write_preferences_payload(paths, payload)
     return updated
@@ -156,11 +164,15 @@ def describe_preferences(paths: ProjectPaths) -> str:
     ]
     for index, preference in enumerate(preferences, 1):
         state = "已启用" if preference.enabled else "未启用"
-        lines.append(f"{index}. {state} {preference.preference}")
+        lines.append(f"{index}. {state} [{preference.preference_id}] {preference.preference}")
+    conflict_hints = preference_conflict_hints(preferences)
+    if conflict_hints:
+        lines.append("偏好冲突提示：")
+        lines.extend(conflict_hints)
     lines.extend(
         [
             "说明：启用状态只用于本地可审计管理，不自动改变回复风格、LLM prompt、路由或执行决策。",
-            "可用 /preference-enable 编号 启用，/preference-disable 编号 停用。",
+            "可用 /preference-enable 编号或ID 启用，/preference-disable 编号或ID 停用。",
         ]
     )
     return "\n".join(lines)
@@ -180,9 +192,13 @@ def describe_preference_preview(paths: ProjectPaths, user_input: str = "") -> st
     if preferences:
         lines.append("将参考的偏好：")
         for index, preference in enumerate(preferences, 1):
-            lines.append(f"{index}. {preference.preference}")
+            lines.append(f"{index}. [{preference.preference_id}] {preference.preference}")
+        conflict_hints = preference_conflict_hints(preferences)
+        if conflict_hints:
+            lines.append("偏好冲突提示：")
+            lines.extend(conflict_hints)
     else:
-        lines.append("暂无已启用偏好。可用 /preference-enable 编号 启用。")
+        lines.append("暂无已启用偏好。可用 /preference-enable 编号或ID 启用。")
     lines.extend(
         [
             "应用策略草案：已启用偏好只作为显式预览内容展示。",
@@ -190,6 +206,32 @@ def describe_preference_preview(paths: ProjectPaths, user_input: str = "") -> st
         ]
     )
     return "\n".join(lines)
+
+
+def preference_conflict_hints(preferences: tuple[Preference, ...]) -> tuple[str, ...]:
+    """返回已启用偏好的明显冲突提示；只提示，不自动裁决。"""
+
+    enabled = tuple(preference for preference in preferences if preference.enabled)
+    hints: list[str] = []
+    for label, left_keywords, right_keywords in _CONFLICT_RULES:
+        left_matches = tuple(
+            preference
+            for preference in enabled
+            if _contains_any(preference.preference, left_keywords)
+            and not _contains_any(preference.preference, right_keywords)
+        )
+        right_matches = tuple(
+            preference
+            for preference in enabled
+            if _contains_any(preference.preference, right_keywords)
+            and not _contains_any(preference.preference, left_keywords)
+        )
+        if left_matches and right_matches:
+            hints.append(
+                f"- {label}可能冲突：{_format_conflict_preference(left_matches[0])} 与 "
+                f"{_format_conflict_preference(right_matches[0])}。只提示冲突，不自动裁决优先级。"
+            )
+    return tuple(hints)
 
 
 def _preferences_path(paths: ProjectPaths):
@@ -235,6 +277,7 @@ def _preference_from_record(record: object) -> Preference | None:
         return None
     return Preference(
         preference=preference,
+        preference_id=_coerce_preference_id(record.get("id"), preference),
         enabled=_coerce_enabled(record.get("enabled")),
         source=str(record.get("source") or "").strip(),
         created_at=str(record.get("created_at") or "").strip(),
@@ -244,6 +287,7 @@ def _preference_from_record(record: object) -> Preference | None:
 
 def _preference_to_record(preference: Preference) -> dict[str, object]:
     return {
+        "id": preference.preference_id or _preference_id_for(preference.preference),
         "preference": preference.preference,
         "enabled": preference.enabled,
         "source": preference.source,
@@ -263,6 +307,45 @@ def _preference_key(preference: str) -> str:
     return preference.strip().casefold()
 
 
+def _preference_id_for(preference: str) -> str:
+    digest = hashlib.sha1(_preference_key(preference).encode("utf-8")).hexdigest()
+    return f"pref-{digest[:10]}"
+
+
+def _coerce_preference_id(value: object, preference: str) -> str:
+    raw_id = str(value or "").strip().casefold()
+    if _is_valid_preference_id(raw_id):
+        return raw_id
+    return _preference_id_for(preference)
+
+
+def _is_valid_preference_id(value: str) -> bool:
+    if not value.startswith("pref-") or len(value) != 15:
+        return False
+    return all(character in "0123456789abcdef" for character in value[5:])
+
+
+def _resolve_preference_record_index(records: list[dict[str, object]], reference: int | str) -> int | None:
+    if isinstance(reference, int):
+        return reference - 1 if 1 <= reference <= len(records) else None
+
+    normalized_reference = str(reference or "").strip().casefold()
+    if not normalized_reference:
+        raise ValueError("偏好引用必须是编号或ID。")
+    if normalized_reference.isdigit():
+        index = int(normalized_reference)
+        return index - 1 if 1 <= index <= len(records) else None
+    if not _is_valid_preference_id(normalized_reference):
+        raise ValueError("偏好引用必须是编号或ID。")
+
+    for index, record in enumerate(records):
+        preference = str(record.get("preference") or "").strip()
+        preference_id = _coerce_preference_id(record.get("id"), preference)
+        if preference_id == normalized_reference:
+            return index
+    return None
+
+
 def _coerce_enabled(value: object) -> bool:
     if isinstance(value, bool):
         return value
@@ -275,5 +358,19 @@ def _preference_format_message() -> str:
     return "偏好候选格式：偏好内容不能为空。"
 
 
+def _contains_any(text: str, keywords: tuple[str, ...]) -> bool:
+    return any(keyword in text for keyword in keywords)
+
+
+def _format_conflict_preference(preference: Preference) -> str:
+    return f"{preference.preference_id} {preference.preference}"
+
+
 def _now_iso() -> str:
     return datetime.now().isoformat(timespec="seconds")
+
+
+_CONFLICT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
+    ("回答长度", ("简洁", "简短", "精简", "短回答"), ("详细", "详尽", "展开", "完整说明")),
+    ("回复语言", ("中文", "汉语"), ("英文", "英语")),
+)
