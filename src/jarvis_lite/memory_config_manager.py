@@ -10,6 +10,7 @@ from .config import ProjectPaths
 from .contacts import contact_alias_count
 from .llm import LLMSettings, llm_local_config_path
 from .memory_config_candidates import memory_config_candidate_counts
+from .preferences import PREFERENCES_FILENAME, preference_count
 from .search import SearchSettings, search_local_config_path
 
 
@@ -31,6 +32,7 @@ def describe_memory_config_manager(paths: ProjectPaths) -> str:
         f"- 常用目录：{len(directories)} 个（memory/directories.json）",
         f"- 联系人别名：{contact_alias_count(paths)} 个（config/contacts.local.json）",
         f"- 授权规则：{authorization_rule_count(paths)} 条（config/{AUTHORIZATION_RULES_FILENAME}）",
+        f"- 偏好：{preference_count(paths)} 条（config/{PREFERENCES_FILENAME}）",
     ]
     if directories:
         lines.append(f"  目录别名：{'、'.join(directory.alias for directory in directories)}")

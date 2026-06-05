@@ -13,6 +13,7 @@ from jarvis_lite.contacts import save_contact_alias
 from jarvis_lite.memory import append_experience, append_memory
 from jarvis_lite.memory_config_candidates import record_memory_config_candidate
 from jarvis_lite.memory_config_manager import describe_memory_config_manager
+from jarvis_lite.preferences import save_preference
 
 
 class MemoryConfigManagerTests(unittest.TestCase):
@@ -28,6 +29,7 @@ class MemoryConfigManagerTests(unittest.TestCase):
             self.assertIn("常用目录：0 个", response)
             self.assertIn("联系人别名：0 个", response)
             self.assertIn("授权规则：0 条", response)
+            self.assertIn("偏好：0 条", response)
             self.assertIn("应用本地覆盖：0 个", response)
             self.assertIn("LLM 本地配置：未创建", response)
             self.assertIn("联网搜索本地配置：未创建", response)
@@ -48,6 +50,7 @@ class MemoryConfigManagerTests(unittest.TestCase):
             add_common_directory(paths, "项目", target)
             save_contact_alias(paths, "小王", "微信联系人王工", source="test")
             save_authorization_rule(paths, "微信发消息前需要确认", source="test")
+            save_preference(paths, "回答尽量简洁", source="test")
             record_memory_config_candidate(paths, "app_alias", "代理面板 = Clash Verge")
             (paths.config_dir / "apps.local.json").write_text(
                 json.dumps(
@@ -95,6 +98,7 @@ class MemoryConfigManagerTests(unittest.TestCase):
             self.assertIn("目录别名：项目", response)
             self.assertIn("联系人别名：1 个", response)
             self.assertIn("授权规则：1 条", response)
+            self.assertIn("偏好：1 条", response)
             self.assertIn("应用本地覆盖：1 个", response)
             self.assertIn("记忆与配置候选：1 条活跃，0 条已忽略", response)
             self.assertIn("LLM 本地配置：存在", response)
