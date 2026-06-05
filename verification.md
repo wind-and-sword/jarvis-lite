@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-05：发布 `0.138.0` 可安装测试包，完成偏好应用确认草稿第一阶段；`/preference-apply-draft [输入文本]` 可生成待确认偏好应用草稿，展示输入、已启用偏好稳定 ID、冲突提示和确认边界；当前阶段不真正应用偏好，不改变回复风格、LLM prompt、路由或执行决策，不把偏好管理命令加入 LLM 白名单；全量 `unittest` 761 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.138.0.exe`。
 - 2026-06-05：发布 `0.137.0` 可安装测试包，完成偏好稳定 ID 与冲突提示第一阶段；新偏好写入稳定 `id`，旧记录缺失 `id` 时按偏好文本生成确定性 ID，`/preference-enable 编号或ID` 与 `/preference-disable 编号或ID` 可显式启停，`/preference-status` 和 `/preference-preview [输入文本]` 会展示偏好 ID；已启用偏好存在明显互斥表达时只读提示人工确认，当前阶段不自动裁决冲突，不改变回复风格、LLM prompt、路由或执行决策，不把偏好管理命令加入 LLM 白名单；全量 `unittest` 758 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.137.0.exe`。
 - 2026-06-05：发布 `0.136.0` 可安装测试包，完成偏好应用预览第一阶段；`/preference-preview [输入文本]` 可只读展示当前已启用偏好和偏好应用草案，无启用偏好时提示先显式启用；当前阶段只做显式预览，不改变回复风格、LLM prompt、路由或执行决策，不把偏好预览命令加入 LLM 白名单；全量 `unittest` 756 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.136.0.exe`。
 - 2026-06-05：发布 `0.135.0` 可安装测试包，完成偏好显式启用与停用第一阶段；`/preference-status` 可只读展示本地偏好总数、已启用数量、未启用数量和编号列表，`/preference-enable 编号` 与 `/preference-disable 编号` 可显式切换已保存偏好的 `enabled` 字段；当前阶段启用状态只用于本地可审计管理，不改变回复风格、LLM prompt、路由或执行决策，不把偏好管理命令加入 LLM 白名单；全量 `unittest` 753 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.135.0.exe`。

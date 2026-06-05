@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.preferences import (
     PREFERENCES_FILENAME,
+    describe_preference_application_draft,
     describe_preference_preview,
     describe_preferences,
     parse_preference_candidate,
@@ -154,6 +155,41 @@ class PreferenceTests(unittest.TestCase):
             self.assertIn("已启用偏好：0 条", preview)
             self.assertIn("暂无已启用偏好", preview)
             self.assertIn("可用 /preference-enable 编号或ID 启用", preview)
+
+    def test_preference_application_draft_reports_empty_enabled_preferences(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            save_preference(paths, "回答尽量简洁", source="test")
+
+            draft = describe_preference_application_draft(paths, "帮我总结知识库")
+
+            self.assertIn("待确认偏好应用草稿", draft)
+            self.assertIn("预览输入：帮我总结知识库", draft)
+            self.assertIn("已启用偏好：0 条", draft)
+            self.assertIn("暂无已启用偏好", draft)
+            self.assertIn("可用 /preference-enable 编号或ID 启用", draft)
+            self.assertIn("当前阶段不真正应用偏好", draft)
+
+    def test_preference_application_draft_lists_enabled_preferences_and_conflicts(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            concise = save_preference(paths, "回答尽量简洁", source="test")
+            detailed = save_preference(paths, "回答尽量详细", source="test")
+            set_preference_enabled(paths, concise.preference_id, True)
+            set_preference_enabled(paths, detailed.preference_id, True)
+
+            draft = describe_preference_application_draft(paths, "解释这个项目")
+
+            self.assertIn("待确认偏好应用草稿", draft)
+            self.assertIn("确认状态：待用户显式确认", draft)
+            self.assertIn("预览输入：解释这个项目", draft)
+            self.assertIn("已启用偏好：2 条", draft)
+            self.assertIn(f"1. [{concise.preference_id}] 回答尽量简洁", draft)
+            self.assertIn(f"2. [{detailed.preference_id}] 回答尽量详细", draft)
+            self.assertIn("偏好冲突提示", draft)
+            self.assertIn("只提示冲突，不自动裁决优先级", draft)
+            self.assertIn("当前阶段不自动改变回复风格、LLM prompt、路由或执行决策", draft)
+            self.assertIn("当前阶段不真正应用偏好", draft)
 
     def test_preference_status_and_preview_report_enabled_conflicts(self):
         with tempfile.TemporaryDirectory() as temp_dir:

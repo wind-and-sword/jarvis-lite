@@ -208,6 +208,38 @@ def describe_preference_preview(paths: ProjectPaths, user_input: str = "") -> st
     return "\n".join(lines)
 
 
+def describe_preference_application_draft(paths: ProjectPaths, user_input: str = "") -> str:
+    """生成待确认偏好应用草稿；当前阶段不真正应用偏好。"""
+
+    draft_input = user_input.strip()
+    preferences = enabled_preferences(paths)
+    lines = [
+        "待确认偏好应用草稿",
+        "确认状态：待用户显式确认",
+        f"已启用偏好：{len(preferences)} 条",
+    ]
+    if draft_input:
+        lines.append(f"预览输入：{draft_input}")
+    if preferences:
+        lines.append("拟参考的偏好：")
+        for index, preference in enumerate(preferences, 1):
+            lines.append(f"{index}. [{preference.preference_id}] {preference.preference}")
+        conflict_hints = preference_conflict_hints(preferences)
+        if conflict_hints:
+            lines.append("偏好冲突提示：")
+            lines.extend(conflict_hints)
+    else:
+        lines.append("暂无已启用偏好。可用 /preference-enable 编号或ID 启用。")
+    lines.extend(
+        [
+            "草稿策略：已启用偏好仅生成可审阅草稿，后续真正应用前仍需显式确认。",
+            "说明：当前阶段不自动改变回复风格、LLM prompt、路由或执行决策。",
+            "确认边界：当前阶段不真正应用偏好，不生成可执行确认命令。",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def preference_conflict_hints(preferences: tuple[Preference, ...]) -> tuple[str, ...]:
     """返回已启用偏好的明显冲突提示；只提示，不自动裁决。"""
 

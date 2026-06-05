@@ -1154,6 +1154,30 @@ class AgentTests(unittest.TestCase):
         self.assertIn("偏好预览：/preference-preview", status)
         self.assertIn("/preference-preview", manager_status)
 
+    def test_preference_apply_draft_command_reports_confirmation_boundary(self):
+        self.agent.handle("/config-candidate-add preference 回答尽量简洁")
+        self.agent.handle("/config-candidate-confirm 1")
+
+        empty_draft = self.agent.handle("/preference-apply-draft 帮我总结知识库")
+        self.agent.handle("/preference-enable 1")
+        draft = self.agent.handle("/preference-apply-draft 帮我总结知识库")
+        help_text = self.agent.handle("/help")
+        status = self.agent.handle("/status")
+        manager_status = self.agent.handle("/config-manager-status")
+        preference_id = json.loads((self.paths.config_dir / "preferences.local.json").read_text(encoding="utf-8"))[
+            "preferences"
+        ][0]["id"]
+
+        self.assertIn("暂无已启用偏好", empty_draft)
+        self.assertIn("待确认偏好应用草稿", draft)
+        self.assertIn("确认状态：待用户显式确认", draft)
+        self.assertIn("预览输入：帮我总结知识库", draft)
+        self.assertIn(f"1. [{preference_id}] 回答尽量简洁", draft)
+        self.assertIn("当前阶段不真正应用偏好", draft)
+        self.assertIn("/preference-apply-draft [输入文本]：生成待确认偏好应用草稿", help_text)
+        self.assertIn("偏好应用草稿：/preference-apply-draft", status)
+        self.assertIn("/preference-apply-draft", manager_status)
+
     def test_authorization_status_command_reports_policy(self):
         response = self.agent.handle("/authorization-status")
 
@@ -4281,7 +4305,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.137.1",
+                    "version": "0.138.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4292,7 +4316,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.137.1", response)
+        self.assertIn("发现新版本：0.138.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4307,7 +4331,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.137.1",
+                        "version": "0.138.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

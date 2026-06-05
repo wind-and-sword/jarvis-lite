@@ -117,7 +117,12 @@ from .memory_config_candidates import (
     restore_memory_config_candidate,
     undo_memory_config_candidate,
 )
-from .preferences import describe_preference_preview, describe_preferences, set_preference_enabled
+from .preferences import (
+    describe_preference_application_draft,
+    describe_preference_preview,
+    describe_preferences,
+    set_preference_enabled,
+)
 from .idea_workflow import (
     describe_idea_focus,
     describe_idea_open,
@@ -1149,6 +1154,11 @@ class JarvisAgent:
             self.tools.run("record_log", message="预览已启用偏好应用草案")
             return describe_preference_preview(self.paths, preview_input)
 
+        if command == "/preference-apply-draft":
+            draft_input = prompt[len(command):].strip()
+            self.tools.run("record_log", message="生成待确认偏好应用草稿")
+            return describe_preference_application_draft(self.paths, draft_input)
+
         if command == "/config-candidate-apply":
             if not args:
                 return "用法：/config-candidate-apply 编号"
@@ -1225,6 +1235,7 @@ class JarvisAgent:
                 "/preference-enable 编号或ID：启用已保存偏好",
                 "/preference-disable 编号或ID：停用已保存偏好",
                 "/preference-preview [输入文本]：预览已启用偏好的应用草案",
+                "/preference-apply-draft [输入文本]：生成待确认偏好应用草稿",
                 "/config-candidate-restore 编号：把已忽略或已固化候选恢复为活跃候选",
                 "/config-candidate-dismiss 编号：忽略指定记忆与配置候选",
                 "/status：查看阶段 1 当前状态",
@@ -4536,6 +4547,7 @@ class JarvisAgent:
                 "- 撤销固化：/config-candidate-undo 编号 删除联系人别名、应用别名、授权规则或偏好并恢复候选",
                 "- 偏好状态：/preference-status 查看本地偏好启用状态",
                 "- 偏好预览：/preference-preview [输入文本] 预览已启用偏好的应用草案",
+                "- 偏好应用草稿：/preference-apply-draft [输入文本] 生成待确认偏好应用草稿",
                 "- 任务状态：/task-status 查看当前任务、步骤、中断恢复和失败复盘",
                 "- 任务失败截图：/task-fail-capture 失败原因 [lang=chi_sim+eng]",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",

@@ -56,6 +56,7 @@ def describe_memory_config_manager(paths: ProjectPaths) -> str:
             "- /authorization-status：查看本地授权规则和执行决策边界",
             "- /preference-status：查看本地偏好启用状态",
             "- /preference-preview [输入文本]：预览已启用偏好的应用草案",
+            "- /preference-apply-draft [输入文本]：生成待确认偏好应用草稿",
             "- /config-candidates：查看记忆与配置候选池",
             "- /llm-config-check：只读检查外脑本地配置",
             "- /search-config-check：只读检查联网搜索本地配置",
