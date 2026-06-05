@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from .app_registry import APP_REGISTRY_FILENAME
+from .authorization_rules import AUTHORIZATION_RULES_FILENAME, authorization_rule_count
 from .automation import list_common_directories
 from .config import ProjectPaths
 from .contacts import contact_alias_count
@@ -29,6 +30,7 @@ def describe_memory_config_manager(paths: ProjectPaths) -> str:
         f"- 经验记忆：{_count_markdown_bullets(paths.memory_dir / 'experiences.md')} 条（memory/experiences.md）",
         f"- 常用目录：{len(directories)} 个（memory/directories.json）",
         f"- 联系人别名：{contact_alias_count(paths)} 个（config/contacts.local.json）",
+        f"- 授权规则：{authorization_rule_count(paths)} 条（config/{AUTHORIZATION_RULES_FILENAME}）",
     ]
     if directories:
         lines.append(f"  目录别名：{'、'.join(directory.alias for directory in directories)}")
@@ -49,6 +51,7 @@ def describe_memory_config_manager(paths: ProjectPaths) -> str:
             "- /experience 经验内容：写入经验记忆",
             "- /dir-add 别名 目录路径：登记常用目录",
             "- /apps：查看应用注册表和本地覆盖提示",
+            "- /authorization-status：查看本地授权规则和执行决策边界",
             "- /config-candidates：查看记忆与配置候选池",
             "- /llm-config-check：只读检查外脑本地配置",
             "- /search-config-check：只读检查联网搜索本地配置",

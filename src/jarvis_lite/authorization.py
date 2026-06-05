@@ -4,6 +4,9 @@ import shlex
 from dataclasses import dataclass
 from typing import Iterable
 
+from .authorization_rules import describe_authorization_rules
+from .config import ProjectPaths
+
 
 DESKTOP_ACTION_COMMANDS = (
     "/app-launch",
@@ -135,21 +138,22 @@ def authorize_intent_execution(
     )
 
 
-def describe_authorization_status() -> str:
+def describe_authorization_status(paths: ProjectPaths | None = None) -> str:
     """输出意图授权层第一阶段策略。"""
 
     command_list = "、".join(DESKTOP_ACTION_COMMANDS)
-    return "\n".join(
-        [
-            "意图授权层状态：第一阶段已启用",
-            "- 直接执行：显式 slash command，或高置信低风险查询/状态命令。",
-            "- 准备后确认：自然语言或建议链路中的桌面动作命令。",
-            "- 追问补充：缺少槽位或识别置信度不足的意图。",
-            "- 降级：LLM 外脑桌面动作只返回说明，不自动执行。",
-            f"- 桌面动作范围：{command_list}",
-            "- 确认入口：确认执行 / 取消执行。",
-        ]
-    )
+    lines = [
+        "意图授权层状态：第一阶段已启用",
+        "- 直接执行：显式 slash command，或高置信低风险查询/状态命令。",
+        "- 准备后确认：自然语言或建议链路中的桌面动作命令。",
+        "- 追问补充：缺少槽位或识别置信度不足的意图。",
+        "- 降级：LLM 外脑桌面动作只返回说明，不自动执行。",
+        f"- 桌面动作范围：{command_list}",
+        "- 确认入口：确认执行 / 取消执行。",
+    ]
+    if paths is not None:
+        lines.extend(describe_authorization_rules(paths).splitlines())
+    return "\n".join(lines)
 
 
 def _command_name(command: str) -> str:

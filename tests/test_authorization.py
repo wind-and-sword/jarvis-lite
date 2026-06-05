@@ -1,13 +1,22 @@
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from jarvis_lite.config import build_project_paths
 from jarvis_lite.authorization import (
     authorize_intent_execution,
     describe_authorization_status,
     is_desktop_action_command,
+)
+from jarvis_lite.authorization_rules import (
+    AUTHORIZATION_RULES_FILENAME,
+    authorization_rule_count,
+    read_authorization_rules,
+    remove_authorization_rule,
+    save_authorization_rule,
 )
 
 
@@ -138,6 +147,31 @@ class AuthorizationTests(unittest.TestCase):
         self.assertIn("/qq-open", status)
         self.assertIn("/wechat-open", status)
         self.assertIn("/idea-open", status)
+
+    def test_authorization_rule_store_writes_counts_and_removes_rules(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+
+            saved = save_authorization_rule(paths, "微信发消息前需要确认", source="test")
+            rules_after_save = read_authorization_rules(paths)
+            count_after_save = authorization_rule_count(paths)
+            status_after_save = describe_authorization_status(paths)
+            removed = remove_authorization_rule(paths, "微信发消息前需要确认")
+            rules_after_remove = read_authorization_rules(paths)
+
+            self.assertEqual(saved.rule, "微信发消息前需要确认")
+            self.assertEqual(count_after_save, 1)
+            self.assertEqual(rules_after_save[0].rule, "微信发消息前需要确认")
+            self.assertTrue((paths.config_dir / AUTHORIZATION_RULES_FILENAME).exists())
+            self.assertIn("本地授权规则：1 条", status_after_save)
+            self.assertIn("- 微信发消息前需要确认", status_after_save)
+            self.assertTrue(removed)
+            self.assertEqual(rules_after_remove, ())
+            self.assertEqual(authorization_rule_count(paths), 0)
+            self.assertNotIn(
+                "微信发消息前需要确认",
+                (paths.config_dir / AUTHORIZATION_RULES_FILENAME).read_text(encoding="utf-8"),
+            )
 
 
 if __name__ == "__main__":

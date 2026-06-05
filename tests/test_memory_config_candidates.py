@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.app_registry import find_registered_app
+from jarvis_lite.authorization_rules import authorization_rule_count, read_authorization_rules
 from jarvis_lite.contacts import contact_alias_count, read_contact_aliases
 from jarvis_lite.memory_config_candidates import (
     apply_memory_config_candidate,
@@ -247,18 +248,45 @@ class MemoryConfigCandidateTests(unittest.TestCase):
             self.assertIn("1. 应用别名：晨会入口 => chrome", list_response)
             self.assertEqual(load_runtime_context(paths).memory_config_candidates[0].status, "active")
 
-    def test_confirm_supports_only_confirmed_high_risk_candidate_types(self):
+    def test_confirm_authorization_rule_candidate_persists_and_undo_removes_rule(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
             record_memory_config_candidate(paths, "authorization_rule", "微信发消息前需要确认")
 
+            confirm_response = confirm_memory_config_candidate(paths, 1)
+            rules_after_confirm = read_authorization_rules(paths)
+            count_after_confirm = authorization_rule_count(paths)
+            runtime_context_after_confirm = load_runtime_context(paths)
+            history_response = describe_memory_config_candidate_history(paths)
+            undo_response = undo_memory_config_candidate(paths, 1)
+            list_response = describe_memory_config_candidates(paths)
+
+            self.assertIn("已确认并固化记忆与配置候选 1：授权规则", confirm_response)
+            self.assertIn("授权规则：微信发消息前需要确认", confirm_response)
+            self.assertIn("写入：config/authorization.local.json", confirm_response)
+            self.assertIn("撤销固化：/config-candidate-undo 1", confirm_response)
+            self.assertEqual(count_after_confirm, 1)
+            self.assertEqual(rules_after_confirm[0].rule, "微信发消息前需要确认")
+            self.assertEqual(runtime_context_after_confirm.memory_config_candidates[0].status, "applied")
+            self.assertIn("1. 已固化 授权规则：微信发消息前需要确认", history_response)
+            self.assertIn("已撤销固化候选 1：授权规则：微信发消息前需要确认", undo_response)
+            self.assertIn("候选已恢复为活跃", undo_response)
+            self.assertEqual(authorization_rule_count(paths), 0)
+            self.assertIn("1. 授权规则：微信发消息前需要确认", list_response)
+            self.assertEqual(load_runtime_context(paths).memory_config_candidates[0].status, "active")
+
+    def test_confirm_supports_only_confirmed_high_risk_candidate_types(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            record_memory_config_candidate(paths, "preference", "回答尽量简洁")
+
             response = confirm_memory_config_candidate(paths, 1)
             runtime_context = load_runtime_context(paths)
 
-            self.assertIn("暂不支持确认固化授权规则候选", response)
-            self.assertIn("当前阶段只支持联系人别名和应用别名确认固化", response)
+            self.assertIn("暂不支持确认固化偏好候选", response)
+            self.assertIn("当前阶段只支持联系人别名、应用别名和授权规则确认固化", response)
             self.assertEqual(runtime_context.memory_config_candidates[0].status, "active")
-            self.assertFalse((paths.config_dir / "authorization.local.json").exists())
+            self.assertFalse((paths.config_dir / "preferences.local.json").exists())
 
     def test_apply_rejects_unsupported_or_invalid_candidates_without_hiding_them(self):
         with tempfile.TemporaryDirectory() as temp_dir:

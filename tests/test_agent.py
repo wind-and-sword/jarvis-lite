@@ -1044,6 +1044,29 @@ class AgentTests(unittest.TestCase):
         self.assertIn("没有找到应用：晨会入口", find_after_undo)
         self.assertIn("1. 应用别名：晨会入口 => chrome", list_response)
 
+    def test_config_candidate_confirm_and_undo_authorization_rule(self):
+        self.agent.handle("/config-candidate-add authorization_rule 微信发消息前需要确认")
+
+        confirm_response = self.agent.handle("/config-candidate-confirm 1")
+        authorization_status = self.agent.handle("/authorization-status")
+        manager_status = self.agent.handle("/config-manager-status")
+        history_response = self.agent.handle("/config-candidate-history")
+        undo_response = self.agent.handle("/config-candidate-undo 1")
+        authorization_status_after_undo = self.agent.handle("/authorization-status")
+        list_response = self.agent.handle("/config-candidates")
+
+        self.assertIn("已确认并固化记忆与配置候选 1：授权规则", confirm_response)
+        self.assertIn("授权规则：微信发消息前需要确认", confirm_response)
+        self.assertIn("写入：config/authorization.local.json", confirm_response)
+        self.assertIn("本地授权规则：1 条", authorization_status)
+        self.assertIn("- 微信发消息前需要确认", authorization_status)
+        self.assertIn("授权规则：1 条", manager_status)
+        self.assertIn("1. 已固化 授权规则：微信发消息前需要确认", history_response)
+        self.assertIn("已撤销固化候选 1：授权规则：微信发消息前需要确认", undo_response)
+        self.assertIn("候选已恢复为活跃", undo_response)
+        self.assertIn("本地授权规则：0 条", authorization_status_after_undo)
+        self.assertIn("1. 授权规则：微信发消息前需要确认", list_response)
+
     def test_authorization_status_command_reports_policy(self):
         response = self.agent.handle("/authorization-status")
 
@@ -4171,7 +4194,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.132.1",
+                    "version": "0.133.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4182,7 +4205,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.132.1", response)
+        self.assertIn("发现新版本：0.133.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4197,7 +4220,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.132.1",
+                        "version": "0.133.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

@@ -4,6 +4,12 @@ from dataclasses import replace
 from datetime import datetime
 
 from .app_registry import APP_REGISTRY_FILENAME, find_registered_app, parse_app_alias_candidate, remove_app_alias, save_app_alias
+from .authorization_rules import (
+    AUTHORIZATION_RULES_FILENAME,
+    parse_authorization_rule_candidate,
+    remove_authorization_rule,
+    save_authorization_rule,
+)
 from .automation import add_common_directory
 from .config import ProjectPaths
 from .contacts import CONTACTS_FILENAME, parse_contact_alias_candidate, remove_contact_alias, save_contact_alias
@@ -302,11 +308,11 @@ def confirm_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
     candidate_index = active_indices[index - 1]
     candidate = candidates[candidate_index]
     label = _candidate_type_label(candidate.candidate_type)
-    if candidate.candidate_type not in {"contact_alias", "app_alias"}:
+    if candidate.candidate_type not in {"contact_alias", "app_alias", "authorization_rule"}:
         return "\n".join(
             [
                 f"暂不支持确认固化{label}候选。",
-                "当前阶段只支持联系人别名和应用别名确认固化，不写入其他高风险长期配置。",
+                "当前阶段只支持联系人别名、应用别名和授权规则确认固化，不写入其他高风险长期配置。",
                 "候选仍保持活跃，可用 /config-candidate-dismiss 编号 忽略。",
             ]
         )
@@ -317,11 +323,16 @@ def confirm_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
             save_contact_alias(paths, alias, target, source="config-candidate")
             persisted_summary = f"联系人别名：{alias} -> {target}"
             storage_target = f"config/{CONTACTS_FILENAME}"
-        else:
+        elif candidate.candidate_type == "app_alias":
             alias, app_query = parse_app_alias_candidate(candidate.content)
             app = save_app_alias(paths, alias, app_query)
             persisted_summary = f"应用别名：{alias} -> {app.display_name} ({app.app_id})"
             storage_target = f"config/{APP_REGISTRY_FILENAME}"
+        else:
+            rule = parse_authorization_rule_candidate(candidate.content)
+            saved_rule = save_authorization_rule(paths, rule, source="config-candidate")
+            persisted_summary = f"授权规则：{saved_rule.rule}"
+            storage_target = f"config/{AUTHORIZATION_RULES_FILENAME}"
     except ValueError as exc:
         return str(exc)
 
@@ -366,11 +377,11 @@ def undo_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
     candidate_index = history_indices[index - 1]
     candidate = candidates[candidate_index]
     label = _candidate_type_label(candidate.candidate_type)
-    if candidate.candidate_type not in {"contact_alias", "app_alias"} or candidate.status != "applied":
+    if candidate.candidate_type not in {"contact_alias", "app_alias", "authorization_rule"} or candidate.status != "applied":
         return "\n".join(
             [
                 f"暂不支持撤销固化{label}候选。",
-                "当前阶段只支持已固化联系人别名和应用别名候选撤销。",
+                "当前阶段只支持已固化联系人别名、应用别名和授权规则候选撤销。",
                 "如需恢复候选状态，可用 /config-candidate-restore 编号。",
             ]
         )
@@ -381,7 +392,7 @@ def undo_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
             remove_contact_alias(paths, alias)
             removed_summary = f"{alias} -> {target}"
             storage_target = f"config/{CONTACTS_FILENAME}"
-        else:
+        elif candidate.candidate_type == "app_alias":
             alias, app_query = parse_app_alias_candidate(candidate.content)
             app = find_registered_app(paths, app_query)
             if app is None:
@@ -389,6 +400,11 @@ def undo_memory_config_candidate(paths: ProjectPaths, index: int) -> str:
             remove_app_alias(paths, alias, app_query)
             removed_summary = f"{alias} -> {app.display_name} ({app.app_id})"
             storage_target = f"config/{APP_REGISTRY_FILENAME}"
+        else:
+            rule = parse_authorization_rule_candidate(candidate.content)
+            remove_authorization_rule(paths, rule)
+            removed_summary = rule
+            storage_target = f"config/{AUTHORIZATION_RULES_FILENAME}"
     except ValueError as exc:
         return str(exc)
 

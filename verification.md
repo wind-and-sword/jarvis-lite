@@ -1,11 +1,12 @@
 # 验证记录
 
-> 日期：2026-06-04
+> 日期：2026-06-05
 > 执行者：Codex
 > 说明：根目录只作为验证记录入口，不再长期追加完整命令和输出。
 
 ## 最近摘要
 
+- 2026-06-05：发布 `0.133.0` 可安装测试包，完成授权规则确认固化与撤销第一阶段；`/config-candidate-confirm 编号` 可把活跃授权规则候选写入 `config/authorization.local.json` 并标记已固化，`/config-candidate-undo 编号` 可从历史中撤销已固化授权规则、删除对应规则并恢复候选；`/authorization-status` 和配置管家只读展示本地授权规则，当前阶段不改变命令执行决策，不把确认/撤销命令加入 LLM 白名单；全量 `unittest` 746 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.133.0.exe`。
 - 2026-06-04：发布 `0.132.0` 可安装测试包，完成应用别名确认固化与撤销第一阶段；`/config-candidate-confirm 编号` 可把活跃应用别名候选写入 `config/apps.local.json` 的 `apps.<app_id>.aliases` 并标记已固化，`/config-candidate-undo 编号` 可从历史中撤销已固化应用别名、删除对应别名并恢复候选；`/app-find 新别名` 可命中已登记应用，确认和撤销阶段不启动应用、不切换窗口、不点击、不输入，不把确认/撤销命令加入 LLM 白名单；全量 `unittest` 743 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.132.0.exe`。
 - 2026-06-04：发布 `0.131.0` 可安装测试包，完成联系人别名确认固化与撤销第一阶段；`/config-candidate-confirm 编号` 可把活跃联系人别名候选写入 `config/contacts.local.json` 并标记已固化，`/config-candidate-undo 编号` 可从历史中撤销已固化联系人别名、删除对应别名并恢复候选；当前阶段不查找真实联系人、不点击、不输入、不发送消息，不把确认/撤销命令加入 LLM 白名单；全量 `unittest` 739 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.131.0.exe`。
 - 2026-06-04：发布 `0.130.0` 可安装测试包，完成任务失败复盘窗口与授权摘要第一阶段；`/task-fail` 和 `/task-fail-capture` 会在失败复盘中记录当前只读窗口摘要、路由摘要和授权摘要，`/task-status` 最近失败记录展示同一批复盘上下文；当前阶段不切换窗口、不点击、不输入、不自动重新执行外部动作；全量 `unittest` 734 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.130.0.exe`。
@@ -175,7 +176,8 @@
 - [2026-06-01 周索引](verification/2026-06/week-2026-06-01.md)：2026-06-01 至 2026-06-07。
 - [2026-05-18 周索引](verification/2026-05/week-2026-05-18.md)：2026-05-18 至 2026-05-24。
 - [2026-05-25 周索引](verification/2026-05/week-2026-05-25.md)：2026-05-25 至 2026-05-31。
-- [2026-06-04 验证记录](verification/2026-06/2026-06-04.md)：最近一次验证明细。
+- [2026-06-05 验证记录](verification/2026-06/2026-06-05.md)：最近一次验证明细。
+- [2026-06-04 验证记录](verification/2026-06/2026-06-04.md)：2026-06-04 验证明细。
 - [2026-06-03 验证记录](verification/2026-06/2026-06-03.md)：2026-06-03 验证明细。
 - [2026-06-02 验证记录](verification/2026-06/2026-06-02.md)：2026-06-02 验证明细。
 - [2026-06-01 验证记录](verification/2026-06/2026-06-01.md)：2026-06-01 验证明细。
