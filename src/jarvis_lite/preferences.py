@@ -240,6 +240,58 @@ def describe_preference_application_draft(paths: ProjectPaths, user_input: str =
     return "\n".join(lines)
 
 
+def describe_confirmed_preference_application(paths: ProjectPaths, user_input: str = "") -> str:
+    """确认已启用偏好仅应用到本次显式命令输出。"""
+
+    application_input = user_input.strip()
+    preferences = enabled_preferences(paths)
+    if not preferences:
+        lines = ["无法确认偏好应用：暂无已启用偏好。"]
+        if application_input:
+            lines.append(f"应用输入：{application_input}")
+        lines.extend(
+            [
+                "未确认应用偏好。",
+                "可用 /preference-enable 编号或ID 启用。",
+                "说明：未改变回复风格、LLM prompt、路由或执行决策。",
+            ]
+        )
+        return "\n".join(lines)
+
+    conflict_hints = preference_conflict_hints(preferences)
+    if conflict_hints:
+        lines = ["无法确认偏好应用：存在偏好冲突。"]
+        if application_input:
+            lines.append(f"应用输入：{application_input}")
+        lines.append("偏好冲突提示：")
+        lines.extend(conflict_hints)
+        lines.extend(
+            [
+                "未确认应用偏好。",
+                "可用 /preference-disable 编号或ID 停用冲突偏好。",
+                "说明：冲突只提示人工确认，不自动裁决优先级。",
+            ]
+        )
+        return "\n".join(lines)
+
+    lines = [
+        "已确认本次偏好应用",
+        f"已确认偏好：{len(preferences)} 条",
+    ]
+    if application_input:
+        lines.append(f"应用输入：{application_input}")
+    lines.append("本次应用的偏好：")
+    for index, preference in enumerate(preferences, 1):
+        lines.append(f"{index}. [{preference.preference_id}] {preference.preference}")
+    lines.extend(
+        [
+            "应用范围：仅限本次 /preference-apply-confirm 命令输出。",
+            "说明：本次确认不写入 LLM prompt，不影响普通聊天、路由或执行决策。",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def preference_conflict_hints(preferences: tuple[Preference, ...]) -> tuple[str, ...]:
     """返回已启用偏好的明显冲突提示；只提示，不自动裁决。"""
 

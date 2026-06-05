@@ -118,6 +118,7 @@ from .memory_config_candidates import (
     undo_memory_config_candidate,
 )
 from .preferences import (
+    describe_confirmed_preference_application,
     describe_preference_application_draft,
     describe_preference_preview,
     describe_preferences,
@@ -1159,6 +1160,11 @@ class JarvisAgent:
             self.tools.run("record_log", message="生成待确认偏好应用草稿")
             return describe_preference_application_draft(self.paths, draft_input)
 
+        if command == "/preference-apply-confirm":
+            confirmation_input = prompt[len(command):].strip()
+            self.tools.run("record_log", message="确认本次偏好应用")
+            return describe_confirmed_preference_application(self.paths, confirmation_input)
+
         if command == "/config-candidate-apply":
             if not args:
                 return "用法：/config-candidate-apply 编号"
@@ -1236,6 +1242,7 @@ class JarvisAgent:
                 "/preference-disable 编号或ID：停用已保存偏好",
                 "/preference-preview [输入文本]：预览已启用偏好的应用草案",
                 "/preference-apply-draft [输入文本]：生成待确认偏好应用草稿",
+                "/preference-apply-confirm [输入文本]：确认本次偏好应用",
                 "/config-candidate-restore 编号：把已忽略或已固化候选恢复为活跃候选",
                 "/config-candidate-dismiss 编号：忽略指定记忆与配置候选",
                 "/status：查看阶段 1 当前状态",
@@ -4548,6 +4555,7 @@ class JarvisAgent:
                 "- 偏好状态：/preference-status 查看本地偏好启用状态",
                 "- 偏好预览：/preference-preview [输入文本] 预览已启用偏好的应用草案",
                 "- 偏好应用草稿：/preference-apply-draft [输入文本] 生成待确认偏好应用草稿",
+                "- 偏好应用确认：/preference-apply-confirm [输入文本] 确认本次偏好应用",
                 "- 任务状态：/task-status 查看当前任务、步骤、中断恢复和失败复盘",
                 "- 任务失败截图：/task-fail-capture 失败原因 [lang=chi_sim+eng]",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",

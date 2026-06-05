@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from jarvis_lite.config import build_project_paths
 from jarvis_lite.preferences import (
     PREFERENCES_FILENAME,
+    describe_confirmed_preference_application,
     describe_preference_application_draft,
     describe_preference_preview,
     describe_preferences,
@@ -190,6 +191,54 @@ class PreferenceTests(unittest.TestCase):
             self.assertIn("只提示冲突，不自动裁决优先级", draft)
             self.assertIn("当前阶段不自动改变回复风格、LLM prompt、路由或执行决策", draft)
             self.assertIn("当前阶段不真正应用偏好", draft)
+
+    def test_confirmed_preference_application_requires_enabled_preferences(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            save_preference(paths, "回答尽量简洁", source="test")
+
+            confirmation = describe_confirmed_preference_application(paths, "帮我总结知识库")
+
+            self.assertIn("无法确认偏好应用：暂无已启用偏好", confirmation)
+            self.assertIn("可用 /preference-enable 编号或ID 启用", confirmation)
+            self.assertIn("未确认应用偏好", confirmation)
+
+    def test_confirmed_preference_application_reports_one_shot_scope(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            concise = save_preference(paths, "回答尽量简洁", source="test")
+            chinese = save_preference(paths, "优先使用中文", source="test")
+            set_preference_enabled(paths, concise.preference_id, True)
+            set_preference_enabled(paths, chinese.preference_id, True)
+
+            confirmation = describe_confirmed_preference_application(paths, "帮我总结知识库")
+
+            self.assertIn("已确认本次偏好应用", confirmation)
+            self.assertIn("应用输入：帮我总结知识库", confirmation)
+            self.assertIn("已确认偏好：2 条", confirmation)
+            self.assertIn(f"1. [{concise.preference_id}] 回答尽量简洁", confirmation)
+            self.assertIn(f"2. [{chinese.preference_id}] 优先使用中文", confirmation)
+            self.assertIn("应用范围：仅限本次 /preference-apply-confirm 命令输出", confirmation)
+            self.assertIn("不写入 LLM prompt", confirmation)
+            self.assertIn("不影响普通聊天、路由或执行决策", confirmation)
+
+    def test_confirmed_preference_application_rejects_enabled_conflicts(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            concise = save_preference(paths, "回答尽量简洁", source="test")
+            detailed = save_preference(paths, "回答尽量详细", source="test")
+            set_preference_enabled(paths, concise.preference_id, True)
+            set_preference_enabled(paths, detailed.preference_id, True)
+
+            confirmation = describe_confirmed_preference_application(paths, "解释这个项目")
+
+            self.assertIn("无法确认偏好应用：存在偏好冲突", confirmation)
+            self.assertIn("偏好冲突提示", confirmation)
+            self.assertIn(f"{concise.preference_id} 回答尽量简洁", confirmation)
+            self.assertIn(f"{detailed.preference_id} 回答尽量详细", confirmation)
+            self.assertIn("只提示冲突，不自动裁决优先级", confirmation)
+            self.assertIn("未确认应用偏好", confirmation)
+            self.assertIn("可用 /preference-disable 编号或ID 停用冲突偏好", confirmation)
 
     def test_preference_status_and_preview_report_enabled_conflicts(self):
         with tempfile.TemporaryDirectory() as temp_dir:
