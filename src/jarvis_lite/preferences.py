@@ -16,6 +16,7 @@ class Preference:
     """本地偏好记录；第一阶段只做持久化和展示，不自动改变回复策略。"""
 
     preference: str
+    enabled: bool = False
     source: str = ""
     created_at: str = ""
     updated_at: str = ""
@@ -48,6 +49,7 @@ def save_preference(
     preference: str,
     *,
     source: str = "",
+    enabled: bool | None = None,
 ) -> Preference:
     """新增或更新本地偏好，不改变当前回复风格或执行决策。"""
 
@@ -58,6 +60,7 @@ def save_preference(
 
     saved = Preference(
         preference=normalized_preference,
+        enabled=bool(enabled) if enabled is not None else False,
         source=source.strip(),
         created_at=now,
         updated_at=now,
@@ -70,6 +73,7 @@ def save_preference(
         if _preference_key(existing_preference) == preference_key:
             saved = Preference(
                 preference=normalized_preference,
+                enabled=_coerce_enabled(record.get("enabled")) if enabled is None else bool(enabled),
                 source=source.strip() or str(record.get("source") or "").strip(),
                 created_at=str(record.get("created_at") or now),
                 updated_at=now,
@@ -84,6 +88,29 @@ def save_preference(
     payload["preferences"] = updated_records
     _write_preferences_payload(paths, payload)
     return saved
+
+
+def set_preference_enabled(paths: ProjectPaths, index: int, enabled: bool) -> Preference:
+    """按 1 基编号切换偏好启用状态；不自动应用到回复或执行路径。"""
+
+    payload = _read_preferences_payload(paths)
+    records = _valid_preference_records(payload.get("preferences"))
+    if index < 1 or index > len(records):
+        raise ValueError("偏好编号不存在。可用 /preference-status 查看本地偏好。")
+
+    now = _now_iso()
+    target_record = records[index - 1]
+    updated = Preference(
+        preference=str(target_record.get("preference") or "").strip(),
+        enabled=enabled,
+        source=str(target_record.get("source") or "").strip(),
+        created_at=str(target_record.get("created_at") or now),
+        updated_at=now,
+    )
+    records[index - 1] = _preference_to_record(updated)
+    payload["preferences"] = records
+    _write_preferences_payload(paths, payload)
+    return updated
 
 
 def remove_preference(paths: ProjectPaths, preference: str) -> bool:
@@ -114,11 +141,22 @@ def describe_preferences(paths: ProjectPaths) -> str:
     """展示本地偏好，只读展示，不触发回复或执行策略变更。"""
 
     preferences = read_preferences(paths)
-    lines = [f"偏好：{len(preferences)} 条"]
-    for preference in preferences:
-        lines.append(f"- {preference.preference}")
-    if preferences:
-        lines.append("说明：本阶段只持久化和展示偏好，不自动改变回复或执行决策。")
+    enabled_count = sum(1 for preference in preferences if preference.enabled)
+    disabled_count = len(preferences) - enabled_count
+    lines = [
+        f"本地偏好：{len(preferences)} 条",
+        f"- 已启用：{enabled_count} 条",
+        f"- 未启用：{disabled_count} 条",
+    ]
+    for index, preference in enumerate(preferences, 1):
+        state = "已启用" if preference.enabled else "未启用"
+        lines.append(f"{index}. {state} {preference.preference}")
+    lines.extend(
+        [
+            "说明：启用状态只用于本地可审计管理，不自动改变回复风格、LLM prompt、路由或执行决策。",
+            "可用 /preference-enable 编号 启用，/preference-disable 编号 停用。",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -165,15 +203,17 @@ def _preference_from_record(record: object) -> Preference | None:
         return None
     return Preference(
         preference=preference,
+        enabled=_coerce_enabled(record.get("enabled")),
         source=str(record.get("source") or "").strip(),
         created_at=str(record.get("created_at") or "").strip(),
         updated_at=str(record.get("updated_at") or "").strip(),
     )
 
 
-def _preference_to_record(preference: Preference) -> dict[str, str]:
+def _preference_to_record(preference: Preference) -> dict[str, object]:
     return {
         "preference": preference.preference,
+        "enabled": preference.enabled,
         "source": preference.source,
         "created_at": preference.created_at,
         "updated_at": preference.updated_at,
@@ -189,6 +229,14 @@ def _normalize_preference(preference: str) -> str:
 
 def _preference_key(preference: str) -> str:
     return preference.strip().casefold()
+
+
+def _coerce_enabled(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().casefold() in {"1", "true", "yes", "enabled", "已启用"}
+    return False
 
 
 def _preference_format_message() -> str:

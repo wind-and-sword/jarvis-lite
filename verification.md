@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-05：发布 `0.135.0` 可安装测试包，完成偏好显式启用与停用第一阶段；`/preference-status` 可只读展示本地偏好总数、已启用数量、未启用数量和编号列表，`/preference-enable 编号` 与 `/preference-disable 编号` 可显式切换已保存偏好的 `enabled` 字段；当前阶段启用状态只用于本地可审计管理，不改变回复风格、LLM prompt、路由或执行决策，不把偏好管理命令加入 LLM 白名单；全量 `unittest` 753 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.135.0.exe`。
 - 2026-06-05：发布 `0.134.0` 可安装测试包，完成偏好确认固化与撤销第一阶段；`/config-candidate-confirm 编号` 可把活跃偏好候选写入 `config/preferences.local.json` 并标记已固化，`/config-candidate-undo 编号` 可从历史中撤销已固化偏好、删除对应偏好并恢复候选；配置管家只读展示本地偏好数量，当前阶段不改变回复风格、LLM prompt、路由或执行决策，不把确认/撤销命令加入 LLM 白名单；全量 `unittest` 750 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.134.0.exe`。
 - 2026-06-05：发布 `0.133.0` 可安装测试包，完成授权规则确认固化与撤销第一阶段；`/config-candidate-confirm 编号` 可把活跃授权规则候选写入 `config/authorization.local.json` 并标记已固化，`/config-candidate-undo 编号` 可从历史中撤销已固化授权规则、删除对应规则并恢复候选；`/authorization-status` 和配置管家只读展示本地授权规则，当前阶段不改变命令执行决策，不把确认/撤销命令加入 LLM 白名单；全量 `unittest` 746 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.133.0.exe`。
 - 2026-06-04：发布 `0.132.0` 可安装测试包，完成应用别名确认固化与撤销第一阶段；`/config-candidate-confirm 编号` 可把活跃应用别名候选写入 `config/apps.local.json` 的 `apps.<app_id>.aliases` 并标记已固化，`/config-candidate-undo 编号` 可从历史中撤销已固化应用别名、删除对应别名并恢复候选；`/app-find 新别名` 可命中已登记应用，确认和撤销阶段不启动应用、不切换窗口、不点击、不输入，不把确认/撤销命令加入 LLM 白名单；全量 `unittest` 743 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.132.0.exe`。

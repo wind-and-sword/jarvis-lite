@@ -14,6 +14,7 @@ from jarvis_lite.preferences import (
     read_preferences,
     remove_preference,
     save_preference,
+    set_preference_enabled,
 )
 
 
@@ -32,12 +33,16 @@ class PreferenceTests(unittest.TestCase):
 
             self.assertEqual(parsed, "回答尽量简洁")
             self.assertEqual(saved.preference, "回答尽量简洁")
+            self.assertFalse(saved.enabled)
             self.assertEqual(count_after_save, 1)
             self.assertEqual(preferences_after_save[0].preference, "回答尽量简洁")
+            self.assertFalse(preferences_after_save[0].enabled)
             self.assertTrue((paths.config_dir / PREFERENCES_FILENAME).exists())
-            self.assertIn("偏好：1 条", description_after_save)
-            self.assertIn("- 回答尽量简洁", description_after_save)
-            self.assertIn("不自动改变回复或执行决策", description_after_save)
+            self.assertIn("本地偏好：1 条", description_after_save)
+            self.assertIn("已启用：0 条", description_after_save)
+            self.assertIn("未启用：1 条", description_after_save)
+            self.assertIn("1. 未启用 回答尽量简洁", description_after_save)
+            self.assertIn("不自动改变回复风格、LLM prompt、路由或执行决策", description_after_save)
             self.assertTrue(removed)
             self.assertEqual(preferences_after_remove, ())
             self.assertEqual(preference_count(paths), 0)
@@ -51,6 +56,41 @@ class PreferenceTests(unittest.TestCase):
             parse_preference_candidate("   ")
 
         self.assertIn("偏好候选格式：偏好内容不能为空。", str(context.exception))
+
+    def test_preference_store_enables_and_disables_preferences_by_index(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            save_preference(paths, "回答尽量简洁", source="test")
+
+            enabled = set_preference_enabled(paths, 1, True)
+            preferences_after_enable = read_preferences(paths)
+            status_after_enable = describe_preferences(paths)
+            disabled = set_preference_enabled(paths, 1, False)
+            preferences_after_disable = read_preferences(paths)
+            status_after_disable = describe_preferences(paths)
+
+            self.assertTrue(enabled.enabled)
+            self.assertEqual(enabled.preference, "回答尽量简洁")
+            self.assertTrue(preferences_after_enable[0].enabled)
+            self.assertIn("已启用：1 条", status_after_enable)
+            self.assertIn("未启用：0 条", status_after_enable)
+            self.assertIn("1. 已启用 回答尽量简洁", status_after_enable)
+            self.assertFalse(disabled.enabled)
+            self.assertFalse(preferences_after_disable[0].enabled)
+            self.assertIn("已启用：0 条", status_after_disable)
+            self.assertIn("未启用：1 条", status_after_disable)
+            self.assertIn("1. 未启用 回答尽量简洁", status_after_disable)
+
+    def test_preference_enable_rejects_invalid_index_without_writing(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            save_preference(paths, "回答尽量简洁", source="test")
+
+            with self.assertRaises(ValueError) as context:
+                set_preference_enabled(paths, 2, True)
+
+            self.assertIn("偏好编号不存在", str(context.exception))
+            self.assertFalse(read_preferences(paths)[0].enabled)
 
 
 if __name__ == "__main__":

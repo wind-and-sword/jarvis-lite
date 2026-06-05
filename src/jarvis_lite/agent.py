@@ -117,6 +117,7 @@ from .memory_config_candidates import (
     restore_memory_config_candidate,
     undo_memory_config_candidate,
 )
+from .preferences import describe_preferences, set_preference_enabled
 from .idea_workflow import (
     describe_idea_focus,
     describe_idea_open,
@@ -326,6 +327,9 @@ class JarvisAgent:
         if prompt in {"/config-manager-status", "config-manager-status", "/memory-config-status", "memory-config-status"}:
             self.tools.run("record_log", message="查看记忆与配置管家状态")
             return describe_memory_config_manager(self.paths)
+        if prompt in {"/preference-status", "preference-status"}:
+            self.tools.run("record_log", message="查看本地偏好启用状态")
+            return describe_preferences(self.paths)
         if prompt in {
             "/config-candidates",
             "config-candidates",
@@ -1108,6 +1112,44 @@ class JarvisAgent:
             self.tools.run("record_log", message=f"撤销固化记忆与配置候选：{candidate_index}")
             return undo_memory_config_candidate(self.paths, candidate_index)
 
+        if command == "/preference-enable":
+            if not args:
+                return "用法：/preference-enable 编号"
+            try:
+                preference_index = int(args[0])
+            except ValueError:
+                return "偏好编号必须是数字。"
+            try:
+                preference = set_preference_enabled(self.paths, preference_index, True)
+            except ValueError as exc:
+                return str(exc)
+            self.tools.run("record_log", message=f"启用本地偏好：{preference_index}")
+            return "\n".join(
+                [
+                    f"已启用偏好 {preference_index}：{preference.preference}",
+                    "说明：本阶段只记录启用状态，不自动改变回复风格、LLM prompt、路由或执行决策。",
+                ]
+            )
+
+        if command == "/preference-disable":
+            if not args:
+                return "用法：/preference-disable 编号"
+            try:
+                preference_index = int(args[0])
+            except ValueError:
+                return "偏好编号必须是数字。"
+            try:
+                preference = set_preference_enabled(self.paths, preference_index, False)
+            except ValueError as exc:
+                return str(exc)
+            self.tools.run("record_log", message=f"停用本地偏好：{preference_index}")
+            return "\n".join(
+                [
+                    f"已停用偏好 {preference_index}：{preference.preference}",
+                    "说明：本阶段只记录启用状态，不自动改变回复风格、LLM prompt、路由或执行决策。",
+                ]
+            )
+
         if command == "/config-candidate-apply":
             if not args:
                 return "用法：/config-candidate-apply 编号"
@@ -1180,6 +1222,9 @@ class JarvisAgent:
                 "/config-candidate-apply 编号：固化低风险记忆或配置候选",
                 "/config-candidate-confirm 编号：确认固化联系人别名、应用别名、授权规则或偏好候选",
                 "/config-candidate-undo 编号：撤销已固化联系人别名、应用别名、授权规则或偏好候选",
+                "/preference-status：查看本地偏好启用状态",
+                "/preference-enable 编号：启用已保存偏好",
+                "/preference-disable 编号：停用已保存偏好",
                 "/config-candidate-restore 编号：把已忽略或已固化候选恢复为活跃候选",
                 "/config-candidate-dismiss 编号：忽略指定记忆与配置候选",
                 "/status：查看阶段 1 当前状态",
@@ -4489,6 +4534,7 @@ class JarvisAgent:
                 "- 固化候选：/config-candidate-apply 编号 固化长期记忆、经验记忆或常用目录候选",
                 "- 确认候选：/config-candidate-confirm 编号 确认固化联系人别名、应用别名、授权规则或偏好候选",
                 "- 撤销固化：/config-candidate-undo 编号 删除联系人别名、应用别名、授权规则或偏好并恢复候选",
+                "- 偏好状态：/preference-status 查看本地偏好启用状态",
                 "- 任务状态：/task-status 查看当前任务、步骤、中断恢复和失败复盘",
                 "- 任务失败截图：/task-fail-capture 失败原因 [lang=chi_sim+eng]",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",
