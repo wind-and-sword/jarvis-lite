@@ -1,0 +1,39 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.7.0 连通性诊断闭环",
+  "scope": {
+    "goal": "在 0.6.0 写入配置后，新增或增强可控的 LLM/Search 连通性检查入口，让用户能区分配置完整、provider 可调用和调用失败原因。",
+    "modules": [
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/inner_brain.py",
+      "src/jarvis_lite/llm.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "current_state": {
+    "llm": "已有 /llm-smoke，但当前会话中若用户手动修改 local.json，除非执行 /llm-enable 或 /llm-config-set，否则 smoke 使用旧 router。",
+    "search": "已有 /search 会真实调用 provider 并写入最近联网搜索上下文，但缺少不污染上下文的搜索连通性检查命令。",
+    "inner_brain": "配置 init/set/check 已有 seed 样本入口，连通性测试表达尚未单独映射。",
+    "gap": "配置写入完成后，用户仍缺少一个清晰的下一步测试闭环：LLM smoke 应自动读取当前本地配置，Search 也需要 smoke 入口。"
+  },
+  "decisions": [
+    "0.7.0 定义为连通性诊断 v1。",
+    "增强 /llm-smoke：非注入 router 场景下每次执行前重新读取本地配置。",
+    "新增 /search-smoke [query]：默认查询 Python 版本，调用 SearchRouter 但不写入最近联网搜索上下文。",
+    "新增自然语言入口“测试外脑连接”“测试联网搜索连接”，只映射到 smoke 命令。",
+    "LLM provider 白名单加入 /llm-smoke 和 /search-smoke，但仍由 JarvisAgent 校验与执行。",
+    "错误输出继续脱敏 API key，并给出 /config-check、/enable 和配置写入下一步。"
+  ],
+  "risks": [
+    "/search-smoke 会真实调用搜索 provider；文案必须明确这是连通性测试，会发起一次 provider 调用。",
+    "不能让 smoke 污染最近联网搜索上下文，否则会影响后续搜索来源比较和摘要。",
+    "LLM smoke 执行真实 provider 时仍可能消耗 token；文档必须说明。"
+  ],
+  "verification": [
+    "先写新增 Agent 测试和版本测试，并确认 RED。",
+    "实现后运行目标测试、相关回归、全量 unittest、源码桌面 smoke、CLI smoke、安装包构建、打包后 exe smoke、安装器元数据检查、git diff --check、Markdown 本地链接、敏感信息扫描和本地配置跟踪检查。"
+  ],
+  "tooling_note": "当前会话未提供 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用技能文件、rg、本地文件读取、update_plan、apply_patch、unittest 和 PyInstaller。"
+}

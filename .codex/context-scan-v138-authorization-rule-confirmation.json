@@ -1,0 +1,71 @@
+{
+  "date": "2026-06-05",
+  "executor": "Codex",
+  "task": "v138 authorization_rule candidate confirmation and undo",
+  "tooling": {
+    "unavailable_mcp": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "fallback": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "apply_patch",
+      "unittest"
+    ]
+  },
+  "current_state": {
+    "release": "0.132.0",
+    "head": "8db0ed7 feat: 增加应用别名确认固化 0.132.0",
+    "working_tree": "clean at scan time",
+    "previous_stage": "application alias confirmation writes config/apps.local.json aliases and supports undo"
+  },
+  "location": {
+    "candidate_logic": "src/jarvis_lite/memory_config_candidates.py",
+    "authorization_policy": "src/jarvis_lite/authorization.py",
+    "agent_commands": "src/jarvis_lite/agent.py",
+    "manager_status": "src/jarvis_lite/memory_config_manager.py",
+    "tests": [
+      "tests/test_authorization.py",
+      "tests/test_memory_config_candidates.py",
+      "tests/test_memory_config_manager.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "tests/test_llm.py"
+    ]
+  },
+  "similar_implementations": [
+    {
+      "feature": "contact_alias",
+      "evidence": "src/jarvis_lite/contacts.py centralizes config/contacts.local.json parsing, save, remove and count; memory_config_candidates confirms/undoes it."
+    },
+    {
+      "feature": "app_alias",
+      "evidence": "src/jarvis_lite/app_registry.py provides parse_app_alias_candidate(), save_app_alias() and remove_app_alias(); /app-find observes the persisted alias."
+    },
+    {
+      "feature": "authorization_status",
+      "evidence": "src/jarvis_lite/authorization.py exposes describe_authorization_status() and tests assert the first-stage policy boundaries."
+    }
+  ],
+  "design_direction": {
+    "scope": "Add explicit confirmation and undo for authorization_rule candidates as an auditable local config record.",
+    "storage": "config/authorization.local.json with a rules list; records contain rule text, source, created_at and updated_at.",
+    "observable_effect": "/authorization-status and /config-manager-status show local authorization rule count and rule text.",
+    "non_goals": [
+      "Do not add /config-candidate-confirm or /config-candidate-undo to the LLM command whitelist.",
+      "Do not let ordinary chat or LLM fallback write authorization rules.",
+      "Do not change existing command execution decisions in this first stage.",
+      "Do not click, type, focus windows or launch apps."
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "date": "2026-05-21",
+  "executor": "Codex",
+  "project_root": "E:/oyzj/ai/jarvis-lite",
+  "task": "自然语言最近上下文状态查询",
+  "context": {
+    "modules": [
+      "src/jarvis_lite/intent.py",
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/runtime_context.py",
+      "tests/test_agent.py"
+    ],
+    "current_implementation": [
+      "intent.py 已把常见中文表达解析为 NaturalLanguageIntent。",
+      "agent.py 已维护 _recent_document_path、_recent_directory、_recent_search_result_paths。",
+      "runtime_context.py 已持久化 recent_search_result_paths 到项目外 jarvis-lite-runtime/agent-context.json。",
+      "tests/test_agent.py 已覆盖最近资料、最近目录、最近搜索结果、编号选择、查看编号结果和跨 Agent 恢复。"
+    ],
+    "similar_patterns": [
+      "capabilities 意图由 intent.py 解析后在 agent.py 直接格式化文本返回。",
+      "最近搜索结果缺失时已有明确提示，提示用户先提问。",
+      "目录上下文使用 CommonDirectory 保存别名和绝对路径，输出时复用现有路径格式。"
+    ],
+    "tooling": {
+      "test_runner": ".\\.venv\\Scripts\\python.exe -m unittest",
+      "code_index": "当前工具列表不可用，已降级为 rg 和文件读取。",
+      "sequential_thinking": "当前工具列表不可用，已用本地计划和上下文扫描替代。",
+      "shrimp_task_manager": "当前工具列表不可用，已用 update_plan 和 .codex 计划替代。"
+    }
+  },
+  "key_questions": [
+    {
+      "priority": "high",
+      "question": "最近上下文状态应该暴露哪些信息？",
+      "answer": "暴露最近资料、最近目录和最近搜索结果列表，正好覆盖已有上下文字段。"
+    },
+    {
+      "priority": "high",
+      "question": "没有上下文时如何避免误导？",
+      "answer": "返回空状态和下一步提示，让用户先提问、导入资料或打开/整理目录。"
+    },
+    {
+      "priority": "medium",
+      "question": "是否扩展持久化范围？",
+      "answer": "本阶段只做状态查询，不改变最近资料和最近目录的持久化策略，避免扩大变更面。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_method_known": true
+  }
+}

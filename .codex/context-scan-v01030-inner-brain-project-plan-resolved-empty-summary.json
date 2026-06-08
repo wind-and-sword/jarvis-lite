@@ -1,0 +1,49 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.103.0 InnerBrain PROJECT-PLAN 已处理空视图主干同步",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、apply_patch、unittest、PyInstaller 打包和本地 smoke 验证。",
+  "context": {
+    "current_version": "0.102.0",
+    "git_head": "9e323df feat: 同步已处理空视图概要 0.102.0",
+    "main_files": [
+      "word/PROJECT-PLAN.md",
+      "tests/test_project_metadata.py",
+      "tests/test_agent.py",
+      "README.md",
+      "pyproject.toml",
+      "src/jarvis_lite/__init__.py"
+    ],
+    "observations": [
+      "README 顶部 InnerBrain 样本闭环概要已包含暂无已处理样本时只显示已通过样本的提示。",
+      "word/PROJECT-PLAN.md 的 InnerBrain 可观察与样本闭环主干描述仍只说明 /inner-brain-eval-local-resolved [文件名] 可只读查看当前已通过样本，未同步空已处理样本提示。",
+      "data/inner-brain/evaluation/runtime.jsonl 当前不存在，无法基于真实本机 evaluation 失败样本做补样本闭环。",
+      "日志.txt 当前尾部是 0.35.0 旧开发过程片段，不是新的真实失败样本输入。"
+    ],
+    "similar_patterns": [
+      "0.101.0 在运行时和 Agent 层新增已处理空视图行动提示。",
+      "0.102.0 通过 tests/test_project_metadata.py 固化 README 顶部概要同步。",
+      "0.97.0 通过元数据测试固定 README 与 PROJECT-PLAN 的本机失败视图待处理失败语言。"
+    ]
+  },
+  "decision": {
+    "target_version": "0.103.0",
+    "scope": [
+      "新增 PROJECT-PLAN 主干概要一致性测试，限定检查 InnerBrain 可观察与样本闭环 bullet。",
+      "同步 word/PROJECT-PLAN.md 主干描述中的 /inner-brain-eval-local-resolved [文件名] 空已处理样本提示。",
+      "项目版本提升到 0.103.0，更新更新清单测试夹具到 0.103.1。",
+      "同步 README 安装版本、PROJECT-PLAN 里程碑、计划索引、进度和验证记录。"
+    ],
+    "out_of_scope": [
+      "不修改 describe_inner_brain_resolved_evaluation() 或 JarvisAgent 运行时输出。",
+      "不改变已处理样本筛选、排序、文件候选、报告入口或后续处理链接。",
+      "不新增任意 JSONL 写入能力，不改变本机 evaluation payload 或训练样本写入。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

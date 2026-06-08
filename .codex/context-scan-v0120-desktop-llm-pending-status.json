@@ -1,0 +1,45 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.12.0 desktop LLM pending status",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP，按项目降级规则使用本地文件读取、rg、update_plan、apply_patch 和 unittest。",
+  "locations": {
+    "desktop_panel": "src/jarvis_lite/desktop/widgets.py",
+    "desktop_bridge": "src/jarvis_lite/desktop/bridge.py",
+    "agent_context": "src/jarvis_lite/agent.py",
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "widget_tests": "tests/test_desktop_widgets.py",
+    "bridge_tests": "tests/test_desktop_bridge.py"
+  },
+  "current_behavior": [
+    "0.11.0 已让 LLM pending 澄清状态进入 runtime context，并通过 /recent-context 展示澄清轮次和过期策略。",
+    "AssistantPanel 当前只有 statusLabel 展示 idle/success/error 等通用状态。",
+    "桌面面板可通过“最近上下文”快捷命令手动查看 pending，但不会固定展示待补充外脑问题。",
+    "DesktopBridge.send() 只返回 DesktopResponse(user_input, assistant_text, state, turn_count)，没有携带 runtime pending 快照。"
+  ],
+  "similar_patterns": [
+    "AssistantPanel._append_response() 会在每次提交后刷新输出和状态。",
+    "DesktopPetWindow 通过 panel.set_state_listener() 监听状态变化。",
+    "DesktopBridge.send_sensitive() 会直接使用 ConversationSession.agent.handle()，适合在执行后读取 Agent 内部状态。"
+  ],
+  "key_questions": [
+    {
+      "question": "桌面固定状态是否应该调用 /recent-context？",
+      "answer": "不应该。调用命令会污染会话历史或产生额外日志。应由 Agent 提供只读状态文本，Bridge 读取后传给 Panel。"
+    },
+    {
+      "question": "是否需要新增自然语言识别？",
+      "answer": "不需要。本轮只展示既有 LLM pending 状态，不改变 InnerBrain 或 LLM 路由判断。"
+    },
+    {
+      "question": "是否需要隐藏无 pending 状态？",
+      "answer": "不隐藏。固定状态区域要稳定可见，无 pending 时显示“外脑待补充：无”。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

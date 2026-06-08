@@ -1,0 +1,48 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.13.0 桌面外脑运行状态与最近调用结果",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地文件检索、计划文件、update_plan、apply_patch、unittest 和本地打包验证。",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "desktop_bridge": "src/jarvis_lite/desktop/bridge.py",
+    "desktop_widgets": "src/jarvis_lite/desktop/widgets.py",
+    "tests": [
+      "tests/test_agent.py",
+      "tests/test_desktop_bridge.py",
+      "tests/test_desktop_widgets.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "current_behavior": {
+    "llm_pending": "0.12.0 已固定展示 LLM 待补充问题和轮次。",
+    "llm_status": "/llm-status 可查看 provider 配置，但桌面不会固定展示运行状态。",
+    "llm_recent_call": "LLM fallback、smoke、搜索总结和澄清补充完成后只把响应写入 transcript，没有独立的最近外脑调用快照。"
+  },
+  "similar_patterns": [
+    "RuntimeContext 持久化 recent_web_search、recent_files 和 pending_llm_clarification。",
+    "JarvisAgent.llm_clarification_status_text() 为桌面提供只读状态文本，不通过命令污染历史。",
+    "DesktopResponse 在 send/send_sensitive 后附带 llm_pending_status_text，AssistantPanel 响应后刷新 label。"
+  ],
+  "key_questions": [
+    {
+      "question": "状态是否应该通过 /llm-status 后台查询？",
+      "answer": "否。沿用 0.12.0 的只读方法，避免污染 transcript 和历史。"
+    },
+    {
+      "question": "最近调用是否需要持久化？",
+      "answer": "需要。桌面重启后仍应能看到最近一次外脑行为，和 pending 状态一样进入 RuntimeContext。"
+    },
+    {
+      "question": "是否记录 API key 或完整敏感配置？",
+      "answer": "不记录。状态只展示 provider、model、intent type、触发来源、输入摘要和结果摘要。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

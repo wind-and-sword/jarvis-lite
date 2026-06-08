@@ -1,0 +1,52 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.32.0 InnerBrain 评估失败过滤视图",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "inner_brain": "src/jarvis_lite/inner_brain.py",
+    "tests": [
+      "tests/test_inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/2026-06-01-v36-inner-brain-evaluation-failures-only-plan.md",
+      "word/progress/2026-06-01.md",
+      "verification.md",
+      "verification/2026-06/2026-06-01.md"
+    ]
+  },
+  "current_state": {
+    "evaluation": "/inner-brain-eval 已合并 seed 和 data/inner-brain/evaluation/*.jsonl，并在失败时输出显式训练建议。",
+    "gap": "评估样本较多时，完整样例输出会掩盖失败样本，排查效率低。",
+    "principle": "不新增自然语言正则，不自动训练，不改变正常聊天路由。"
+  },
+  "similar_patterns": [
+    "describe_inner_brain_evaluation(report) 统一格式化评估摘要和样例。",
+    "InnerBrainEvaluationReport.failed_case_results 已为失败建议提供失败视图。",
+    "Agent 的 /inner-brain-eval 属于路由观察命令，不污染训练候选。"
+  ],
+  "implementation_contract": {
+    "api": "describe_inner_brain_evaluation(report, failures_only=True)",
+    "command": "/inner-brain-eval-failed",
+    "aliases": [
+      "brain-eval-failed",
+      "inner-brain-eval-failures"
+    ],
+    "output": "保留摘要和来源计数，只列失败样例；无失败时输出 - 无；失败时保留修复建议。",
+    "side_effects": "不写 runtime 训练样本，不改变最近路由候选。"
+  },
+  "verification": [
+    "目标 RED/GREEN 测试",
+    "InnerBrain 专项",
+    "Agent/LLM/桌面/Conversation 相邻回归",
+    "全量 unittest",
+    "源码桌面 smoke",
+    "Windows 安装包构建和打包后 exe smoke",
+    "diff、Markdown 链接、敏感信息、本地配置跟踪检查"
+  ],
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、apply_patch、本地 unittest 和打包脚本。"
+}

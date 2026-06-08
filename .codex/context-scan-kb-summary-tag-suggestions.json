@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-25",
+  "executor": "Codex",
+  "task": "知识库摘要按标签给出下一步提问建议",
+  "tooling_note": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP 工具；按项目本地上下文扫描和测试留痕降级。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP 工具；使用 update_plan 与本地计划文档替代。",
+    "code_index": "当前会话未暴露 code-index MCP 工具；使用 rg 和 Get-Content 检索源码、测试和文档。"
+  },
+  "observations": [
+    "`/kb-summary` 已输出标签分组，但末尾仍只有通用 `读取第一份资料；给第一份资料打标签 标签；/ask 关键词`。",
+    "JarvisAgent._knowledge_summary() 已在 Agent 层追加后续操作提示，并会调用 build_knowledge_index() 写入最近资料列表。",
+    "KnowledgeDocument.tags 已包含摘要分组所需标签，可在 Agent 层复用，不需要新增知识库存储格式。",
+    "README 和个人设备 Agent 方案把后续重点定为摘要结果更细的下一步建议。"
+  ],
+  "decision": "在 `/kb-summary` 有标签资料时，保留现有通用后续操作，并额外追加最多 3 个 `/ask 标签` 示例。",
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choices": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

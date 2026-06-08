@@ -1,0 +1,35 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.87.0 InnerBrain 本机评估样本保存反馈待处理失败标签",
+  "observations": [
+    "src/jarvis_lite/agent.py::_describe_inner_brain_evaluation_case_save 是四个保存入口共用的反馈函数。",
+    "tests/test_agent.py 已有四个保存入口断言，覆盖 eval-add、eval-label、eval-add-candidate 和 eval-label-candidate。",
+    "修改范围只涉及后续验证标签，命令和写入文件 runtime.jsonl 不变。"
+  ],
+  "target_contract": {
+    "input": [
+      "/inner-brain-eval-add 文本 => /命令",
+      "/inner-brain-eval-label 文本 => intent [slot=value ...]",
+      "/inner-brain-eval-add-candidate 编号 => /命令",
+      "/inner-brain-eval-label-candidate 编号 => intent [slot=value ...]"
+    ],
+    "output": [
+      "- 只看待处理失败样本：/inner-brain-eval-local-failed",
+      "- 导出样本文件待处理失败报告：/inner-brain-eval-local-report runtime.jsonl"
+    ],
+    "unchanged": [
+      "保存 evaluation 样本",
+      "不自动训练",
+      "候选保留",
+      "报告导出命令",
+      "本机 evaluation JSONL payload"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  }
+}

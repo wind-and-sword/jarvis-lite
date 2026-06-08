@@ -1,0 +1,30 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.2.0 InnerBrain 多轮澄清 v1 收口",
+  "goal": "让当前已支持的主要 missing 槽位都有中文提示、下一句补槽执行和回归测试，形成可安装的 0.2.0 里程碑版本。",
+  "current_completed_slots": [
+    "source",
+    "items",
+    "web.search/web.search_summarize query",
+    "result_index + tags for document.tag_numbered_recent",
+    "alias for directory.open_alias",
+    "experience for experience.record"
+  ],
+  "remaining_scope": [
+    "document.read_path path",
+    "document.read_numbered_recent result_index",
+    "document.tag_recent tags",
+    "tag_group.preview_tagging alias + tags",
+    "experience.search query",
+    "experience.advice query"
+  ],
+  "boundary": "所有解析均只在 InnerBrain 已返回 CLARIFY 且 intent 已知后执行；不新增用正则判断用户主意图的路径。",
+  "verification_plan": [
+    "新增 RED 测试覆盖剩余关键缺槽。",
+    "修复提示标签、action hint 和 alias+tags 补槽拆分。",
+    "升级 0.2.0，打包 JarvisLiteSetup-0.2.0.exe。",
+    "运行目标测试、tests.test_inner_brain tests.test_agent、全量 unittest、源码 smoke、打包 smoke、Markdown 链接、敏感信息扫描。"
+  ],
+  "tool_degradation": "当前会话未提供 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地文件读取、rg、update_plan、apply_patch、unittest 和打包脚本。"
+}

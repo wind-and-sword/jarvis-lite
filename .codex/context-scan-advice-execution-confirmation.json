@@ -1,0 +1,49 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "最近建议执行前确认第一版",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "intent": "src/jarvis_lite/intent.py",
+    "tests": "tests/test_agent.py"
+  },
+  "current_behavior": [
+    "最近建议可通过“查看第一条建议”读取，且已持久化到 agent-context.json。",
+    "建议文本格式为“/command 参数：说明”，目前只展示，不执行。",
+    "自然语言意图层还没有“执行第一条建议”“确认执行”“取消执行”。"
+  ],
+  "design_options": [
+    {
+      "option": "直接执行建议",
+      "decision": "拒绝",
+      "reason": "建议可能包含占位参数，例如 /import 源文件或目录路径 [目标文件名]，直接执行会落入用法或错误提示，用户体验差。"
+    },
+    {
+      "option": "执行前确认两步走",
+      "decision": "采用",
+      "reason": "先展示将执行的真实命令，用户确认后复用现有 handle(command) 路径，改动小且可测试。"
+    },
+    {
+      "option": "只生成完整命令不提供确认",
+      "decision": "暂不采用",
+      "reason": "用户还需要手动复制输入，无法形成自然语言闭环。"
+    }
+  ],
+  "scope": [
+    "支持“执行第一条建议”“执行第2条建议”。",
+    "支持“确认执行”执行当前待确认建议命令。",
+    "支持“取消执行”清空待确认建议命令。",
+    "建议命令含占位符时不进入待确认状态，提示用户补全参数后手动输入。"
+  ],
+  "non_goals": [
+    "不自动补全 /import、/tag 等命令参数。",
+    "不持久化待确认命令。",
+    "不新增独立命令执行器，继续复用 JarvisAgent.handle()。"
+  ],
+  "sufficiency": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "补齐 LLM 调用收口小任务并打包新版本",
+  "tool_fallback": {
+    "sequential_thinking": "当前工具列表不可用，使用本地代码阅读、rg、update_plan 和测试驱动流程降级执行。",
+    "shrimp_task_manager": "当前工具列表不可用，使用 update_plan 和本地 .codex 计划文件降级执行。",
+    "code_index": "当前工具列表不可用，使用 rg 和定向文件读取降级执行。"
+  },
+  "locations": {
+    "agent": "src/jarvis_lite/agent.py",
+    "llm": "src/jarvis_lite/llm.py",
+    "agent_tests": "tests/test_agent.py",
+    "llm_tests": "tests/test_llm.py",
+    "installer": "src/jarvis_lite/desktop/windows_installer.py",
+    "installer_tests": "tests/test_windows_installer.py",
+    "packaging": "src/jarvis_lite/desktop/packaging.py",
+    "build_scripts": [
+      "scripts/build_desktop_exe.py",
+      "scripts/build_windows_installer.py"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/progress/2026-05-28.md",
+      "verification.md",
+      "verification/2026-05/2026-05-28.md"
+    ]
+  },
+  "current_state": {
+    "git": "main 与 origin/main 对齐，工作树干净。",
+    "llm": "已有 provider-neutral Router，OpenAI Responses/OpenAI-compatible adapter，/llm-status、/llm-usage、/llm-config-example、/llm-smoke，以及 fallback 近期上下文。",
+    "installer": "IExpress 安装器会 taskkill 旧进程，copy /Y 覆盖安装目录内 exe 和卸载脚本，写 HKCU 卸载注册表；卸载脚本删除程序目录和快捷方式，但保留 %LOCALAPPDATA%\\Jarvis Lite 用户数据。"
+  },
+  "similar_patterns": [
+    "JarvisAgent.handle() 顶层处理无参数状态命令，例如 /llm-status、/llm-usage、/recent-files。",
+    "JarvisAgent._llm_smoke() 强制调用 Router 但不执行 command intent。",
+    "OpenAIResponsesProvider._instructions() 目前只在 prompt 层约束模型返回命令白名单。",
+    "tests/test_windows_installer.py 已覆盖覆盖安装前 taskkill、卸载注册表和保留用户数据。"
+  ],
+  "questions": {
+    "high": [
+      "Agent 是否应在执行 LLM command intent 前再次校验命令白名单？答案：应当校验，避免只依赖 provider prompt。",
+      "如何让用户不调用真实 provider 也能看到 fallback context？答案：新增 /llm-context-preview。",
+      "已安装旧版时应该覆盖安装还是卸载重装？答案：默认覆盖安装；安装脚本 copy /Y 覆盖程序文件并保留用户数据，卸载重装仅用于安装目录损坏或快捷方式/注册表异常。"
+    ],
+    "medium": [
+      "打包产物是否提交 Git？答案：继续输出到 ../jarvis-lite-dist，不提交二进制产物。",
+      "是否需要真实 API key 验证？答案：本轮不写入真实 key，真实调用只提供 smoke 路径。"
+    ]
+  },
+  "sufficiency_check": {
+    "interfaces_clear": true,
+    "technical_choices_clear": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

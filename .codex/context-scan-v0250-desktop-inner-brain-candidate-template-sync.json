@@ -1,0 +1,31 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.25.0 桌面 InnerBrain 候选模板状态同步",
+  "location": {
+    "desktop_panel": "src/jarvis_lite/desktop/widgets.py",
+    "candidate_output": "src/jarvis_lite/agent.py:_inner_brain_candidates_status",
+    "desktop_tests": "tests/test_desktop_widgets.py"
+  },
+  "current_state": [
+    "0.24.0 已在桌面面板新增候选编号和 teach/label 模板填充按钮。",
+    "模板编号上限固定为 20，不会根据当前 /inner-brain-candidates 输出收紧。",
+    "空候选时模板按钮仍可填入命令，用户可能误发无效编号。",
+    "/inner-brain-candidates 输出空状态为 InnerBrain 训练候选：暂无。；有候选时以 N. 文本 的行列出编号。"
+  ],
+  "decision": {
+    "approach": "桌面面板在收到 /inner-brain-candidates 响应后解析候选数量，更新模板状态文本、编号上限和按钮启用状态。",
+    "boundaries": [
+      "不自动发送模板。",
+      "不自动训练。",
+      "不改变 Agent 候选统计或排序规则。",
+      "只同步桌面 UI 状态。"
+    ]
+  },
+  "validation": [
+    "TDD：新增空候选禁用模板测试、有候选同步编号上限测试、版本提升测试。",
+    "回归：桌面、Agent、LLM、InnerBrain、会话链路。",
+    "打包：源码 smoke、PyInstaller + IExpress、打包 exe smoke、安装脚本版本文本。"
+  ],
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、apply_patch 和本地 unittest。"
+}

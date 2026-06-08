@@ -1,0 +1,29 @@
+{
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "task": "按编号读取批量标签历史影响资料",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "intent": "src/jarvis_lite/intent.py",
+    "tests": "tests/test_agent.py"
+  },
+  "current_behavior": [
+    "`/tag-history` 只展示标签组、追加标签、更新数量和恢复提示。",
+    "历史记录没有保存受影响资料路径，因此不能把某条历史恢复成最近资料列表。",
+    "现有 `读取第二份资料` 已能基于 `_recent_document_paths` 读取编号资料。"
+  ],
+  "decision": {
+    "chosen": "在批量标签历史结构中新增 `document_paths`，确认执行时保存受影响资料相对路径；新增“读取第 N 条标签历史资料”意图，把该历史的影响资料写回最近资料列表并输出列表。",
+    "reason": "复用现有最近资料编号读取能力，避免新增复杂的历史详情模型。"
+  },
+  "compatibility": [
+    "旧历史记录没有 `document_paths` 时继续可读，只是不能恢复影响资料列表。",
+    "运行态 JSON 仍保留旧单条字段和历史列表字段。"
+  ],
+  "verification": [
+    "新增 Agent 测试先失败，证明历史无法按编号恢复影响资料。",
+    "实现后验证目标测试、历史命令、最近批量摘要和编号读取回归。",
+    "收尾执行全量 unittest、桌面 smoke 和 git diff --check。"
+  ]
+}

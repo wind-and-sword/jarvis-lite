@@ -1,0 +1,27 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "已知项目目录上下文增强",
+  "tooling_fallback": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP，使用本地代码阅读、rg 和 update_plan 替代并记录。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP，使用本地计划和 .codex 记录替代。",
+    "code_index": "当前会话未提供 code-index MCP，使用 rg 替代。"
+  },
+  "context": {
+    "agent_directory_lookup": "JarvisAgent._find_common_directory() 先读取用户登记的常用目录，再调用 _known_directory() 做系统已知目录 fallback。",
+    "known_directory_current": "_known_directory_candidates() 已支持桌面和下载目录，均从 Path.home() 下寻找候选目录。",
+    "project_root_source": "build_project_paths() 已集中提供 ProjectPaths.root，测试里 self.paths.root 指向临时 jarvis-lite 项目根目录。",
+    "similar_tests": [
+      "test_natural_language_open_common_directory_alias_records_request",
+      "test_natural_language_organize_common_directory_alias_returns_preview",
+      "test_natural_language_organize_desktop_uses_known_desktop_directory",
+      "test_natural_language_open_downloads_uses_known_downloads_directory"
+    ]
+  },
+  "decision": "新增项目目录 fallback 时保留用户登记目录优先级；未登记项目目录时，项目/project/current project 指向 self.paths.root。",
+  "verification": [
+    "先写打开项目目录和整理项目目录的失败测试。",
+    "再实现 _known_directory() 对项目根目录的特例。",
+    "运行 targeted tests、tests.test_agent、全量 unittest、桌面 smoke 和 git diff --check。"
+  ]
+}

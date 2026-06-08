@@ -1,0 +1,51 @@
+{
+  "task": "批量标签历史资料读取恢复提示",
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "tooling": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index"
+    ],
+    "fallback": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "apply_patch",
+      "unittest"
+    ]
+  },
+  "location": {
+    "agent": "src/jarvis_lite/agent.py::_read_tagged_documents_history_documents",
+    "tests": "tests/test_agent.py::AgentTests",
+    "runtime_context": "src/jarvis_lite/runtime_context.py::RuntimeTaggedDocumentsOperationContext"
+  },
+  "current_state": {
+    "history_command": "/tag-history 已展示每条批量标签历史的恢复提示。",
+    "history_read": "读取第一条标签历史资料 会恢复 document_paths 为最近资料列表，并输出资料编号和摘要。",
+    "gap": "读取历史影响资料的输出没有直接展示该历史条目的 restore_commands，用户需要回到 /tag-history 才能看到逐份恢复命令。"
+  },
+  "similar_cases": [
+    "最近上下文状态会展示最近批量打标签摘要和恢复提示。",
+    "/tag-history 会展示每条历史的恢复提示。",
+    "确认批量打标签结果会输出操作记录和恢复提示。"
+  ],
+  "chosen_design": "复用历史条目已保存的 restore_commands，在读取历史影响资料时追加一行恢复提示，不新增运行态字段。",
+  "interface_contract": {
+    "input": "读取第 N 条标签历史资料",
+    "output": "历史摘要、影响资料编号列表、恢复提示、可继续操作",
+    "fallback": "旧历史没有 document_paths 时继续返回明确提示；没有 restore_commands 时不显示恢复提示。"
+  },
+  "verification": [
+    "新增 Agent 失败测试，覆盖跨实例读取历史资料时显示恢复提示。",
+    "运行目标测试和批量标签历史相关回归。",
+    "运行全量 unittest、桌面 smoke 和 git diff --check。"
+  ],
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "InnerBrain 本机空评估视图补样本默认写入 runtime.jsonl 提示",
+  "stage": "阶段0：需求理解与上下文收集",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "used": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "apply_patch",
+      "unittest"
+    ],
+    "note": "当前会话未暴露 AGENTS 指定 MCP 工具，按项目降级规则使用本地结构化分析、快速检索、TDD 和本地验证留痕。"
+  },
+  "locations": {
+    "implementation": [
+      "src/jarvis_lite/inner_brain.py:describe_inner_brain_evaluation"
+    ],
+    "tests": [
+      "tests/test_inner_brain.py:test_inner_brain_local_evaluation_empty_state_suggests_evaluation_sample_commands",
+      "tests/test_agent.py:test_inner_brain_eval_local_failed_command_guides_empty_local_evaluation_samples",
+      "tests/test_project_metadata.py:test_project_version_matches_release_package_version",
+      "tests/test_agent.py:update manifest fixtures"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/README.md",
+      "word/progress/2026-06-03.md",
+      "word/文档索引.md",
+      "verification.md",
+      "verification/2026-06/2026-06-03.md",
+      "verification/2026-06/README.md",
+      "verification/2026-06/week-2026-06-01.md"
+    ]
+  },
+  "current_behavior": {
+    "empty_local_evaluation": "本机 evaluation 样本为空时会列出 /inner-brain-eval-add、/inner-brain-eval-label、候选写入命令，并说明只写本机 evaluation、不自动训练。",
+    "gap": "空样本评估视图没有说明这些补样本命令默认写入 data/inner-brain/evaluation/runtime.jsonl；0.99.0 只覆盖了报告导出空筛选文件反馈。"
+  },
+  "planned_behavior": {
+    "response_hint": "提示：补样本命令默认写入 runtime.jsonl。",
+    "scope": "只改变 describe_inner_brain_evaluation() 的空本机评估样本文案，覆盖 /inner-brain-eval-local、/inner-brain-eval-local-failed 和空筛选本机文件评估视图。",
+    "version": "0.100.0"
+  },
+  "similar_patterns": [
+    "0.46.0 本机 evaluation 样本为空时加入只读添加入口引导。",
+    "0.69.0 本机 evaluation 样本保存反馈提示 /inner-brain-eval-local-file runtime.jsonl 和 /inner-brain-eval-local-report runtime.jsonl。",
+    "0.99.0 指定文件报告空筛选反馈提示补样本命令默认写入 runtime.jsonl。"
+  ],
+  "risks": [
+    "不能暗示可直接写入任意筛选文件；现有补样本命令仍默认写入 runtime.jsonl。",
+    "不能改变评估样本 payload、报告路径、训练样本写入或命令集合。",
+    "版本 0.100.0 需要同步 pyproject、__init__、测试夹具、文档和安装包。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risk_points_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "inner-brain-adopt-sample",
+  "tooling_note": "当前会话没有 sequential-thinking、shrimp-task-manager、code-index；按项目约定记录降级，使用 rg、文件读取、update_plan、apply_patch 和 unittest 执行。",
+  "location": {
+    "inner_brain": "src/jarvis_lite/inner_brain.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": [
+      "tests/test_inner_brain.py",
+      "tests/test_agent.py"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/progress/2026-05-28.md",
+      "verification.md",
+      "verification/2026-05/2026-05-28.md"
+    ]
+  },
+  "current_state": {
+    "inner_brain": "已支持 legacy_rule、seed_sample 和 data/inner-brain/training/*.jsonl runtime_sample 加载。",
+    "preview": "已支持 /inner-brain-status 和 /inner-brain-preview 文本，preview 不执行命令。",
+    "gap": "文档已标注后续需要在 preview 基础上增加“采纳为训练样本”的人工确认闭环，但代码尚未落地。"
+  },
+  "similar_patterns": [
+    "/inner-brain-preview 文本：只格式化 InnerBrainResult，不执行本地动作。",
+    "load_training_samples(paths)：从 data/inner-brain/training/*.jsonl 读取运行态样本。",
+    "JarvisAgent 命令处理：显式 slash 命令优先于自然语言和 LLM fallback。"
+  ],
+  "interface_contract": {
+    "command": "/inner-brain-adopt 文本",
+    "behavior": "重新理解该文本，将非 unknown 的识别结果保存为 runtime JSONL 样本；不执行识别出的命令。",
+    "output": "返回保存状态、样本路径、意图、策略和槽位摘要；重复样本返回已存在。",
+    "rejection": "unknown 结果不保存，提示先用 preview 或后续人工标签能力补充。"
+  },
+  "risk_points": [
+    "不能因为采纳桌面删除表达而删除 .lnk 文件。",
+    "不能重复写入相同样本导致 runtime 样本污染。",
+    "保存后当前 Agent 的 InnerBrain 需要刷新，便于 status 立即反映 runtime_sample 数量。"
+  ],
+  "verification": [
+    "先写失败测试，覆盖写入 JSONL、去重、unknown 拒绝、Agent 命令和 preview/adopt 不执行。",
+    "运行 tests.test_inner_brain 和 tests.test_agent 专项。",
+    "收尾运行全量 unittest、桌面 smoke、git diff --check、Markdown 本地链接检查和敏感信息扫描。"
+  ],
+  "sufficiency_check": {
+    "clear_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

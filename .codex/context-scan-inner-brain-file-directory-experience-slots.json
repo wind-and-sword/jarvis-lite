@@ -1,0 +1,33 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "InnerBrain 文件路径、目录和经验槽位迁移",
+  "tool_degradation": {
+    "sequential-thinking": "当前工具列表未提供，改用本地结构化扫描与 update_plan 留痕。",
+    "shrimp-task-manager": "当前工具列表未提供，改用 update_plan 和 .codex 计划文件。",
+    "code-index": "当前工具列表未提供，改用 rg 和本地文件读取。"
+  },
+  "locations": {
+    "inner_brain": "src/jarvis_lite/inner_brain.py",
+    "legacy_parser": "src/jarvis_lite/intent.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_inner_brain.py, tests/test_agent.py",
+    "plan": "word/plans/2026-05-28-v6-inner-brain-classifier-first-plan.md"
+  },
+  "knowns": [
+    "InnerBrain 已经是 seed/runtime 样本分类器优先，legacy parser 只作为迁移期 fallback。",
+    "显式文件读取/导入、目录打开/整理和经验记录/搜索/建议仍由 intent.py 旧 parser 命中。",
+    "JarvisAgent 已具备 /read、/import、目录管理和经验记忆执行链路，迁移不需要重写执行层。"
+  ],
+  "unknowns_resolved": [
+    "带空格路径需要从原始输入抽取，不能使用去空格后的相似度文本。",
+    "编号最近文件导入需要保持 recent_file.import_numbered 优先，不能被泛化 knowledge.import 样本吞掉。",
+    "目录 alias 和最近目录引用需要分开，避免打开这个目录被当成普通 alias。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_reason": true,
+    "risk_identified": true,
+    "verification_known": true
+  }
+}

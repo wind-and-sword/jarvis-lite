@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-25",
+  "executor": "Codex",
+  "task": "知识库摘要按标签分组展示",
+  "tooling_note": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP 工具；按项目要求用本地上下文扫描、计划和测试留痕降级。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP 工具；使用 update_plan 与本地计划文档替代。",
+    "code_index": "当前会话未暴露 code-index MCP 工具；使用 rg 和 Get-Content 检索源码、测试和文档。"
+  },
+  "observations": [
+    "word/2026-05-25-jarvis-lite-progress.md 后续建议明确提到继续做知识库摘要分组展示。",
+    "summarize_knowledge_base() 当前输出资料总数、可检索行数、逐份来源、行数、标签和摘要预览，但没有聚合视图。",
+    "KnowledgeDocument 已有 tags 字段，build_knowledge_index() 已读取标签元数据，可直接复用。",
+    "JarvisAgent._knowledge_summary() 会基于 build_knowledge_index() 写入最近资料列表，因此摘要展示变化不应改变编号顺序。"
+  ],
+  "decision": "在 summarize_knowledge_base() 中新增标签分组段；有标签资料按标签聚合，无标签资料归入未标签，逐份资料概览和最近资料上下文保持原顺序。",
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choices": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

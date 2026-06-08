@@ -1,0 +1,37 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.26.0 desktop InnerBrain candidate selection binding",
+  "location": {
+    "desktop_ui": "src/jarvis_lite/desktop/widgets.py",
+    "desktop_tests": "tests/test_desktop_widgets.py",
+    "metadata_tests": "tests/test_project_metadata.py",
+    "agent_update_fixture": "tests/test_agent.py"
+  },
+  "current_state": {
+    "candidate_command": "/inner-brain-candidates returns numbered candidate lines such as '1. prompt'.",
+    "desktop_template": "AssistantPanel has a candidate index QSpinBox and fill buttons for teach/label templates.",
+    "state_sync": "0.25.0 syncs status, button enabled state, and index maximum after /inner-brain-candidates."
+  },
+  "gap": "The desktop panel still requires users to map the transcript candidate line to a numeric stepper manually. There is no UI control directly bound to a selected candidate row.",
+  "target": {
+    "behavior": "After /inner-brain-candidates, populate a desktop candidate selector from numbered candidate lines. Selecting an option synchronizes the numeric index. Template buttons still fill only the input box and never submit automatically.",
+    "non_goals": [
+      "No backend route change",
+      "No new natural language regex routing",
+      "No automatic training or command execution",
+      "No real provider configuration or API key changes"
+    ]
+  },
+  "similar_patterns": [
+    "QComboBox provider selectors in AssistantPanel",
+    "QSpinBox candidate index control in AssistantPanel",
+    "Desktop widget tests expose small helper methods for UI state assertions"
+  ],
+  "verification": {
+    "red": "Add desktop widget tests for candidate selector population and selection-to-template binding, plus version metadata test.",
+    "green": "Implement selector parsing/sync and bump project version to 0.26.0.",
+    "regression": "Run desktop widget tests, adjacent desktop/agent/LLM/InnerBrain tests, full unittest, desktop smoke, installer build, and static checks."
+  },
+  "tooling_note": "sequential-thinking/shrimp/code-index/exa MCP are unavailable in this session; using rg, targeted file reads, update_plan, apply_patch, TDD, local unittest and smoke/package verification."
+}

@@ -1,0 +1,60 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "phase": "0.17.0-route-history-detail",
+  "task": "新增可读的最近路由历史详情入口，并把路由历史纳入最近上下文。",
+  "tooling_degradation": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，按项目降级规则使用本地检索、计划文件和 TDD。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，使用 update_plan 与项目方案文件替代。",
+    "code_index": "当前会话未暴露 code-index MCP，使用 rg / Get-Content 检索。",
+    "exa": "本阶段不需要网络检索；如后续需要，优先检查 exa 是否可用。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/runtime_context.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "word/plans/"
+    ],
+    "current_behavior": [
+      "JarvisAgent.route_status_text() 已展示最新路由、依据和最近 5 条短历史。",
+      "RuntimeContext 已持久化 recent_route_decision 与 recent_route_decisions。",
+      "DesktopBridge 与 AssistantPanel 复用 route_status_text()，无需新增桌面通道。",
+      "/recent-context 目前未展示最近路由历史，用户需要看桌面状态或内部 runtime 才能完整诊断连续输入轨迹。"
+    ],
+    "similar_patterns": [
+      "/recent-context 通过 _recent_context_status() 汇总最近资料、目录、搜索、LLM pending 等上下文。",
+      "/tag-history 通过独立历史命令展示结构化历史记录。",
+      "route_status_text() 已有 _route_history_line() 作为短列表格式化辅助。"
+    ],
+    "tests": [
+      "tests.test_agent.AgentTests 覆盖 Agent 命令、LLM、搜索、InnerBrain 和运行态恢复。",
+      "tests.test_desktop_bridge / tests.test_desktop_widgets 已覆盖桌面状态透传。",
+      "tests.test_project_metadata 校验 pyproject 与 jarvis_lite.__version__。"
+    ]
+  },
+  "key_questions": [
+    {
+      "question": "是否需要改变自然语言路由策略？",
+      "priority": "high",
+      "answer": "不需要。本阶段只增强可观测性，避免新增自然语言正则或改变 InnerBrain/LLM/Search 顺序。"
+    },
+    {
+      "question": "详情入口应该放在哪里？",
+      "priority": "high",
+      "answer": "新增显式 /route-history 命令，并在 /recent-context 中追加短摘要，符合现有命令式诊断入口模式。"
+    },
+    {
+      "question": "桌面是否需要新控件？",
+      "priority": "medium",
+      "answer": "不需要。桌面已固定展示短历史，详情可通过聊天命令查看。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risk_identified": true,
+    "verification_known": true
+  }
+}

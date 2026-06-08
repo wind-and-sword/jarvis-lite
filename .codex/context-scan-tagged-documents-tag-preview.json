@@ -1,0 +1,49 @@
+{
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "task": "标签组批量打标签前预览",
+  "location": {
+    "intent": "src/jarvis_lite/intent.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_agent.py",
+    "docs": [
+      "README.md",
+      "verification.md",
+      "word/2026-05-25-jarvis-lite-progress.md",
+      "word/2026-05-22-jarvis-lite-personal-device-agent-plan.md"
+    ]
+  },
+  "current_state": {
+    "implemented": [
+      "按标签读取资料组：读取项目标签资料",
+      "/kb-summary 提示按标签读取资料",
+      "按编号给最近资料打标签"
+    ],
+    "gap": "用户看到标签组后，如果想给整个标签组追加标签，目前没有批量影响范围预览。"
+  },
+  "similar_patterns": [
+    "_read_tagged_documents(tag) 使用 build_knowledge_index() 按标签筛选并写入最近资料列表",
+    "_tag_numbered_recent_document(index, tags) 复用最近资料列表逐份设置标签",
+    "_organize_preview(alias) 只生成预览，不移动或删除文件"
+  ],
+  "design_decision": "批量类自然语言先只输出预览，不直接修改标签元数据；同时写入最近资料列表，方便用户后续逐份确认。",
+  "risks": [
+    "set_document_tags 是覆盖式设置，预览建议需要保留原标签并追加新标签，避免误导用户丢失原标签。",
+    "解析顺序必须放在普通 tag 意图之前，否则“项目标签资料”会被当作文件名。"
+  ],
+  "verification": [
+    "新增 Agent RED/GREEN 测试",
+    "tests.test_agent",
+    "tests.test_knowledge",
+    "unittest discover",
+    "desktop smoke",
+    "git diff --check"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  },
+  "tooling_note": "当前未提供 sequential-thinking、shrimp-task-manager、code-index；已用 tool_search 确认不可用，本轮使用 rg、本地文件读取、update_plan、apply_patch 和 unittest 降级执行。"
+}

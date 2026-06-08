@@ -1,0 +1,40 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "v6 InnerBrain 多轮澄清目录别名与经验内容补槽",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "inner_brain": "src/jarvis_lite/inner_brain.py",
+    "tests": "tests/test_agent.py",
+    "docs": [
+      "word/PROJECT-PLAN.md",
+      "word/plans/2026-05-28-v6-inner-brain-classifier-first-plan.md",
+      "word/progress/2026-05-29.md",
+      "verification/2026-05/2026-05-29.md"
+    ]
+  },
+  "current_state": {
+    "covered_clarification_slots": [
+      "source",
+      "items",
+      "query for web.search/web.search_summarize",
+      "result_index + tags"
+    ],
+    "existing_slot_completion": "complete_inner_brain_clarification 已能把 alias、experience、query 等字符串槽位从下一句写回 slots。",
+    "gap": "alias 和 experience 的澄清展示仍缺少中文缺槽名、用户可直接回复的示例提示，以及对“目录是...”“经验是...”这类补充句式的清理。"
+  },
+  "decision": {
+    "version": "0.1.10",
+    "scope": [
+      "directory.open_alias missing=alias",
+      "experience.record missing=experience"
+    ],
+    "boundary": "自然语言主识别仍由 seed/runtime 样本分类器负责；本轮只在已知 intent 的 pending 补槽阶段做结构化槽位清理。"
+  },
+  "verification_plan": [
+    "先写 RED 测试覆盖目录别名和经验内容补槽。",
+    "更新 Agent 澄清文案和 InnerBrain 补槽归一化。",
+    "运行目标测试、InnerBrain/Agent 回归、全量 unittest、源码 smoke、打包 smoke、静态检查。"
+  ],
+  "tool_degradation": "当前会话未提供 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地文件读取、rg、update_plan、apply_patch、unittest 和打包脚本。"
+}

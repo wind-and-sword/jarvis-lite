@@ -1,0 +1,53 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.33.0 InnerBrain 本机评估过滤视图",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "inner_brain": "src/jarvis_lite/inner_brain.py",
+    "tests": [
+      "tests/test_inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/2026-06-01-v37-inner-brain-local-evaluation-view-plan.md",
+      "word/progress/2026-06-01.md",
+      "verification.md",
+      "verification/2026-06/2026-06-01.md"
+    ]
+  },
+  "current_state": {
+    "evaluation": "/inner-brain-eval 合并 seed_evaluation 和 local_evaluation，/inner-brain-eval-failed 只显示失败项。",
+    "gap": "真实日志样本进入 data/inner-brain/evaluation/*.jsonl 后，用户需要单独查看本机样本表现，避免 seed 基线和本机样本混在一起。",
+    "principle": "本阶段只增加评估过滤视图，不自动训练、不改变正常聊天路由。"
+  },
+  "implementation_contract": {
+    "api": "evaluate_inner_brain(inner_brain, source_filter='local_evaluation')",
+    "command": "/inner-brain-eval-local",
+    "failed_command": "/inner-brain-eval-local-failed",
+    "aliases": [
+      "brain-eval-local",
+      "brain-eval-local-failed"
+    ],
+    "output": "评估集显示 local_evaluation，只包含本机评估样本；失败过滤版本只显示失败样例和修复建议。",
+    "side_effects": "不写 runtime 训练样本，不污染最近路由候选。"
+  },
+  "similar_patterns": [
+    "/inner-brain-eval 作为路由观察命令，不污染候选。",
+    "/inner-brain-eval-failed 复用同一评估报告，只改变展示视图。",
+    "load_evaluation_cases() 已把 JSONL 样本标记为 source=local_evaluation。"
+  ],
+  "verification": [
+    "RED/GREEN 目标测试",
+    "InnerBrain 专项",
+    "Agent/LLM/桌面/Conversation 相邻回归",
+    "全量 unittest",
+    "源码桌面 smoke",
+    "Windows 安装包构建和打包后 exe smoke",
+    "diff、Markdown 链接、敏感信息、本地配置跟踪检查"
+  ],
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、apply_patch、本地 unittest 和打包脚本。"
+}

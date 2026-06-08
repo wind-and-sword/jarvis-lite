@@ -1,0 +1,52 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "将 InnerBrain v1 与样本闭环打包为 0.1.3 可安装测试版",
+  "location": {
+    "version_files": [
+      "pyproject.toml",
+      "src/jarvis_lite/__init__.py",
+      "README.md"
+    ],
+    "packaging": [
+      "scripts/build_windows_installer.py",
+      "src/jarvis_lite/desktop/windows_installer.py",
+      "src/jarvis_lite/desktop/packaging.py"
+    ],
+    "tests": [
+      "tests/test_project_metadata.py",
+      "tests/test_windows_installer.py",
+      "tests/test_desktop_packaging.py"
+    ],
+    "verification_docs": [
+      "verification.md",
+      "verification/2026-05/2026-05-28.md",
+      "word/progress/2026-05-28.md"
+    ]
+  },
+  "current_state": {
+    "current_version": "0.1.2",
+    "unpackaged_changes_since_0_1_2": [
+      "InnerBrain v1",
+      "InnerBrain status/preview",
+      "runtime 样本采纳",
+      "人工标注入口",
+      "口语化教学入口"
+    ],
+    "installer_behavior": "IExpress 安装器会覆盖程序文件，保留 %LOCALAPPDATA%\\Jarvis Lite 用户数据，并在完成弹窗显示版本号。"
+  },
+  "decision": {
+    "release_version": "0.1.3",
+    "scope": "只做版本提升、文档同步、安装器构建和打包验证，不新增业务能力。",
+    "artifact": [
+      "..\\jarvis-lite-dist\\JarvisLiteSetup.exe",
+      "..\\jarvis-lite-dist\\JarvisLiteSetup-0.1.3.exe"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risk_identified": true,
+    "verification_known": true
+  }
+}

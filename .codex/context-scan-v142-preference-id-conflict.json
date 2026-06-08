@@ -1,0 +1,47 @@
+{
+  "date": "2026-06-05",
+  "executor": "Codex",
+  "stage": "v142 / 0.137.0",
+  "topic": "偏好稳定 ID 与冲突提示第一阶段",
+  "trigger": "用户要求继续下一阶段；word/PROJECT-PLAN.md 后续目标写明下一批优先评估偏好冲突提示、稳定 ID 和真正应用前确认策略。",
+  "current_state": {
+    "version": "0.136.0",
+    "latest_commit": "f6893eb feat: 增加偏好应用预览 0.136.0",
+    "preference_storage": "config/preferences.local.json 当前记录 preference、enabled、source、created_at、updated_at。",
+    "commands": [
+      "/preference-status",
+      "/preference-enable 编号",
+      "/preference-disable 编号",
+      "/preference-preview [输入文本]"
+    ],
+    "boundary": "偏好启用与预览只做本地可审计管理，不自动改变回复风格、LLM prompt、路由或执行决策。"
+  },
+  "known_patterns": [
+    "preferences.py 负责偏好解析、持久化、启停、状态描述和预览描述。",
+    "agent.py 通过显式 slash command 调用 preferences.py helper，并把偏好管理命令排除在 LLM provider instructions 之外。",
+    "tests/test_preferences.py 和 tests/test_agent.py 已覆盖偏好保存、确认固化、启停、预览和不自动应用边界。"
+  ],
+  "key_questions": [
+    {
+      "question": "稳定 ID 是否需要立即接入命令？",
+      "answer": "需要。仅展示 ID 不能解决编号受排序影响的问题；本阶段让 /preference-enable 与 /preference-disable 支持编号或 ID，同时保留编号兼容现有测试。"
+    },
+    {
+      "question": "冲突提示是否需要自动解决优先级？",
+      "answer": "不需要。当前路线仍要求不自动改变回复策略；本阶段只提示明显冲突并要求后续人工确认。"
+    },
+    {
+      "question": "旧 preferences.local.json 缺少 ID 如何处理？",
+      "answer": "读取时按偏好文本生成确定性 ID，后续保存或启停时写回记录；无需破坏旧文件。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  },
+  "tool_fallbacks": [
+    "sequential-thinking MCP、shrimp-task-manager、code-index 和 exa 未在当前工具列表中提供；使用 rg、Get-Content、git、update_plan、apply_patch 和本地 unittest 替代。"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.23.0 桌面内脑候选快捷入口",
+  "tool_degradation": {
+    "sequential_thinking": "当前会话未提供该 MCP 工具，已用本地代码阅读、rg 检索和 TDD 流程替代。",
+    "shrimp_task_manager": "当前会话未提供该 MCP 工具，已用 update_plan 维护执行计划。",
+    "code_index": "当前会话未提供该 MCP 工具，已用 rg 和定向文件读取替代。",
+    "exa": "本阶段不需要外部网络资料。"
+  },
+  "locations": [
+    "src/jarvis_lite/desktop/bridge.py",
+    "src/jarvis_lite/desktop/widgets.py",
+    "src/jarvis_lite/desktop/tray.py",
+    "tests/test_desktop_bridge.py",
+    "tests/test_desktop_widgets.py"
+  ],
+  "current_behavior": [
+    "桌面面板和托盘快捷命令复用 direct_quick_commands()。",
+    "/inner-brain-candidates 已可直接执行，但不在桌面快捷入口中。"
+  ],
+  "target_behavior": [
+    "quick_commands() 提供“内脑候选”快捷命令。",
+    "direct_quick_commands() 将 /inner-brain-candidates 作为无需参数的直接命令。",
+    "桌面面板按钮和托盘菜单可一键执行 /inner-brain-candidates。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

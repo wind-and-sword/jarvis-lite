@@ -1,0 +1,66 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.72.0 InnerBrain 本机文件失败视图当前文件总览入口",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "used": [
+      "Get-Content",
+      "rg",
+      "update_plan",
+      "apply_patch",
+      "unittest",
+      "build_windows_installer",
+      "local smoke checks"
+    ]
+  },
+  "scan": {
+    "location": [
+      "src/jarvis_lite/agent.py::_describe_inner_brain_local_failed_evaluation",
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_file_failed_command_lists_only_selected_file_failures",
+      "tests/test_project_metadata.py::ProjectMetadataTests.test_project_version_matches_release_package_version"
+    ],
+    "current_behavior": "指定文件失败视图已有当前文件已处理入口、全部失败入口和当前文件报告导出入口，但缺少回到当前文件全部样本总览的入口。",
+    "similar_patterns": [
+      "0.57.0 为指定文件失败视图追加当前文件已处理入口。",
+      "0.70.0 为指定文件报告导出反馈追加当前文件已处理入口。",
+      "0.71.0 为指定文件报告导出反馈追加当前文件总览入口。"
+    ],
+    "tech_stack": [
+      "Python 3.13",
+      "unittest",
+      "PySide6 desktop smoke",
+      "PyInstaller Windows installer"
+    ],
+    "tests": [
+      "目标 RED/GREEN",
+      "tests.test_agent + tests.test_project_metadata 相邻回归",
+      "全量 unittest discover",
+      "源码桌面 smoke",
+      "Windows 安装包构建",
+      "打包后 exe smoke",
+      "Markdown 本地链接、敏感差异和本地配置检查"
+    ]
+  },
+  "questions": {
+    "known": [
+      "用户需要继续推进下一个任务，且不能推送远端时可先本地提交。",
+      "README 可以更新，之前关于 README 的否定已被用户撤回。",
+      "本任务只改变反馈文案，不新增命令、不写训练数据。"
+    ],
+    "unknown": [],
+    "priority": []
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  },
+  "observation": "该入口与 0.70.0、0.71.0 形成文件级失败视图和报告导出反馈的一致导航闭环，风险集中在提示文案回归。"
+}

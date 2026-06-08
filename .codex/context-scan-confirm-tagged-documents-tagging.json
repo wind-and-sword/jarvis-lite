@@ -1,0 +1,49 @@
+{
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "task": "确认执行标签组批量打标签预览",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_agent.py",
+    "docs": [
+      "README.md",
+      "verification.md",
+      "word/2026-05-26-jarvis-lite-progress.md",
+      "word/2026-05-22-jarvis-lite-personal-device-agent-plan.md"
+    ]
+  },
+  "current_state": {
+    "implemented": [
+      "标签组批量打标签前预览",
+      "确认执行/取消执行用于经验建议命令"
+    ],
+    "gap": "标签组预览后，确认执行仍只检查待确认经验建议命令，无法真正应用预览标签。"
+  },
+  "similar_patterns": [
+    "_confirm_pending_advice_suggestion_execution() 使用同一自然语言入口确认待执行建议命令",
+    "_cancel_pending_advice_suggestion_execution() 清理待执行建议命令",
+    "_tag_numbered_recent_document() 复用最近资料列表逐份设置标签"
+  ],
+  "design_decision": "复用“确认执行/取消执行”自然语言入口；预览后保存仅会话内的待确认标签组状态，确认后逐份调用 set_document_tags，取消或确认后清空状态。",
+  "risks": [
+    "确认入口已有经验建议语义，必须避免同时存在两个待确认任务。",
+    "确认执行应追加标签而非覆盖掉原有标签。",
+    "取消后再次确认不能修改标签。"
+  ],
+  "verification": [
+    "新增 Agent RED/GREEN 测试覆盖确认执行和取消执行",
+    "经验建议确认回归",
+    "标签预览和普通标签回归",
+    "tests.test_knowledge",
+    "unittest discover",
+    "desktop smoke",
+    "git diff --check"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  },
+  "tooling_note": "当前未提供 sequential-thinking、shrimp-task-manager、code-index；使用 rg、本地文件读取、update_plan、apply_patch 和 unittest 降级执行。"
+}

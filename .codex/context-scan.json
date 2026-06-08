@@ -1,0 +1,43 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.124.0 任务状态自动采集第一阶段",
+  "location": {
+    "core_modules": [
+      "src/jarvis_lite/runtime_context.py",
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/task_state.py"
+    ],
+    "similar_tests": [
+      "tests/test_task_state.py task failure replay tests",
+      "tests/test_agent.py task command tests",
+      "tests/test_agent.py route history and recent context tests"
+    ]
+  },
+  "current_implementation": {
+    "runtime_context": "agent-context.json 已保存当前任务、最近失败记录和最近路由，但当前任务自身缺少最近任务事件字段。",
+    "agent": "JarvisAgent 已在显式命令和自然语言路由时记录 RuntimeRouteDecisionContext。",
+    "gap": "任务失败复盘只能看到最近路由摘要，不能保留失败前的多条任务内普通命令上下文。"
+  },
+  "tech_stack": [
+    "Python 3.13",
+    "unittest",
+    "dataclasses",
+    "JSON runtime context"
+  ],
+  "verification": [
+    "目标 unittest",
+    "相邻回归",
+    "全量 unittest",
+    "命令行 smoke",
+    "桌面 smoke",
+    "Windows installer build",
+    "静态检查"
+  ],
+  "observations": [
+    "应复用 runtime_context.py，避免新增数据库或额外持久化组件。",
+    "应复用现有 RuntimeRouteDecisionContext，避免新增独立事件存储。",
+    "自动采集第一阶段只记录任务期间的路由事件，不采集执行结果全文或桌面内容。",
+    "任务管理命令本身需要过滤，避免 /task-fail 覆盖失败前真实上下文。"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.4.0 运行态外脑与搜索配置初始化闭环",
+  "tooling_note": {
+    "sequential_thinking": "当前工具集中未暴露 sequential-thinking，已使用本地上下文扫描和 update_plan 降级。",
+    "shrimp_task_manager": "当前工具集中未暴露 shrimp-task-manager，已使用 .codex 计划文件和 update_plan 降级。",
+    "code_index": "当前工具集中未暴露 code-index，已使用 rg 和定向文件读取降级。",
+    "exa": "本任务不需要网络事实检索；未使用联网搜索。"
+  },
+  "context": {
+    "current_version": "0.3.0",
+    "recent_commit": "898f8d8 feat: 收口外脑 provider 配置 0.3.0",
+    "llm_current_state": [
+      "LLMSettings 已支持 qwen/gemini provider alias，并映射到 openai-compatible adapter。",
+      "/llm-enable 会确保 config/llm.example.json 存在，但不会生成 config/llm.local.json。",
+      "README 说明安装版配置文件位于 %LOCALAPPDATA%\\Jarvis Lite\\config\\llm.local.json。"
+    ],
+    "search_current_state": [
+      "SearchSettings 支持 off/fake/tavily。",
+      "/search-enable 会确保 config/search.example.json 存在，但不会生成 config/search.local.json。",
+      "真实 search provider 当前使用 Tavily 官方 Python SDK。"
+    ],
+    "agent_current_state": [
+      "JarvisAgent 已有 /llm-config-example、/llm-enable、/search-config-example、/search-enable。",
+      "InnerBrain seed 样本已有 开启外脑 -> /llm-enable，但没有配置草稿初始化入口。"
+    ]
+  },
+  "key_questions": [
+    {
+      "question": "0.4.0 是否继续扩展 provider 原生 SDK？",
+      "decision": "否。0.3.0 刚收口 alias，0.4.0 优先减少安装后配置落地摩擦。"
+    },
+    {
+      "question": "是否写入真实 API key？",
+      "decision": "否。只生成 api_key 为空的本地草稿，避免误判为已配置或泄漏。"
+    },
+    {
+      "question": "是否覆盖已有 local.json？",
+      "decision": "否。已有配置必须保留，并且响应不得打印已有 key。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

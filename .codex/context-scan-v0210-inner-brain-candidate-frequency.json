@@ -1,0 +1,24 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.21.0 InnerBrain 候选频次排序",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_agent.py",
+    "metadata": "tests/test_project_metadata.py"
+  },
+  "current_state": {
+    "candidate_listing": "/inner-brain-candidates 直接按最近路由顺序列出 llm-fallback、memory-fallback、inner-brain-clarify。",
+    "candidate_teaching": "/inner-brain-teach-candidate 编号 => /命令 使用当前候选编号。",
+    "candidate_labeling": "/inner-brain-label-candidate 编号 => intent [slot=value ...] 使用当前候选编号。"
+  },
+  "gap": "重复 fallback 输入不会聚合，较新的单次候选可能排在重复出现的高频缺口前面。",
+  "decision": "在最近 5 条路由候选内按 prompt 精确聚合，输出出现次数；排序规则为出现次数降序，同频按最近一次出现顺序。",
+  "verification": [
+    "RED/GREEN：重复候选优先排序、编号教学使用聚合排序、编号标注使用聚合排序、版本一致性",
+    "相邻回归：桌面、Agent、LLM、InnerBrain、Conversation",
+    "全量 unittest discover",
+    "源码 smoke、installer 构建、打包 exe smoke、静态检查"
+  ],
+  "tool_degradation": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；使用 rg、Get-Content、update_plan、apply_patch、unittest 和本地构建验证替代，并在 operations-log.md 留痕。"
+}

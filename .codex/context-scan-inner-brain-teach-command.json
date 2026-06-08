@@ -1,0 +1,61 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "新增 InnerBrain 口语化教学入口",
+  "location": {
+    "agent_command_dispatch": "src/jarvis_lite/agent.py",
+    "inner_brain_runtime_save": "src/jarvis_lite/inner_brain.py",
+    "agent_tests": "tests/test_agent.py",
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/progress/2026-05-28.md",
+      "verification.md",
+      "verification/2026-05/2026-05-28.md"
+    ]
+  },
+  "current_state": {
+    "debug_commands": [
+      "/inner-brain-status",
+      "/inner-brain-preview 文本",
+      "/inner-brain-adopt 文本",
+      "/inner-brain-label 文本 => intent [slot=value ...]"
+    ],
+    "limitation": "人工标注入口仍偏开发语法，普通用户需要知道 intent 与 slot 名称。",
+    "existing_reuse": "save_labeled_runtime_training_sample() 已能保存 text -> intent -> slots，JarvisAgent._label_inner_brain_sample() 已有保存、去重和刷新反馈。"
+  },
+  "similar_cases": [
+    "JarvisAgent._adopt_inner_brain_sample()：保存 runtime 样本后刷新 self.inner_brain，不执行命令。",
+    "JarvisAgent._label_inner_brain_sample()：解析 label 参数并调用 save_labeled_runtime_training_sample()。",
+    "InnerBrain._sample_to_natural_language_intent()：runtime 样本含 command slot 时可转换为 NaturalLanguageIntent('command') 并交给 Agent 执行。"
+  ],
+  "design": {
+    "recommended_approach": "新增用户口语化教学入口，只覆盖 text -> command 的高频场景，复用现有人工标注保存能力。",
+    "command_syntax": "/inner-brain-teach 文本 => /命令",
+    "natural_syntax": "以后我说“文本”就是 /命令；把“文本”记成 /命令",
+    "constraints": [
+      "教学动作只保存样本，不执行目标命令。",
+      "保存后当前 Agent 立即刷新 InnerBrain。",
+      "目标命令先限制为已知可教学命令，避免 unknown 命令进入训练样本。",
+      "这不是继续堆业务正则，而是教学入口语法解析；核心理解仍由 InnerBrain runtime 样本承担。"
+    ]
+  },
+  "questions": {
+    "known": [
+      "需要降低人工标注门槛。",
+      "需要继续沉淀用户真实说法。",
+      "已有 runtime 样本保存和执行链路可复用。"
+    ],
+    "unknown": [
+      "后续是否要支持教学到任意 intent + slot 的自然语言表单。",
+      "后续是否要在桌面 UI 中做“识别错了”的一键标注。"
+    ],
+    "decision": "本轮先做 text -> command 的口语教学入口，范围小、可验证、与当前 v4 方案一致。"
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risk_identified": true,
+    "verification_known": true
+  }
+}

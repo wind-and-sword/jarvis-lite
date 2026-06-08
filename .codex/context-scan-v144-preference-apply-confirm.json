@@ -1,0 +1,48 @@
+{
+  "date": "2026-06-05",
+  "executor": "Codex",
+  "stage": "v144 / 0.139.0",
+  "topic": "偏好应用确认命令第一阶段",
+  "trigger": "用户要求继续下一阶段；word/PROJECT-PLAN.md 后续目标写明下一批优先评估偏好确认草稿后的真实应用确认命令和应用范围。",
+  "current_state": {
+    "version": "0.138.0",
+    "latest_commit": "07c1b50 feat: 增加偏好应用确认草稿 0.138.0",
+    "commands": [
+      "/preference-status",
+      "/preference-enable 编号或ID",
+      "/preference-disable 编号或ID",
+      "/preference-preview [输入文本]",
+      "/preference-apply-draft [输入文本]"
+    ],
+    "boundary": "偏好启用、预览、草稿和冲突提示只做本地可审计管理，不自动改变回复风格、LLM prompt、路由或执行决策。"
+  },
+  "known_patterns": [
+    "preferences.py 负责偏好读写、启停、状态、预览、应用草稿和冲突提示。",
+    "agent.py 通过显式 slash command 调用 preferences.py helper，并把偏好管理命令排除在 LLM provider instructions 之外。",
+    "memory_config_manager.py 的可管理入口用静态文案列出相关命令。",
+    "tests/test_preferences.py 覆盖 helper，tests/test_agent.py 覆盖 Agent 命令和帮助/status 文案，tests/test_llm.py 覆盖 LLM 白名单边界。"
+  ],
+  "key_questions": [
+    {
+      "question": "确认命令是否要改变普通聊天回复？",
+      "answer": "不改变。第一阶段确认只限本次显式 /preference-apply-confirm 命令输出，不写入普通回复路径或 provider prompt。"
+    },
+    {
+      "question": "存在明显冲突时是否允许确认应用？",
+      "answer": "不允许。确认命令遇到冲突提示时拒绝确认，并提示先停用冲突偏好，避免自动裁决优先级。"
+    },
+    {
+      "question": "是否需要持久化确认结果？",
+      "answer": "暂不持久化。本阶段只生成可审计确认结果，避免引入运行态状态污染和后续自动应用歧义。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  },
+  "tool_fallbacks": [
+    "sequential-thinking MCP、shrimp-task-manager、code-index 和 exa 未在当前工具列表中提供；使用 rg、Get-Content、git、update_plan、apply_patch、superpowers 流程和本地 unittest 替代。"
+  ]
+}

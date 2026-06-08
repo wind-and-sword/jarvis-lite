@@ -1,0 +1,43 @@
+{
+  "date": "2026-05-27",
+  "executor": "Codex",
+  "task": "LLM OpenAI-compatible 完整 /v1/responses URL 接入恢复",
+  "source": "从用户保存的 日志.txt 恢复中断点",
+  "tooling_note": "当前可用工具中没有 sequential-thinking、shrimp-task-manager、code-index；已使用本地文件读取、rg、apply_patch、unittest 降级执行。",
+  "location": {
+    "runtime": "src/jarvis_lite/llm.py",
+    "tests": [
+      "tests/test_llm.py",
+      "tests/test_agent.py"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/2026-05-27-v3-pc-agent-llm-first-plan.md",
+      "word/progress/2026-05-27.md",
+      "verification.md",
+      "verification/2026-05/2026-05-27.md"
+    ]
+  },
+  "current_behavior_before_change": [
+    "openai-compatible 依赖 JARVIS_LITE_LLM_BASE_URL + API key + model。",
+    "用户如果复制完整 /v1/responses URL，OpenAI SDK 会收到完整 endpoint，而不是 SDK 期望的 base_url。",
+    "/llm-status 不展示归一化后的 SDK Base URL。",
+    "/llm-config-example openai-compatible 未提示完整 Responses URL 写法。"
+  ],
+  "target_contract": [
+    "JARVIS_LITE_LLM_BASE_URL、JARVIS_LITE_LLM_API_KEY、JARVIS_LITE_LLM_MODEL 均保持环境变量配置。",
+    "真实 API key 和具体 endpoint 不写入代码、文档或提交。",
+    "完整 /v1/responses URL 在 SDK 调用前归一化为 /v1 base URL。",
+    "状态和配置模板明确展示此兼容行为。"
+  ],
+  "validation": [
+    "目标 RED/GREEN 测试",
+    "tests.test_llm",
+    "tests.test_agent",
+    "unittest discover",
+    "desktop smoke",
+    "git diff --check",
+    "Markdown 本地链接检查"
+  ]
+}

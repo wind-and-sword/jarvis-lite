@@ -1,0 +1,66 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.44.0 InnerBrain 本机失败评估按意图混淆方向分组展示修复建议",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "replacement": "使用本地 rg、Get-Content、update_plan、TDD、unittest、Windows 打包脚本和本地 smoke 验证。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/inner_brain.py: describe_inner_brain_evaluation() 负责失败视图、汇总段落和修复建议段落。",
+      "src/jarvis_lite/inner_brain.py: _inner_brain_evaluation_fix_suggestion() 负责单条失败样本的显式 teach/label 建议。",
+      "tests/test_inner_brain.py: InnerBrainEvaluationReport 汇总和 Markdown 导出测试覆盖失败报告文案。",
+      "tests/test_agent.py: /inner-brain-eval-local-report 等 Agent 命令测试覆盖导出报告内容。",
+      "tests/test_project_metadata.py、pyproject.toml、src/jarvis_lite/__init__.py 维护版本一致性。"
+    ],
+    "current_behavior": [
+      "0.43.0 已输出失败类型、失败期望意图、失败意图混淆、失败文件意图混淆、失败原因和失败修复建议。",
+      "现有失败修复建议是平铺列表，所有失败样本按 case 顺序输出。",
+      "现有失败意图混淆汇总只展示数量和典型样本，不直接列出该混淆方向下的修复建议。"
+    ],
+    "similar_patterns": [
+      "失败意图混淆汇总使用 expected_intent != result.intent 过滤，按数量降序和混淆方向升序输出。",
+      "失败文件意图混淆汇总复用同一过滤规则，未指定单文件时才展示。",
+      "报告导出复用 failures-only 描述，因此新增描述段落可自动进入 Markdown 报告。"
+    ],
+    "tests": [
+      "新增 InnerBrain 描述测试，验证失败意图混淆修复建议分组。",
+      "扩展 Markdown 导出测试，验证报告包含分组修复建议。",
+      "扩展 Agent 本机报告命令测试，验证导出的报告包含分组修复建议。",
+      "版本一致性测试提升到 0.44.0，更新检测 fixture 提升到 0.44.1。"
+    ],
+    "observation": [
+      "下一阶段应保持只读展示，不写 training/runtime JSONL，不改变 evaluation JSONL payload，不新增命令接口。",
+      "为了兼容已有用户阅读习惯和测试，建议新增 `失败意图混淆修复建议：` 段落，而不是替换现有 `失败修复建议：` 平铺列表。"
+    ]
+  },
+  "questions": [
+    {
+      "question": "是否替换现有平铺修复建议？",
+      "priority": "high",
+      "answer": "不替换。新增分组段落并保留平铺列表，避免旧视图缺失非意图混淆失败的修复建议。"
+    },
+    {
+      "question": "哪些失败样本进入分组？",
+      "priority": "high",
+      "answer": "仅进入 expected_intent 与 actual intent 不一致的失败样本；意图一致的策略或命令失败继续只在平铺建议中展示。"
+    },
+    {
+      "question": "是否需要新数据结构或新命令？",
+      "priority": "medium",
+      "answer": "不需要。复用现有 report.failed_case_results 和 _inner_brain_evaluation_fix_suggestion() 生成只读展示。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risk_identified": true,
+    "verification_known": true
+  }
+}

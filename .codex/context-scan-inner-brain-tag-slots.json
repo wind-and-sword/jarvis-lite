@@ -1,0 +1,48 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "InnerBrain 标签槽位意图迁移",
+  "tool_degradation": [
+    "当前会话未提供 sequential-thinking MCP，已用本地结构化扫描和 update_plan 替代。",
+    "当前会话未提供 shrimp-task-manager MCP，已用 update_plan 和 .codex 计划文件替代。",
+    "当前会话未提供 code-index MCP，已用 rg 与本地文件读取替代。",
+    "本任务不需要联网事实检索，未调用 exa 或 web 搜索。"
+  ],
+  "locations": {
+    "inner_brain": "src/jarvis_lite/inner_brain.py",
+    "legacy_intent_parser": "src/jarvis_lite/intent.py",
+    "agent_dispatcher": "src/jarvis_lite/agent.py",
+    "inner_brain_tests": "tests/test_inner_brain.py",
+    "agent_tests": "tests/test_agent.py",
+    "architecture_doc": "word/plans/2026-05-28-v6-inner-brain-classifier-first-plan.md"
+  },
+  "legacy_functions": [
+    "_parse_tag_intent",
+    "_parse_tagged_documents_tag_preview_intent",
+    "_parse_read_tagged_documents_intent",
+    "_parse_read_tagged_documents_history_intent"
+  ],
+  "agent_handlers": [
+    "tag_recent_document",
+    "tag_numbered_recent_document",
+    "tag_numbered_search_result",
+    "preview_tagged_documents_tagging",
+    "read_tagged_documents",
+    "read_tagged_documents_history_documents"
+  ],
+  "migration_slice": [
+    "给这个资料打标签 项目 Python",
+    "给这个结果打标签 运行环境",
+    "给第二份资料打标签 项目 Python",
+    "给第二条结果打标签 运行环境",
+    "给项目标签资料都打标签 归档",
+    "读取项目标签资料",
+    "读取第一条标签历史资料"
+  ],
+  "sufficiency_check": {
+    "interface_contract": "InnerBrainResult.slots 输出 tags、alias、result_index；NaturalLanguageIntent 复用现有 Agent 名称。",
+    "technical_choice": "样本签名负责语义识别；解析函数只抽 tags、alias、result_index。",
+    "risks": "显式文件名打标签必须继续走 legacy_fallback，避免把 note.txt 当成最近资料。",
+    "verification": "新增 InnerBrain 红绿测试，回归标签 Agent 流程和全量 unittest。"
+  }
+}

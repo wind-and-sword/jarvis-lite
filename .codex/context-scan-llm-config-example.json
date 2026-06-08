@@ -1,0 +1,48 @@
+{
+  "date": "2026-05-27",
+  "executor": "Codex",
+  "task": "新增 LLM 配置模板命令",
+  "location": {
+    "llm_module": "src/jarvis_lite/llm.py",
+    "agent_command_router": "src/jarvis_lite/agent.py",
+    "tests": [
+      "tests/test_llm.py",
+      "tests/test_agent.py"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/2026-05-27-v3-pc-agent-llm-first-plan.md",
+      "word/progress/2026-05-27.md",
+      "verification/2026-05/2026-05-27.md"
+    ]
+  },
+  "current_behavior": {
+    "llm_status": "/llm-status 已展示本地配置诊断。",
+    "llm_usage": "/llm-usage 已从本地日志汇总 token 用量。",
+    "gap": "用户拿到 API key 前缺少命令内配置模板，需要翻 README。"
+  },
+  "implementation": {
+    "llm_function": "describe_llm_config_examples(provider='') 输出不含真实密钥的 PowerShell 模板。",
+    "agent_command": "/llm-config-example [provider] 在 slash command 阶段处理，不进入 LLM fallback。",
+    "supported_templates": [
+      "off",
+      "fake",
+      "openai",
+      "openai-compatible"
+    ],
+    "aliases": [
+      "qwen -> openai-compatible",
+      "gemini -> openai-compatible"
+    ]
+  },
+  "verification": [
+    "TDD RED/GREEN",
+    "tests.test_llm",
+    "tests.test_agent",
+    "unittest discover",
+    "desktop smoke",
+    "Markdown local links",
+    "git diff --check"
+  ]
+}

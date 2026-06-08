@@ -1,0 +1,56 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "inner-brain-label-sample",
+  "tooling_note": "当前会话没有 sequential-thinking、shrimp-task-manager、code-index；按项目约定记录降级，使用技能文件、rg、文件读取、update_plan、apply_patch 和 unittest 执行。",
+  "location": {
+    "inner_brain": "src/jarvis_lite/inner_brain.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": [
+      "tests/test_inner_brain.py",
+      "tests/test_agent.py"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/progress/2026-05-28.md",
+      "verification.md",
+      "verification/2026-05/2026-05-28.md"
+    ]
+  },
+  "current_state": {
+    "adopt": "/inner-brain-adopt 文本 可以采纳当前 InnerBrain 已识别的非 unknown 结果。",
+    "gap": "unknown 或误识别样本仍无法人工指定 intent/slots 写入 runtime 样本。",
+    "training_format": "data/inner-brain/training/*.jsonl 使用 text、intent、slots、missing。"
+  },
+  "similar_patterns": [
+    "save_runtime_training_sample(paths, text, result)：保存已识别结果并去重。",
+    "JarvisAgent._adopt_inner_brain_sample()：保存样本后刷新 InnerBrain。",
+    "Agent 命令解析：slash 命令优先于自然语言和 LLM fallback。"
+  ],
+  "design": {
+    "command": "/inner-brain-label 文本 => intent [slot=value ...] [missing=a,b]",
+    "examples": [
+      "/inner-brain-label 可以看看资料库吗 => knowledge.status command=/kb",
+      "/inner-brain-label 删除这个快捷方式 => desktop.delete_shortcut items=比特浏览器"
+    ],
+    "behavior": "把人工标注的 text、intent、slots、missing 写入 runtime.jsonl；保存本身不执行命令；保存后刷新当前 Agent 的 InnerBrain。",
+    "invalid_input": "缺少 =>、缺少 intent、slot 不是 key=value、文本为空时返回用法或错误。"
+  },
+  "risks": [
+    "命令解析不能误把标注动作当作实际执行动作。",
+    "slot 列表要用 JSON 兼容结构保存，便于重载。",
+    "人工标注后应立即能被当前 Agent 使用，不需要重启。"
+  ],
+  "verification": [
+    "InnerBrain 单测覆盖人工样本写入和重载。",
+    "Agent 测试覆盖 help、命令保存、unknown 输入经标注后本地执行、无效格式拒绝、桌面快捷方式标注不删除。",
+    "全量 unittest、桌面 smoke、临时目录 label smoke、diff/link/sensitive 检查。"
+  ],
+  "sufficiency_check": {
+    "clear_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "按编号查看最近文件详情",
+  "tool_fallback": {
+    "missing": ["sequential-thinking", "shrimp-task-manager", "code-index"],
+    "used": ["rg", "Get-Content", "update_plan", "apply_patch"]
+  },
+  "locations": {
+    "recent_file_scan": "src/jarvis_lite/automation.py",
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "natural_language_intent": "src/jarvis_lite/intent.py",
+    "agent_routing": "src/jarvis_lite/agent.py",
+    "agent_tests": "tests/test_agent.py"
+  },
+  "current_behavior": [
+    "`/recent-files` 和“查看最近文件”会扫描常用目录、项目目录、桌面、下载目录顶层文件。",
+    "最近文件列表当前只在响应文本里展示，不写入 `RuntimeContext`。",
+    "“查看第一份最近文件”当前没有专门意图，会落入普通兜底。"
+  ],
+  "target_behavior": [
+    "`/recent-files` 成功列出文件后，把最近文件列表保存到运行态上下文。",
+    "新 Agent 实例可以恢复最近文件列表。",
+    "“查看第一份最近文件”只展示文件元数据：来源、路径、修改时间；不读取内容，不打开文件。"
+  ],
+  "risks": [
+    "不要把系统任意文件内容读出来。",
+    "不要启动外部应用或打开文件。",
+    "缺失或已删除文件需要明确提示。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "date": "2026-06-03",
+  "actor": "Codex",
+  "task": "0.93.0 InnerBrain 全量评估运行日志固定与本机评估集标签",
+  "tool_fallback": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；使用本地结构化分析、rg、Get-Content、update_plan 和 unittest 降级执行。",
+  "scope": {
+    "target_files": [
+      "src/jarvis_lite/agent.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "pyproject.toml",
+      "src/jarvis_lite/__init__.py",
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/README.md",
+      "word/plans/2026-06-03-v97-inner-brain-full-eval-log-label-plan.md",
+      "word/progress/2026-06-03.md",
+      "word/文档索引.md",
+      "verification.md",
+      "verification/2026-06/2026-06-03.md"
+    ],
+    "change": "把 /inner-brain-eval 与 /inner-brain-eval-failed 的运行日志从“本地评估集”收紧为“固定与本机评估集”，避免和只看本机样本的 /inner-brain-eval-local 混淆。",
+    "non_goals": [
+      "不修改评估输出正文",
+      "不修改 /inner-brain-eval-local 或指定文件本机评估日志",
+      "不修改命令集合、别名、失败筛选、排序、报告正文、报告路径、本机 evaluation JSONL payload 或训练样本写入"
+    ]
+  },
+  "evidence": {
+    "full_eval_log": "src/jarvis_lite/agent.py 当前在 /inner-brain-eval 分支记录“执行 InnerBrain 本地评估集”，但 evaluate_inner_brain(self.inner_brain) 会覆盖 seed_evaluation 与 local_evaluation。",
+    "full_failed_log": "src/jarvis_lite/agent.py 当前在 /inner-brain-eval-failed 分支记录“执行 InnerBrain 本地评估集并只显示失败样本”。",
+    "similar_cases": [
+      "/inner-brain-eval-local 记录“执行 InnerBrain 本机评估集”",
+      "/inner-brain-eval-local-failed 记录“执行 InnerBrain 本机评估集并只显示待处理失败样本”",
+      "/inner-brain-eval-local-file-failed 文件名 记录“执行 InnerBrain 本机评估文件并只显示待处理失败样本：文件名”"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "date": "2026-05-21",
+  "executor": "Codex",
+  "task": "桌面更新下载体验",
+  "tooling_status": {
+    "sequential_thinking": "当前可用工具列表未提供，使用本地文件阅读、rg、update_plan 和项目文档替代。",
+    "shrimp_task_manager": "当前可用工具列表未提供，使用 .codex 计划文档和 update_plan 替代。",
+    "code_index": "当前可用工具列表未提供，使用 rg 与定向文件读取替代。"
+  },
+  "location": {
+    "update_core": "src/jarvis_lite/update.py",
+    "agent_command_router": "src/jarvis_lite/agent.py",
+    "desktop_quick_commands": "src/jarvis_lite/desktop/bridge.py",
+    "desktop_panel": "src/jarvis_lite/desktop/widgets.py",
+    "desktop_tray": "src/jarvis_lite/desktop/tray.py"
+  },
+  "current_state": [
+    "已有 /update-status [清单路径或URL]，可读取本地或 http/https JSON 清单。",
+    "更新清单目前包含 version、download_url、release_notes、published_at。",
+    "桌面面板和托盘已有“检查更新”无参数快捷命令。",
+    "最新进度文档建议下一阶段做下载体验，静默自动更新、校验安装包和失败回滚暂缓。"
+  ],
+  "similar_patterns": [
+    "src/jarvis_lite/update.py 使用标准库 urllib.request 读取远程清单。",
+    "src/jarvis_lite/desktop/settings.py 将运行态桌面设置保存到项目外 jarvis-lite-runtime。",
+    "src/jarvis_lite/agent.py 通过命令分支接入 /update-status，并记录 logs/jarvis.log。",
+    "src/jarvis_lite/desktop/bridge.py 集中维护桌面快捷命令集合，面板和托盘复用 direct_quick_commands()。"
+  ],
+  "key_questions": [
+    {
+      "priority": "high",
+      "question": "下载产物保存在哪里，避免写入 Git 工作区？",
+      "answer": "沿用桌面运行态约定，保存到项目根目录上一层的 jarvis-lite-runtime/updates/。"
+    },
+    {
+      "priority": "high",
+      "question": "是否自动安装或替换正在运行的应用？",
+      "answer": "不做。本阶段只下载/复制安装包并提示用户手动覆盖安装。"
+    },
+    {
+      "priority": "medium",
+      "question": "如何让桌面入口可触发下载？",
+      "answer": "新增 /update-download 命令，并把“下载更新”加入 direct_quick_commands()，面板和托盘自动复用。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

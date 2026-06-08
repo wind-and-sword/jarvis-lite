@@ -1,0 +1,30 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "扩大 InnerBrain 多轮澄清覆盖：联网搜索 query 槽位",
+  "tool_degradation": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP，使用本地代码扫描、update_plan 和 TDD 替代。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP，使用 .codex 计划文件和 update_plan 替代。",
+    "code_index": "当前会话未提供 code-index MCP，使用 rg 与定向文件读取替代。",
+    "exa": "本阶段不需要外部事实检索，未调用网络搜索。"
+  },
+  "scan": {
+    "current_state": [
+      "0.1.7 已实现 pending InnerBrainResult 和 complete_inner_brain_clarification()。",
+      "_clarification_slots_from_reply() 已能把 query 补充写入 slots。",
+      "_sample_to_natural_language_intent() 对 experience.search/advice 使用 slots.query。",
+      "_sample_to_natural_language_intent() 对 web.search/web.search_summarize 仍重新从 prompt 抽 query；当用户只回复“Python 版本”时不会生成 /search 或 /search-summary。"
+    ],
+    "target_contract": [
+      "runtime 或 seed 样本返回 web.search missing=query 时，下一句自然语言补充 query 后继续执行 /search。",
+      "runtime 或 seed 样本返回 web.search_summarize missing=query 时，下一句自然语言补充 query 后继续执行 /search-summary。",
+      "澄清提示中 query 显示为用户可理解的“查询关键词”，并给出 /search 关键词 或 /search-summary 关键词提示。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

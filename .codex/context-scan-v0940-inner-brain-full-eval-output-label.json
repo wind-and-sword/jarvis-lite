@@ -1,0 +1,52 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.94.0 InnerBrain 全量评估输出固定与本机评估集标签",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露，使用本地结构化分析和 update_plan 代替。",
+    "shrimp_task_manager": "当前会话未暴露，使用 update_plan 维护任务。",
+    "code_index": "当前会话未暴露，使用 rg 和 Get-Content 检索。",
+    "exa": "本任务无需网络检索。"
+  },
+  "scan": {
+    "location": [
+      "src/jarvis_lite/inner_brain.py:evaluate_inner_brain() 生成 report.name。",
+      "src/jarvis_lite/inner_brain.py:describe_inner_brain_evaluation() 输出评估集名称和 source_counts。",
+      "src/jarvis_lite/agent.py:/inner-brain-eval 与 /inner-brain-eval-failed 复用 describe_inner_brain_evaluation()。"
+    ],
+    "current_behavior": [
+      "/inner-brain-eval 无本机样本时输出 `评估集：seed_evaluation`。",
+      "/inner-brain-eval 有本机样本时输出 `评估集：seed_evaluation+local_evaluation` 和 `local_evaluation：N 条`。",
+      "/inner-brain-eval-local` 输出 `评估集：local_evaluation`。"
+    ],
+    "similar_patterns": [
+      "0.89.0 将报告标题从失败报告改为待处理失败报告，只改展示，不改报告路径。",
+      "0.90.0 将帮助和本机失败日志改为待处理失败标签，只改文案，不改命令集合。",
+      "0.93.0 将全量评估运行日志改为固定与本机评估集标签，只改日志文案，不改输出正文。"
+    ],
+    "tests": [
+      "tests/test_inner_brain.py:test_inner_brain_evaluation_reports_repeatable_seed_baseline",
+      "tests/test_inner_brain.py:test_inner_brain_evaluation_loads_local_jsonl_cases",
+      "tests/test_agent.py:test_inner_brain_eval_command_reports_repeatable_seed_baseline",
+      "tests/test_agent.py:test_inner_brain_eval_command_includes_local_evaluation_cases_without_training"
+    ]
+  },
+  "questions": [
+    {
+      "priority": "high",
+      "question": "是否应改变 report.name 内部值？",
+      "answer": "不改变。report.name 仍用于内部判断，例如 local_evaluation 空样本提示；本阶段只通过展示函数映射输出标签。"
+    },
+    {
+      "priority": "high",
+      "question": "是否影响 /inner-brain-eval-local 文件过滤？",
+      "answer": "只影响展示标签；文件过滤仍保留 `本机评估集:文件名` 或原文件名输出，不改变 source_file_filter。"
+    }
+  ],
+  "sufficiency": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

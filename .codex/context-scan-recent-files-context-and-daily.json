@@ -1,0 +1,37 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "最近文件纳入最近上下文和日报",
+  "tool_fallback": {
+    "missing": ["sequential-thinking", "shrimp-task-manager", "code-index"],
+    "used": ["rg", "Get-Content", "update_plan", "apply_patch"]
+  },
+  "locations": {
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "agent_recent_context_status": "src/jarvis_lite/agent.py",
+    "daily_report_recent_context": "src/jarvis_lite/automation.py",
+    "agent_tests": "tests/test_agent.py",
+    "automation_tests": "tests/test_automation.py"
+  },
+  "current_behavior": [
+    "`RuntimeContext` 已保存 `recent_files`，每项包含来源别名和路径。",
+    "`JarvisAgent._recent_context_status()` 只展示最近资料、资料列表、目录、搜索结果、建议和待确认命令。",
+    "`automation._append_recent_context_lines()` 和 `_append_next_action_lines()` 还没有读取最近文件列表。"
+  ],
+  "target_behavior": [
+    "执行“查看最近文件”后，“查看最近上下文”展示最近文件列表数量和编号。",
+    "新 Agent 实例恢复运行态后，也能在最近上下文状态中展示最近文件列表。",
+    "日报“最近上下文”展示最近文件列表，日报“下一步建议”提示继续查看第一份最近文件。"
+  ],
+  "risks": [
+    "只展示文件来源和路径，不读取文件内容，不打开文件。",
+    "最近文件路径来自运行态上下文，日报不应因为文件已删除而失败。",
+    "保持现有最近资料、目录、搜索结果、建议输出不变。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

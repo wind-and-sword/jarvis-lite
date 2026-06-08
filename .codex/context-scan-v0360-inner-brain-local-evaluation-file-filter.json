@@ -1,0 +1,66 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.36.0 InnerBrain 本机评估 JSONL 文件过滤",
+  "tooling_note": {
+    "unavailable_required_mcp": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "fallback_tools": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "apply_patch",
+      "unittest"
+    ]
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/inner_brain.py",
+      "src/jarvis_lite/agent.py",
+      "tests/test_inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ],
+    "current_behavior": [
+      "load_evaluation_cases() 已读取 data/inner-brain/evaluation/*.jsonl，但 InnerBrainEvaluationCase 未记录来源文件名。",
+      "evaluate_inner_brain() 已支持 source_filter，但不支持 source_file_filter。",
+      "Agent 已有 /inner-brain-eval-local 和 /inner-brain-eval-local-failed，只能按 local_evaluation 来源过滤。"
+    ],
+    "existing_patterns": [
+      "/inner-brain-eval-local 通过 source_filter=\"local_evaluation\" 复用统一评估描述。",
+      "/inner-brain-eval-local-failed 通过 failures_only=True 复用失败视图。",
+      "评估命令纳入 route observability，不污染最近路由历史。"
+    ],
+    "tests": [
+      "新增 InnerBrain 指定 JSONL 文件过滤测试。",
+      "新增 Agent 指定 JSONL 文件评估命令测试。",
+      "新增 Agent 指定 JSONL 文件失败视图命令测试。",
+      "版本一致性测试提升到 0.36.0。"
+    ]
+  },
+  "decision": {
+    "target_version": "0.36.0",
+    "scope": [
+      "给本机 evaluation case 增加只读 source_file 元数据。",
+      "给 evaluate_inner_brain() 增加 source_file_filter。",
+      "新增 /inner-brain-eval-local-file 文件名。",
+      "新增 /inner-brain-eval-local-file-failed 文件名。"
+    ],
+    "out_of_scope": [
+      "不新增自然语言意图正则。",
+      "不自动训练、不写 data/inner-brain/training/runtime.jsonl。",
+      "不改变评估样本 JSONL payload 和去重键。",
+      "不做报告导出或失败分组。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

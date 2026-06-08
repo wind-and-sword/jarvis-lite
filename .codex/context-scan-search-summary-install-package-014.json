@@ -1,0 +1,44 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "发布 SearchRouter + LLMRouter 组合流程 0.1.4 可安装测试包",
+  "tool_degradation": {
+    "sequential_thinking": "当前会话未提供该 MCP 工具，改用本地结构化扫描和计划留痕。",
+    "shrimp_task_manager": "当前会话未提供该 MCP 工具，改用 update_plan 与 .codex 计划文件。",
+    "code_index": "当前会话未提供该 MCP 工具，改用 rg 和定向文件读取。",
+    "exa": "当前任务不需要联网事实检索。"
+  },
+  "current_state": {
+    "previous_release": "0.1.3",
+    "target_release": "0.1.4",
+    "branch": "main",
+    "remote_status_before_package": "ahead 6"
+  },
+  "release_scope": [
+    "LLM 本地配置入口",
+    "Agent 联网搜索第一版",
+    "InnerBrain 样本分类器优先迁移",
+    "编号、标签、文件路径、目录、经验槽位迁移",
+    "SearchRouter + LLMRouter 搜索总结组合流程"
+  ],
+  "files_to_update": [
+    "pyproject.toml",
+    "src/jarvis_lite/__init__.py",
+    "tests/test_project_metadata.py",
+    "README.md",
+    "word/progress/2026-05-28.md",
+    "verification.md",
+    "verification/2026-05/2026-05-28.md",
+    "verification/2026-05/README.md"
+  ],
+  "verification_plan": [
+    "版本一致性 RED/GREEN",
+    "全量 unittest",
+    "源码桌面 smoke",
+    "Windows 安装器构建",
+    "打包后 JarvisLite.exe --smoke",
+    "安装脚本和 IExpress 完成消息版本检查",
+    "版本化安装包副本 JarvisLiteSetup-0.1.4.exe",
+    "git diff --check、Markdown 本地链接、敏感信息扫描、本地配置跟踪检查"
+  ]
+}

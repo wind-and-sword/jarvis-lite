@@ -1,0 +1,64 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.38.0 InnerBrain 本机评估失败报告导出",
+  "trigger": "用户要求 push 0.37.0 后继续下一个阶段；v41 后续建议在失败分组不足时补报告导出或按文件汇总治理视图。",
+  "tooling_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，降级为本地上下文扫描和 update_plan。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，降级为项目内方案文档和 update_plan。",
+    "code_index": "当前会话未暴露 code-index MCP，降级为 rg 与 Get-Content。",
+    "exa": "本阶段无需网络搜索；未调用 exa。"
+  },
+  "scope": {
+    "target_version": "0.38.0",
+    "goal": "新增只读命令，把 InnerBrain 本机失败评估报告导出为 Markdown，便于后续按文件处理失败样本。",
+    "non_goals": [
+      "不新增自然语言意图正则",
+      "不自动训练、不自动采纳、不写 data/inner-brain/training/runtime.jsonl",
+      "不改变 evaluation JSONL payload 或去重键",
+      "不改正常聊天路由、LLM fallback 或联网搜索",
+      "不在本阶段改分类器评分或补 seed 样本"
+    ]
+  },
+  "code_locations": {
+    "inner_brain": "src/jarvis_lite/inner_brain.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "inner_brain_tests": "tests/test_inner_brain.py",
+    "agent_tests": "tests/test_agent.py",
+    "metadata_tests": "tests/test_project_metadata.py"
+  },
+  "current_behavior": [
+    "`evaluate_inner_brain()` 支持 source_filter 和 source_file_filter，只读执行 seed/local evaluation。",
+    "`describe_inner_brain_evaluation(report, failures_only=True)` 可只显示失败样本、失败文件分组和显式修复建议。",
+    "`/inner-brain-eval-local-failed` 只显示本机失败样本；`/inner-brain-eval-local-file-failed 文件名` 只显示指定文件失败样本。",
+    "当前没有将评估结果写入 Markdown 的 API 或 Agent 命令。"
+  ],
+  "similar_patterns": [
+    "`_inner_brain_local_file_evaluation()` 解析文件名并调用 evaluate_inner_brain(..., source_filter='local_evaluation', source_file_filter=...)。",
+    "`_describe_inner_brain_evaluation_case_save()` 返回写入路径和只读/不训练说明。",
+    "文档保存类命令通常把文件写入 `word/` 或 `data/` 并返回相对路径。"
+  ],
+  "design_decision": {
+    "approach": "新增 InnerBrainEvaluationReportSaveResult 与 `export_inner_brain_evaluation_report(paths, report, failures_only=True, filename='inner-brain-evaluation-report.md')`，Agent 新增 `/inner-brain-eval-local-report [文件名]`。",
+    "why": "报告导出是只读观察能力，能承接失败文件分组，又避免在没有真实失败样本证据时直接改分类器。",
+    "report_path": "word/inner-brain-evaluation-report.md",
+    "file_filter": "命令可选 JSONL 文件名，复用现有 basename + 自动补 .jsonl 的过滤语义。"
+  },
+  "risk_assessment": [
+    "报告导出会写 Markdown 文件，但不写 training runtime 样本；需要测试确认 training 文件不存在。",
+    "如果没有本机评估样本，报告会导出空评估结果；这符合只读导出语义。",
+    "若指定不存在的 JSONL 文件，现有 evaluate 路径会得到 0 条结果，本阶段保持一致。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  },
+  "planned_tests": [
+    "InnerBrain API：导出失败报告 Markdown，包含元数据、失败文件分组、失败样例和修复建议。",
+    "Agent 命令：`/inner-brain-eval-local-report` 返回报告路径并写入 Markdown，不写 training runtime 样本。",
+    "Agent 命令：`/inner-brain-eval-local-report failed-log.jsonl` 只导出指定文件失败样本。",
+    "版本一致性：`RELEASE_VERSION` 提升到 0.38.0。"
+  ]
+}

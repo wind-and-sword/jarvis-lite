@@ -1,0 +1,51 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "继续迁移 legacy_fallback 高频自然语言别名到 InnerBrain seed 样本",
+  "tool_degradation": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP，使用本地脚本扫描 InnerBrain 输出和 update_plan 替代。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP，使用 .codex 计划和 update_plan 替代。",
+    "code_index": "当前会话未提供 code-index MCP，使用 rg 与定向文件读取替代。",
+    "exa": "本阶段不需要外部事实检索，未调用网络搜索。"
+  },
+  "scan": {
+    "worktree": "git status 显示 main...origin/main [ahead 9]，无已跟踪改动。",
+    "remaining_legacy_examples": [
+      "早",
+      "早安",
+      "上午好",
+      "下午好",
+      "中午好",
+      "哈喽",
+      "hello",
+      "hi",
+      "你叫啥",
+      "你的名字是什么",
+      "你的名称是什么",
+      "怎么称呼你",
+      "会做什么",
+      "能干什么",
+      "查看上下文",
+      "看看上下文",
+      "你还记得上次什么",
+      "资料库摘要",
+      "知识库状态",
+      "最近文件",
+      "创建日报",
+      "今天日报",
+      "生成今天日报",
+      "帮我生成日报",
+      "有没有更新",
+      "看看更新",
+      "下载更新安装包",
+      "查看经验",
+      "看看经验"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

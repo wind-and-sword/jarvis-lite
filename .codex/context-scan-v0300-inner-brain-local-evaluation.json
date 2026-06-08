@@ -1,0 +1,44 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.30.0 InnerBrain 本机评估集扩展",
+  "location": {
+    "core": "src/jarvis_lite/inner_brain.py",
+    "agent_command": "src/jarvis_lite/agent.py",
+    "tests": [
+      "tests/test_inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ],
+    "docs": [
+      "word/plans/2026-06-01-v34-inner-brain-local-evaluation-plan.md",
+      "word/PROJECT-PLAN.md",
+      "README.md",
+      "verification.md",
+      "verification/2026-06/2026-06-01.md"
+    ]
+  },
+  "current_state": [
+    "0.29.0 已提供 /inner-brain-eval 固定 seed 评估集。",
+    "评估命令只观察分类器表现，不训练、不写 runtime 样本、不污染候选。",
+    "真实测试日志需要先进入评估集验证，再决定是否沉淀到训练样本或 seed 样本。"
+  ],
+  "change_summary": [
+    "InnerBrainEvaluationCase 增加 source 字段。",
+    "新增 load_evaluation_cases(paths) 读取 data/inner-brain/evaluation/*.jsonl。",
+    "evaluate_inner_brain() 默认合并 seed_evaluation 和 local_evaluation。",
+    "describe_inner_brain_evaluation() 输出来源计数。",
+    "本机评估样本不写 data/inner-brain/training/runtime.jsonl，也不改变正常聊天路由。"
+  ],
+  "validation_plan": [
+    "TDD RED: 本机评估加载、Agent 命令合并本机评估、版本一致性测试先失败。",
+    "GREEN: 实现 JSONL 加载、来源计数和版本提升后目标测试通过。",
+    "回归: InnerBrain 专项、Agent/LLM/桌面/Conversation 相邻回归、全量 unittest。",
+    "打包: 源码桌面 smoke、Windows 安装包构建、打包 exe smoke、安装脚本文案检查。",
+    "收尾: git diff --check、Markdown 本地链接检查、敏感信息差异扫描、本地配置跟踪检查。"
+  ],
+  "tool_degradation": [
+    "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP。",
+    "按项目降级规则使用 rg、Get-Content、update_plan、apply_patch、unittest、PyInstaller、Git 和本地脚本完成闭环。"
+  ]
+}

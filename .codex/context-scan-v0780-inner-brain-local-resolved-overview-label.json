@@ -1,0 +1,46 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.78.0 InnerBrain 本机已处理指定文件视图当前文件总览标签",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，使用本地结构化分析记录替代。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，使用 update_plan 与项目文档计划替代。",
+    "code_index": "当前会话未暴露 code-index MCP，使用 rg 和 Get-Content 检索替代。",
+    "exa": "本任务不需要网络搜索。"
+  },
+  "location": {
+    "implementation": "src/jarvis_lite/agent.py::_inner_brain_local_resolved_evaluation",
+    "tests": [
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_resolved_command_can_filter_local_file",
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_resolved_command_suggests_report_for_file_with_pending_failures",
+      "tests/test_project_metadata.py::ProjectMetadataTests.test_project_version_matches_release_package_version"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/README.md",
+      "word/文档索引.md",
+      "word/progress/2026-06-03.md",
+      "verification.md",
+      "verification/2026-06/2026-06-03.md"
+    ]
+  },
+  "known": [
+    "/inner-brain-eval-local-resolved 文件名 的后续处理已经能回到 /inner-brain-eval-local-file 当前文件名。",
+    "0.77.0 已把指定文件失败视图的同文件总览入口标注为 当前文件总览。",
+    "全量本机评估和全量已处理候选行已使用 总览 标签。"
+  ],
+  "unknowns": [
+    {
+      "question": "是否需要同时调整报告导出反馈的 查看当前文件全部样本文案？",
+      "priority": "low",
+      "decision": "不纳入 0.78.0；本轮只处理已处理指定文件视图，保持小步提交。"
+    }
+  ],
+  "sufficiency": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

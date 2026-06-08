@@ -1,0 +1,43 @@
+{
+  "date": "2026-06-03",
+  "actor": "Codex",
+  "task": "0.92.0 InnerBrain 本机全量反馈按文件聚焦待处理失败标签",
+  "tool_fallback": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；使用本地结构化分析、rg、Get-Content、update_plan 和 unittest 降级执行。",
+  "scope": {
+    "target_files": [
+      "src/jarvis_lite/agent.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "pyproject.toml",
+      "src/jarvis_lite/__init__.py",
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/README.md",
+      "word/plans/2026-06-03-v96-inner-brain-file-focus-pending-label-plan.md",
+      "word/progress/2026-06-03.md",
+      "word/文档索引.md",
+      "verification.md",
+      "verification/2026-06/2026-06-03.md"
+    ],
+    "change": "把本机全量失败视图和全量报告导出反馈里的“按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名”统一为“按文件聚焦待处理失败：/inner-brain-eval-local-file-failed 文件名”。",
+    "non_goals": [
+      "不修改固定评估 /inner-brain-eval-failed 的失败样本语义",
+      "不修改指定文件反馈中的当前文件待处理失败入口",
+      "不修改命令集合、别名、筛选、排序、报告路径、本机 evaluation payload 或训练写入"
+    ]
+  },
+  "evidence": {
+    "failed_view_line": "src/jarvis_lite/agent.py::_describe_inner_brain_local_failed_evaluation() 未指定文件分支当前输出“- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名”",
+    "report_line": "src/jarvis_lite/agent.py::_export_inner_brain_local_evaluation_report() 未指定文件分支当前输出“- 按文件聚焦失败：/inner-brain-eval-local-file-failed 文件名”",
+    "tests": [
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_failed_command_lists_only_failed_local_cases 当前断言旧标签",
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_report_command_exports_failed_markdown_without_training 当前断言旧标签"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

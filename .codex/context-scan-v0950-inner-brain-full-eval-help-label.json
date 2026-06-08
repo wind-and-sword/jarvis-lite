@@ -1,0 +1,53 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.95.0 InnerBrain 全量评估帮助固定与本机评估集标签",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、superpowers 流程、TDD、unittest 和本地构建验证。",
+  "context": {
+    "current_version": "0.94.0",
+    "main_files": [
+      "src/jarvis_lite/agent.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "pyproject.toml",
+      "src/jarvis_lite/__init__.py"
+    ],
+    "existing_patterns": [
+      "0.93.0 已把 /inner-brain-eval 与 /inner-brain-eval-failed 的运行日志标注为固定与本机评估集。",
+      "0.94.0 已把评估输出正文里的 seed_evaluation/local_evaluation 显示名映射为固定评估集/本机评估集。",
+      "/help 中本机评估相关入口已经使用待处理失败语义，但全量评估入口仍是泛化的评估集/失败样本描述。"
+    ],
+    "tests": [
+      "tests.test_agent.AgentTests.test_help_command_lists_llm_usage_command",
+      "tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version"
+    ]
+  },
+  "decision": {
+    "target_version": "0.95.0",
+    "scope": [
+      "把 /inner-brain-eval 帮助文案改为执行 InnerBrain 固定评估集和本机评估集。",
+      "把 /inner-brain-eval-failed 帮助文案改为只显示 InnerBrain 固定与本机评估集失败样本。",
+      "同步版本、方案、进度和验证记录。"
+    ],
+    "out_of_scope": [
+      "不改变评估输出正文、运行日志、命令集合、别名、失败筛选、排序、报告路径、本机 evaluation JSONL payload 或训练样本写入。",
+      "不新增本机真实 evaluation 样本；当前仓库没有 data/inner-brain/evaluation/runtime.jsonl。"
+    ]
+  },
+  "key_questions": [
+    {
+      "question": "是否需要等待用户确认帮助文案？",
+      "answer": "不需要。用户明确要求继续执行且不要等待回复；变更是窄范围显示文案。"
+    },
+    {
+      "question": "是否会影响命令解析或评估执行？",
+      "answer": "不会。只修改 JarvisAgent._help() 的两行字符串和测试断言。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

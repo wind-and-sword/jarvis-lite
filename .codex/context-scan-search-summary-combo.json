@@ -1,0 +1,43 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "SearchRouter + LLMRouter 搜索总结组合流程",
+  "tool_degradation": {
+    "sequential_thinking": "当前会话未提供该 MCP 工具，改用本地结构化扫描和计划留痕。",
+    "shrimp_task_manager": "当前会话未提供该 MCP 工具，改用 update_plan 与 .codex 计划文件。",
+    "code_index": "当前会话未提供该 MCP 工具，改用 rg 和定向文件读取。",
+    "exa": "当前任务基于本地代码和文档，不需要联网检索。"
+  },
+  "locations": {
+    "agent": "src/jarvis_lite/agent.py",
+    "inner_brain": "src/jarvis_lite/inner_brain.py",
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "llm": "src/jarvis_lite/llm.py",
+    "search": "src/jarvis_lite/search.py",
+    "agent_tests": "tests/test_agent.py",
+    "inner_brain_tests": "tests/test_inner_brain.py"
+  },
+  "known": [
+    "SearchRouter 已支持 off/fake/tavily，并由 JarvisAgent 显式调用。",
+    "LLMRouter 已支持结构化 answer/command/clarify/no_action，并由 JarvisAgent 注入最近上下文。",
+    "InnerBrain 已改为 seed/runtime 样本分类器优先，legacy_fallback 只作迁移兼容。",
+    "用户方案要求搜索与 LLM 互补：搜索提供当前来源，LLM 只基于 Agent 提供的来源总结，不自由浏览。"
+  ],
+  "gaps_before_change": [
+    "`/search` 只展示搜索结果，没有写入最近联网搜索上下文和 LLM context。",
+    "自然语言“联网查一下...并总结”会被普通 `web.search` 吞掉，没有触发 LLM 总结。",
+    "`/search-summary` 尚未形成 SearchRouter -> RuntimeContext -> LLMRouter 的组合链路。",
+    "教学 `/search-summary` 时 intent 命名需要与 `web.search_summarize` 统一。"
+  ],
+  "similar_patterns": [
+    "最近资料上下文通过 runtime_context 持久化，并进入 `_llm_context_lines()`。",
+    "最近搜索结果路径通过 `_remember_recent_search_results()` 写入运行态上下文。",
+    "LLM smoke 和 LLM fallback 都通过 `LLMRouter.complete_intent()` 获取结构化输出。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "main_risks": true,
+    "verification_method": true
+  }
+}

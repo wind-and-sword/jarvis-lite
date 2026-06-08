@@ -1,0 +1,69 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.45.0 InnerBrain 本机失败评估文件意图混淆修复建议分组",
+  "location": {
+    "report_format": "src/jarvis_lite/inner_brain.py::describe_inner_brain_evaluation",
+    "export": "src/jarvis_lite/inner_brain.py::export_inner_brain_evaluation_report",
+    "tests": [
+      "tests/test_inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/README.md",
+      "word/文档索引.md",
+      "verification.md",
+      "verification/2026-06/2026-06-02.md"
+    ]
+  },
+  "current_state": {
+    "version": "0.44.0",
+    "last_local_commit": "c3ba5c4 feat: 分组本机评估混淆修复建议 0.44.0",
+    "remote_status": "origin/main still at 0.43.0 because GitHub push is blocked by HTTPS/TLS timeouts",
+    "existing_sections": [
+      "失败文件：",
+      "失败类型汇总：",
+      "失败期望意图汇总：",
+      "失败意图混淆汇总：",
+      "失败文件意图混淆汇总：",
+      "失败原因汇总：",
+      "失败意图混淆修复建议：",
+      "失败修复建议："
+    ]
+  },
+  "similar_patterns": [
+    "0.43.0 的失败文件意图混淆汇总只在 source_file_filter 为 null 时展示，避免单文件报告重复列文件名。",
+    "0.44.0 的失败意图混淆修复建议直接在 describe_inner_brain_evaluation 中派生，不新增 report 持久字段。",
+    "报告导出复用 failures_only 描述，因此新增展示段会自动进入 /inner-brain-eval-local-report。"
+  ],
+  "decision": {
+    "scope": "只读报告展示",
+    "new_section": "失败文件意图混淆修复建议：",
+    "group_key": "source_file + expected_intent -> actual_intent",
+    "filter": "仅统计 source_file 存在且 expected_intent != result.intent 的失败样本",
+    "single_file_report": "不展示文件级分组，继续保留 0.44.0 的意图混淆修复建议",
+    "excluded": [
+      "不新增 Agent 命令",
+      "不写 data/inner-brain/training/runtime.jsonl",
+      "不改变 evaluation JSONL payload",
+      "不新增自然语言正则或外部依赖"
+    ]
+  },
+  "verification": [
+    "RED/GREEN 目标 unittest",
+    "tests.test_inner_brain + tests.test_agent 相邻回归",
+    "全量 unittest",
+    "源码桌面 smoke",
+    "Windows 安装包构建和打包后 exe smoke",
+    "git diff --check、Markdown 链接检查、敏感信息差异扫描、本地配置跟踪检查"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risk_identified": true,
+    "verification_known": true
+  }
+}

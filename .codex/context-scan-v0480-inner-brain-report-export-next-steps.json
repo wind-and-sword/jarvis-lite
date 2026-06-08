@@ -1,0 +1,63 @@
+{
+  "task": "0.48.0 InnerBrain 本机失败评估报告导出后续处理提示",
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "trigger": "用户要求继续下一个阶段且无需等待回复，承接 0.47.0 后继续打磨 InnerBrain 本机评估闭环。",
+  "tooling_note": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "fallback": "使用 rg、Get-Content、update_plan 和本地计划文档完成上下文扫描与规划。"
+  },
+  "current_context": {
+    "core_files": [
+      "src/jarvis_lite/agent.py",
+      "tests/test_agent.py",
+      "src/jarvis_lite/inner_brain.py",
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/progress/2026-06-02.md"
+    ],
+    "existing_entry": "/inner-brain-eval-local-report [文件名]",
+    "current_behavior": "导出 word/inner-brain-evaluation-report.md 后返回报告文件、失败样本数量、可选评估文件和不写 runtime 训练样本说明。",
+    "similar_patterns": [
+      "0.47.0 已在 _describe_inner_brain_evaluation_case_save() 的保存反馈中追加后续验证提示。",
+      "/inner-brain-eval-local-file-failed 文件名 已可按本机 JSONL 文件只看失败样本。",
+      "/inner-brain-eval-local-failed 已可只看本机失败样本和修复建议。",
+      "/inner-brain-eval-add 与 /inner-brain-eval-label 已可继续补 evaluation 样本但不训练。"
+    ]
+  },
+  "decision": {
+    "target_version": "0.48.0",
+    "scope": [
+      "在报告导出响应末尾追加后续处理提示。",
+      "未指定文件时提示查看本机失败样本、按文件聚焦失败和补充 evaluation 样本。",
+      "指定文件时提示复查当前文件失败样本、查看全部本机失败样本和补充 evaluation 样本。"
+    ],
+    "out_of_scope": [
+      "不新增命令。",
+      "不改变导出的 Markdown 报告内容。",
+      "不自动运行评估。",
+      "不自动训练、不写入 data/inner-brain/training/runtime.jsonl。",
+      "不改变 evaluation JSONL payload、去重键或保存路径。"
+    ]
+  },
+  "questions": {
+    "known": [
+      "报告导出响应由 Agent._export_inner_brain_local_evaluation_report() 统一生成。",
+      "报告导出保存结果包含 relative_path、failed_count 和 source_file_filter。",
+      "现有 Agent 测试已经覆盖未指定文件和指定文件两条导出路径。"
+    ],
+    "unknown": [],
+    "priority": "上下文充分，不需要额外深挖。"
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

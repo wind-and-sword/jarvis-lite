@@ -1,0 +1,39 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "v127 记忆与配置候选池第一阶段",
+  "tooling_fallback": {
+    "sequential_thinking": "unavailable in current tool surface",
+    "shrimp_task_manager": "unavailable in current tool surface",
+    "code_index": "unavailable in current tool surface",
+    "exa": "not needed; no external factual lookup required"
+  },
+  "locations": {
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "candidate_module": "src/jarvis_lite/memory_config_candidates.py",
+    "manager_status": "src/jarvis_lite/memory_config_manager.py",
+    "agent_commands": "src/jarvis_lite/agent.py",
+    "tests": [
+      "tests/test_memory_config_candidates.py",
+      "tests/test_memory_config_manager.py",
+      "tests/test_agent.py",
+      "tests/test_llm.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "knowns": [
+    "运行态上下文统一写入项目外 jarvis-lite-runtime/agent-context.json。",
+    "配置管家已有只读状态入口，不自动写入长期配置。",
+    "本阶段仅支持显式 slash command，不把候选写入或忽略命令加入 LLM 白名单。"
+  ],
+  "unknowns_resolved": [
+    "测试夹具需要使用 temp_dir/jarvis-lite 作为项目根，否则 runtime_context_path 会共享系统临时目录父级并污染候选统计。",
+    "打包后 GUI exe 使用 runw.exe，当前终端不会收到 stdout；以退出码 0 和无残留进程作为 smoke 证据。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risk_points": true,
+    "verification_method": true
+  }
+}

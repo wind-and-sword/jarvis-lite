@@ -1,0 +1,35 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "按编号读取最近资料",
+  "tool_fallback": {
+    "sequential_thinking": "当前工具列表未提供 sequential-thinking，使用本地代码阅读、rg 检索和 update_plan 记录替代。",
+    "shrimp_task_manager": "当前工具列表未提供 shrimp-task-manager，使用 .codex 计划文件和 update_plan 替代。",
+    "code_index": "当前工具列表未提供 code-index，使用 rg 和定向文件读取替代。"
+  },
+  "current_implementation": {
+    "recent_document_paths": "最近资料列表已保存并展示，最新在前，最多 5 条。",
+    "read_recent_document": "“读取这个资料”读取当前最近资料。",
+    "read_numbered_search_result": "“查看第二条结果”可读取最近搜索结果列表中的资料。",
+    "gap": "最近资料列表虽然展示编号，但不能直接说“读取第二份资料”。"
+  },
+  "decision": {
+    "scope": "新增自然语言意图 read_numbered_recent_document，支持读取/查看/看看第 N 份资料、文档或文件。",
+    "execution": "Agent 根据 recent_document_paths 选择对应 data 文件，复用现有 /read 读取路径，并把被读取资料提升为当前最近资料。",
+    "errors": [
+      "无最近资料列表时提示先读取或导入资料。",
+      "编号越界时提示最近资料列表总数。"
+    ],
+    "not_in_scope": [
+      "不支持按编号删除或移动资料。",
+      "不读取系统最近文件。",
+      "不改变“查看第二条结果”的搜索结果语义。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

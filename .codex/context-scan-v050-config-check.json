@@ -1,0 +1,39 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.5.0 本地配置检查闭环",
+  "scope": {
+    "goal": "在 0.4.0 生成配置草稿之后，新增无需网络调用的 LLM/Search 本地配置检查入口。",
+    "modules": [
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/llm.py",
+      "src/jarvis_lite/search.py",
+      "src/jarvis_lite/inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "current_state": {
+    "llm": "LLMRouter.describe() 已能展示 provider、adapter、model、base_url、SDK Base URL、API key 状态、网络调用状态和配置问题。",
+    "search": "SearchRouter.describe() 已能展示 provider、base_url、max_results、API key 状态、网络调用状态和配置问题。",
+    "runtime_config": "0.4.0 已新增 /llm-config-init 与 /search-config-init 生成 local.json 草稿，已有配置不覆盖。",
+    "gap": "用户填入 local.json 后缺少一个只读检查入口；/llm-enable 与 /search-enable 会重新加载运行态，/llm-smoke 或 /search 可能触发真实 provider 调用。"
+  },
+  "decisions": [
+    "0.5.0 定义为本地配置检查 v1。",
+    "新增 /llm-config-check 与 /search-config-check，只读取本地配置和环境变量，不发起网络调用。",
+    "命令输出沿用现有 Router.describe()，避免新增并行诊断模型。",
+    "检查命令必须展示配置文件路径、本地配置是否存在、结果建议，并隐藏 API key。",
+    "InnerBrain 只增加 seed/runtime 样本入口，不扩大正则匹配。"
+  ],
+  "risks": [
+    "LLMSettings.configuration_issues() 当前在 provider=off 时会丢弃 config_error，需要让无效 JSON 能在检查命令里显示。",
+    "输出文案需要避免让用户误解检查命令会联网。",
+    "本地配置文件仍不能提交到 Git。"
+  ],
+  "verification": [
+    "先运行新增目标测试并确认失败。",
+    "实现后运行目标测试、相关回归、全量 unittest、源码桌面 smoke、打包后 exe smoke、静态检查、敏感信息扫描和本地配置跟踪检查。"
+  ],
+  "tooling_note": "当前会话未提供 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、本地文件读取、update_plan、apply_patch、unittest 和 PyInstaller。"
+}

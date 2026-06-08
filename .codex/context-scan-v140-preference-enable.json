@@ -1,0 +1,79 @@
+{
+  "date": "2026-06-05",
+  "executor": "Codex",
+  "task": "v140 preference explicit enable and disable",
+  "tooling": {
+    "unavailable_mcp": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "fallback": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "apply_patch",
+      "unittest"
+    ],
+    "skills": [
+      "superpowers:using-superpowers",
+      "superpowers:brainstorming",
+      "superpowers:writing-plans",
+      "superpowers:test-driven-development",
+      "superpowers:verification-before-completion"
+    ],
+    "skill_conflict": "brainstorming requires user approval before implementation, but project AGENTS.md requires autonomous continuation for next-stage work; project instruction takes priority."
+  },
+  "current_state": {
+    "release": "0.134.0",
+    "head": "e86c316 feat: 增加偏好确认固化 0.134.0",
+    "working_tree": "clean at scan time",
+    "previous_stage": "preference confirmation writes config/preferences.local.json and supports undo without changing response or execution behavior"
+  },
+  "known": {
+    "preference_storage": "src/jarvis_lite/preferences.py stores preference text, source, created_at and updated_at in config/preferences.local.json.",
+    "candidate_confirmation": "src/jarvis_lite/memory_config_candidates.py confirms preference candidates and restores them on undo.",
+    "manager_status": "src/jarvis_lite/memory_config_manager.py reports preference count.",
+    "agent_commands": "src/jarvis_lite/agent.py already handles explicit command branches and help/status text.",
+    "llm_boundary": "tests/test_llm.py asserts config candidate commands do not enter provider instructions."
+  },
+  "similar_implementations": [
+    {
+      "feature": "authorization-status",
+      "evidence": "Agent routes /authorization-status to a read-only status helper and lists it in help/status."
+    },
+    {
+      "feature": "preference confirmation",
+      "evidence": "preferences.py centralizes config/preferences.local.json parsing, save, remove and count."
+    },
+    {
+      "feature": "candidate command guards",
+      "evidence": "Agent command branches validate numeric candidate indexes and return explicit usage strings."
+    }
+  ],
+  "approaches": [
+    {
+      "name": "Read-only status only",
+      "tradeoff": "Lowest risk, but does not satisfy the next-stage enable/disable target."
+    },
+    {
+      "name": "Enable/disable metadata only",
+      "tradeoff": "Adds auditable user control while preserving the current no-automatic-application boundary."
+    },
+    {
+      "name": "Enable and apply to response behavior",
+      "tradeoff": "More visible to users but changes LLM prompt and local reply behavior before conflict and precedence rules are designed."
+    }
+  ],
+  "selected_approach": {
+    "name": "Enable/disable metadata only",
+    "reason": "It advances preference management without changing response style, LLM prompt, routing, command authorization or desktop actions."
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  }
+}

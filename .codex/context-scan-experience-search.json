@@ -1,0 +1,32 @@
+{
+  "date": "2026-05-21",
+  "executor": "Codex",
+  "task": "经验搜索第一版",
+  "location": {
+    "memory": "src/jarvis_lite/memory.py",
+    "intent": "src/jarvis_lite/intent.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_memory.py, tests/test_agent.py"
+  },
+  "current_state": {
+    "git": "main 比 origin/main 超前 2 个提交，最新本地提交 28d5e94 feat: 引用最近经验。",
+    "experience_storage": "经验保存在 memory/experiences.md，append_experience() 去重，read_experiences() 全文读取。",
+    "recent_reference": "list_recent_experiences() 已支持按最新优先返回最近经验，能力摘要和日报会引用。",
+    "missing": "当前没有按关键词检索经验的函数、命令或自然语言入口。"
+  },
+  "design": {
+    "search_api": "新增 search_experiences(paths, query, limit=5)，按经验文本包含关键词检索，最新经验优先。",
+    "command": "新增 /experience-search 关键词，返回匹配经验列表；无关键词返回用法；无结果返回明确提示。",
+    "natural_language": "支持“搜索经验 导入”和“查找经验：导入”等简单表达映射到 /experience-search。"
+  },
+  "non_goals": [
+    "不做模糊匹配、分词、评分或排序权重。",
+    "不改变 /experiences 全文查看格式。",
+    "不接入大模型总结或改写经验。"
+  ],
+  "verification": [
+    "先写 search_experiences RED 测试。",
+    "先写 /experience-search 和自然语言搜索 RED 测试。",
+    "再实现最小生产代码，并跑专项、全量、桌面 smoke 和 git diff --check。"
+  ]
+}

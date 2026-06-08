@@ -1,0 +1,53 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.79.0 InnerBrain 本机失败报告导出反馈当前文件总览标签",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，使用本地结构化分析替代并在 operations-log.md 留痕。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager，使用 update_plan 和项目计划文档替代。",
+    "code_index": "当前会话未暴露 code-index，使用 rg 与 Get-Content 检索。",
+    "exa": "本任务无需网络事实检索。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py::_export_inner_brain_local_evaluation_report",
+      "tests/test_agent.py::test_inner_brain_eval_local_report_command_can_filter_local_file",
+      "tests/test_project_metadata.py::test_project_version_matches_release_package_version"
+    ],
+    "current_behavior": "/inner-brain-eval-local-report 文件名 导出反馈仍输出 '- 查看当前文件全部样本：/inner-brain-eval-local-file failed-log.jsonl'。",
+    "similar_patterns": [
+      "src/jarvis_lite/agent.py::_describe_inner_brain_local_failed_evaluation 已使用 '- 当前文件总览：/inner-brain-eval-local-file ...'。",
+      "src/jarvis_lite/agent.py::_inner_brain_local_resolved_evaluation 已使用 '- 当前文件总览：/inner-brain-eval-local-file ...'。",
+      "src/jarvis_lite/agent.py::_describe_inner_brain_local_evaluation 的文件候选行使用 '总览：/inner-brain-eval-local-file ...'。"
+    ],
+    "tech_stack": "Python 3.13, unittest, PySide6 desktop smoke, PyInstaller Windows installer.",
+    "tests": [
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent.AgentTests.test_inner_brain_eval_local_report_command_can_filter_local_file tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent tests.test_project_metadata -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest discover -s tests -v"
+    ]
+  },
+  "key_questions": [
+    {
+      "question": "是否只改指定文件报告导出反馈？",
+      "priority": "high",
+      "answer": "是。全量报告导出反馈没有当前文件上下文，继续保留现有入口。"
+    },
+    {
+      "question": "是否改 Markdown 报告正文？",
+      "priority": "high",
+      "answer": "否。报告正文统计和典型样本不属于导航标签。"
+    },
+    {
+      "question": "是否新增命令或改变训练写入？",
+      "priority": "high",
+      "answer": "否。继续复用既有 /inner-brain-eval-local-file，不写 training/runtime.jsonl。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.39.0 InnerBrain 本机评估失败原因汇总",
+  "trigger": "用户要求继续下一个任务；承接 v42 后续“失败原因聚类”。",
+  "tool_fallbacks": {
+    "sequential_thinking": "当前工具集中未暴露 sequential-thinking MCP，已用本地分析、update_plan 和留痕文件降级。",
+    "shrimp_task_manager": "当前工具集中未暴露 shrimp-task-manager，已用 update_plan 与本地方案文档降级。",
+    "code_index": "当前工具集中未暴露 code-index，已用 rg 与 Get-Content 检索。",
+    "exa": "本阶段不需要网络搜索；若需要外部资料，将优先尝试官方/主来源检索。"
+  },
+  "context": {
+    "repo_status": "git status --short --branch 显示 main 与 origin/main 同步，工作树干净。",
+    "current_version": "0.38.0",
+    "latest_plan": "word/plans/2026-06-02-v42-inner-brain-local-evaluation-report-export-plan.md",
+    "next_direction": "v42 后续建议：若报告仍不足以定位失败原因，再做按文件汇总治理视图或失败原因聚类。",
+    "selected_scope": "选择失败原因汇总作为 0.39.0 小闭环；不新增自然语言命令，不改训练样本，不改分类器评分。"
+  },
+  "locations": {
+    "inner_brain": "src/jarvis_lite/inner_brain.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "inner_brain_tests": "tests/test_inner_brain.py",
+    "agent_tests": "tests/test_agent.py",
+    "metadata_tests": "tests/test_project_metadata.py",
+    "plan_docs": "word/plans/",
+    "verification_docs": "verification.md, verification/2026-06/"
+  },
+  "current_implementation": {
+    "report_model": "InnerBrainEvaluationReport 暴露 failed_case_results 与 failed_source_file_counts。",
+    "description": "describe_inner_brain_evaluation(report, failures_only=True) 当前输出失败文件、失败样例、原因和修复建议。",
+    "export": "export_inner_brain_evaluation_report() 将失败视图写入 word/inner-brain-evaluation-report.md。",
+    "agent_command": "/inner-brain-eval-local-report [文件名] 执行 local_evaluation，可选 source_file_filter。"
+  },
+  "similar_patterns": [
+    "0.37.0 在 InnerBrainEvaluationReport 上新增 failed_source_file_counts，再由 describe_inner_brain_evaluation() 输出失败文件分组。",
+    "0.38.0 复用 describe_inner_brain_evaluation(..., failures_only=True) 生成 Markdown 报告。",
+    "版本发布惯例为同步 pyproject.toml、src/jarvis_lite/__init__.py、tests/test_project_metadata.py 和更新检测 fixture。"
+  ],
+  "key_questions": [
+    {
+      "question": "失败原因如何聚类而不引入复杂模型？",
+      "answer": "直接按现有 case_result.reason 文本计数，稳定、可审计、无需新增依赖。"
+    },
+    {
+      "question": "是否影响完整评估输出？",
+      "answer": "仅 failures_only 视图输出失败原因汇总，保持正常评估视图简洁。"
+    },
+    {
+      "question": "如何验证只读边界？",
+      "answer": "测试报告内容包含失败原因汇总，同时断言 data/inner-brain/training/runtime.jsonl 不存在。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": "在 InnerBrainEvaluationReport 增加 failed_reason_counts；describe/export 继续返回 str/Markdown；Agent 命令接口不变。",
+    "technical_choice": "按 reason 文本聚类，复用 dataclass property 与现有描述函数，不引入新依赖。",
+    "risks": "相同根因若 reason 文本不同不会合并；本阶段接受该边界，后续再做更复杂归一化。",
+    "verification": "TDD RED/GREEN、InnerBrain/Agent 相邻回归、全量 unittest、桌面 smoke、安装包构建和静态检查。"
+  }
+}

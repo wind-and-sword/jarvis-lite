@@ -1,0 +1,36 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.46.0 InnerBrain 本机评估空样本引导",
+  "location": {
+    "implementation": "src/jarvis_lite/inner_brain.py describe_inner_brain_evaluation()",
+    "agent_commands": "src/jarvis_lite/agent.py /inner-brain-eval-local 与 /inner-brain-eval-local-failed 复用评估描述",
+    "tests": "tests/test_inner_brain.py, tests/test_agent.py, tests/test_project_metadata.py"
+  },
+  "current_state": {
+    "local_evaluation_data": "data/inner-brain 当前没有本机 evaluation JSONL 文件",
+    "observed_command": "python src/app.py --once \"/inner-brain-eval-local-failed\" 输出 0/0、失败样例 - 无，但没有提示如何添加本机评估样本",
+    "seed_evaluation": "python src/app.py --once \"/inner-brain-eval-failed\" 输出 seed_evaluation 10/10 通过"
+  },
+  "similar_patterns": [
+    "describe_inner_brain_evaluation() 已在 failures_only 且无失败时输出 失败样例：- 无",
+    "README 已说明 /inner-brain-eval-add 和 /inner-brain-eval-label 只写 evaluation 样本、不训练",
+    "Agent /inner-brain-eval-local 和 /inner-brain-eval-local-failed 均复用 describe_inner_brain_evaluation()"
+  ],
+  "key_questions": [
+    {
+      "question": "是否应该基于构造失败直接补 seed 样本？",
+      "answer": "否。当前真实本机样本为空，seed 评估 10/10 通过；测试中的 knowledge.summary -> knowledge.status 是报告功能构造失败，不应改变已有状态/摘要语义。"
+    },
+    {
+      "question": "空状态应不应该写训练样本？",
+      "answer": "否。只读提示，保留本机评估样本与训练样本分离边界。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": "输入 InnerBrainEvaluationReport，输出展示文本；Agent 命令无需变化",
+    "technical_choice": "复用既有描述函数，避免新增命令或持久化格式",
+    "risks": "避免对 seed/custom 空评估误展示本机样本命令；避免让用户误以为会训练",
+    "verification": "TDD 新增 InnerBrain 和 Agent 空样本测试，版本一致性测试，回归和本地 smoke"
+  }
+}

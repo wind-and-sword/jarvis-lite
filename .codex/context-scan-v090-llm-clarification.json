@@ -1,0 +1,57 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.9.0 LLM 外脑多轮澄清 v1",
+  "tooling_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，改用本地上下文扫描、update_plan 与 TDD 留痕。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，改用 .codex 计划文件和 update_plan。",
+    "code_index": "当前会话未暴露 code-index，内部检索使用 rg、Select-String 和定向文件读取。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py：JarvisAgent.handle 负责本地命令、InnerBrain、多轮补槽、data 回答和 LLM fallback 调度。",
+      "src/jarvis_lite/agent.py：_answer_from_llm 调用 LLMRouter.complete_intent，_handle_llm_intent 执行 command/answer/clarify 三类结构化意图。",
+      "src/jarvis_lite/inner_brain.py：已有 complete_inner_brain_clarification，JarvisAgent 会保存 _pending_inner_brain_clarification 并处理用户下一句。",
+      "src/jarvis_lite/llm.py：LLMIntent 已包含 type、command、answer、clarification、reason、usage，FakeLLMProvider 可用于测试。"
+    ],
+    "current_behavior": [
+      "LLM 返回 clarify 时，Agent 只返回“LLM 外脑需要补充信息：...”，不会保存待澄清状态。",
+      "用户下一句会被当作全新的输入，无法与原始问题、澄清问题组成同一次外脑判断。",
+      "InnerBrain 已有 pending 澄清补槽，说明 Agent 侧保存待澄清状态是项目既有模式。"
+    ],
+    "similar_patterns": [
+      "_pending_inner_brain_clarification 保存 InnerBrainResult，_handle_pending_inner_brain_clarification 在 handle 主流程中优先消费用户补充。",
+      "_is_inner_brain_clarification_cancel 使用固定取消短语，只处理澄清会话控制，不承担自然语言意图识别。",
+      "_llm_context_lines 汇总长期记忆、最近资料、最近搜索和下一步建议，适合在 LLM 澄清续聊时追加补充上下文。"
+    ],
+    "tests": [
+      "tests/test_agent.py 已覆盖 LLM command、answer、clarify、usage 与上下文。",
+      "tests/test_project_metadata.py 固化发布版本号。",
+      "全量验证继续使用 unittest discover、桌面 smoke、安装包构建和 packaged exe smoke。"
+    ],
+    "observation": "本阶段应补齐 LLM 外脑多轮行为，而不是继续堆正则。InnerBrain 的本地澄清仍优先处理工具槽位，LLM 澄清只服务 fallback 后的开放式自然语言外脑判断。"
+  },
+  "key_questions": [
+    {
+      "question": "LLM 澄清续聊需要保存哪些信息？",
+      "priority": "high",
+      "answer": "保存原始问题、LLM 澄清问题和当时的上下文；用户补充到来后拼成明确的续聊 prompt，并追加上下文标记。"
+    },
+    {
+      "question": "澄清期间用户取消时是否调用 LLM？",
+      "priority": "high",
+      "answer": "不调用。复用 InnerBrain 取消短语，清空 pending，并返回“已取消这次外脑补充”。"
+    },
+    {
+      "question": "LLM 再次返回 clarify 怎么处理？",
+      "priority": "medium",
+      "answer": "v1 允许替换 pending 为新的澄清问题，避免循环执行；后续若需要再做澄清轮数限制。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

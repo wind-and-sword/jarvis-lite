@@ -1,0 +1,56 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.10.0 LLM 外脑澄清状态持久化和可观察 v1",
+  "tooling_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，改用本地上下文扫描、update_plan 与 TDD 留痕。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，改用 .codex 计划文件和 update_plan。",
+    "code_index": "当前会话未暴露 code-index，内部检索使用 rg、Select-String 和定向文件读取。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py：0.9.0 已新增 PendingLLMClarification 和 _pending_llm_clarification。",
+      "src/jarvis_lite/runtime_context.py：RuntimeContext 已持久化最近资料、最近目录、最近联网搜索、最近建议和批量标签历史。",
+      "src/jarvis_lite/agent.py：_runtime_context 和 _save_runtime_context 是 Agent 写入运行态上下文的统一出口。",
+      "src/jarvis_lite/agent.py：_recent_context_status 是当前用户查看最近上下文的统一展示入口。"
+    ],
+    "current_behavior": [
+      "LLM 澄清 pending 只保存在当前 Agent 实例内存中，重启桌面或新建 Agent 后会丢失。",
+      "最近上下文状态不会显示待补充的 LLM 外脑问题。",
+      "取消或补齐 LLM 澄清时，没有运行态上下文可清理。"
+    ],
+    "similar_patterns": [
+      "recent_document_path、recent_web_search 等字段通过 RuntimeContext 读写并在新 Agent 实例恢复。",
+      "_recent_context_status 展示待确认建议命令和待确认批量打标签，适合加入待补充外脑问题。",
+      "InnerBrain pending 没有持久化，但 LLM 外脑澄清更接近桌面长会话，适合进入 runtime context。"
+    ],
+    "tests": [
+      "tests/test_agent.py 已覆盖 LLM 澄清 follow-up、取消、最近上下文状态和运行态上下文跨实例恢复。",
+      "tests/test_project_metadata.py 固化发布版本号。"
+    ],
+    "observation": "0.10.0 应复用 RuntimeContext，不新增自研存储；也不新增自然语言正则模板。"
+  },
+  "key_questions": [
+    {
+      "question": "LLM pending 是否需要跨桌面重启恢复？",
+      "priority": "high",
+      "answer": "需要。桌面安装版可能重启应用，用户下一句补充应能接回外脑澄清。"
+    },
+    {
+      "question": "如何让用户看到待补充问题？",
+      "priority": "high",
+      "answer": "在最近上下文状态里展示待补充外脑问题和原始问题，并提供取消提示。"
+    },
+    {
+      "question": "是否要新增自然语言识别规则？",
+      "priority": "medium",
+      "answer": "不需要。本阶段只复用已有最近上下文入口和 runtime context。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

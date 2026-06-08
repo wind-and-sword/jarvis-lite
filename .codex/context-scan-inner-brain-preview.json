@@ -1,0 +1,24 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "为 InnerBrain 增加可观察调试入口",
+  "tooling_fallback": {
+    "sequential_thinking": "当前工具列表未提供，改用本地计划和代码证据记录分析结果",
+    "shrimp_task_manager": "当前工具列表未提供，改用 update_plan 与 .codex 计划文档",
+    "code_index": "当前工具列表未提供，改用 rg 与文件读取"
+  },
+  "current_state": {
+    "branch": "main",
+    "latest_commit": "4de9722 feat: 引入 InnerBrain 内脑雏形",
+    "working_tree": "clean before task",
+    "inner_brain_module": "src/jarvis_lite/inner_brain.py",
+    "agent_entry": "src/jarvis_lite/agent.py"
+  },
+  "observations": [
+    "InnerBrain v1 已输出结构化结果，但用户当前只能从 JarvisAgent 最终回复间接判断是否命中。",
+    "LLM 已有 /llm-status 和 /llm-context-preview，InnerBrain 缺少同类可观察入口。",
+    "预览命令必须只展示理解结果，不执行命令，尤其不能触发桌面快捷方式删除等本地动作。",
+    "状态命令应展示 seed/runtime 样本数量、阈值和训练样本目录，方便后续沉淀样本。"
+  ],
+  "decision": "新增 /inner-brain-status 和 /inner-brain-preview 文本，复用现有 JarvisAgent 命令风格；格式化逻辑放在 inner_brain.py，Agent 只负责命令入口。"
+}

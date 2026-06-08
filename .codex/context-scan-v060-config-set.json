@@ -1,0 +1,42 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.6.0 本地配置写入闭环",
+  "scope": {
+    "goal": "在 0.4.0 配置草稿生成和 0.5.0 配置检查之后，新增运行态命令写入 LLM/Search 本地配置，减少用户手动编辑 JSON 的摩擦。",
+    "modules": [
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/llm.py",
+      "src/jarvis_lite/search.py",
+      "src/jarvis_lite/inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "current_state": {
+    "llm": "已有 LLMSettings.from_sources()、llm_local_config_path()、write_llm_local_config_draft()、/llm-config-init、/llm-config-check 和 Router.describe()。",
+    "search": "已有 SearchSettings.from_sources()、search_local_config_path()、write_search_local_config_draft()、/search-config-init、/search-config-check 和 Router.describe()。",
+    "inner_brain": "配置初始化和检查只通过 seed 样本映射到命令，不依赖大范围正则。",
+    "gap": "用户仍需要手动打开 JSON 填写 provider/model/base_url/api_key/max_results；安装版目录不直观时会增加配置成本。"
+  },
+  "decisions": [
+    "0.6.0 定义为本地配置写入 v1。",
+    "新增 /llm-config-set key=value ...，允许写入 provider、model、base_url、api_key、fake_response。",
+    "新增 /search-config-set key=value ...，允许写入 provider、api_key、base_url、max_results、fake_results。",
+    "命令缺少参数时返回用法和示例，不尝试从自然语言中猜测 API key 或 URL。",
+    "写入使用 JSON 解析和覆盖指定字段，保留未指定字段；无效 key/provider/max_results 或现有 JSON 损坏时不做部分写入。",
+    "输出、日志和文档只展示字段名与状态，不回显真实 API key。",
+    "InnerBrain 只新增“设置/修改配置”入口映射到无参命令用法，不扩展正则自然语言解析。"
+  ],
+  "risks": [
+    "命令行包含 api_key 时不能被 Agent 日志记录或响应回显。",
+    "shlex posix=false 需要保持 URL 和 key 中常见字符不被错误拆分。",
+    "search fake_results 是 JSON 数组，命令参数中较难输入，首版保留字段能力但主要文档推荐 provider/api_key/base_url/max_results。",
+    "本地 config/*.local.json 必须继续不进入 Git。"
+  ],
+  "verification": [
+    "先写新增 Agent 测试和版本测试，并确认 RED。",
+    "实现后运行目标测试、相关回归、全量 unittest、源码桌面 smoke、配置写入 CLI smoke、安装包构建、打包后 exe smoke、安装器元数据检查、git diff --check、Markdown 本地链接、敏感信息扫描和本地配置跟踪检查。"
+  ],
+  "tooling_note": "当前会话未提供 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用技能文件、rg、本地文件读取、update_plan、apply_patch、unittest 和 PyInstaller。"
+}

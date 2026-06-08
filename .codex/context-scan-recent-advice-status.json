@@ -1,0 +1,35 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "最近建议状态展示第一版",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_agent.py",
+    "docs": [
+      "README.md",
+      "word/2026-05-21-jarvis-lite-natural-language-brain-progress.md"
+    ]
+  },
+  "current_behavior": [
+    "“查看最近上下文”已展示最近资料、最近目录和最近搜索结果。",
+    "最近建议列表已持久化到 RuntimeContext，但最近上下文状态没有展示建议数量或内容。",
+    "待确认建议命令只保存在当前 JarvisAgent 实例内，也没有状态展示。"
+  ],
+  "design": [
+    "在 _recent_context_status() 中增加最近建议状态，显示数量并列出编号建议。",
+    "在 _recent_context_status() 中增加待确认建议命令，pending 存在时显示命令，不存在时显示无。",
+    "空状态判断纳入最近建议和 pending 命令；只有最近建议时不再返回“还没有记录”。",
+    "生成新的最近建议时清空旧 pending 命令，避免用户确认执行过期建议。"
+  ],
+  "non_goals": [
+    "不改变最近建议持久化格式。",
+    "不持久化待确认命令。",
+    "不在状态页执行或准备任何命令。"
+  ],
+  "sufficiency": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

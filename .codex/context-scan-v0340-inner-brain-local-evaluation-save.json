@@ -1,0 +1,39 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.34.0 InnerBrain 本机评估样本显式写入入口",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、TDD 和本地 unittest。",
+  "locations": {
+    "agent_entry": "src/jarvis_lite/agent.py",
+    "inner_brain_core": "src/jarvis_lite/inner_brain.py",
+    "agent_tests": "tests/test_agent.py",
+    "inner_brain_tests": "tests/test_inner_brain.py",
+    "metadata_test": "tests/test_project_metadata.py"
+  },
+  "current_state": [
+    "0.33.0 已提供 /inner-brain-eval-local 与 /inner-brain-eval-local-failed，可单独查看本机 evaluation JSONL。",
+    "本机 evaluation JSONL 当前主要靠手动写入 data/inner-brain/evaluation/*.jsonl。",
+    "/inner-brain-teach 与 /inner-brain-label 已能显式写入 runtime 训练样本，但这会改变分类器样本，不适合作为纯评估沉淀入口。",
+    "load_evaluation_cases() 只读取本机 evaluation JSONL，不参与训练。"
+  ],
+  "design_decision": {
+    "chosen": "新增显式命令写入本机 evaluation JSONL。",
+    "reason": "先把真实日志沉淀为可重复评估样本，再决定是否训练，符合评估与训练分离、拒绝自动训练和不堆自然语言正则的方向。",
+    "rejected_alternatives": [
+      "按文件名过滤本机评估：排查效率提升有限，不能解决样本录入门槛。",
+      "导出评估报告：适合样本规模扩大后再做，当前应先补数据入口。"
+    ]
+  },
+  "acceptance": [
+    "/inner-brain-eval-add 文本 => /命令 写入 data/inner-brain/evaluation/runtime.jsonl，expected_intent 由已知命令白名单解析。",
+    "/inner-brain-eval-label 文本 => intent [slot=value ...] 写入同一 evaluation JSONL。",
+    "重复样本不重复写入。",
+    "写入 evaluation 不创建 data/inner-brain/training/runtime.jsonl，不刷新 InnerBrain 训练样本，不自动训练。",
+    "写入后 /inner-brain-eval-local 能读取新增样本。"
+  ],
+  "risk_notes": [
+    "命令目标必须显式，不从自然语言猜测 intent 或 command。",
+    "evaluation JSONL 不支持 slots 断言，当前只持久化 expected_intent、expected_policy、expected_command；slot 断言可后续独立扩展。",
+    "写入文件固定为 data/inner-brain/evaluation/runtime.jsonl，便于和手写文件区分。"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "v123 QQ/微信准备式工作流第一阶段",
+  "location": {
+    "existing_patterns": [
+      "src/jarvis_lite/app_registry.py",
+      "src/jarvis_lite/window_state.py",
+      "src/jarvis_lite/clash_workflow.py",
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/authorization.py",
+      "src/jarvis_lite/automation.py",
+      "src/jarvis_lite/llm.py"
+    ],
+    "tests": [
+      "tests/test_app_registry.py",
+      "tests/test_window_state.py",
+      "tests/test_clash_workflow.py",
+      "tests/test_agent.py",
+      "tests/test_authorization.py",
+      "tests/test_llm.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "known": [
+    "QQ 与微信已在 AppRegistry 中登记为 qq 和 wechat。",
+    "WindowState 已能按进程名或标题把窗口匹配到 AppRegistry 应用。",
+    "Clash 工作流已验证打开/聚焦/状态命令的低风险模式。"
+  ],
+  "unknowns": [
+    {
+      "priority": "high",
+      "question": "第一阶段是否发送消息或输入消息？",
+      "answer": "否。当前只生成准备单，不查找真实联系人、不点击、不输入、不发送。"
+    },
+    {
+      "priority": "medium",
+      "question": "是否同时支持 QQ 和微信？",
+      "answer": "是。路线明确 QQ/微信准备式工作流，复用同一模块处理两个应用。"
+    }
+  ],
+  "sufficiency": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  },
+  "plan": [
+    "新增 messaging_workflow 模块，复用 AppRegistry 和 WindowState。",
+    "新增 /messaging-workflow-status、/qq-open、/qq-focus、/qq-prepare-message、/wechat-open、/wechat-focus、/wechat-prepare-message。",
+    "更新授权层、自动化状态、LLM 状态白名单和版本文档。",
+    "通过 RED/GREEN、目标测试、相邻回归、全量 unittest、smoke、打包和静态检查验证。"
+  ]
+}

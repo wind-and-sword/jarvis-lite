@@ -1,0 +1,26 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.54.0 InnerBrain 本机评估全量视图文件候选状态摘要",
+  "location": {
+    "agent_response": "src/jarvis_lite/agent.py::_describe_inner_brain_local_evaluation",
+    "evaluation_report": "src/jarvis_lite/inner_brain.py::InnerBrainEvaluationReport.case_results",
+    "agent_tests": "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_command_lists_only_local_cases"
+  },
+  "current_behavior": {
+    "file_candidates": "/inner-brain-eval-local 已列出每个 source_file 的总样本数和 /inner-brain-eval-local-file 文件名命令",
+    "missing_detail": "候选文件未显示通过/失败数量，用户仍需进入文件视图或失败视图判断处理优先级",
+    "file_view": "/inner-brain-eval-local-file 文件名 不改行为"
+  },
+  "available_reuse": {
+    "case_results": "每个 InnerBrainEvaluationCaseResult 都包含 case.source_file 与 passed 布尔值",
+    "source_file_counts": "已有总数统计可继续作为候选顺序来源",
+    "no_training_assertions": "现有测试已断言不创建 data/inner-brain/training/runtime.jsonl"
+  },
+  "sufficiency_check": {
+    "interface_contract": "输入 InnerBrainEvaluationReport，输出 Agent 响应文本；全量本机视图候选行新增通过/失败摘要。",
+    "technical_choice": "在 Agent 层聚合 case_results，不新增评估报告字段，避免扩大维护面。",
+    "risks": "候选行更长；只追加通过/失败数量，不展开样本内容。",
+    "verification": "TDD 目标测试、Agent+InnerBrain 回归、全量 unittest、桌面 smoke、安装包构建、静态/链接/敏感检查。"
+  }
+}

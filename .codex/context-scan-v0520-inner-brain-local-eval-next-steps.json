@@ -1,0 +1,57 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.52.0 InnerBrain 本机评估全量视图后续处理提示",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "used": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "unittest",
+      "apply_patch"
+    ],
+    "note": "当前工具集未暴露项目手册要求的 MCP，继续按本地检索和本地自动验证降级。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py: /inner-brain-eval-local、/inner-brain-eval-local-file、/inner-brain-eval-local-failed、/inner-brain-eval-local-resolved 的响应组合",
+      "src/jarvis_lite/inner_brain.py: describe_inner_brain_evaluation 与 describe_inner_brain_resolved_evaluation",
+      "tests/test_agent.py: 本机评估命令、文件过滤命令和后续处理提示测试",
+      "tests/test_project_metadata.py: 版本一致性测试"
+    ],
+    "current_state": [
+      "0.51.0 已提供 /inner-brain-eval-local-resolved [文件名]，但全量本机评估视图尚未提示这个新入口。",
+      "失败视图和已处理视图都已有后续处理段落；全量视图仍直接返回 describe_inner_brain_evaluation()。"
+    ],
+    "similar_cases": [
+      "_describe_inner_brain_local_failed_evaluation(report) 只在有失败时追加后续处理。",
+      "_inner_brain_local_resolved_evaluation(args) 在已处理视图中追加返回失败视图提示。",
+      "_inner_brain_local_file_evaluation(args, failures_only=True) 已复用文件过滤和失败视图包装。"
+    ],
+    "tests": [
+      "Agent /inner-brain-eval-local 有本机样本时提示只看失败和查看已处理样本。",
+      "Agent /inner-brain-eval-local-file 文件名 有样本时提示当前文件失败视图和当前文件已处理清单。",
+      "空本机样本不追加全量后续处理，保留添加样本引导。"
+    ]
+  },
+  "questions": {
+    "known": [
+      "只改 Agent 响应提示，不改 InnerBrain 评估结果、样本训练或报告导出。",
+      "提示应只在 report.total_count > 0 时出现，避免空样本状态下和添加样本引导混杂。",
+      "指定文件视图应使用 report.source_file_filter 输出当前文件命令。"
+    ],
+    "unknown": []
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

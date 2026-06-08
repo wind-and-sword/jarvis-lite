@@ -1,0 +1,42 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.110.0 鼠标点击自动化第一阶段",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，使用本地结构化分析、rg、Get-Content、update_plan 和 TDD 替代。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，使用 word/plans 方案文件和 update_plan 替代。",
+    "code_index": "当前会话未暴露 code-index，使用 rg 和 Get-Content 检索。",
+    "exa": "本阶段不需要网络检索。"
+  },
+  "current_state": {
+    "latest_completed_version": "0.109.0",
+    "latest_commit": "f46a271 feat: 增加快捷键自动化 0.109.0",
+    "project_plan_next": "继续推进鼠标自动化基础、意图授权层、自动记忆与配置管家和五个常用应用首批工作流。",
+    "existing_automation_module": "src/jarvis_lite/automation.py 已包含目录、日报、文件整理、最近文件和快捷键自动化。",
+    "existing_agent_pattern": "JarvisAgent 在显式 slash command 分支调用 automation 描述函数，失败时返回可读错误并写入 record_log。"
+  },
+  "design_decision": {
+    "scope": "显式坐标鼠标点击第一阶段。",
+    "command": "/mouse-click x y [button=left|right|middle]",
+    "adapter": "复用 pyautogui，通过执行器注入测试，真实 adapter 只在未注入时调用。",
+    "non_goals": [
+      "不做目标识别",
+      "不做拖动或长按",
+      "不做窗口切换",
+      "不做应用启动",
+      "不做自然语言自动点击",
+      "不在单元测试中真实点击鼠标"
+    ]
+  },
+  "risks": [
+    "真实 mouse-click smoke 会影响当前桌面焦点和鼠标位置，本阶段只做状态 smoke 并在验证记录中说明跳过真实点击。",
+    "多显示器可能出现负坐标，因此解析层只要求整数，不强制非负或屏幕边界检查。",
+    "button 参数只允许 left/right/middle，避免拼写错误传入底层 adapter。"
+  ],
+  "verification_plan": [
+    "RED/GREEN: tests.test_automation 覆盖坐标解析、button 参数、注入 executor。",
+    "RED/GREEN: tests.test_agent 覆盖 /mouse-click 成功、空参数和失败反馈。",
+    "版本一致性测试提升到 0.110.0。",
+    "相邻回归、全量 unittest、/automation-status smoke、源码桌面 smoke、Windows 打包和打包后 smoke。"
+  ]
+}

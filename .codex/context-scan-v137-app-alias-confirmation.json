@@ -1,0 +1,43 @@
+{
+  "date": "2026-06-04",
+  "executor": "Codex",
+  "task": "v137 应用别名确认固化与撤销第一阶段",
+  "tooling_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，使用本地结构化分析和 update_plan 降级。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，使用 .codex 计划、word/plans 计划和 update_plan 降级。",
+    "code_index": "当前会话未暴露 code-index MCP，使用 rg 与 Get-Content 检索。",
+    "exa": "本阶段不需要网络检索。"
+  },
+  "known": {
+    "previous_release": "0.131.0 已完成联系人别名确认固化与撤销第一阶段并推送。",
+    "next_stage_source": "word/PROJECT-PLAN.md 后续目标写明继续实现更高风险候选真实确认固化与撤销闭环，下一批优先评估应用别名或授权规则。",
+    "chosen_stage": "应用别名确认固化与撤销第一阶段。",
+    "existing_storage": "src/jarvis_lite/app_registry.py 已读取 config/apps.local.json，并把 apps.<app_id>.aliases 合并到内置应用别名。",
+    "existing_candidate_flow": "src/jarvis_lite/memory_config_candidates.py 已支持高风险候选确认草稿，/config-candidate-confirm 和 /config-candidate-undo 当前只支持 contact_alias。",
+    "existing_tests": [
+      "tests/test_app_registry.py 覆盖 apps.local.json 追加 aliases 后 /app-find 与 /app-launch 使用别名。",
+      "tests/test_memory_config_candidates.py 覆盖 contact_alias 确认/撤销和高风险候选草稿。",
+      "tests/test_agent.py 覆盖 Agent 候选命令、/apps 和 /app-find。"
+    ]
+  },
+  "design": {
+    "candidate_format": "应用别名候选使用 别名 => 应用标识或已登记应用名，也兼容 -> 和 =。",
+    "write_scope": "只写 config/apps.local.json 的 apps.<app_id>.aliases，不写 path，不启动应用。",
+    "undo_scope": "只删除候选对应应用下的别名；如果该 app 覆盖没有 path 且别名为空，则移除空覆盖项。",
+    "unsupported_scope": "authorization_rule 和 preference 仍保持确认草稿或暂不支持真实确认。"
+  },
+  "risks": [
+    "必须避免撤销应用别名时删除已有 path 覆盖。",
+    "必须避免把 /config-candidate-confirm 或 /config-candidate-undo 加入 LLM 白名单。",
+    "必须保持 app registry 既有 apps.local.json schema 兼容。"
+  ],
+  "verification": [
+    "目标 RED/GREEN unittest",
+    "相邻回归",
+    "全量 unittest",
+    "临时项目 Agent smoke",
+    "源码桌面 smoke",
+    "安装包构建与打包后 smoke",
+    "git diff --check、Markdown 本地链接、敏感信息形态扫描"
+  ]
+}

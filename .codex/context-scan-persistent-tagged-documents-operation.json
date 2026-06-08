@@ -1,0 +1,25 @@
+{
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "task": "持久化最近批量标签操作摘要",
+  "tooling_fallback": {
+    "sequential-thinking": "当前会话不可用",
+    "shrimp-task-manager": "当前会话不可用",
+    "code-index": "当前会话不可用，使用 rg 和本地文件读取降级检索"
+  },
+  "location": {
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_agent.py"
+  },
+  "current_behavior": {
+    "runtime_context": "RuntimeContext 持久化最近资料、资料列表、目录、搜索结果、建议和最近文件。",
+    "gap": "最近批量标签操作摘要只保存在 JarvisAgent 内存字段中，新 Agent 实例无法恢复。"
+  },
+  "sufficiency_check": {
+    "interface_contract": "确认批量标签后，新 JarvisAgent 实例执行 最近上下文状态 仍显示 最近批量打标签摘要和恢复提示。",
+    "technical_choice": "新增 RuntimeTaggedDocumentsOperationContext dataclass，并在 RuntimeContext 中增加 recent_tagged_documents_operation 字段。",
+    "risks": "旧 agent-context.json 没有该字段时必须兼容为空；损坏字段要忽略。",
+    "verification": "新增 Agent 跨实例恢复测试先失败后通过，回归运行态最近上下文和全量测试。"
+  }
+}

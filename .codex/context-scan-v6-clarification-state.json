@@ -1,0 +1,33 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "推进 v6 下一阶段：InnerBrain 多轮澄清状态",
+  "tool_degradation": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP，使用本地代码扫描、update_plan 和 TDD 替代。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP，使用 .codex 计划文件和 update_plan 替代。",
+    "code_index": "当前会话未提供 code-index MCP，使用 rg 与定向文件读取替代。",
+    "exa": "本阶段不需要外部事实检索，未调用网络搜索。"
+  },
+  "scan": {
+    "worktree": "main...origin/main [ahead 10]，工作区干净。",
+    "current_behavior": [
+      "InnerBrainResult 已包含 intent/slots/missing/policy。",
+      "JarvisAgent._inner_brain_clarification() 只返回缺槽提示，不保存待澄清状态。",
+      "用户下一句补充路径或对象名会重新走完整 handle 流程，不能回填上一轮 missing slot。",
+      "desktop.delete_shortcut 缺少 items 时已能返回 CLARIFY，可作为第一批真实闭环样例。",
+      "runtime 样本支持 missing，例如 knowledge.import missing=source，可作为导入资料路径的第一批闭环样例。"
+    ],
+    "target_contract": [
+      "Agent 保存最近一次 InnerBrain CLARIFY 结果。",
+      "下一条非命令自然语言优先尝试回填 missing slot。",
+      "补齐后复用既有 NaturalLanguageIntent/命令执行路径，不新增平行执行层。",
+      "用户可用取消类表达清除待澄清状态。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

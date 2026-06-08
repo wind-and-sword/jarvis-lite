@@ -1,0 +1,64 @@
+{
+  "task": "0.50.0 InnerBrain 本机失败视图文件聚焦提示",
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "trigger": "承接 0.49.0 本机失败视图导出报告提示，继续补齐失败列表视图中的文件聚焦入口。",
+  "tooling_note": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "fallback": "使用 rg、Get-Content、update_plan 和本地计划文档完成上下文扫描与规划。"
+  },
+  "current_context": {
+    "core_files": [
+      "src/jarvis_lite/agent.py",
+      "tests/test_agent.py",
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/progress/2026-06-02.md"
+    ],
+    "entry_points": [
+      "/inner-brain-eval-local-failed",
+      "/inner-brain-eval-local-file-failed 文件名"
+    ],
+    "current_behavior": "0.49.0 已在本机失败视图有失败样本时追加报告导出提示，但全部失败视图没有直接提示按文件聚焦，文件失败视图没有直接提示回到全部本机失败样本。",
+    "similar_patterns": [
+      "0.48.0 报告导出反馈会提示查看失败样本和按文件聚焦失败。",
+      "0.49.0 本机失败视图会提示导出全部或当前文件失败报告。",
+      "/inner-brain-eval-local-file-failed 文件名 已支持按本机 JSONL 文件过滤失败样本。"
+    ]
+  },
+  "decision": {
+    "target_version": "0.50.0",
+    "scope": [
+      "全部本机失败视图有失败样本时追加按文件聚焦失败提示。",
+      "指定文件失败视图有失败样本时追加查看全部本机失败样本提示。",
+      "继续复用 0.49.0 的后续处理段落。"
+    ],
+    "out_of_scope": [
+      "不新增命令。",
+      "不改变导出的 Markdown 报告内容。",
+      "不自动运行报告导出。",
+      "不自动训练、不写入 data/inner-brain/training/runtime.jsonl。",
+      "不改变 evaluation JSONL payload、去重键或保存路径。"
+    ]
+  },
+  "questions": {
+    "known": [
+      "本机失败视图后续处理段落集中在 JarvisAgent._describe_inner_brain_local_failed_evaluation()。",
+      "全部失败视图和文件失败视图都能通过 report.source_file_filter 区分。",
+      "现有测试已覆盖有失败、空样本和文件过滤路径。"
+    ],
+    "unknown": [],
+    "priority": "上下文充分，不需要额外深挖。"
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

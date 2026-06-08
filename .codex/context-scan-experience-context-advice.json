@@ -1,0 +1,28 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "经验建议引用最近上下文第一版",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "intent": "src/jarvis_lite/intent.py",
+    "tests": "tests/test_agent.py"
+  },
+  "current_behavior": [
+    "/experience-advice 关键词 会输出相关经验和固定命令建议。",
+    "JarvisAgent 已保存最近资料、最近目录和最近搜索结果。",
+    "自然语言“这个资料/这个目录”已有部分标签和目录动作指代能力。"
+  ],
+  "gap": [
+    "/experience-advice 这个资料 只能按字面关键词生成通用资料命令，不能指出当前资料。",
+    "/experience-advice 这个目录 只能输出通用目录命令，不能带出最近目录别名。"
+  ],
+  "scope": [
+    "只处理最近资料和最近目录两个上下文引用。",
+    "只输出具体命令建议，不自动执行命令。",
+    "不新增持久化字段，复用现有 RuntimeContext。"
+  ],
+  "verification": [
+    "新增 Agent 测试覆盖最近资料建议、缺少最近资料提示、最近目录建议。",
+    "运行 Agent 专项测试、全量 unittest、桌面 smoke 和 git diff --check。"
+  ]
+}

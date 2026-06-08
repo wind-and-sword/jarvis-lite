@@ -1,0 +1,45 @@
+{
+  "date": "2026-05-21",
+  "executor": "Codex",
+  "task": "经验操作建议第一版",
+  "location": {
+    "memory": "src/jarvis_lite/memory.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "intent": "src/jarvis_lite/intent.py",
+    "tests": [
+      "tests/test_agent.py",
+      "tests/test_memory.py"
+    ]
+  },
+  "current_behavior": [
+    "经验可通过 /experience 写入 memory/experiences.md。",
+    "经验可通过 /experiences 查看全文。",
+    "经验可通过 /experience-search 关键词和“搜索经验 关键词”检索。",
+    "能力摘要和日报会引用最近经验。"
+  ],
+  "similar_patterns": [
+    "自然语言命令映射：parse_natural_language_intent() 返回 NaturalLanguageIntent('command', command='...')。",
+    "Agent 命令入口：_handle_command() 解析斜杠命令并调用私有方法。",
+    "经验搜索展示：_search_experiences() 负责用法、空结果和编号列表。"
+  ],
+  "key_questions": [
+    {
+      "question": "操作建议是否需要开放式规划？",
+      "answer": "第一版不做开放式规划，只把用户的问题关键词映射到经验检索，并附上已有命令入口。"
+    },
+    {
+      "question": "是否新增持久化格式？",
+      "answer": "不新增。继续使用 memory/experiences.md 和 search_experiences()。"
+    },
+    {
+      "question": "如何验证？",
+      "answer": "新增 Agent 测试覆盖 /experience-advice、有匹配、无匹配、缺少关键词和自然语言“我该怎么导入资料”。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risk_points": true,
+    "verification_method": true
+  }
+}

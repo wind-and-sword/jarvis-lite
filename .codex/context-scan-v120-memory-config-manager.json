@@ -1,0 +1,69 @@
+{
+  "task": "v120 / 0.115.0 自动记忆与配置管家第一阶段",
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "phase": "阶段0：上下文收集",
+  "tooling_fallback": {
+    "sequential_thinking": "当前会话未暴露该 MCP，使用本地结构化分析替代。",
+    "shrimp_task_manager": "当前会话未暴露该 MCP，使用 update_plan 与项目方案文档替代。",
+    "code_index": "当前会话未暴露该 MCP，使用 rg 与 Get-Content 替代。",
+    "exa": "本阶段不需要网络搜索；如后续需要，当前优先本地文档。"
+  },
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "memory": "src/jarvis_lite/memory.py",
+    "config_paths": "src/jarvis_lite/config.py",
+    "directory_registry": "src/jarvis_lite/automation.py",
+    "app_registry": "src/jarvis_lite/app_registry.py",
+    "llm_config": "src/jarvis_lite/llm.py",
+    "search_config": "src/jarvis_lite/search.py",
+    "tests": [
+      "tests/test_memory.py",
+      "tests/test_config.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "current_implementation": {
+    "memory_profile": "memory/profile.md stores long-term bullet facts via append_memory/read_profile.",
+    "experience_memory": "memory/experiences.md stores reusable workflow bullets via append_experience/read_experiences.",
+    "directories": "memory/directories.json stores aliases via /dir-add and list_common_directories.",
+    "apps": "config/apps.local.json can override AppRegistry paths and aliases.",
+    "llm": "config/llm.local.json is managed by /llm-config-init/check/set and masks API key in responses.",
+    "search": "config/search.local.json is managed by /search-config-init/check/set and masks API key in responses."
+  },
+  "similar_patterns": [
+    "/authorization-status: standalone status descriptor plus Agent command/help/status integration.",
+    "/automation-status: aggregates local capability state and common directories.",
+    "/llm-config-check and /search-config-check: read-only config inspection without provider calls or API key echo."
+  ],
+  "key_questions": [
+    {
+      "question": "第一阶段是否应自动写入配置？",
+      "answer": "否。v108 要求普通对话先进入候选，不无脑写入长期配置；本阶段先做只读盘点和管理入口。"
+    },
+    {
+      "question": "哪些数据源进入统一视图？",
+      "answer": "长期记忆、经验记忆、常用目录、应用本地覆盖、LLM 本地配置、联网搜索本地配置。"
+    },
+    {
+      "question": "如何验证不泄露敏感值？",
+      "answer": "在 LLM/Search 本地配置写入假 API key，断言配置管家和 Agent 响应只显示已配置/未配置，不包含原文 key。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": "describe_memory_config_manager(paths: ProjectPaths) -> str; /config-manager-status and /memory-config-status return same read-only report.",
+    "technical_choice": "Reuse existing storage readers and settings parsers; add one focused module instead of duplicating config commands.",
+    "risks": [
+      "API key leakage in aggregated report.",
+      "Invalid JSON configs causing status command crash.",
+      "Over-expanding into automatic persistence before candidate/undo model exists."
+    ],
+    "verification": [
+      "New unit tests for manager report.",
+      "Agent command/help/status tests.",
+      "Project metadata version test.",
+      "Adjacent unittest and full unittest discovery."
+    ]
+  }
+}

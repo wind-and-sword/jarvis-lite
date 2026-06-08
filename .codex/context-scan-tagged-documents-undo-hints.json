@@ -1,0 +1,48 @@
+{
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "task": "标签组批量打标签确认后的历史与恢复提示",
+  "tooling_fallback": {
+    "sequential-thinking": "当前会话不可用",
+    "shrimp-task-manager": "当前会话不可用",
+    "code-index": "当前会话不可用，使用 rg 和本地文件读取降级检索"
+  },
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_agent.py",
+    "docs": [
+      "README.md",
+      "verification.md",
+      "word/2026-05-26-jarvis-lite-progress.md",
+      "word/2026-05-22-jarvis-lite-personal-device-agent-plan.md"
+    ]
+  },
+  "current_behavior": {
+    "confirm_output": "确认执行批量打标签后输出已确认、追加标签和逐份新标签。",
+    "restore_gap": "输出没有说明确认前标签，也没有给用户恢复到原标签的命令提示。",
+    "tag_command_contract": "/tag 文件名 标签... 会通过 set_document_tags() 设置完整标签集，不是仅追加。"
+  },
+  "similar_patterns": [
+    "批量预览已展示当前标签和预览标签，确认时可复用确认前标签生成恢复提示。",
+    "最近资料列表在预览时已写入，可继续使用 给第一份资料打标签 这类自然语言恢复命令。",
+    "操作日志已有 record_log，可继续记录确认批量打标签动作。"
+  ],
+  "questions": [
+    {
+      "priority": "high",
+      "question": "这轮是否做真正自动撤销命令？",
+      "answer": "暂不新增自动撤销命令。先在确认结果中输出可复制的恢复命令，改动小且不新增持久化状态。"
+    },
+    {
+      "priority": "medium",
+      "question": "恢复命令如何处理确认前无标签的资料？",
+      "answer": "当前知识库资料出现在标签组中说明至少有组标签；如果仍遇到空标签，提示需要手动设置标签，不生成空 /tag 命令。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": "确认输出包含 操作记录：本次已更新 N 份资料。 和 恢复提示：如需撤销本次追加，可逐份执行：给第一份资料打标签 项目；给第二份资料打标签 项目。",
+    "technical_choice": "在 _confirm_pending_tagged_documents_tagging() 内保存确认前标签，更新成功后生成恢复命令。",
+    "risks": "部分资料更新失败时不应输出失败资料的恢复命令；标签中包含空白时沿用现有自然语言 /tag 限制。",
+    "verification": "新增 Agent 目标测试先失败后通过，跑标签组确认、普通标签回归、全量 unittest、桌面 smoke 和 git diff --check。"
+  }
+}

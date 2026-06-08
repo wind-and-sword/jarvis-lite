@@ -1,0 +1,39 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "系统最近文件列表第一版",
+  "tool_fallback": {
+    "missing": ["sequential-thinking", "shrimp-task-manager", "code-index"],
+    "used": ["rg", "Get-Content", "update_plan", "apply_patch"]
+  },
+  "locations": {
+    "natural_language_intent": "src/jarvis_lite/intent.py",
+    "agent_routing": "src/jarvis_lite/agent.py",
+    "directory_helpers": "src/jarvis_lite/automation.py",
+    "agent_tests": "tests/test_agent.py",
+    "automation_tests": "tests/test_automation.py"
+  },
+  "current_behavior": [
+    "已有常用目录登记、已知项目/桌面/下载目录 fallback、整理预览和打开目录记录。",
+    "自然语言可以说“打开下载目录”“整理桌面”“查看最近上下文”。",
+    "还没有“查看最近文件”或 `/recent-files` 能力。",
+    "最近资料列表只覆盖 data/ 知识库资料，不扫描系统目录。"
+  ],
+  "similar_patterns": [
+    "`/dirs` 读取常用目录并输出列表。",
+    "`整理桌面` 通过 `_known_directory()` 使用系统桌面目录 fallback。",
+    "`整理项目目录` 直接使用 `paths.root` 作为已知项目目录。",
+    "`preview_file_organization()` 只读取目录顶层文件，不移动或删除文件。"
+  ],
+  "risks": [
+    "真实系统目录文件数量可能较多，第一版只扫描顶层文件并限制输出数量。",
+    "测试需要稳定排序，使用文件修改时间并通过 `os.utime` 控制。",
+    "桌面/下载目录在测试中通过 `Path.home` patch 提供。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

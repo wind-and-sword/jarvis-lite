@@ -1,0 +1,38 @@
+{
+  "date": "2026-05-21",
+  "executor": "Codex",
+  "task": "自然语言最近资料和最近目录持久化",
+  "location": {
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_agent.py"
+  },
+  "current_state": {
+    "git": "main 比 origin/main 超前 3 个提交，工作区干净，最新提交 5bf9e72 feat: 支持最近上下文状态查询。",
+    "runtime_context": "RuntimeContext 当前只持久化 recent_search_result_paths 到项目外 jarvis-lite-runtime/agent-context.json。",
+    "agent_state": "JarvisAgent 初始化会恢复 recent_search_result_paths，并用第一条搜索结果补 recent_document_path；recent_directory 仍为空。",
+    "recent_document": "_remember_recent_document() 只写入内存字段，导入或标签更新后的最近资料在新 Agent 实例中丢失。",
+    "recent_directory": "_remember_recent_directory() 只写入内存字段，打开或整理目录后的最近目录在新 Agent 实例中丢失。"
+  },
+  "similar_implementations": [
+    "最近搜索结果持久化：_remember_recent_search_results() 调用 save_runtime_context() 写入 recent_search_result_paths。",
+    "最近上下文状态：_recent_context_status() 已统一展示最近资料、最近目录和最近搜索结果。",
+    "最近目录复用：_open_recent_directory() 和 _organize_recent_directory() 已通过 CommonDirectory 复用目录操作。"
+  ],
+  "constraints": [
+    "复用现有 RuntimeContext，不新增数据库或外部依赖。",
+    "运行态文件仍位于项目外 jarvis-lite-runtime/agent-context.json。",
+    "不改变 /ask 排序、导入流程、目录打开记录和整理预览行为。",
+    "损坏或缺失运行态文件继续回退为空上下文。"
+  ],
+  "verification": [
+    "先新增重启后最近资料可用于打标签的 RED 测试。",
+    "先新增重启后最近目录可用于打开目录的 RED 测试。",
+    "专项运行 tests.test_agent，再运行全量 unittest、桌面 smoke 和 git diff --check。"
+  ],
+  "tool_degradation": {
+    "sequential_thinking": "当前工具列表不可用，已用本地代码扫描、update_plan 和本地留痕替代。",
+    "shrimp_task_manager": "当前工具列表不可用，已用 update_plan 和 .codex 计划文档替代。",
+    "code_index": "当前工具列表不可用，已用 rg 和文件读取替代。"
+  }
+}

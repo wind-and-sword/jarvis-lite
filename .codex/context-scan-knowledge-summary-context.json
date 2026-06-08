@@ -1,0 +1,25 @@
+{
+  "date": "2026-05-25",
+  "executor": "Codex",
+  "task": "知识库摘要联动最近资料上下文",
+  "tool_fallback": {
+    "sequential-thinking": "当前会话没有该 MCP 工具，使用本地代码阅读和测试替代。",
+    "shrimp-task-manager": "当前会话没有该 MCP 工具，使用 update_plan 和本地计划文件替代。",
+    "code-index": "当前会话没有该 MCP 工具，使用 rg 和文件读取替代。"
+  },
+  "current_state": {
+    "summary_command": "/kb-summary 已输出资料来源、行数、标签和首行摘要预览。",
+    "recent_document_context": "读取、导入和问答命中会写入最近资料列表；知识库摘要暂未写入。",
+    "numbered_followups": "已有“读取第 N 份资料”和“给第 N 份资料打标签”的自然语言路径。"
+  },
+  "target_gap": "查看知识库摘要后，摘要中的编号资料不能直接被后续编号操作复用。",
+  "planned_scope": [
+    "让 /kb-summary 把摘要中的资料列表写入最近资料上下文。",
+    "输出明确的可继续操作提示。",
+    "保持 /kb 和 /ask 行为不变。"
+  ],
+  "verification": [
+    "新增 Agent RED 测试。",
+    "运行目标测试、Agent/Knowledge 专项、全量测试、桌面 smoke 和 git diff --check。"
+  ]
+}

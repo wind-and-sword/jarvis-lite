@@ -1,0 +1,45 @@
+{
+  "task": "0.15.0 路由解释详情 v1",
+  "created_at": "2026-05-29 18:06",
+  "executor": "Codex",
+  "scope": {
+    "goal": "在 0.14.0 最近路由决策状态基础上补充为什么选择该路由的解释信息，帮助确认回复来自 InnerBrain、LLM、知识库还是记忆兜底。",
+    "non_goals": [
+      "不增加自然语言正则规则",
+      "不改变 InnerBrain/LLM/搜索路由优先级",
+      "不提交 config/llm.local.json 或 config/search.local.json"
+    ]
+  },
+  "current_state": {
+    "runtime_context": "src/jarvis_lite/runtime_context.py 已有 RuntimeRouteDecisionContext(route/detail/prompt/summary/created_at)，可持久化 recent_route_decision。",
+    "agent": "src/jarvis_lite/agent.py 的 JarvisAgent.handle() 已在 command、inner-brain、inner-brain-clarify、knowledge、llm-fallback、memory-fallback 路径调用 _remember_route_decision()。",
+    "desktop": "DesktopResponse、DesktopBridge 和 AssistantPanel 已透传 route_status_text，并固定展示 routeStatusLabel。",
+    "inner_brain": "InnerBrainResult 已有 source、confidence、missing、reason；describe_inner_brain_result() 已形成中文展示模式，可作为解释字段格式参考。",
+    "llm": "RuntimeLLMCallContext 已记录 source、prompt、intent_type、summary、provider、model、created_at；LLMIntent 本身包含 reason。"
+  },
+  "questions": [
+    {
+      "question": "是否需要扩展路由行为？",
+      "answer": "不需要。本阶段只扩展可观察信息，避免继续堆正则。"
+    },
+    {
+      "question": "解释信息应该在哪里保存？",
+      "answer": "优先扩展 RuntimeRouteDecisionContext.explanation，由 route_status_text() 统一展示和桌面透传。"
+    },
+    {
+      "question": "InnerBrain 解释信息来源是什么？",
+      "answer": "直接使用 InnerBrainResult.source/confidence/missing/reason，避免自造二次判断。"
+    },
+    {
+      "question": "LLM fallback 如何解释？",
+      "answer": "使用最近 LLM 调用的 provider/model/source/type/summary，并可从 LLMIntent.reason 持久化补充 reason。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  },
+  "tool_degradation": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg/Get-Content/update_plan/apply_patch/unittest/PyInstaller。"
+}

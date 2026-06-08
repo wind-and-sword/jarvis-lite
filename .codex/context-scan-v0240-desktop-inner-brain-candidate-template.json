@@ -1,0 +1,27 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.24.0 桌面 InnerBrain 候选 teach/label 模板填充入口",
+  "location": {
+    "desktop_panel": "src/jarvis_lite/desktop/widgets.py",
+    "desktop_bridge": "src/jarvis_lite/desktop/bridge.py",
+    "candidate_commands": "src/jarvis_lite/agent.py",
+    "desktop_tests": "tests/test_desktop_widgets.py"
+  },
+  "current_state": [
+    "0.23.0 已将“内脑候选”加入 direct_quick_commands，点击后执行 /inner-brain-candidates。",
+    "Agent 已支持 /inner-brain-teach-candidate 编号 => /命令 和 /inner-brain-label-candidate 编号 => intent [slot=value ...]。",
+    "AssistantPanel 当前输入框为 QLineEdit，可通过 setText 填入命令并由用户显式发送。",
+    "桌面测试已有 quick_command_button、transcript_text、status_text 等面板辅助方法。"
+  ],
+  "decision": {
+    "approach": "新增候选编号 QSpinBox 与两个填充按钮，分别把 teach/label 模板写入输入框；不自动提交。",
+    "reason": "降低桌面显式训练输入成本，同时保持用户确认发送，不新增自然语言正则、不自动训练。"
+  },
+  "validation": [
+    "TDD：先新增桌面面板模板控件和填充行为测试，并将版本期望提升到 0.24.0。",
+    "GREEN：实现最小 UI 方法和按钮连接。",
+    "回归：桌面相关测试、全量 unittest、桌面 smoke、安装包 smoke、静态与敏感信息检查。"
+  ],
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、apply_patch 和本地 unittest。"
+}

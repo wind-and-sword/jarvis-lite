@@ -1,0 +1,37 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.65.0 InnerBrain 本机评估全量视图文件候选报告入口",
+  "tool_fallback": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；使用本地结构化分析、rg/Get-Content、update_plan、TDD、unittest、PyInstaller 和 smoke 验证替代。",
+  "location": {
+    "agent_view": "src/jarvis_lite/agent.py::_describe_inner_brain_local_evaluation",
+    "report_command": "JarvisAgent 既有 /inner-brain-eval-local-report [文件名]",
+    "tests": [
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_command_lists_only_local_cases",
+      "tests/test_project_metadata.py::ProjectMetadataTests.test_project_version_matches_release_package_version"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/README.md",
+      "word/progress/2026-06-02.md",
+      "verification.md"
+    ]
+  },
+  "current_behavior": {
+    "local_eval_candidates": "未指定文件执行 /inner-brain-eval-local 时，可聚焦文件行显示总数、通过数、失败数和 /inner-brain-eval-local-file 文件名；失败数大于 0 时追加待处理入口。",
+    "failed_view_groups": "0.64.0 已在 /inner-brain-eval-local-failed 的失败文件分组行中追加 /inner-brain-eval-local-report 文件名。",
+    "report_export": "/inner-brain-eval-local-report [文件名] 已支持按单个 JSONL 文件导出失败报告。"
+  },
+  "decision": {
+    "goal": "在 /inner-brain-eval-local 的可聚焦文件候选行中，为仍有失败的来源文件追加报告入口。",
+    "line_format": "- 文件名：N 条，通过 P 条，失败 F 条：/inner-brain-eval-local-file 文件名；待处理：/inner-brain-eval-local-file-failed 文件名；报告：/inner-brain-eval-local-report 文件名",
+    "scope": "只改变 Agent 全量本机评估视图候选行文案；不改评估数据、训练写入、报告导出路径、排序、指定文件视图或失败视图分组。"
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

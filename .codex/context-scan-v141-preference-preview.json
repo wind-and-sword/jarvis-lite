@@ -1,0 +1,38 @@
+{
+  "date": "2026-06-05",
+  "executor": "Codex",
+  "task": "v141 preference application preview first stage",
+  "release": "0.136.0",
+  "tooling_fallback": {
+    "sequential_thinking": "unavailable in current tool list",
+    "shrimp_task_manager": "unavailable in current tool list",
+    "code_index": "unavailable in current tool list",
+    "exa": "not needed; no web facts required",
+    "fallback_used": ["rg", "Get-Content", "git", "update_plan"]
+  },
+  "known_context": {
+    "current_head": "dff70fd feat: 增加偏好显式启停 0.135.0",
+    "branch_state": "main ahead of origin/main by 3 local commits before v141 work",
+    "next_project_goal": "PROJECT-PLAN 后续目标要求继续完善已固化高风险配置的冲突提示、启用预览和撤销体验；下一批优先评估已启用偏好的显式预览和应用策略，默认仍不自动改变回复策略。",
+    "existing_preference_store": "src/jarvis_lite/preferences.py 持久化 config/preferences.local.json，Preference 包含 preference/enabled/source/created_at/updated_at。",
+    "existing_agent_commands": "JarvisAgent 已支持 /preference-status、/preference-enable 编号、/preference-disable 编号。",
+    "existing_llm_boundary": "tests/test_llm.py 断言偏好管理命令不进入 provider instructions。"
+  },
+  "decision": {
+    "stage_name": "偏好应用预览第一阶段",
+    "command": "/preference-preview [输入文本]",
+    "scope": "只读读取 enabled=true 的偏好并生成可审计预览；无输入时展示通用预览，有输入时展示该输入的预览对象。",
+    "non_goals": [
+      "不自动改变普通聊天回复风格",
+      "不把偏好写入 LLM prompt 或 provider instructions",
+      "不改变路由、授权或桌面执行决策",
+      "不从普通聊天自动启用、停用或应用偏好"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

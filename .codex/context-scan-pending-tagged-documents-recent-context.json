@@ -1,0 +1,48 @@
+{
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "task": "标签组批量打标签待确认状态接入最近上下文",
+  "tooling_fallback": {
+    "sequential-thinking": "当前会话不可用",
+    "shrimp-task-manager": "当前会话不可用",
+    "code-index": "当前会话不可用，使用 rg 和本地文件读取降级检索"
+  },
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_agent.py",
+    "docs": [
+      "README.md",
+      "verification.md",
+      "word/2026-05-26-jarvis-lite-progress.md",
+      "word/2026-05-22-jarvis-lite-personal-device-agent-plan.md"
+    ]
+  },
+  "current_behavior": {
+    "tagged_documents_preview": "给项目标签资料都打标签 归档 会保存 _pending_tagged_documents_*，并清空待确认建议命令。",
+    "recent_context_status": "查看最近上下文 会展示最近资料、资料列表、目录、最近文件、搜索结果、最近建议和待确认建议命令。",
+    "gap": "最近上下文尚未展示标签组批量打标签的待确认状态，预览后用户需要回看上一条输出才能知道确认执行将影响哪些资料。"
+  },
+  "similar_patterns": [
+    "test_natural_language_recent_context_status_reports_pending_advice_command 覆盖待确认建议命令展示。",
+    "test_natural_language_preview_tagged_documents_tagging_sets_recent_document_list_without_mutation 覆盖标签组预览会写入最近资料列表但不修改标签。",
+    "_recent_context_status() 已集中格式化会话内最近状态，适合补一行待确认批量打标签。"
+  ],
+  "questions": [
+    {
+      "priority": "high",
+      "question": "待确认批量打标签是否应该持久化到新 Agent 实例？",
+      "answer": "不持久化。现有确认闭环明确是同一 Agent 会话内状态；最近上下文只展示当前会话内待确认状态。"
+    },
+    {
+      "priority": "medium",
+      "question": "最近上下文是否应复用现有待确认建议命令字段？",
+      "answer": "不复用。增加独立展示行，避免把批量标签任务误写成建议命令。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": "预览后调用 查看最近上下文，输出一行 待确认批量打标签：项目标签资料 -> 追加标签：归档，2 份。",
+    "technical_choice": "仅增强 _recent_context_status()，复用内存中的 _pending_tagged_documents_* 状态。",
+    "risks": "确认/取消后必须恢复为无；不能影响待确认建议命令的既有展示。",
+    "verification": "新增 Agent 目标测试先失败后通过，再跑相关回归、全量 unittest、桌面 smoke 和 git diff --check。"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "读取资料后写入最近资料上下文",
+  "tooling_note": "本环境未提供 sequential-thinking、shrimp-task-manager 和 code-index MCP，使用本地 rg、Get-Content、update_plan 与 unittest 替代并留痕。",
+  "current_state": {
+    "agent_read_command": "src/jarvis_lite/agent.py 中 /read 成功后只返回 read_data_file 输出，没有调用 _remember_recent_document。",
+    "recent_document_sources": [
+      "/import 单个文件成功后会调用 _remember_recent_document。",
+      "/tag 成功后会调用 _remember_recent_document。",
+      "/ask 或普通问题命中资料后会调用 _remember_recent_document。",
+      "查看编号搜索结果当前只记录日志，不改变最近资料。"
+    ],
+    "runtime_context": "src/jarvis_lite/runtime_context.py 已支持 recent_document_path 持久化，无需新增字段。",
+    "tests": "tests/test_agent.py 已覆盖最近导入资料、最近搜索结果和最近上下文状态。"
+  },
+  "key_questions": [
+    {
+      "question": "/read 是否应成为最近资料来源？",
+      "answer": "应成为。用户主动读取某个 data 文件后，后续“这个资料”、日报和经验建议都应指向它。"
+    },
+    {
+      "question": "是否需要新增运行态字段？",
+      "answer": "不需要，复用 recent_document_path。"
+    },
+    {
+      "question": "是否需要自然语言读取文件？",
+      "answer": "本轮不做，保持小步，只处理已有 /read 命令。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

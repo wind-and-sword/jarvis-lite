@@ -1,0 +1,44 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.28.0 InnerBrain 样本包含签名置信度补偿",
+  "location": {
+    "classifier": "src/jarvis_lite/inner_brain.py",
+    "tests": [
+      "tests/test_inner_brain.py",
+      "tests/test_project_metadata.py",
+      "tests/test_agent.py"
+    ],
+    "docs": [
+      "word/plans/2026-06-01-v32-inner-brain-contained-signature-boost-plan.md",
+      "verification/2026-06/2026-06-01.md",
+      "verification.md"
+    ]
+  },
+  "current_behavior": {
+    "sample_classifier": "_sample_similarity() 使用归一化文本的 Dice 相似度比较 seed/runtime 样本。",
+    "observed_gap": "长句“帮我看一下知识库状态”可以匹配到 knowledge.status，但置信度不足，仅进入 CLARIFY，无法直接执行 /kb。",
+    "risk": "继续增加自然语言正则会偏离用户要求；降低全局阈值会扩大误识别面。"
+  },
+  "similar_patterns": [
+    "InnerBrain seed/runtime 样本已经是训练数据来源，优先增强样本评分而不是新增模板。",
+    "HIGH_CONFIDENCE/MEDIUM_CONFIDENCE 已集中定义，当前任务不调整阈值常量。",
+    "测试中大量自然语言代表句通过 source=seed_sample 验证分类器行为。"
+  ],
+  "decision": {
+    "approach": "在样本相似度层增加包含签名补偿：当 prompt 完整包含长度不少于 4 的 sample_text 时，按覆盖率给出受上限约束的高置信补偿。",
+    "why": "该方案复用显式样本签名，不枚举用户说法，也不新增 intent 正则。",
+    "non_goals": [
+      "不自动训练",
+      "不自动猜测 unknown 候选",
+      "不改变 seed/runtime 样本格式",
+      "不改变阈值常量"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_reason": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

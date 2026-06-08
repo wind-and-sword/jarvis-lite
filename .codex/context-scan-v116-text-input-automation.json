@@ -1,0 +1,39 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "stage": "0.111.0",
+  "topic": "文本输入自动化第一阶段",
+  "tool_fallback": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、superpowers 和本地 unittest。",
+  "known_context": {
+    "current_version": "0.110.0",
+    "latest_commit": "d54e969 feat: 增加鼠标点击自动化 0.110.0",
+    "working_tree": "git status --short --branch 显示 main...origin/main，公开工作区干净。",
+    "roadmap": "word/PROJECT-PLAN.md 已完成 /hotkey 与 /mouse-click，后续目标仍包含键鼠自动化基础和文本输入。",
+    "similar_implementations": [
+      "src/jarvis_lite/automation.py: describe_hotkey_automation 使用 executor 注入和 pyautogui adapter。",
+      "src/jarvis_lite/automation.py: describe_mouse_click_automation 使用显式参数解析、executor 注入和 pyautogui adapter。",
+      "src/jarvis_lite/agent.py: /hotkey 与 /mouse-click 命令分支负责用法提示、异常转可读反馈和工具日志。"
+    ],
+    "tests": [
+      "tests/test_automation.py 覆盖自动化解析和 executor 注入。",
+      "tests/test_agent.py 覆盖 slash command 接入、缺参和执行失败。",
+      "tests/test_project_metadata.py 覆盖版本一致性。"
+    ]
+  },
+  "decision": {
+    "scope": "/type-text 文本",
+    "executor": "使用 pyperclip 设置剪贴板，再用 pyautogui.hotkey('ctrl', 'v') 粘贴，优先支持 Unicode 文本。",
+    "boundaries": [
+      "只接收显式 slash command。",
+      "不切换窗口、不点击目标、不启动应用。",
+      "不接入自然语言自动输入。",
+      "单元测试通过 executor 注入，绝不真实输入。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "知识库问答证据增强",
+  "tooling_fallback": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP，使用本地代码阅读、rg 和 update_plan 替代并记录。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP，使用本地计划和 .codex 记录替代。",
+    "code_index": "当前会话未提供 code-index MCP，使用 rg 替代。"
+  },
+  "context": {
+    "knowledge_answer": "answer_from_data() 通过 find_data_matches() 获取 DataMatch 列表，再由 answer_from_matches() 输出用户可读回答。",
+    "current_answer_shape": "当前输出包含命中数量和 data/文件:行号 + 命中文本。",
+    "available_evidence": "DataMatch 已包含 relative_path、line_number、text 和 score，可直接解释为关键词匹配分数。",
+    "existing_follow_ups": "Agent 已支持“查看第一条结果”“给这个结果打标签 标签”和 /read 文件名。"
+  },
+  "decision": "只增强输出格式，不改变检索排序、分数算法、匹配过滤或最近上下文持久化。",
+  "verification": [
+    "新增 answer_from_data 输出命中原因和可继续操作的失败测试。",
+    "实现 answer_from_matches() 的格式增强。",
+    "运行 tests.test_knowledge、tests.test_agent、全量 unittest、桌面 smoke 和 git diff --check。"
+  ]
+}

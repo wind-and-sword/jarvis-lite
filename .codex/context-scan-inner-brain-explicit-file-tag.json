@@ -1,0 +1,22 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "迁移 InnerBrain 显式文件名标签槽位",
+  "tool_degradation": {
+    "sequential_thinking": "当前会话未提供该 MCP 工具，改用本地结构化扫描和计划留痕。",
+    "shrimp_task_manager": "当前会话未提供该 MCP 工具，改用 update_plan 与 .codex 计划文件。",
+    "code_index": "当前会话未提供该 MCP 工具，改用 rg 和定向文件读取。"
+  },
+  "known": [
+    "`给 note.txt 打标签 项目` 已在文档中标为剩余 legacy_fallback 迁移项。",
+    "`JarvisAgent` 已有 `/tag 文件名 标签...` 执行链路，并会写入知识库标签元数据。",
+    "InnerBrain 已有 `document.tag_recent`、`document.tag_numbered_recent` 和 `search_result.tag_numbered`。",
+    "路径读取/导入迁移已有 `_normalize_read_document_path()` 可复用，能去掉 `data/` 前缀。"
+  ],
+  "decision": "新增 `document.tag_path` 样本 intent；样本签名负责识别显式文件名打标签语义，解析函数只抽 `path` 和 `tags`，执行继续映射到 `/tag`。",
+  "acceptance": [
+    "`给 note.txt 打标签 项目` 返回 `document.tag_path`、`source=seed_sample`、`path=note.txt`、`tags=(项目,)`。",
+    "`把 data/note.txt 标记为 项目 Python` 返回 `document.tag_path`，并映射到 `/tag \"note.txt\" 项目 Python`。",
+    "Agent 现有自然语言显式文件打标签测试继续通过。"
+  ]
+}

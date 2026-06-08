@@ -1,0 +1,44 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.47.0 InnerBrain 本机评估样本保存后续验证提示",
+  "tool_degradation": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；使用本地 Get-Content、rg、update_plan 和 TDD 流程替代。",
+  "location": {
+    "implementation": "src/jarvis_lite/agent.py _describe_inner_brain_evaluation_case_save()",
+    "save_paths": "src/jarvis_lite/agent.py _save_inner_brain_command_evaluation_sample() 与 _save_inner_brain_labeled_evaluation_sample() 均复用同一描述函数",
+    "tests": "tests/test_agent.py, tests/test_project_metadata.py",
+    "docs": "README.md, word/PROJECT-PLAN.md, word/plans/README.md, word/progress/2026-06-02.md, verification.md"
+  },
+  "current_state": {
+    "saved_response": "保存本机 evaluation 样本后已经显示样本文件、用户说法、意图、策略、目标命令、只保存不训练说明和 /inner-brain-eval-local。",
+    "gap": "用户保存样本后还需要自行记住只看失败、按 runtime.jsonl 聚焦和导出失败报告命令。",
+    "latest_commit": "8c6f8c5 feat: 引导本机评估空样本添加 0.46.0"
+  },
+  "similar_patterns": [
+    "0.46.0 空样本引导已列出 evaluation 样本添加入口并说明不自动训练。",
+    "/inner-brain-eval-local-file 文件名 与 /inner-brain-eval-local-file-failed 文件名 已支持按本机 JSONL 文件过滤。",
+    "/inner-brain-eval-local-report [文件名] 已支持导出本机失败评估 Markdown 报告。"
+  ],
+  "design": {
+    "selected_approach": "在现有保存反馈末尾追加后续验证命令，而不是新增命令或更改 JSONL。",
+    "alternatives": [
+      "新增单独的 evaluation 帮助命令：命令面增加，不适合当前小闭环。",
+      "保存后自动运行评估：可能增加执行噪音并改变命令副作用，不采用。",
+      "只更新 README：用户在命令行保存后仍缺少即时下一步，不采用。"
+    ],
+    "output_contract": [
+      "保留现有保存反馈字段。",
+      "追加 后续验证：",
+      "追加 复跑本机评估：/inner-brain-eval-local",
+      "追加 只看失败样本：/inner-brain-eval-local-failed",
+      "追加 聚焦样本文件：/inner-brain-eval-local-file runtime.jsonl",
+      "追加 导出失败报告：/inner-brain-eval-local-report"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": "输入 InnerBrainEvaluationSaveResult，输出保存反馈文本；保存 API 与 Agent 命令接口不变。",
+    "technical_choice": "复用现有 _describe_inner_brain_evaluation_case_save()，保证 direct/candidate、command/label 四条保存路径一致。",
+    "risks": "避免自动训练、避免自动运行评估、避免改变 evaluation JSONL payload。",
+    "verification": "TDD 新增 Agent 保存反馈测试和版本一致性测试，复跑 InnerBrain + Agent、全量 unittest、smoke、打包、静态检查。"
+  }
+}

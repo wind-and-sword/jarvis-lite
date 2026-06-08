@@ -1,0 +1,45 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.99.0 InnerBrain 本机报告空筛选文件补样本写入提示",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、apply_patch、unittest、源码 smoke、PyInstaller 打包和本地 smoke 验证。",
+  "context": {
+    "current_version": "0.98.0",
+    "main_files": [
+      "src/jarvis_lite/agent.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "README.md",
+      "word/PROJECT-PLAN.md"
+    ],
+    "observations": [
+      "项目下一步要求观察真实 runtime.jsonl 失败报告，但当前 data/inner-brain/evaluation/runtime.jsonl 不存在。",
+      "0.98.0 已在 /inner-brain-eval-local-report [文件名] 指定文件反馈中显示 当前文件样本：N。",
+      "当当前筛选文件样本数为 0 时，反馈仍只展示查看类入口和通用补样本入口，没有说明补样本命令默认写入 runtime.jsonl。"
+    ],
+    "similar_patterns": [
+      "/inner-brain-eval-local 和 /inner-brain-eval-local-failed 在本机 evaluation 为空时会提示只写 evaluation、不自动训练的添加入口。",
+      "/inner-brain-eval-add 与 /inner-brain-eval-label 保存反馈明确样本文件为 data/inner-brain/evaluation/runtime.jsonl。",
+      "/inner-brain-eval-local-report [文件名] 已有指定文件分支，可在 report.total_count 为 0 时追加提示。"
+    ]
+  },
+  "decision": {
+    "target_version": "0.99.0",
+    "scope": [
+      "为 /inner-brain-eval-local-report [文件名] 的空筛选文件反馈追加补样本写入目标提示。",
+      "提示只在 source_file_filter 存在且 report.total_count 为 0 时出现。",
+      "同步版本、更新清单测试夹具、计划、进度和验证记录。"
+    ],
+    "out_of_scope": [
+      "不新增按任意 JSONL 文件写入 evaluation 样本的命令。",
+      "不改变 /inner-brain-eval-add 或 /inner-brain-eval-label 的默认写入目标。",
+      "不改变报告正文、报告路径、缺失文件空报告行为、本机 evaluation payload 或训练样本写入。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

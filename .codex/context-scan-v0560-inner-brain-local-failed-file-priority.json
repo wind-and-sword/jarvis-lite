@@ -1,0 +1,40 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.56.0 InnerBrain 本机失败视图失败文件汇总排序",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地结构化分析、rg/Get-Content、update_plan、TDD、unittest、PyInstaller 打包和本地 smoke 验证。",
+  "context": {
+    "current_version": "0.55.0",
+    "main_files": [
+      "src/jarvis_lite/inner_brain.py",
+      "tests/test_inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "word/plans/2026-06-02-v59-inner-brain-local-eval-file-priority-plan.md"
+    ],
+    "existing_patterns": [
+      "0.55.0 已让 /inner-brain-eval-local 的可聚焦文件按失败数量优先排序。",
+      "describe_inner_brain_evaluation(report, failures_only=True) 统一生成失败视图和本机失败报告中的 失败文件 分组。",
+      "既有失败文件分组只列失败来源文件，不列纯通过文件。"
+    ]
+  },
+  "decision": {
+    "target_version": "0.56.0",
+    "scope": [
+      "失败文件分组按失败数量降序、文件名升序排序。",
+      "Agent 本机失败视图和未指定文件的 Markdown 报告复用该顺序。",
+      "不调整评估 case 结构、不写 training runtime。"
+    ],
+    "out_of_scope": [
+      "不改变失败样例和修复建议内容。",
+      "不新增批量训练或自动训练入口。",
+      "不改变 /inner-brain-eval-local 的可聚焦文件行格式。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

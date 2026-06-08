@@ -1,0 +1,49 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "已知下载目录上下文增强",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP 工具，改用本地代码阅读、update_plan 和记录文件替代。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP 工具，改用 .codex 计划文件和 update_plan 替代。",
+    "code_index": "当前会话未提供 code-index MCP 工具，内部检索使用 rg 和文件读取。"
+  },
+  "quick_scan": {
+    "module_location": [
+      "src/jarvis_lite/intent.py",
+      "src/jarvis_lite/agent.py",
+      "tests/test_agent.py"
+    ],
+    "current_behavior": [
+      "自然语言目录意图已支持“打开X目录”和“整理X目录”。",
+      "JarvisAgent._known_directory() 当前仅为“桌面/desktop”提供 Path.home() fallback。",
+      "打开已知目录只记录打开请求，不启动外部应用；整理已知目录只生成预览，不移动文件。"
+    ],
+    "similar_cases": [
+      "test_natural_language_open_desktop_uses_known_desktop_directory",
+      "test_natural_language_organize_desktop_uses_known_desktop_directory",
+      "test_natural_language_organize_recent_directory_after_open_common_directory"
+    ],
+    "tech_stack": "Python 3.13, unittest, PySide6 桌面 smoke。"
+  },
+  "questions": {
+    "known": [
+      "个人设备级 Agent 方案中明确把下载目录列为电脑 Agent 的重要工作对象。",
+      "已有桌面目录 fallback 可作为实现模板。",
+      "本轮只增加下载目录，不扩展到手机、手表或浏览器。"
+    ],
+    "unknown": [
+      "不同 Windows 环境下载目录可能是 Downloads 或 下载。优先级：高，结论：候选两个目录名。",
+      "是否处理“downloads”英文表达。优先级：中，结论：同时支持 downloads/download。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": "输入“打开下载目录”或“整理下载目录”，当 Path.home()/Downloads 或 Path.home()/下载 存在时，返回目录打开记录或整理预览，并更新最近目录。",
+    "technical_choice": "仅扩展 _known_directory_candidates() 的别名映射，复用现有 open/organize 逻辑。",
+    "risk_points": [
+      "不应影响已登记常用目录优先级。",
+      "不应改变没有下载目录时的错误提示。",
+      "不应真实打开外部应用或移动文件。"
+    ],
+    "verification": "先写失败测试，再实现，跑相关 Agent 测试、全量测试、桌面 smoke 和 diff 检查。"
+  }
+}

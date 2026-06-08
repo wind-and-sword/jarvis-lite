@@ -1,0 +1,38 @@
+{
+  "date": "2026-05-19",
+  "executor": "Codex",
+  "task": "规划 Jarvis Lite 桌面虚拟助手应用形态",
+  "known_context": {
+    "current_entry": "src/jarvis_lite/app.py 提供命令行入口和 --once 一次性执行。",
+    "core_agent": "src/jarvis_lite/agent.py 中 JarvisAgent.handle(user_input) 是当前可复用的单轮调度入口。",
+    "session": "src/jarvis_lite/conversation.py 中 ConversationSession 管理多轮会话、history、clear 和 save-summary。",
+    "capabilities": [
+      "长期记忆读取和写入",
+      "data 资料问答",
+      "知识库导入、PDF 和 JSON 聊天记录转换",
+      "资料标签",
+      "文本语音入口和播报 transcript",
+      "常用目录管理",
+      "日报生成",
+      "文件整理预览",
+      "目录打开 dry-run transcript"
+    ],
+    "paused": [
+      "摄像头",
+      "麦克风",
+      "真实麦克风语音识别",
+      "真实外部应用启动"
+    ]
+  },
+  "design_direction": {
+    "recommended_shape": "桌面角落常驻虚拟助手 + 点击展开完整助手面板",
+    "recommended_stack": "Python 核心继续保留，第一版桌面壳建议使用 PySide6/Qt；后续如需要更复杂前端再评估 Tauri 或 Web UI。",
+    "reason": "当前项目核心全部是 Python，PySide6 可直接复用 JarvisAgent 和 ConversationSession，避免第一版就引入 Node/Rust sidecar 复杂度。"
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "tech_choice_reason_clear": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  }
+}

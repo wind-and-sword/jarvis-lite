@@ -1,0 +1,49 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "实现 InnerBrain v1，本地内脑与 LLM 外脑分工落地",
+  "tooling_fallback": {
+    "sequential_thinking": "当前工具列表未提供，改用本地计划和代码证据记录分析结果",
+    "shrimp_task_manager": "当前工具列表未提供，改用 update_plan 与 .codex 计划文档",
+    "code_index": "当前工具列表未提供，改用 rg 与文件读取"
+  },
+  "known_context": {
+    "current_branch": "main",
+    "latest_pushed_commit": "dfd692d docs: 落地内脑外脑双脑方案",
+    "current_design_doc": "word/plans/2026-05-28-v4-inner-brain-llm-dual-brain-plan.md",
+    "agent_entry": "src/jarvis_lite/agent.py",
+    "legacy_natural_language_parser": "src/jarvis_lite/intent.py",
+    "llm_router": "src/jarvis_lite/llm.py",
+    "main_agent_tests": "tests/test_agent.py"
+  },
+  "observations": [
+    "JarvisAgent.handle() 当前顺序为命令、身份、斜杠命令、身份事实、parse_natural_language_intent、data answer、LLM fallback、memory fallback。",
+    "parse_natural_language_intent() 已包含大量规则和正则，可作为 InnerBrain v1 的 legacy_rule 来源，而不是立刻删除。",
+    "LLMRouter 已经返回结构化 LLMIntent，Agent 负责白名单校验和最终执行。",
+    "v4 方案明确 InnerBrain 输出 intent、slots、confidence、missing、source、reason，并用高/中/低置信度决定执行、澄清或交给外脑。",
+    "data/ 是用户运行态知识库目录，不适合把内置种子样本直接提交到 data/；内置种子样本应放在 src/jarvis_lite/ 包内，运行态训练样本再从 paths.data_dir/inner-brain/training/*.jsonl 读取。"
+  ],
+  "key_questions": [
+    {
+      "priority": "high",
+      "question": "InnerBrain v1 是否直接替换 legacy 规则？",
+      "answer": "不替换。先把 legacy parser 包装为 source=legacy_rule，再用样本相似度补充表达泛化。这样行为可回归，风险低。"
+    },
+    {
+      "priority": "high",
+      "question": "训练样本从哪里来？",
+      "answer": "内置 seed 样本放包内；用户真实日志和后续标注样本使用运行态 JSONL，路径为 data/inner-brain/training/*.jsonl。"
+    },
+    {
+      "priority": "medium",
+      "question": "低置信度如何处理？",
+      "answer": "不直接执行。返回 source=no_match 或 policy=fallback_to_llm，由现有 data/LLM fallback 继续处理。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "把最近搜索结果列表加入 LLM fallback context",
+  "tool_fallback": {
+    "sequential-thinking": "当前工具列表不可用，使用本地代码阅读和计划文件降级。",
+    "shrimp-task-manager": "当前工具列表不可用，使用 update_plan 和本地计划文件降级。",
+    "code-index": "当前工具列表不可用，使用 rg 和定向文件读取降级。"
+  },
+  "current_behavior": [
+    "JarvisAgent._answer_from_data() 会把知识库命中资料写入 _recent_search_result_paths。",
+    "最近上下文状态页会展示最近搜索结果列表。",
+    "LLM fallback context 目前只展示最近资料、最近目录、最近建议数量和下一步建议，没有列出最近搜索结果。"
+  ],
+  "gap": "用户先问知识库命中多份资料后，再让 LLM 做外部规划时，模型不知道有多份最近搜索结果可继续读取或标注。",
+  "decision": "在 _llm_context_lines() 中追加最多 3 条最近搜索结果路径，保持 context 精简并复用现有运行态。"
+}

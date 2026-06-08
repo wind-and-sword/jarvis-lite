@@ -1,0 +1,40 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.29.0 InnerBrain 固定评估集",
+  "location": {
+    "classifier": "src/jarvis_lite/inner_brain.py",
+    "agent_command": "src/jarvis_lite/agent.py",
+    "tests": [
+      "tests/test_inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ],
+    "docs": [
+      "word/plans/2026-06-01-v33-inner-brain-seed-evaluation-plan.md",
+      "verification/2026-06/2026-06-01.md",
+      "README.md"
+    ]
+  },
+  "known_context": {
+    "current_classifier": "InnerBrain 以 seed/runtime 样本分类器为主，legacy_fallback 仅迁移期兼容。",
+    "latest_change": "0.28.0 增加包含签名置信度补偿。",
+    "next_need": "后续评估 embedding 或小型分类器前，需要可重复的本地评估基线。"
+  },
+  "decision": {
+    "approach": "新增固定 seed_evaluation 评估集、评估报告结构、格式化输出和 /inner-brain-eval 命令。",
+    "why": "先建立可重复评估基线，再继续调分类器，避免凭感觉调分或继续堆正则。",
+    "non_goals": [
+      "不自动训练",
+      "不自动采纳候选",
+      "不写入 runtime 样本",
+      "不新增自然语言意图正则"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_reason": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

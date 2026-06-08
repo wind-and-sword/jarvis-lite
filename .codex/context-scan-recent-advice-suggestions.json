@@ -1,0 +1,24 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "最近建议编号查看第一版",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "intent": "src/jarvis_lite/intent.py",
+    "tests": "tests/test_agent.py"
+  },
+  "current_behavior": [
+    "/experience-advice 关键词 会输出相关经验和可执行命令建议。",
+    "建议命令目前只存在于响应文本中，后续对话不能按编号引用。",
+    "现有最近搜索结果已支持“查看第二条结果”这类编号读取，可作为模式参考。"
+  ],
+  "scope": [
+    "保存当前 Agent 实例内最近一次经验建议的命令建议列表。",
+    "支持“查看第一条建议”“查看第2条建议”。",
+    "只展示建议命令文本，不执行命令，不持久化到运行态文件。"
+  ],
+  "verification": [
+    "新增 Agent 测试覆盖查看第一条建议、查看第二条建议、缺少最近建议。",
+    "运行 Agent 专项测试、全量 unittest、桌面 smoke 和 git diff --check。"
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "stage": "0.113.0",
+  "plan_id": "v118-app-launch-automation",
+  "task": "应用启动自动化第一阶段",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，使用本地结构化分析和 update_plan 替代并记录降级。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，使用本地任务拆解和 update_plan 替代并记录降级。",
+    "code_index": "当前会话未暴露 code-index MCP，使用 rg 与 Get-Content 检索。",
+    "exa": "本阶段不需要联网搜索；如需网络事实再按可用工具降级。"
+  },
+  "known": {
+    "module_location": [
+      "src/jarvis_lite/app_registry.py",
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/automation.py"
+    ],
+    "current_implementation": [
+      "AppRegistry 已支持 Chrome、QQ、微信、IntelliJ IDEA、Clash Verge 五个内置应用。",
+      "config/apps.local.json 可覆盖 path 并追加 aliases。",
+      "RegisteredApp.launch_path 会返回已存在的 configured_path 或候选路径。",
+      "Agent 已有 /apps、/app-find 和 /window-focus；/app-find 明确不启动应用。"
+    ],
+    "similar_patterns": [
+      "/hotkey、/mouse-click、/type-text、/window-focus 均使用显式命令、空参数用法、异常转可读失败和工具日志。",
+      "自动化执行类能力通过执行器注入做单元测试，避免真实键鼠或窗口副作用。",
+      "版本联动通过 tests/test_project_metadata.py 的 RELEASE_VERSION 和 tests/test_agent.py 更新清单夹具覆盖。"
+    ],
+    "tests": [
+      "tests/test_app_registry.py 覆盖应用注册表和本地覆盖路径。",
+      "tests/test_agent.py 覆盖 Agent 显式命令分发。",
+      "tests/test_project_metadata.py 覆盖项目版本一致性。"
+    ]
+  },
+  "design": {
+    "command": "/app-launch 应用名称或别名",
+    "scope": [
+      "只启动 AppRegistry 已登记且 launch_path 已存在的应用。",
+      "不切换窗口、不点击、不输入、不发送快捷键、不做自然语言自动启动。",
+      "单元测试通过注入执行器记录 path，不启动真实桌面应用。"
+    ],
+    "api_contract": [
+      "launch_registered_app(paths, query, executor=None) -> AppLaunchResult",
+      "describe_app_launch(paths, query, executor=None) -> str",
+      "空 query 抛 ValueError；未匹配应用抛 ValueError；匹配但无可用路径抛 FileNotFoundError。"
+    ]
+  },
+  "risks": [
+    "真实启动应用会影响用户桌面；单元测试和 smoke 不执行真实启动，使用注入或跳过并记录。",
+    "候选路径依赖用户机器安装状态；路径不存在时必须给出 config/apps.local.json 配置提示。",
+    "Windows 路径启动需要使用标准库 subprocess.Popen，并设置 cwd 为可执行文件父目录。"
+  ],
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.86.0 InnerBrain 本机当前文件待处理失败报告标签",
+  "observations": [
+    "src/jarvis_lite/agent.py 中三个当前文件分支仍使用“导出当前文件失败报告”。",
+    "tests/test_agent.py 已有三个对应断言，可直接按 TDD 改为“导出当前文件待处理失败报告”并先观察 RED。",
+    "同一命令 /inner-brain-eval-local-report 文件名 不需要变更，报告正文与统计逻辑不进入本轮范围。"
+  ],
+  "target_contract": {
+    "input": [
+      "/inner-brain-eval-local-file 文件名",
+      "/inner-brain-eval-local-file-failed 文件名",
+      "/inner-brain-eval-local-resolved 文件名"
+    ],
+    "output": "当当前文件仍有失败样本时，后续处理输出 '- 导出当前文件待处理失败报告：/inner-brain-eval-local-report 文件名'。",
+    "unchanged": [
+      "无失败样本时不显示报告入口",
+      "报告导出命令",
+      "Markdown 报告正文",
+      "失败统计",
+      "训练样本写入"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  }
+}

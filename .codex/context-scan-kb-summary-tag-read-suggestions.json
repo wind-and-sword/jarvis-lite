@@ -1,0 +1,44 @@
+{
+  "date": "2026-05-25",
+  "executor": "Codex",
+  "task": "知识库摘要提示按标签读取资料组",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py::_knowledge_summary",
+    "tests": "tests/test_agent.py::AgentTests",
+    "docs": [
+      "README.md",
+      "verification.md",
+      "word/2026-05-25-jarvis-lite-progress.md",
+      "word/2026-05-22-jarvis-lite-personal-device-agent-plan.md"
+    ]
+  },
+  "current_state": {
+    "implemented": [
+      "/kb-summary 输出标签分组",
+      "/kb-summary 有标签时提示按标签提问：/ask 标签",
+      "自然语言支持读取项目标签资料，并写入最近资料列表"
+    ],
+    "gap": "/kb-summary 尚未直接提示“读取项目标签资料”，用户需要自己联想到新入口。"
+  },
+  "similar_patterns": [
+    "_knowledge_summary_tag_suggestions(index) 从 KnowledgeIndex 提取标签并生成 /ask 建议",
+    "_knowledge_summary() 在摘要正文后追加可继续操作行",
+    "test_knowledge_summary_command_suggests_tagged_ask_followups 覆盖标签建议输出"
+  ],
+  "technical_stack": "Python 3.13 + unittest，本地确定性规则解析。",
+  "verification": [
+    "新增 Agent RED/GREEN 测试",
+    "tests.test_agent",
+    "tests.test_knowledge",
+    "unittest discover",
+    "desktop smoke",
+    "git diff --check"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  },
+  "tooling_note": "当前未提供 sequential-thinking、shrimp-task-manager、code-index；使用 rg、Get-Content、update_plan、apply_patch 和 unittest 降级执行。"
+}

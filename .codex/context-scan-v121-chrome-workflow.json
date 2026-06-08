@@ -1,0 +1,63 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "v121 Chrome 低风险工作流第一阶段",
+  "tooling_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，使用本地结构化分析替代。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，使用 update_plan 与项目计划文档替代。",
+    "code_index": "当前会话未暴露 code-index MCP，使用 rg 与 Get-Content 替代。"
+  },
+  "context_scan": {
+    "module_location": [
+      "src/jarvis_lite/app_registry.py 已提供 Chrome 注册、别名匹配、config/apps.local.json 路径覆盖和应用启动执行器注入。",
+      "src/jarvis_lite/agent.py 已接入 /apps、/app-find、/app-launch 等显式命令。",
+      "src/jarvis_lite/authorization.py 的桌面动作集合还未包含 Chrome 专用工作流命令。"
+    ],
+    "similar_implementations": [
+      "v118 /app-launch：只做显式应用启动，不切换窗口、不点击、不输入，测试通过 executor 注入避免真实启动。",
+      "v117 /window-focus：只切换显式窗口，匹配歧义时返回候选，不做其他动作。",
+      "v114-v116 /hotkey、/mouse-click、/type-text：显式命令、可注入执行器、真实动作 smoke 跳过。"
+    ],
+    "tech_stack": [
+      "Python 3.13",
+      "unittest",
+      "标准库 subprocess.Popen",
+      "ProjectPaths 与 AppRegistry"
+    ],
+    "tests": [
+      "tests/test_app_registry.py 覆盖应用注册和启动行为。",
+      "tests/test_agent.py 覆盖 Agent 命令接入、帮助、错误反馈和版本更新夹具。",
+      "tests/test_authorization.py 覆盖桌面动作命令范围。",
+      "tests/test_project_metadata.py 覆盖版本一致性。"
+    ],
+    "observation_report": [
+      "Chrome 第一阶段不应复用 /app-launch 硬塞 URL 参数，否则会破坏现有 AppLaunchExecutor Callable[[Path], None] 契约。",
+      "应新建专门 workflow 模块，让 executor 接收 Chrome exe 路径与 URL 参数，避免影响通用 AppRegistry。",
+      "需要把 /chrome-open 和 /chrome-search 纳入授权层桌面动作集合，确保后续自然语言或 LLM 建议不会绕过确认边界。",
+      "单元测试不能启动真实 Chrome；smoke 只验证 /chrome-workflow-status 或 /help，不执行真实浏览器。"
+    ]
+  },
+  "key_questions": [
+    {
+      "priority": "high",
+      "question": "Chrome 第一阶段是否包含搜索？",
+      "answer": "包含显式 /chrome-search 关键词。它只构造搜索 URL 并交给 Chrome 打开，不读取网页、不点击页面。"
+    },
+    {
+      "priority": "high",
+      "question": "如何处理没有 Chrome 路径的机器？",
+      "answer": "复用 AppRegistry 的 launch_path；缺失时返回配置 config/apps.local.json 的可读错误。"
+    },
+    {
+      "priority": "medium",
+      "question": "是否接入自然语言？",
+      "answer": "本阶段不接自然语言自动执行，只暴露显式 slash command 和帮助/状态。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_clear": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

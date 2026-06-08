@@ -1,0 +1,56 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.89.0 InnerBrain 本机报告导出待处理失败标题",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，使用本地结构化分析替代并在 operations-log.md 留痕。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager，使用 update_plan 和项目计划文档替代。",
+    "code_index": "当前会话未暴露 code-index，使用 rg 与 Get-Content 检索。",
+    "exa": "本任务无需网络事实检索。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py::_export_inner_brain_local_evaluation_report",
+      "src/jarvis_lite/inner_brain.py::export_inner_brain_evaluation_report",
+      "tests/test_agent.py::test_inner_brain_eval_local_report_command_exports_failed_markdown_without_training",
+      "tests/test_agent.py::test_inner_brain_eval_local_report_command_can_filter_local_file",
+      "tests/test_inner_brain.py::test_export_inner_brain_evaluation_report_writes_failed_markdown_without_training",
+      "tests/test_project_metadata.py::test_project_version_matches_release_package_version"
+    ],
+    "current_behavior": "本机报告导出成功反馈、record_log 文案、Markdown 标题和导出函数 docstring 仍使用“本机评估失败报告”。",
+    "similar_patterns": [
+      "0.84.0-0.88.0 已把入口和候选标签逐步收口到待处理失败语义。",
+      "报告导出只读取 failed_case_results，不写入 runtime 训练样本。",
+      "报告路径保持 word/inner-brain-evaluation-report.md。"
+    ],
+    "tech_stack": "Python 3.13, unittest, PySide6 desktop smoke, PyInstaller Windows installer.",
+    "tests": [
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent.AgentTests.test_inner_brain_eval_local_report_command_exports_failed_markdown_without_training tests.test_agent.AgentTests.test_inner_brain_eval_local_report_command_can_filter_local_file tests.test_inner_brain.InnerBrainTests.test_export_inner_brain_evaluation_report_writes_failed_markdown_without_training tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent tests.test_inner_brain tests.test_project_metadata -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest discover -s tests -v"
+    ]
+  },
+  "key_questions": [
+    {
+      "question": "是否需要改变报告文件路径或 Markdown 内容结构？",
+      "priority": "high",
+      "answer": "否。只调整标题/反馈/日志标签，报告正文、统计和路径保持不变。"
+    },
+    {
+      "question": "是否需要改变失败样本筛选逻辑？",
+      "priority": "high",
+      "answer": "否。仍由 describe_inner_brain_evaluation(report, failures_only=True) 输出待处理失败样本。"
+    },
+    {
+      "question": "是否同步版本和更新检查夹具？",
+      "priority": "high",
+      "answer": "是。发布版本提升到 0.89.0，测试 manifest 夹具提升到 0.89.1。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  }
+}

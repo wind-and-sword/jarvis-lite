@@ -1,0 +1,58 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "phase": "0.19.0-inner-brain-teach-candidate",
+  "task": "基于 InnerBrain 训练候选增加按编号教学命令。",
+  "tooling_degradation": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，按项目降级规则使用本地检索、计划文件和 TDD。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，使用 update_plan 与项目方案文件替代。",
+    "code_index": "当前会话未暴露 code-index MCP，使用 rg / Get-Content 检索。",
+    "exa": "本阶段不需要网络检索。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "word/plans/",
+      "verification/"
+    ],
+    "current_behavior": [
+      "0.18.0 已通过 /inner-brain-candidates 列出可人工训练的 fallback/澄清候选。",
+      "已有 /inner-brain-teach 文本 => /命令，可保存 text -> command 的教学样本。",
+      "候选列表目前只给出可复制示例，用户仍需要手动复制候选文本。"
+    ],
+    "similar_patterns": [
+      "/inner-brain-teach 复用 _save_inner_brain_teach_command 保存教学样本但不执行目标命令。",
+      "/inner-brain-candidates 从 recent_route_decisions 筛选候选，并且不污染路由历史。",
+      "编号类命令在 Agent 中已有多个 1-based 索引入口，例如 recent documents/search/advice。"
+    ],
+    "tests": [
+      "tests.test_agent.AgentTests 覆盖 InnerBrain teach/adopt/candidates 和运行态恢复。",
+      "tests.test_project_metadata 覆盖版本提升。"
+    ]
+  },
+  "key_questions": [
+    {
+      "question": "是否自动猜测候选应绑定的命令？",
+      "priority": "high",
+      "answer": "不自动猜。命令必须由用户在 /inner-brain-teach-candidate 编号 => /命令 中显式给出。"
+    },
+    {
+      "question": "教学候选命令是否记录自身路由？",
+      "priority": "medium",
+      "answer": "不记录。它依赖最近候选编号，记录自身会改变最近路由历史并可能挤掉候选。"
+    },
+    {
+      "question": "本阶段是否支持 label-candidate？",
+      "priority": "medium",
+      "answer": "暂不支持。0.19.0 只做命令教学候选，后续再增加 intent/slot 标注候选。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risk_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "将联网搜索作为与 LLM 外脑互补的 Agent 工具能力纳入方案并实现第一版",
+  "tooling_degradation": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP，改用本地结构化分析并记录在 .codex。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP，改用 update_plan 与本地计划文档。",
+    "code_index": "当前会话未提供 code-index MCP，改用 rg 与定向文件读取。",
+    "exa": "当前会话未提供 exa MCP，联网资料仅在必要时使用 web 官方文档检索。"
+  },
+  "observations": {
+    "modules": [
+      "src/jarvis_lite/llm.py 已有 provider-neutral Router、Settings、本地配置文件与 fake provider 测试模式。",
+      "src/jarvis_lite/agent.py 已集中处理命令、InnerBrain、data 问答和 LLM fallback，适合新增 SearchRouter 注入点。",
+      "src/jarvis_lite/inner_brain.py 已支持 seed/runtime 样本映射到 NaturalLanguageIntent(command=...)。",
+      "src/jarvis_lite/runtime_context.py 当前的 recent_search_result_paths 表示本地知识库搜索结果，不应用来混淆联网搜索结果。"
+    ],
+    "existing_patterns": [
+      "LLM 真实配置使用 config/llm.local.json，模板 config/llm.example.json 进入 Git。",
+      "真实密钥不写入 Git；状态文本只展示是否已配置。",
+      "Agent 命令优先，InnerBrain 高置信命中后仍回到 JarvisAgent 执行，LLM 只返回结构化意图。"
+    ],
+    "tests": [
+      "tests/test_llm.py 覆盖本地配置、环境变量覆盖、fake provider、真实 provider 错误处理。",
+      "tests/test_agent.py 覆盖命令入口、自然语言入口、LLM 注入与运行中重载。",
+      "tests/test_inner_brain.py 覆盖 seed/runtime 样本与策略。"
+    ]
+  },
+  "key_questions": {
+    "known": [
+      "联网搜索应与 LLM 互补，不是二选一。",
+      "搜索必须由 JarvisAgent 显式控制，后续可把搜索结果交给 LLM 总结。",
+      "第一版需要可测试、可配置、可观察，不依赖真实 API key。"
+    ],
+    "unknown": [
+      "用户最终会选哪个搜索 provider，因此第一版需要 provider 抽象和 fake provider。",
+      "真实 provider 的 API key 当前不能假定存在，因此必须允许 disabled/status/smoke 路径。"
+    ],
+    "decision": [
+      "沿用 LLM 配置模型，新增 SearchSettings/SearchRouter/SearchProvider。",
+      "先支持 off、fake、tavily 三种 provider；fake 用于本地测试，tavily 作为主流搜索 API 接入口。",
+      "Agent 新增 /search-status、/search-config-example、/search-enable、/search 关键词；自然语言搜索先通过 InnerBrain seed 映射到 /search。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

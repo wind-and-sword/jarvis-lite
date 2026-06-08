@@ -1,0 +1,65 @@
+{
+  "task": "0.112.0 窗口切换自动化第一阶段",
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "tool_fallbacks": [
+    "当前可用工具未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP。",
+    "内部检索降级为 rg 与 Get-Content；任务拆解降级为 update_plan 与本地结构化分析。"
+  ],
+  "locations": {
+    "window_state": "src/jarvis_lite/window_state.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "automation_status": "src/jarvis_lite/automation.py",
+    "tests": [
+      "tests/test_window_state.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ],
+    "docs": [
+      "word/PROJECT-PLAN.md",
+      "word/plans/README.md",
+      "word/文档索引.md",
+      "word/progress/2026-06-03.md",
+      "verification.md",
+      "verification/2026-06/2026-06-03.md"
+    ]
+  },
+  "current_state": [
+    "0.111.0 已完成并 push 到 origin/main，工作区干净。",
+    "AppRegistry 已支持五个首批应用和别名匹配。",
+    "window_state.py 已能枚举 Windows 可见顶层窗口、识别前台窗口并关联 AppRegistry。",
+    "automation.py 已提供 /hotkey、/mouse-click、/type-text 等显式自动化能力，测试通过 executor 注入避免真实桌面动作。",
+    "Agent 已有 /windows 只读命令和键鼠显式命令接入模式。"
+  ],
+  "similar_patterns": [
+    "/windows 通过 describe_current_windows(self.paths) 返回窗口快照文本。",
+    "/mouse-click 和 /type-text 在 Agent 中先校验参数，捕获 RuntimeError/ValueError 并记录工具日志。",
+    "tests/test_window_state.py 使用 NativeWindow fake 数据验证窗口状态，不触发真实 Windows API。",
+    "tests/test_agent.py 对桌面动作命令使用 patch 验证 Agent 分派，避免执行真实桌面动作。"
+  ],
+  "scope": [
+    "新增显式命令 /window-focus 编号或标题/应用名。",
+    "编号使用 /windows 列表的 1-based 序号。",
+    "标题、进程名、AppRegistry 应用 ID 或显示名可作为匹配入口。",
+    "匹配到多个窗口时返回候选提示，不执行切换。",
+    "真实执行仅在 Windows 上调用 SetForegroundWindow/ShowWindow，不点击、不输入、不启动应用、不接入自然语言自动切换。"
+  ],
+  "risks": [
+    "真实窗口切换会改变当前桌面焦点，smoke 默认跳过实际 /window-focus。",
+    "Windows SetForegroundWindow 可能受系统前台权限限制；需要返回可读失败原因。",
+    "标题或应用名可能匹配多个窗口；必须避免自动选择错误窗口。"
+  ],
+  "validation_plan": [
+    "RED：新增窗口选择、执行器注入、Agent /window-focus 和版本一致性测试，先确认缺少 API/命令/版本失败。",
+    "GREEN：实现窗口目标解析、focus adapter、Agent 命令、帮助文案和版本同步。",
+    "回归：运行 tests.test_window_state、目标 Agent 测试、tests.test_project_metadata 和全量 unittest。",
+    "Smoke：运行 /automation-status 和 /windows；真实 /window-focus 因会改变前台窗口跳过并记录。",
+    "打包：运行 Windows 安装包构建、版本资源检查和打包后 desktop smoke。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

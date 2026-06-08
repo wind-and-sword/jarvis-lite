@@ -1,0 +1,56 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.8.0 桌面配置面板 v1",
+  "tooling_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，改用本地上下文扫描、update_plan 与 TDD 留痕。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，改用 .codex 计划文件和 update_plan。",
+    "code_index": "当前会话未暴露 code-index，内部检索使用 rg、Select-String 和定向文件读取。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/desktop/widgets.py：AssistantPanel 负责桌面聊天、快捷命令和设置控件。",
+      "src/jarvis_lite/desktop/bridge.py：DesktopBridge.send 封装 ConversationSession。",
+      "src/jarvis_lite/agent.py：已有 /llm-config-set、/llm-config-check、/llm-smoke、/search-config-set、/search-config-check、/search-smoke。",
+      "src/jarvis_lite/llm.py 与 src/jarvis_lite/search.py：本地配置读写、provider 校验和敏感字段隐藏已存在。"
+    ],
+    "current_behavior": [
+      "桌面面板只能手动输入 slash command，输入 /llm-config-set api_key=... 会把原始命令展示进聊天面板和会话历史。",
+      "Agent 响应和工具日志已经不回显 api_key，但桌面 transcript 的用户输入仍可能泄露。",
+      "LLM/Search 本地配置文件已加入 .gitignore，测试中使用临时目录。"
+    ],
+    "similar_patterns": [
+      "AssistantPanel.quick_command_button/quick_command_texts 暴露 UI 控件测试辅助。",
+      "AssistantPanel.settings_values/change_settings 管理桌面设置表单。",
+      "DesktopBridge.send 返回 DesktopResponse 并按响应文本映射 DesktopState。"
+    ],
+    "tests": [
+      "tests/test_desktop_widgets.py 覆盖面板控件、快捷按钮、状态和设置持久化。",
+      "tests/test_desktop_bridge.py 覆盖 DesktopBridge 与 quick command。",
+      "tests/test_agent.py 已覆盖命令行配置写入、检查和 smoke 行为。"
+    ]
+  },
+  "key_questions": [
+    {
+      "question": "是否需要新增 provider adapter？",
+      "priority": "high",
+      "answer": "不需要。0.8.0 只做桌面 UX，复用既有命令和 router。"
+    },
+    {
+      "question": "如何避免 API key 泄露？",
+      "priority": "high",
+      "answer": "增加 DesktopBridge.send_sensitive / AssistantPanel.submit_sensitive_text，以真实命令执行，但 transcript 和 ConversationTurn 只保存脱敏显示文本。"
+    },
+    {
+      "question": "面板是否读取已有配置？",
+      "priority": "medium",
+      "answer": "读取 provider、model、base_url、max_results 等非敏感字段；api_key 输入框保持空，留空表示不修改已有 key。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

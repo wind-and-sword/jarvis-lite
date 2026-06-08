@@ -1,0 +1,44 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.31.0 InnerBrain 评估失败修复建议",
+  "location": {
+    "core": "src/jarvis_lite/inner_brain.py",
+    "agent_command": "src/jarvis_lite/agent.py",
+    "tests": [
+      "tests/test_inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ],
+    "docs": [
+      "word/plans/2026-06-01-v35-inner-brain-evaluation-fix-suggestion-plan.md",
+      "word/PROJECT-PLAN.md",
+      "README.md",
+      "verification.md",
+      "verification/2026-06/2026-06-01.md"
+    ]
+  },
+  "current_state": [
+    "0.30.0 已让 /inner-brain-eval 合并 seed_evaluation 与 local_evaluation。",
+    "评估失败时只能看到 FAIL 和原因，缺少直接的显式训练下一步。",
+    "用户方向要求训练必须显式，不允许自动训练或继续堆自然语言正则。"
+  ],
+  "change_summary": [
+    "InnerBrainEvaluationReport 增加 failed_case_results 视图。",
+    "describe_inner_brain_evaluation() 在存在失败样本时追加失败修复建议。",
+    "带 expected_command 的失败样本建议 /inner-brain-teach 文本 => /命令。",
+    "只带可执行 intent 的失败样本建议 /inner-brain-label 文本 => intent。",
+    "clarify/fallback_to_llm 期望只提示确认策略，不自动建议训练。"
+  ],
+  "validation_plan": [
+    "TDD RED: 失败评估建议、Agent 命令失败建议、版本一致性测试先失败。",
+    "GREEN: 实现失败结果视图、修复建议格式化和版本提升。",
+    "回归: InnerBrain 专项、Agent/LLM/桌面/Conversation 相邻回归、全量 unittest。",
+    "打包: 源码桌面 smoke、Windows 安装包构建、打包 exe smoke、安装脚本文案检查。",
+    "收尾: git diff --check、Markdown 本地链接检查、敏感信息差异扫描、本地配置跟踪检查。"
+  ],
+  "tool_degradation": [
+    "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP。",
+    "按项目降级规则使用 rg、Get-Content、update_plan、apply_patch、unittest、PyInstaller、Git 和本地脚本完成闭环。"
+  ]
+}

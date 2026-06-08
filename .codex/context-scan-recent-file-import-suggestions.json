@@ -1,0 +1,37 @@
+{
+  "date": "2026-05-25",
+  "executor": "Codex",
+  "task": "最近文件下一步建议补充导入动作",
+  "tool_fallback": {
+    "sequential_thinking": "当前工具列表不可用，改用本地代码阅读、rg 检索、update_plan 和 TDD 记录替代。",
+    "shrimp_task_manager": "当前工具列表不可用，改用 update_plan 和 .codex 计划文件替代。",
+    "code_index": "当前工具列表不可用，改用 rg 和定点文件读取替代。"
+  },
+  "scan": {
+    "modules": [
+      {
+        "path": "src/jarvis_lite/automation.py",
+        "observation": "suggest_next_actions_from_context() 是日报和最近上下文共用的下一步建议生成入口；最近文件当前只提示“查看第一份最近文件”和 /recent-files。"
+      },
+      {
+        "path": "src/jarvis_lite/agent.py",
+        "observation": "_recent_context_status() 已复用 suggest_next_actions_from_context()，因此只改 automation.py 即可同步影响最近上下文和日报。"
+      },
+      {
+        "path": "tests/test_agent.py",
+        "observation": "test_natural_language_recent_context_status_suggests_next_actions 覆盖最近上下文中的最近文件建议。"
+      },
+      {
+        "path": "tests/test_automation.py",
+        "observation": "test_write_daily_report_suggests_next_actions_from_context 覆盖日报中的最近文件建议。"
+      }
+    ],
+    "decision": "把最近文件建议文案扩展为“查看第一份最近文件；导入第一份最近文件到知识库；/recent-files”，不新增执行逻辑。",
+    "sufficiency_check": {
+      "interface_contract": "有 recent_files 时，下一步建议必须同时提示查看详情、导入知识库和刷新最近文件列表。",
+      "technical_choice": "只修改 suggest_next_actions_from_context() 的建议文本，复用已完成的按编号导入能力。",
+      "risks": "建议文本变更会影响 Agent 和 Automation 测试断言；需要同步文档和验证记录。",
+      "verification": "先跑两个相关测试验证 RED，再跑 Agent、Automation、全量、桌面 smoke 和 git diff --check。"
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "v122 Clash Verge 低风险工作流第一阶段",
+  "location": {
+    "existing_patterns": [
+      "src/jarvis_lite/chrome_workflow.py",
+      "src/jarvis_lite/app_registry.py",
+      "src/jarvis_lite/window_state.py",
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/authorization.py",
+      "src/jarvis_lite/automation.py",
+      "src/jarvis_lite/llm.py"
+    ],
+    "tests": [
+      "tests/test_chrome_workflow.py",
+      "tests/test_app_registry.py",
+      "tests/test_window_state.py",
+      "tests/test_agent.py",
+      "tests/test_authorization.py",
+      "tests/test_llm.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "known": [
+    "Clash Verge 已在 AppRegistry 中登记为 clash_verge，别名包含 Clash、代理面板、代理。",
+    "WindowState 已能按进程名或窗口标题把可见窗口匹配到 clash_verge。",
+    "Chrome 工作流已建立显式状态命令、显式动作命令、执行器注入、授权层桌面动作集合和 LLM 只允许状态命令的边界模式。"
+  ],
+  "unknowns": [
+    {
+      "priority": "high",
+      "question": "Clash 第一阶段是否应修改代理开关或节点？",
+      "answer": "否。此类动作会改变网络状态，当前阶段只做打开和聚焦代理面板。"
+    },
+    {
+      "priority": "medium",
+      "question": "Clash 聚焦是否应在无窗口时自动启动？",
+      "answer": "否。聚焦只切换已存在窗口；无窗口时提示显式 /clash-open。"
+    }
+  ],
+  "sufficiency": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  },
+  "plan": [
+    "新增 clash_workflow 模块，复用 AppRegistry 启动和 WindowState 聚焦。",
+    "新增 /clash-workflow-status、/clash-open、/clash-focus。",
+    "更新授权层、自动化状态、LLM 状态白名单和版本文档。",
+    "通过 RED/GREEN、目标测试、相邻回归、全量 unittest、smoke、打包和静态检查验证。"
+  ]
+}

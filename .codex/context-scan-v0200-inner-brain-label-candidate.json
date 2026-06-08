@@ -1,0 +1,24 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.20.0 InnerBrain 候选按编号标注",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_agent.py",
+    "metadata": "tests/test_project_metadata.py"
+  },
+  "current_state": {
+    "candidate_listing": "/inner-brain-candidates 从最近路由历史筛选 llm-fallback、memory-fallback、inner-brain-clarify。",
+    "candidate_teaching": "/inner-brain-teach-candidate 编号 => /命令 已能把候选保存为已知命令样本。",
+    "manual_labeling": "/inner-brain-label 文本 => intent [slot=value ...] 已能保存非命令型人工标注样本。"
+  },
+  "gap": "用户仍需复制候选原文才能用 /inner-brain-label 标注非命令型 intent/slot。",
+  "decision": "新增 /inner-brain-label-candidate 编号 => intent [slot=value ...]，只复用候选编号选择原文，不自动猜 intent。",
+  "verification": [
+    "RED/GREEN：候选标注保存、候选缺失、slot 格式错误、版本一致性",
+    "相邻回归：桌面、Agent、LLM、InnerBrain、Conversation",
+    "全量 unittest discover",
+    "源码 smoke、installer 构建、打包 exe smoke、静态检查"
+  ],
+  "tool_degradation": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；使用 rg、Get-Content、update_plan、apply_patch、unittest 和本地构建验证替代，并在 operations-log.md 留痕。"
+}

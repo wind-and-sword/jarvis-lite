@@ -1,0 +1,63 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.67.0 InnerBrain 本机文件视图报告入口",
+  "tool_fallback": {
+    "missing_mcp_tools": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "fallback": "使用本地结构化分析、rg、Get-Content、update_plan、TDD、unittest、PyInstaller 和 smoke 验证。"
+  },
+  "context_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py::_describe_inner_brain_local_evaluation",
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_file_command_lists_only_selected_local_file_cases",
+      "tests/test_project_metadata.py::ProjectMetadataTests.test_project_version_matches_release_package_version"
+    ],
+    "current_behavior": [
+      "/inner-brain-eval-local-file 文件名 会进入 source_file_filter 分支。",
+      "当前文件视图会提示查看当前文件待处理失败样本、查看当前文件已处理样本和查看全部本机评估样本。",
+      "当前文件视图即使存在失败样本，也不会提示 /inner-brain-eval-local-report 当前文件名。",
+      "/inner-brain-eval-local-file-failed 文件名 已提示导出当前文件失败报告。"
+    ],
+    "similar_cases": [
+      "_describe_inner_brain_local_failed_evaluation 在指定文件失败视图追加 导出当前文件失败报告。",
+      "_describe_inner_brain_local_evaluation 在全量文件候选中为失败文件追加报告入口。",
+      "_inner_brain_local_resolved_evaluation 在全量已处理候选中为仍有失败的文件追加报告入口。"
+    ],
+    "tests": [
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent.AgentTests.test_inner_brain_eval_local_file_command_lists_only_selected_local_file_cases tests.test_agent.AgentTests.test_inner_brain_eval_local_file_command_suggests_report_for_failed_selected_file tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent tests.test_project_metadata -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest discover -s tests -v"
+    ],
+    "observations": [
+      "本任务补齐指定文件总览到报告导出的直接路径。",
+      "报告只对当前文件存在失败样本时有意义，纯通过文件不应显示报告入口。",
+      "不改变失败报告导出命令、报告路径、评估样本读取和训练写入行为。"
+    ]
+  },
+  "questions": {
+    "known": [
+      "输入是 /inner-brain-eval-local-file 文件名 的命令输出。",
+      "输出是在后续处理中为有失败的当前文件追加导出当前文件失败报告入口。",
+      "纯通过文件不追加报告入口。"
+    ],
+    "unknown": [],
+    "priority": []
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risk_points": true,
+    "verification": true
+  },
+  "acceptance": [
+    "failed-log.jsonl 指定文件总览存在失败时，后续处理包含 /inner-brain-eval-local-report failed-log.jsonl。",
+    "real-log.jsonl 指定文件总览纯通过时，不包含 /inner-brain-eval-local-report real-log.jsonl。",
+    "不改变指定文件失败视图、全量候选排序、JSONL payload、训练写入和报告导出路径。",
+    "版本提升到 0.67.0，安装包文案和元数据一致。"
+  ]
+}

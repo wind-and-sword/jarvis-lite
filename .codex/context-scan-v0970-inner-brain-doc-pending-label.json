@@ -1,0 +1,42 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.97.0 InnerBrain 本机失败视图文档待处理失败标签",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、superpowers 流程、TDD、unittest 和本地构建验证。",
+  "context": {
+    "current_version": "0.96.0",
+    "main_files": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "tests/test_project_metadata.py",
+      "pyproject.toml",
+      "src/jarvis_lite/__init__.py"
+    ],
+    "existing_patterns": [
+      "运行时代码和 /help 已把本机失败视图标注为待处理失败样本。",
+      "README 的详细说明已使用“本机待处理失败样本”，但概要段仍写“只看失败”。",
+      "PROJECT-PLAN 的能力闭环段仍写“只显示本机失败样本”。"
+    ],
+    "tests": [
+      "tests.test_project_metadata.ProjectMetadataTests.test_current_docs_use_pending_failure_language_for_local_failed_view",
+      "tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version"
+    ]
+  },
+  "decision": {
+    "target_version": "0.97.0",
+    "scope": [
+      "把 README 概要中的本机评估入口描述收紧为“只看待处理失败”。",
+      "把 PROJECT-PLAN 中 /inner-brain-eval-local-failed 描述收紧为“只显示本机待处理失败样本”。",
+      "增加文档一致性测试，防止公开文档回退到泛化失败样本标签。"
+    ],
+    "out_of_scope": [
+      "不修改运行时代码、命令集合、报告正文、报告路径、本机 evaluation JSONL payload 或训练样本写入。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

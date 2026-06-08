@@ -1,0 +1,22 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "日报下一步建议生成",
+  "tooling_fallback": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP，使用本地代码阅读、rg 和 update_plan 替代并记录。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP，使用本地计划和 .codex 记录替代。",
+    "code_index": "当前会话未提供 code-index MCP，使用 rg 替代。"
+  },
+  "context": {
+    "daily_report_current": "日报已包含长期记忆、知识库状态、常用目录、最近上下文、经验记忆和最近工具日志。",
+    "runtime_context": "运行态上下文已有最近资料、最近目录、最近搜索结果和最近建议。",
+    "available_followups": "Agent 已支持 /read、/tag、/organize-preview、/dir-open、查看第一条建议、执行第一条建议和 /experience。",
+    "design": "新增“下一步建议”段，使用确定性规则从最近上下文、经验和工具日志生成可执行建议。"
+  },
+  "scope": [
+    "不调用大模型。",
+    "不改变日报已有段落。",
+    "不改变运行态上下文格式。",
+    "不自动执行建议。"
+  ]
+}

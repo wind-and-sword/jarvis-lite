@@ -1,0 +1,54 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "建议命令参数补全草稿",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP 工具，改用本地代码阅读、update_plan 和记录文件替代。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP 工具，改用 .codex 计划文件和 update_plan 替代。",
+    "code_index": "当前会话未提供 code-index MCP 工具，内部检索使用 rg 和文件读取。"
+  },
+  "quick_scan": {
+    "module_location": [
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/intent.py",
+      "tests/test_agent.py"
+    ],
+    "current_behavior": [
+      "JarvisAgent._experience_command_suggestions() 生成带描述的建议命令文本。",
+      "JarvisAgent._prepare_numbered_advice_suggestion_execution() 对可直接执行的建议设置 _pending_advice_command。",
+      "JarvisAgent._executable_advice_command() 遇到占位符参数时返回 None，现有响应只提示需要补全参数。"
+    ],
+    "similar_cases": [
+      "test_natural_language_prepare_and_confirm_executable_advice 覆盖 /kb 这类完整建议命令的确认执行。",
+      "test_natural_language_prepare_advice_requires_completed_parameters 覆盖 /import 这类占位符建议不会进入待确认状态。",
+      "test_natural_language_recent_context_status_reports_pending_advice_command 覆盖待确认命令状态展示。"
+    ],
+    "tech_stack": "Python 3.13, unittest, 标准库优先。",
+    "tests": [
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent.AgentTests.test_natural_language_prepare_advice_with_missing_parameters_returns_command_draft -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest discover -s tests -v"
+    ]
+  },
+  "questions": {
+    "known": [
+      "命令建议文本的命令部分位于中文冒号或英文冒号之前。",
+      "含占位符的建议不能直接执行，也不能写入 _pending_advice_command。",
+      "用户需要可编辑命令模板，便于复制后替换真实参数。"
+    ],
+    "unknown": [
+      "是否要为所有占位符命令生成草稿。优先级：高，结论：采用通用转换，避免只覆盖 /import。",
+      "是否需要新增独立自然语言意图。优先级：低，结论：暂不新增，复用执行第 N 条建议路径。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": "输入最近建议编号，输出不能执行的原因、原建议和命令草稿；不设置待确认命令。",
+    "technical_choice": "在 agent.py 内增加命令文本抽取和占位符草稿转换，复用现有建议执行入口。",
+    "risk_points": [
+      "不能把含占位符命令误判为可执行。",
+      "不能改变 /kb 等完整命令的确认执行行为。",
+      "草稿转换应保留方括号可选参数提示。"
+    ],
+    "verification": "先新增失败测试，再实现，通过专项、Agent 全量、项目全量、桌面 smoke 和 diff 检查。"
+  }
+}

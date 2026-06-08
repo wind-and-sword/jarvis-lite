@@ -1,0 +1,53 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.85.0 InnerBrain 本机失败视图按文件待处理失败报告标签",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，使用本地结构化分析替代并在 operations-log.md 留痕。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager，使用 update_plan 和项目计划文档替代。",
+    "code_index": "当前会话未暴露 code-index，使用 rg 与 Get-Content 检索。",
+    "exa": "本任务无需网络事实检索。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py::_describe_inner_brain_local_failed_evaluation",
+      "tests/test_agent.py::test_inner_brain_eval_local_failed_command_lists_only_failed_local_cases",
+      "tests/test_project_metadata.py::test_project_version_matches_release_package_version"
+    ],
+    "current_behavior": "/inner-brain-eval-local-failed 未指定文件时，后续处理已经输出 '- 导出待处理失败报告：/inner-brain-eval-local-report'，但按文件报告入口仍输出 '- 按文件导出失败报告：/inner-brain-eval-local-report 文件名'。",
+    "similar_patterns": [
+      "同一未指定文件分支的全量报告入口已经使用待处理失败报告标签。",
+      "指定文件分支的全量报告入口已经使用 '- 导出全部待处理失败报告：/inner-brain-eval-local-report'。",
+      "报告导出反馈和当前文件反馈已经统一为待处理失败样本/待处理失败报告语义。"
+    ],
+    "tech_stack": "Python 3.13, unittest, PySide6 desktop smoke, PyInstaller Windows installer.",
+    "tests": [
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent.AgentTests.test_inner_brain_eval_local_failed_command_lists_only_failed_local_cases tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent tests.test_project_metadata -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest discover -s tests -v"
+    ]
+  },
+  "key_questions": [
+    {
+      "question": "是否只改全量本机失败视图的按文件报告入口标签？",
+      "priority": "high",
+      "answer": "是。只把按文件导出失败报告改为按文件导出待处理失败报告。"
+    },
+    {
+      "question": "是否改变按文件报告导出命令？",
+      "priority": "high",
+      "answer": "否。命令仍是 /inner-brain-eval-local-report 文件名。"
+    },
+    {
+      "question": "是否改当前文件失败视图、报告正文或训练写入？",
+      "priority": "high",
+      "answer": "否。只改未指定文件失败视图反馈标签。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  }
+}

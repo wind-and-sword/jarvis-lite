@@ -1,0 +1,30 @@
+{
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "task": "桌面快捷入口接入批量标签历史",
+  "location": {
+    "desktop_bridge": "src/jarvis_lite/desktop/bridge.py",
+    "desktop_widget_tests": "tests/test_desktop_widgets.py",
+    "desktop_bridge_tests": "tests/test_desktop_bridge.py",
+    "agent": "src/jarvis_lite/agent.py"
+  },
+  "current_behavior": [
+    "`/tag-history` 已经是无参数 Agent 命令。",
+    "桌面快捷入口由 `quick_commands()` 和 `DIRECT_QUICK_COMMAND_PROMPTS` 决定。",
+    "当前桌面面板和托盘的直接快捷命令没有标签历史入口。"
+  ],
+  "similar_patterns": [
+    "`/kb-summary` 作为无参数状态命令出现在 quick commands 和 direct quick commands。",
+    "`查看最近上下文` 使用自然语言 prompt，但同样作为直接快捷入口展示。",
+    "`AssistantPanel.quick_command_texts()` 直接使用 direct quick commands 渲染按钮。"
+  ],
+  "decision": {
+    "chosen": "新增“标签历史”快捷按钮，prompt 为 `/tag-history`，加入直接快捷命令白名单。",
+    "reason": "复用已有桌面快捷命令架构，不新增桌面专用逻辑，也不改变 Agent 命令输出格式。"
+  },
+  "verification": [
+    "新增桌面桥接测试先证明快捷命令缺少 `/tag-history`。",
+    "新增桌面面板测试先证明按钮缺少“标签历史”。",
+    "实现后运行桌面桥接和 widgets 相关测试，再运行全量验证。"
+  ]
+}

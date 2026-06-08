@@ -1,0 +1,33 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.77.0 InnerBrain 本机文件失败视图当前文件总览标签",
+  "tool_fallback": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；使用本地结构化分析、rg/Get-Content、update_plan、TDD、unittest 和本地 smoke/打包验证替代。",
+  "location": {
+    "implementation": "src/jarvis_lite/agent.py::_describe_inner_brain_local_failed_evaluation",
+    "tests": [
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_file_failed_command_lists_only_selected_file_failures",
+      "tests/test_project_metadata.py::ProjectMetadataTests.test_project_version_matches_release_package_version"
+    ],
+    "docs": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/",
+      "word/progress/2026-06-03.md",
+      "verification/2026-06/2026-06-03.md"
+    ]
+  },
+  "current_behavior": "`/inner-brain-eval-local-file-failed 文件名` 的后续处理以 `查看当前文件全部样本：/inner-brain-eval-local-file 文件名` 提示回到同文件总览。",
+  "gap": "0.74.0-0.76.0 已在失败文件分组、已处理文件候选和全量文件候选中使用 `总览：` 标注 `/inner-brain-eval-local-file`；指定文件失败视图的同文件总览入口仍未使用同类标签。",
+  "planned_contract": {
+    "changed_output": "指定文件失败视图后续处理将输出 `当前文件总览：/inner-brain-eval-local-file 当前文件名`。",
+    "preserved_behavior": "继续提示当前文件已处理样本、全部本机失败样本、当前文件失败报告和全部本机失败报告。",
+    "out_of_scope": "不自动训练、不写 `data/inner-brain/training/runtime.jsonl`，不改变本机 evaluation JSONL payload、失败分组、报告导出或修复建议。"
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "扩大 InnerBrain 多轮澄清覆盖：编号 + 标签多槽位补齐",
+  "tool_degradation": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP，使用本地代码扫描、update_plan 和 TDD 替代。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP，使用 .codex 计划文件和 update_plan 替代。",
+    "code_index": "当前会话未提供 code-index MCP，使用 rg 与定向文件读取替代。",
+    "exa": "本阶段不需要外部事实检索，未调用网络搜索。"
+  },
+  "scan": {
+    "current_state": [
+      "complete_inner_brain_clarification() 已能按 missing 列表补 result_index 和 tags。",
+      "_clarification_slots_from_reply() 会对同一句 reply 分别抽编号和标签。",
+      "当 reply 为“第二份 项目 Python”时，result_index 可得到 2，但 tags 会包含“第二份”。",
+      "Agent 澄清提示中 tags/result_index 仍显示原始字段名，不够面向用户。"
+    ],
+    "target_contract": [
+      "document.tag_numbered_recent 缺 result_index 和 tags 时，用户下一句“第二份 项目 Python”应补编号 2 和标签 项目/Python。",
+      "编号词不应进入 tags。",
+      "澄清提示应显示“编号、标签”，并给出一句式补槽示例。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

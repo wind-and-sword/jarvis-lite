@@ -1,0 +1,37 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "最近资料列表第一版",
+  "tool_fallback": {
+    "sequential_thinking": "当前工具列表未提供 sequential-thinking，使用本地代码阅读、rg 检索和 update_plan 记录替代。",
+    "shrimp_task_manager": "当前工具列表未提供 shrimp-task-manager，使用 .codex 计划文件和 update_plan 替代。",
+    "code_index": "当前工具列表未提供 code-index，使用 rg 和定向文件读取替代。"
+  },
+  "current_implementation": {
+    "runtime_context": "RuntimeContext 仅保存 recent_document_path、recent_directory、recent_search_result_paths 和 recent_advice_suggestions。",
+    "agent": "JarvisAgent._remember_recent_document 只更新单个最近资料路径；查看最近上下文只展示单个最近资料。",
+    "automation": "日报最近上下文和下一步建议也只引用单个最近资料。",
+    "intent": "已有“查看最近上下文”状态查询，尚无单独最近资料列表意图。"
+  },
+  "similar_patterns": [
+    "recent_search_result_paths 使用 tuple[str, ...] 持久化并在最近上下文中按编号展示。",
+    "recent_advice_suggestions 使用 tuple[str, ...] 持久化并在最近上下文中按编号展示。",
+    "recent_document_path 被 /read、/import、/ask 和 /tag 成功路径更新，并保存到 agent-context.json。"
+  ],
+  "decision": {
+    "scope": "新增 recent_document_paths 作为最近资料列表，保留 recent_document_path 作为当前资料指针。",
+    "limit": "最近资料列表最多保留 5 条，最新在前，重复资料移动到第一条。",
+    "display": "查看最近上下文和日报展示最近资料列表；当前资料仍保持原有单行展示。",
+    "not_in_scope": [
+      "不扫描系统最近文件。",
+      "不接入浏览器、手机或手表。",
+      "不新增自动执行或真实文件移动行为。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.51.0 InnerBrain 本机 evaluation 已处理样本只读清单",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "used": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "unittest",
+      "apply_patch"
+    ],
+    "note": "按项目手册降级到本地检索、结构化计划和本地自动验证。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/inner_brain.py: InnerBrainEvaluationReport、evaluate_inner_brain、describe_inner_brain_evaluation、失败修复建议与报告导出",
+      "src/jarvis_lite/agent.py: InnerBrain 命令分发、本机失败视图、文件过滤和报告导出反馈",
+      "tests/test_inner_brain.py: 评估描述和失败分组测试",
+      "tests/test_agent.py: 本机评估、失败视图、文件过滤、报告导出和版本测试"
+    ],
+    "current_state": [
+      "0.50.0 已支持 /inner-brain-eval-local、/inner-brain-eval-local-failed、/inner-brain-eval-local-file、/inner-brain-eval-local-file-failed 和 /inner-brain-eval-local-report。",
+      "失败视图已能展示失败文件、失败类型、期望意图、意图混淆、文件意图混淆、失败原因和修复建议。",
+      "文档下一步提到真实样本堆积后可考虑已处理建议状态只读清单。"
+    ],
+    "similar_cases": [
+      "describe_inner_brain_evaluation(report, failures_only=True) 只读筛选失败样本。",
+      "_inner_brain_local_file_evaluation(args, failures_only) 复用 source_file_filter 做单文件视图。",
+      "_describe_inner_brain_local_failed_evaluation(report) 在 Agent 层追加后续处理提示，不改变评估主体。"
+    ],
+    "tests": [
+      "新增 InnerBrain 描述测试：只展示当前通过的本机样本，失败样本不出现，且不写 training runtime。",
+      "新增 Agent 命令测试：/inner-brain-eval-local-resolved [文件名] 可只读查看已处理样本并支持文件过滤。",
+      "版本一致性测试同步到 0.51.0。"
+    ]
+  },
+  "questions": {
+    "known": [
+      "新功能应保持本机 evaluation 只读，不自动训练、不自动采纳、不改变 JSONL payload。",
+      "命令命名应沿用 InnerBrain 本机评估命令前缀。",
+      "可通过 evaluate_inner_brain 的 source_filter/source_file_filter 复用现有评估入口。"
+    ],
+    "unknown": [
+      {
+        "priority": "medium",
+        "question": "清单叫已处理还是 resolved 更合适？",
+        "resolution": "沿用现有英文命令风格，使用 /inner-brain-eval-local-resolved [文件名]，中文输出为已处理样例。"
+      }
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  },
+  "scope": {
+    "include": [
+      "新增只读描述函数或等价逻辑，只列出当前 passed 的本机 evaluation 样本。",
+      "新增 Agent 命令 /inner-brain-eval-local-resolved [文件名]。",
+      "帮助文案、文档、版本、验证记录同步到 0.51.0。"
+    ],
+    "exclude": [
+      "不自动训练或写入 data/inner-brain/training/runtime.jsonl。",
+      "不修改本机 evaluation JSONL 格式、保存路径或去重逻辑。",
+      "不引入新自然语言正则或轻量分类器评分调整。"
+    ]
+  }
+}

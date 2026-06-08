@@ -1,0 +1,77 @@
+{
+  "task": "0.102.0 InnerBrain README 已处理空视图概要同步",
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "used": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "superpowers",
+      "unittest"
+    ],
+    "note": "当前会话未暴露 AGENTS 指定 MCP 工具；按项目降级规则使用本地结构化分析、文本检索和 TDD 验证。"
+  },
+  "quick_scan": {
+    "location": [
+      "README.md:19 顶部“InnerBrain 样本闭环”概要描述本机 evaluation 入口。",
+      "README.md:102 安装说明长段已包含 0.101.0 的已处理空视图行动提示。",
+      "tests/test_project_metadata.py 当前覆盖版本一致性和 README/PROJECT-PLAN 的待处理失败文档语义。"
+    ],
+    "current_behavior": [
+      "0.101.0 运行时代码已经在空已处理样本视图输出行动提示。",
+      "README 安装说明长段已经记录“暂无已处理样本时会提示这里只显示已通过样本并引导查看待处理失败或补充本机 evaluation 样本”。",
+      "README 顶部能力概要只写 `/inner-brain-eval-local-resolved [文件名]` 可只读查看当前已通过样本，没有同步空态提示。"
+    ],
+    "similar_cases": [
+      "0.97.0 通过 ProjectMetadataTests 约束 README 与 PROJECT-PLAN 的本机失败视图待处理失败标签。",
+      "0.101.0 已通过函数层和 Agent 层测试约束空已处理视图行动提示。",
+      "README 保留 BOM，文档替换必须继续使用 utf-8-sig/UTF-8 BOM 写回。"
+    ],
+    "tests_and_verification": [
+      "新增 ProjectMetadataTests 测试，抽取 README 顶部 InnerBrain 样本闭环 bullet，断言包含已处理空视图行动提示摘要。",
+      "版本一致性测试提升到 0.102.0。",
+      "更新清单夹具提升到 0.102.1。",
+      "执行目标、相邻、全量、源码 smoke、安装包构建、打包后 smoke、静态检查、Markdown 链接、密钥扫描、README BOM。"
+    ],
+    "observation": "这是文档一致性小闭环，不需要修改运行时代码。风险主要是 README 超长行替换误伤或 BOM 丢失。"
+  },
+  "key_questions": [
+    {
+      "question": "是否需要修改运行时代码？",
+      "priority": "high",
+      "answer": "不需要。0.101.0 已完成运行时提示，本轮只同步 README 顶部概要。"
+    },
+    {
+      "question": "如何避免测试因安装说明长段已包含提示而误判通过？",
+      "priority": "high",
+      "answer": "测试应抽取 `- InnerBrain 样本闭环：` 这一条能力概要，断言该 bullet 本身包含空态提示摘要。"
+    },
+    {
+      "question": "是否需要同步 PROJECT-PLAN？",
+      "priority": "medium",
+      "answer": "需要同步当前里程碑版本到 0.102.0，并在已完成清单中加入 README 概要同步。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "interface_contract_notes": "本轮无运行时接口变更；测试读取 README 文本并验证指定 bullet 内容。",
+    "technical_choice": true,
+    "technical_choice_notes": "沿用 tests/test_project_metadata.py 的文档一致性测试模式。",
+    "risks_identified": true,
+    "risks": [
+      "README 超长行替换可能破坏 BOM 或误删现有说明。",
+      "只检查整篇 README 会被安装说明长段误判，因此必须限定 bullet。",
+      "版本、验证索引和计划索引需要同步，否则发布记录不一致。"
+    ],
+    "verification_known": true,
+    "verification_notes": "按 TDD 先写文档一致性断言并确认 RED，再修改 README 概要和版本文档，随后执行完整本地验证。"
+  },
+  "decision": "收集充分，进入任务规划与 TDD 实施。"
+}

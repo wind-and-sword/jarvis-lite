@@ -1,0 +1,32 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "自然语言读取资料",
+  "tooling_note": "本环境未提供 sequential-thinking、shrimp-task-manager 和 code-index MCP，使用本地 rg、Get-Content、update_plan 与 unittest 替代并留痕。",
+  "current_state": {
+    "intent_parser": "src/jarvis_lite/intent.py 已支持知识库状态、日报、更新、经验、导入、标签、查看编号结果、查看编号建议和目录打开/整理意图。",
+    "read_command": "src/jarvis_lite/agent.py 的 /read 成功后已更新 recent_document_path。",
+    "gap": "用户说“读取 note.txt”或“查看 note.txt”时还没有映射到 /read，会落入普通问答或兜底。",
+    "tests": "tests/test_agent.py 以 Agent 行为测试自然语言意图，不单独暴露 intent 单测。"
+  },
+  "key_questions": [
+    {
+      "question": "是否需要新增命令实现？",
+      "answer": "不需要，复用 /read 文件名。"
+    },
+    {
+      "question": "如何避免误判状态查询？",
+      "answer": "自然语言读取只识别带 .md 或 .txt 后缀的资料文件名。"
+    },
+    {
+      "question": "是否支持带空格文件名？",
+      "answer": "支持引号包裹的文件名，映射为 /read \"文件名\"。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

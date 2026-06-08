@@ -1,0 +1,41 @@
+{
+  "date": "2026-05-25",
+  "executor": "Codex",
+  "task": "知识库摘要增强",
+  "tool_fallback": {
+    "sequential_thinking": "当前工具列表不可用，改用本地代码阅读、rg 检索、update_plan 和 TDD 记录替代。",
+    "shrimp_task_manager": "当前工具列表不可用，改用 update_plan 和 .codex 计划文件替代。",
+    "code_index": "当前工具列表不可用，改用 rg 和定点文件读取替代。"
+  },
+  "scan": {
+    "modules": [
+      {
+        "path": "src/jarvis_lite/knowledge.py",
+        "observation": "已有 describe_knowledge_base()、build_knowledge_index()、_searchable_lines() 和标签元数据读取；可复用这些确定性数据生成资料摘要。"
+      },
+      {
+        "path": "src/jarvis_lite/agent.py",
+        "observation": "/kb 直接返回知识库状态，/ask 负责检索回答；新增摘要入口应保持独立，避免改变现有 /kb 和 /ask 输出。"
+      },
+      {
+        "path": "src/jarvis_lite/intent.py",
+        "observation": "自然语言“查看知识库”已映射到 /kb；可新增“总结知识库/知识库摘要”等更具体意图映射到新命令。"
+      },
+      {
+        "path": "tests/test_knowledge.py",
+        "observation": "已有知识库状态、标签、搜索和回答格式测试；适合补底层摘要函数测试。"
+      },
+      {
+        "path": "tests/test_agent.py",
+        "observation": "已有 /kb 和自然语言查看知识库测试；适合补命令与自然语言入口测试。"
+      }
+    ],
+    "decision": "新增 /kb-summary 和自然语言“总结知识库”，输出每篇资料首条可检索正文、行数和标签；不调用 LLM，不改 /kb。",
+    "sufficiency_check": {
+      "interface_contract": "输入为空参数命令或自然语言短语，输出固定 Markdown 风格文本；无资料时返回明确空状态。",
+      "technical_choice": "复用 build_knowledge_index() 和 _searchable_lines()，新增 summarize_knowledge_base()。",
+      "risks": "不要让“知识库摘要”被旧“查看知识库”规则抢先；不要读取隐藏或不支持文件。",
+      "verification": "先跑新增 Knowledge 和 Agent 测试 RED，再实现并跑专项、全量、桌面 smoke 和 git diff --check。"
+    }
+  }
+}

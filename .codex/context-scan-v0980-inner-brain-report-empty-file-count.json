@@ -1,0 +1,46 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.98.0 InnerBrain 本机报告空文件样本计数提示",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、apply_patch、unittest、源码 smoke、PyInstaller 打包和本地 smoke 验证。",
+  "context": {
+    "current_version": "0.97.0",
+    "main_files": [
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "README.md",
+      "word/PROJECT-PLAN.md"
+    ],
+    "observations": [
+      "项目下一步要求观察真实 runtime.jsonl 失败报告，但当前 data/inner-brain/evaluation/runtime.jsonl 不存在。",
+      "使用 jarvis-lite --once /inner-brain-eval-local-report runtime.jsonl 可导出空报告，响应有待处理失败样本：0 和评估文件：runtime.jsonl，但没有直接暴露当前文件样本数。",
+      "现有导出反馈已覆盖报告路径、失败计数、评估文件和后续处理；新增当前文件样本计数可以让用户明确区分无失败和无样本。"
+    ],
+    "similar_patterns": [
+      "/inner-brain-eval-local-file 文件名 会在评估正文显示通过/失败/评估文件。",
+      "/inner-brain-eval-local-report [文件名] 已在响应里显示待处理失败样本和评估文件。",
+      "ProjectMetadataTests 负责版本同步和公开文档一致性断言。"
+    ]
+  },
+  "decision": {
+    "target_version": "0.98.0",
+    "scope": [
+      "为 /inner-brain-eval-local-report [文件名] 的导出反馈补充当前文件样本计数。",
+      "保留报告正文、报告路径、本机 evaluation JSONL payload、训练样本写入和后续处理入口不变。",
+      "同步版本、更新清单测试夹具、计划、进度和验证记录。"
+    ],
+    "out_of_scope": [
+      "不新增或删除命令。",
+      "不改变缺失文件仍可导出空报告的行为。",
+      "不自动创建 runtime.jsonl，不自动训练。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

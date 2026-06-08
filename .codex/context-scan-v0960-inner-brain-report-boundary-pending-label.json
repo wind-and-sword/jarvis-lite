@@ -1,0 +1,41 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.96.0 InnerBrain 本机报告处理边界待处理失败标签",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、superpowers 流程、TDD、unittest 和本地构建验证。",
+  "context": {
+    "current_version": "0.95.0",
+    "main_files": [
+      "src/jarvis_lite/inner_brain.py",
+      "tests/test_inner_brain.py",
+      "tests/test_project_metadata.py",
+      "pyproject.toml",
+      "src/jarvis_lite/__init__.py"
+    ],
+    "existing_patterns": [
+      "0.89.0 已把报告标题、导出反馈和运行日志统一为本机评估待处理失败报告。",
+      "0.91.0 已把导出反馈计数标注为待处理失败样本。",
+      "当前 Markdown 报告处理边界仍提示“需要修复失败样本时”，与待处理失败报告语义不一致。"
+    ],
+    "tests": [
+      "tests.test_inner_brain.InnerBrainTests.test_export_inner_brain_evaluation_report_writes_failed_markdown_without_training",
+      "tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version"
+    ]
+  },
+  "decision": {
+    "target_version": "0.96.0",
+    "scope": [
+      "把报告处理边界提示改为“需要修复待处理失败样本时”。",
+      "同步版本、方案、进度和验证记录。"
+    ],
+    "out_of_scope": [
+      "不改变报告标题、统计分组、失败筛选、修复建议内容、报告路径、本机 evaluation JSONL payload、命令集合或训练样本写入。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.22.0 InnerBrain 候选运行态统计",
+  "tool_degradation": {
+    "sequential_thinking": "当前会话未提供该 MCP 工具，已用本地代码阅读、rg 检索和 TDD 流程替代。",
+    "shrimp_task_manager": "当前会话未提供该 MCP 工具，已用 update_plan 维护执行计划。",
+    "code_index": "当前会话未提供该 MCP 工具，已用 rg 和定向文件读取替代。",
+    "exa": "本阶段不需要外部网络资料。"
+  },
+  "locations": [
+    "src/jarvis_lite/agent.py",
+    "src/jarvis_lite/runtime_context.py",
+    "tests/test_agent.py",
+    "tests/test_project_metadata.py",
+    "word/plans/"
+  ],
+  "current_behavior": [
+    "/inner-brain-candidates 已能按最近 5 条路由内的重复 prompt 聚合并排序。",
+    "/inner-brain-teach-candidate 与 /inner-brain-label-candidate 已复用候选排序编号。",
+    "最近 5 条路由之外的候选不会保留出现次数，训练后旧候选仍可能从最近路由历史中再次出现。"
+  ],
+  "target_behavior": [
+    "fallback/澄清候选观察写入本地运行态上下文。",
+    "候选出现次数跨最近路由历史保留，并继续按次数优先展示。",
+    "编号教学和编号标注使用同一运行态候选排序。",
+    "显式 teach、label 或 adopt 后移除对应候选。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

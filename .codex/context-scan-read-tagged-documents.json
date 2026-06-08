@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-25",
+  "executor": "Codex",
+  "task": "按标签读取知识库资料组",
+  "tooling_note": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP 工具；按项目本地扫描和测试留痕降级。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP 工具；使用 update_plan 和本地计划文档替代。",
+    "code_index": "当前会话未暴露 code-index MCP 工具；使用 rg 和 Get-Content 检索源码、测试和文档。"
+  },
+  "observations": [
+    "`/kb-summary` 已展示标签分组，并提示 `/ask 标签`。",
+    "最近资料列表机制已支持“读取第 N 份资料”和跨实例恢复。",
+    "KnowledgeDocument.tags 和 build_knowledge_index() 已提供按标签筛选需要的数据。",
+    "自然语言意图层已有读取资料、读取最近资料和按编号读取最近资料的解析模式。"
+  ],
+  "decision": "新增自然语言意图 `read_tagged_documents`，支持“读取项目标签资料”“查看助手标签文档”；Agent 列出匹配资料摘要并写入最近资料列表。",
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choices": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

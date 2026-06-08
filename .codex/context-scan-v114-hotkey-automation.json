@@ -1,0 +1,54 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.109.0 键鼠自动化基础层第一阶段",
+  "location": {
+    "modules": [
+      "src/jarvis_lite/automation.py",
+      "src/jarvis_lite/agent.py"
+    ],
+    "tests": [
+      "tests/test_automation.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ],
+    "docs": [
+      "word/PROJECT-PLAN.md",
+      "word/plans/2026-06-03-v108-jarvis-lite-1-acceptance-plan.md",
+      "word/plans/2026-06-03-v113-screen-ocr-plan.md"
+    ]
+  },
+  "current_state": {
+    "latest_commit": "00fc4eb feat: 增加截图 OCR 串联 0.108.0",
+    "version": "0.108.0",
+    "working_tree": "clean",
+    "next_documented_step": "键鼠自动化基础层",
+    "implementation_gap": "现有 automation.py 只覆盖目录、最近文件、日报和预览类能力，没有可任务调用的桌面键鼠动作。"
+  },
+  "known": [
+    "v108 P0 要求桌面自动化基础层支持打开应用、切换窗口、发送快捷键、输入文本、点击目标和保存截图。",
+    "0.104.0 至 0.108.0 已完成应用注册、窗口感知、截图、OCR 和截图 OCR 串联。",
+    "pyautogui 当前未安装；若采用真实键鼠动作，应作为主流生态依赖加入项目并在测试中通过注入执行器隔离真实动作。"
+  ],
+  "decision": {
+    "selected_increment": "0.109.0 仅做显式快捷键发送第一阶段。",
+    "reason": "快捷键是键鼠自动化的最小可复用动作，能服务 Chrome 地址栏聚焦、窗口快捷切换等后续流程；相比点击和文本输入更容易定义接口和验证边界。",
+    "non_goals": [
+      "不做点击目标。",
+      "不做文本输入。",
+      "不做窗口切换。",
+      "不接入自然语言自动执行。",
+      "不保存免确认规则。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  },
+  "tool_fallbacks": [
+    "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP。",
+    "使用本地结构化分析、rg/Get-Content、update_plan、superpowers、TDD、unittest、smoke 和打包验证替代。"
+  ]
+}

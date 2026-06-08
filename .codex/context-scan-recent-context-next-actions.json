@@ -1,0 +1,36 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "最近上下文输出下一步建议",
+  "tool_fallback": {
+    "missing": ["sequential-thinking", "shrimp-task-manager", "code-index"],
+    "used": ["rg", "Get-Content", "update_plan", "apply_patch"]
+  },
+  "locations": {
+    "daily_next_actions": "src/jarvis_lite/automation.py",
+    "agent_recent_context_status": "src/jarvis_lite/agent.py",
+    "agent_tests": "tests/test_agent.py",
+    "automation_tests": "tests/test_automation.py"
+  },
+  "current_behavior": [
+    "日报已有“下一步建议”，由 `automation._append_next_action_lines()` 根据 `RuntimeContext`、最近经验和工具日志生成。",
+    "“查看最近上下文”只展示资料、目录、最近文件、搜索结果、建议和待确认命令，不展示下一步建议。",
+    "下一步建议逻辑目前是 automation 私有追加函数，Agent 不能复用。"
+  ],
+  "target_behavior": [
+    "抽取公共 `suggest_next_actions_from_context()`，供日报和 Agent 共用。",
+    "“查看最近上下文”在有上下文时展示“下一步建议”。",
+    "建议覆盖最近资料、最近目录、最近文件和最近建议，不自动执行命令。"
+  ],
+  "risks": [
+    "避免让 Agent 直接依赖日报 Markdown 生成细节。",
+    "不引入新的执行能力，只展示建议文本。",
+    "保持已有最近上下文状态文案兼容。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

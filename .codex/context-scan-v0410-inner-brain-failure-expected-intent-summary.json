@@ -1,0 +1,63 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.41.0 InnerBrain 本机评估失败期望意图汇总",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，已降级为本地结构化分析并写入本文件。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，已降级为 update_plan 与本地计划文档。",
+    "code_index": "当前会话未暴露 code-index MCP，已降级为 rg 与 Get-Content 检索。",
+    "exa": "本阶段不需要网络事实检索，未调用 exa；若后续需要联网检索再按可用工具降级。"
+  },
+  "structured_scan": {
+    "git_state": [
+      "main 与 origin/main 同步，HEAD 为 d52cce8 feat: 汇总本机评估失败类型 0.40.0。",
+      "工作树干净。"
+    ],
+    "location": [
+      "src/jarvis_lite/inner_brain.py: InnerBrainEvaluationReport、describe_inner_brain_evaluation()、export_inner_brain_evaluation_report()",
+      "tests/test_inner_brain.py: 失败文件、失败原因、失败类型和报告导出测试",
+      "tests/test_agent.py: /inner-brain-eval-local-report 导出测试",
+      "tests/test_project_metadata.py: 发布版本一致性测试"
+    ],
+    "current_state": [
+      "0.40.0 已新增 failed_reason_category_counts，按 reason 片段归类为意图、命令、策略失败类型。",
+      "failures-only 描述已输出 失败文件、失败类型汇总、失败原因汇总、失败样例和失败修复建议。",
+      "Markdown 报告复用 describe_inner_brain_evaluation(report, failures_only=True)。"
+    ],
+    "similar_implementations": [
+      "failed_source_file_counts 只统计失败样本来源文件。",
+      "failed_reason_counts 只统计失败原因文本。",
+      "failed_reason_category_counts 只统计失败类型并列典型样本。"
+    ],
+    "observation_report": [
+      "v44 后续建议按 expected intent 或来源文件交叉汇总；来源文件分组已在 0.37.0 完成，expected intent 仍缺失。",
+      "expected_intent 已在 InnerBrainEvaluationCase 上稳定存在，不需要解析 reason 文本，也不需要改 JSONL payload。",
+      "按期望意图汇总能帮助先处理高频目标能力，例如 knowledge.summary 多条失败时可优先补对应样本或槽位。"
+    ]
+  },
+  "key_questions": [
+    {
+      "priority": "high",
+      "question": "如何定义新汇总接口？",
+      "answer": "新增 InnerBrainEvaluationReport.failed_expected_intent_counts，返回 Mapping[str, int]，只遍历 failed_case_results。"
+    },
+    {
+      "priority": "high",
+      "question": "输出位置在哪里？",
+      "answer": "在 failures-only 的失败类型汇总之后、失败原因汇总之前输出 失败期望意图汇总，保留从粗到细的排查顺序。"
+    },
+    {
+      "priority": "medium",
+      "question": "是否改变命令接口或评估样本结构？",
+      "answer": "不改变。/inner-brain-eval-local-report 继续复用报告导出，evaluation JSONL payload 和去重键保持不变。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": "已明确：failed_expected_intent_counts 返回 Mapping[str, int]；describe failures-only 新增 失败期望意图汇总 段落。",
+    "technical_choice": "沿用 v41-v44 的派生属性模式，避免新增持久化字段和依赖。",
+    "main_risks": "新增段落可能影响输出顺序断言；通过 InnerBrain 和 Agent 报告测试固定行为。",
+    "verification": "按 TDD 先写目标失败测试，再实现，随后运行目标测试、相邻回归、全量 unittest、桌面 smoke、安装包和静态检查。",
+    "all_checked": true
+  },
+  "decision": "进入 0.41.0 实施：在本机失败评估视图和 Markdown 报告中增加失败期望意图汇总。"
+}

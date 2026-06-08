@@ -1,0 +1,31 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.88.0 InnerBrain 本机文件候选待处理报告标签",
+  "observations": [
+    "src/jarvis_lite/inner_brain.py 负责失败文件分组本体里的报告短标签。",
+    "src/jarvis_lite/agent.py 负责本机全量视图和全量已处理视图文件候选里的报告短标签。",
+    "tests/test_agent.py 与 tests/test_inner_brain.py 已覆盖三个展示位置和排序。"
+  ],
+  "target_contract": {
+    "input": [
+      "/inner-brain-eval-local",
+      "/inner-brain-eval-local-failed",
+      "/inner-brain-eval-local-resolved"
+    ],
+    "output": "文件候选或失败文件分组中仍有失败时，短标签输出 '待处理报告：/inner-brain-eval-local-report 文件名'。",
+    "unchanged": [
+      "候选排序",
+      "报告命令",
+      "报告正文",
+      "展示条件",
+      "训练样本写入"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  }
+}

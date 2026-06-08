@@ -1,0 +1,55 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "v124 / 0.119.0 IDEA 项目状态第一阶段",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "app_registry": "src/jarvis_lite/app_registry.py",
+    "window_state": "src/jarvis_lite/window_state.py",
+    "adjacent_workflows": [
+      "src/jarvis_lite/chrome_workflow.py",
+      "src/jarvis_lite/clash_workflow.py",
+      "src/jarvis_lite/messaging_workflow.py"
+    ]
+  },
+  "current_state": {
+    "completed_version": "0.118.0",
+    "current_branch": "main",
+    "git_status": "main...origin/main clean for public files",
+    "idea_registry": "AppRegistry 已有 app_id=idea，display_name=IntelliJ IDEA，默认候选路径为 JetBrains/IntelliJ IDEA/bin/idea64.exe，可由 config/apps.local.json 覆盖。"
+  },
+  "similar_implementations": [
+    "Clash Verge 工作流复用 AppRegistry 打开和 WindowState 聚焦。",
+    "QQ/微信准备式工作流复用 AppRegistry、WindowState，并把真实 UI 操作限制在显式命令。",
+    "WindowState 已能通过注入快照测试窗口匹配，不需要真实切换窗口。"
+  ],
+  "technical_stack": [
+    "Python 3.13",
+    "unittest",
+    "标准库 pathlib/subprocess/dataclasses",
+    "PyInstaller/Windows installer packaging"
+  ],
+  "questions": [
+    {
+      "priority": "high",
+      "question": "IDEA 第一阶段是否应打开项目还是只读状态？",
+      "answer": "v108 写明 IDEA 需要打开应用和项目、识别当前项目状态；本阶段做显式 /idea-open、/idea-focus、/idea-open-project 路径 和只读 /idea-project-status [路径]。"
+    },
+    {
+      "priority": "high",
+      "question": "项目状态如何避免风险？",
+      "answer": "只检查目录存在、.idea、.git 和常见构建文件，不运行测试、不打开终端、不读取 IDE 内部窗口内容、不写项目文件。"
+    },
+    {
+      "priority": "medium",
+      "question": "LLM 是否可建议 IDEA 命令？",
+      "answer": "只允许 /idea-workflow-status；打开、聚焦和打开项目属于桌面动作，不进入 LLM 白名单。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

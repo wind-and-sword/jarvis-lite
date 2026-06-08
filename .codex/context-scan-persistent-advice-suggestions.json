@@ -1,0 +1,47 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "最近建议持久化第一版",
+  "location": {
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_agent.py",
+    "docs": [
+      "README.md",
+      "word/2026-05-21-jarvis-lite-natural-language-brain-progress.md"
+    ]
+  },
+  "current_behavior": [
+    "RuntimeContext 已通过项目外 jarvis-lite-runtime/agent-context.json 保存最近资料、最近目录和最近搜索结果。",
+    "JarvisAgent 初始化时会恢复最近资料、最近目录和最近搜索结果。",
+    "最近建议列表 _recent_advice_suggestions 目前只保存在当前 JarvisAgent 实例内，新实例无法继续处理“查看第一条建议”。"
+  ],
+  "similar_patterns": [
+    "recent_search_result_paths 使用 tuple[str, ...] 存储，load_runtime_context 通过 _read_str_tuple 读取可选 JSON 列表。",
+    "_remember_recent_search_results() 修改内存字段后调用 _save_runtime_context()。",
+    "_save_runtime_context() 统一写入 RuntimeContext，避免字段之间互相覆盖。"
+  ],
+  "questions": [
+    {
+      "priority": "high",
+      "question": "最近建议应保存在哪里？",
+      "answer": "复用现有 RuntimeContext 和 agent-context.json，避免新增存储文件和迁移流程。"
+    },
+    {
+      "priority": "medium",
+      "question": "损坏或缺失的最近建议字段如何处理？",
+      "answer": "沿用 _read_str_tuple，只接受非空字符串列表，缺失、类型错误或损坏文件回退为空。"
+    },
+    {
+      "priority": "low",
+      "question": "是否在最近上下文状态中展示最近建议？",
+      "answer": "本轮不扩展状态展示，范围只覆盖重启后继续按编号查看建议。"
+    }
+  ],
+  "sufficiency": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

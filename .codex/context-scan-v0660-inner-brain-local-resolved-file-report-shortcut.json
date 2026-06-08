@@ -1,0 +1,68 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.66.0 InnerBrain 本机已处理视图文件候选报告入口",
+  "tool_fallback": {
+    "missing_mcp_tools": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "fallback": "使用本地结构化分析、rg、Get-Content、update_plan、TDD、unittest、PyInstaller 和 smoke 验证。"
+  },
+  "context_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py::_inner_brain_local_resolved_evaluation",
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_resolved_command_lists_only_passed_local_cases",
+      "tests/test_project_metadata.py::ProjectMetadataTests.test_project_version_matches_release_package_version"
+    ],
+    "current_behavior": [
+      "/inner-brain-eval-local-resolved 未指定文件时会列出可查看文件候选。",
+      "候选行显示已处理数量和待处理失败数量。",
+      "待处理失败数量大于 0 时，候选行只追加 /inner-brain-eval-local-file-failed 当前文件名。",
+      "/inner-brain-eval-local 已在 0.65.0 为仍有失败的文件候选追加 /inner-brain-eval-local-report 当前文件名。"
+    ],
+    "similar_cases": [
+      "src/jarvis_lite/agent.py::_describe_inner_brain_local_evaluation 在 failed_count > 0 时追加待处理入口和报告入口。",
+      "src/jarvis_lite/inner_brain.py::describe_inner_brain_evaluation 在本机失败视图分组中追加聚焦入口和报告入口。",
+      "tests/test_agent.py 中本机全量评估、失败视图、已处理视图均使用完整行断言保护行内快捷入口。"
+    ],
+    "tech_stack": [
+      "Python 3.13",
+      "unittest",
+      "PyInstaller Windows installer script"
+    ],
+    "tests": [
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent.AgentTests.test_inner_brain_eval_local_resolved_command_lists_only_passed_local_cases tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent tests.test_project_metadata -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest discover -s tests -v"
+    ],
+    "observations": [
+      "本任务是 0.65.0 的对称补齐：已处理视图仍有待处理失败的文件也应能直接导出同文件失败报告。",
+      "指定文件已处理视图已有后续入口，不显示候选列表，本轮不改变。",
+      "纯通过文件没有失败报告内容，不能追加报告入口。"
+    ]
+  },
+  "questions": {
+    "known": [
+      "输入是 /inner-brain-eval-local-resolved 未指定文件的命令输出。",
+      "输出是在可查看文件候选行上追加可复制的报告入口。",
+      "只有同文件待处理失败数量大于 0 时才追加。"
+    ],
+    "unknown": [],
+    "priority": []
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risk_points": true,
+    "verification": true
+  },
+  "acceptance": [
+    "real-log.jsonl 已处理 1 条且待处理失败 1 条时，候选行包含 /inner-brain-eval-local-report real-log.jsonl。",
+    "clean-log.jsonl 待处理失败 0 条时，不包含 /inner-brain-eval-local-report clean-log.jsonl。",
+    "不改变排序、失败过滤、已处理样本展示和训练写入行为。",
+    "版本提升到 0.66.0，安装包文案和元数据一致。"
+  ]
+}

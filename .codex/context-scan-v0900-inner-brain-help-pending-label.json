@@ -1,0 +1,50 @@
+{
+  "date": "2026-06-03",
+  "actor": "Codex",
+  "task": "0.90.0 InnerBrain 本机失败帮助待处理标签",
+  "tool_fallback": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；使用本地结构化分析、rg、Get-Content、update_plan 和 unittest 降级执行。",
+  "scope": {
+    "target_files": [
+      "src/jarvis_lite/agent.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "pyproject.toml",
+      "src/jarvis_lite/__init__.py",
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/README.md",
+      "word/plans/2026-06-03-v94-inner-brain-help-pending-label-plan.md",
+      "word/progress/2026-06-03.md",
+      "word/文档索引.md",
+      "verification.md",
+      "verification/2026-06/2026-06-03.md"
+    ],
+    "change": "把 /help 中本机失败视图、按文件失败视图和报告入口文案，以及本机失败视图运行日志中的失败样本标签统一为待处理失败语义。",
+    "non_goals": [
+      "不修改固定评估集 /inner-brain-eval-failed 文案",
+      "不修改命令集合或别名",
+      "不修改失败筛选、排序、报告正文、报告路径、本机 evaluation payload 或训练写入"
+    ]
+  },
+  "evidence": {
+    "help_lines": [
+      "src/jarvis_lite/agent.py:_help() 仍显示 /inner-brain-eval-local-failed：只显示本机 InnerBrain 评估失败样本",
+      "src/jarvis_lite/agent.py:_help() 仍显示 /inner-brain-eval-local-report [文件名]：导出本机 InnerBrain 失败评估报告",
+      "src/jarvis_lite/agent.py:_help() 仍显示 /inner-brain-eval-local-file-failed 文件名：只显示指定本机评估 JSONL 的失败样本"
+    ],
+    "log_lines": [
+      "src/jarvis_lite/agent.py:本机全量失败视图 record_log 为 只显示失败样本",
+      "src/jarvis_lite/agent.py:本机文件失败视图 record_log 为 只显示失败样本"
+    ],
+    "tests": [
+      "tests/test_agent.py::AgentTests.test_help_command_lists_llm_usage_command 可加入帮助文案断言",
+      "tests/test_agent.py 中已有 jarvis.log 读取断言模式，可扩展本机失败视图日志断言"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

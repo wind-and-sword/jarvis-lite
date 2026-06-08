@@ -1,0 +1,41 @@
+{
+  "date": "2026-05-23",
+  "executor": "Codex",
+  "task": "按编号导入最近文件到知识库",
+  "tool_fallback": {
+    "sequential_thinking": "当前工具列表不可用，改用本地代码阅读、rg 检索、update_plan 和 TDD 记录替代。",
+    "shrimp_task_manager": "当前工具列表不可用，改用 update_plan 和 .codex 计划文件替代。",
+    "code_index": "当前工具列表不可用，改用 rg 和定点文件读取替代。"
+  },
+  "scan": {
+    "modules": [
+      {
+        "path": "src/jarvis_lite/intent.py",
+        "observation": "自然语言导入在 _parse_import_intent 中会把“第一份最近文件”当成普通源路径；需要在它之前识别更具体的最近文件编号意图。"
+      },
+      {
+        "path": "src/jarvis_lite/agent.py",
+        "observation": "_recent_files_status() 保存最近文件列表，_read_numbered_recent_file() 已有缺列表、越界和文件缺失提示，可复用同类校验；/import 已集中处理文件类型、复制和最近资料上下文。"
+      },
+      {
+        "path": "src/jarvis_lite/knowledge.py",
+        "observation": "import_knowledge_path() 已支持 Markdown、txt、PDF、JSON 和目录；本任务无需新增导入实现。"
+      },
+      {
+        "path": "tests/test_agent.py",
+        "observation": "已有最近文件列表、按编号查看、导入资料和最近资料上下文测试；本任务适合继续补 Agent 行为测试。"
+      }
+    ],
+    "similar_patterns": [
+      "read_numbered_recent_file",
+      "read_numbered_recent_document",
+      "tag_numbered_recent_document"
+    ],
+    "sufficiency_check": {
+      "interface_contract": "支持“导入第一份最近文件到知识库”“把第2份最近文件导入知识库”，输出复用 /import 成功或失败文案。",
+      "technical_choice": "解析器新增具体意图，Agent 选择最近文件路径后调用 self.handle('/import \"path\"')。",
+      "risks": "解析顺序必须早于通用导入意图；编号、空列表、文件缺失和不支持格式必须保持明确提示。",
+      "verification": "新增 Agent RED/GREEN 测试，随后跑 tests.test_agent、全量 unittest、桌面 smoke 和 git diff --check。"
+    }
+  }
+}

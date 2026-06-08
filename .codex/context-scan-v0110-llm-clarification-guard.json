@@ -1,0 +1,41 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.11.0 LLM 外脑澄清轮数与过期策略",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地 rg、Get-Content、update_plan、apply_patch、unittest 和文档留痕。",
+  "current_state": {
+    "agent": "src/jarvis_lite/agent.py 已有 PendingLLMClarification，保存 original_prompt、clarification、context；JarvisAgent 初始化时从 RuntimeContext 恢复 pending。",
+    "runtime_context": "src/jarvis_lite/runtime_context.py 已有 RuntimeLLMClarificationContext，但没有创建时间、轮数或过期判断。",
+    "tests": "tests/test_agent.py 已覆盖 pending 跨 Agent 恢复、/recent-context 不消耗 pending、取消后清理持久化 pending。",
+    "docs": "word/plans/2026-05-29-v14-llm-clarification-runtime-plan.md 后续方向明确增加 LLM 澄清轮数和过期策略。"
+  },
+  "observations": [
+    "LLM 在补充后再次返回 clarify 时，现有 _handle_pending_llm_clarification 会清空 pending 后调用 _handle_llm_intent；_handle_llm_intent 会把 combined_prompt 当作新的 original_prompt，导致原始问题嵌套。",
+    "pending_llm_clarification 可以长期留在 runtime JSON 中，桌面重启后仍会消费用户下一句，缺少过期边界。",
+    "最近上下文只显示待补充问题和原始问题，无法告诉用户当前是第几轮澄清。"
+  ],
+  "target": {
+    "version": "0.11.0",
+    "scope": [
+      "为 LLM pending 增加 created_at 和 clarification_count。",
+      "首次 LLM clarify 保存第 1 轮澄清状态。",
+      "LLM 连续 clarify 时保留真正原始问题并递增轮数。",
+      "超过最大澄清轮数后清空 pending 并提示用户重新完整描述需求。",
+      "过期 pending 在 Agent 启动时清理，不再消费新输入。",
+      "最近上下文展示澄清轮次和过期策略。"
+    ],
+    "out_of_scope": [
+      "不新增自然语言正则模板。",
+      "不改变 LLM provider adapter。",
+      "不改变 InnerBrain missing 槽位逻辑。",
+      "不把 API key 或 provider 配置写入 Git。"
+    ]
+  },
+  "verification": [
+    "TDD RED：新增 Agent 测试覆盖连续 clarify 保留原始问题并递增轮数。",
+    "TDD RED：新增 Agent 测试覆盖超过最大轮数后清空 pending。",
+    "TDD RED：新增 Agent 测试覆盖过期 runtime pending 启动后清理且不消费新输入。",
+    "版本一致性测试提升到 0.11.0。",
+    "GREEN 后运行邻近回归、全量 unittest、桌面 smoke、安装包和静态检查。"
+  ]
+}

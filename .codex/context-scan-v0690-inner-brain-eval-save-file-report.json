@@ -1,0 +1,56 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.69.0 InnerBrain 本机 evaluation 保存反馈按文件报告入口",
+  "fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，使用本地结构化分析替代。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，使用 update_plan 和本地计划文档替代。",
+    "code_index": "当前会话未暴露 code-index MCP，使用 rg 和 Get-Content 检索替代。",
+    "exa": "本任务不需要网络检索，未调用 exa。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py::_describe_inner_brain_evaluation_case_save()",
+      "tests/test_agent.py::test_inner_brain_eval_add_command_saves_local_evaluation_case_without_training",
+      "tests/test_agent.py::test_inner_brain_eval_add_candidate_saves_selected_candidate_command_without_training",
+      "tests/test_project_metadata.py::RELEASE_VERSION"
+    ],
+    "current_behavior": "四条本机 evaluation 保存入口统一写入 data/inner-brain/evaluation/runtime.jsonl；保存反馈提示复跑本机评估、只看失败、聚焦 runtime.jsonl，但导出报告仍使用全局 /inner-brain-eval-local-report。",
+    "similar_patterns": [
+      "0.65.0 在 /inner-brain-eval-local 文件候选中按失败文件追加 /inner-brain-eval-local-report 文件名。",
+      "0.67.0 在 /inner-brain-eval-local-file 文件名 指定文件总览中按失败文件追加 /inner-brain-eval-local-report 文件名。",
+      "0.68.0 在 /inner-brain-eval-local-resolved 文件名 指定文件已处理视图中按同文件待处理失败追加 /inner-brain-eval-local-report 文件名。"
+    ],
+    "tech_stack": "Python 3.13, unittest, PyInstaller/IExpress Windows installer, Markdown 文档。",
+    "tests": [
+      ".\\.venv\\Scripts\\python.exe -m unittest tests.test_agent tests.test_project_metadata -v",
+      ".\\.venv\\Scripts\\python.exe -m unittest discover -s tests -v",
+      ".\\.venv\\Scripts\\python.exe -m jarvis_lite.desktop.app --smoke",
+      ".\\.venv\\Scripts\\python.exe scripts\\build_windows_installer.py"
+    ],
+    "observation": "保存反馈已经能聚焦 runtime.jsonl，但报告入口仍是全局命令；这会让用户刚保存样本后需要手动拼接 runtime.jsonl，和最近几个文件级治理入口不一致。word/plans/README.md 当前方案也仍指向 v69，需要随 0.69.0 修正为 v73。"
+  },
+  "questions": [
+    {
+      "priority": "high",
+      "question": "保存反馈是否能确定来源文件名？",
+      "answer": "能。_describe_inner_brain_evaluation_case_save() 通过 save_result.path.name 得到 source_file，目前已用于 /inner-brain-eval-local-file runtime.jsonl。"
+    },
+    {
+      "priority": "high",
+      "question": "按文件报告入口是否应替换全局报告入口？",
+      "answer": "应在保存反馈中追加按文件报告入口，并保留全局失败视图入口。保存样本后用户最直接需要评估当前 runtime.jsonl，因此报告命令应明确为 /inner-brain-eval-local-report runtime.jsonl。"
+    },
+    {
+      "priority": "medium",
+      "question": "是否改变 evaluation JSONL 或训练路径？",
+      "answer": "不改变。仅修改 Agent 响应文本、版本和文档，不写入 training runtime 样本。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

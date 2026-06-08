@@ -1,0 +1,39 @@
+{
+  "task": "0.82.0 InnerBrain 本机失败报告导出反馈全量待处理失败标签",
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，使用本地结构化分析替代。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，使用 update_plan 与项目文档计划替代。",
+    "code_index": "当前会话未暴露 code-index MCP，使用 rg 和 Get-Content 检索替代。",
+    "exa": "本任务只需本地代码和文档证据，未进行网络搜索。"
+  },
+  "location": {
+    "code": "src/jarvis_lite/agent.py::_export_inner_brain_local_evaluation_report",
+    "tests": "tests/test_agent.py::test_inner_brain_eval_local_report_command_exports_failed_markdown_without_training",
+    "metadata": [
+      "pyproject.toml",
+      "src/jarvis_lite/__init__.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "current_behavior": {
+    "unfiltered_report_feedback": "/inner-brain-eval-local-report 未指定文件时，后续处理仍输出 `查看本机失败样本：/inner-brain-eval-local-failed`。",
+    "documented_behavior": "README 已描述报告导出反馈会以待处理失败语义提示 `/inner-brain-eval-local-failed`。"
+  },
+  "target_behavior": {
+    "label": "将全量报告导出反馈改为 `查看待处理失败样本：/inner-brain-eval-local-failed`。",
+    "scope": "只改变 `/inner-brain-eval-local-report` 未指定文件时的后续处理标签，不改变命令、报告正文、失败统计、导出路径、本机 evaluation JSONL payload 或训练写入逻辑。"
+  },
+  "similar_implementations": [
+    "src/jarvis_lite/agent.py::_inner_brain_local_resolved_evaluation 全量分支使用 `查看待处理失败样本`。",
+    "src/jarvis_lite/agent.py::_export_inner_brain_local_evaluation_report 指定文件分支在 0.81.0 使用 `查看全部待处理失败样本`。",
+    "tests/test_agent.py 中全量报告导出测试已经覆盖该后续处理区域。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "main_risks": true,
+    "verification_method": true
+  }
+}

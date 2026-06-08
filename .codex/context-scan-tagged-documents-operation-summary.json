@@ -1,0 +1,36 @@
+{
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "task": "标签组批量操作摘要接入最近上下文",
+  "tooling_fallback": {
+    "sequential-thinking": "当前会话不可用",
+    "shrimp-task-manager": "当前会话不可用",
+    "code-index": "当前会话不可用，使用 rg 和本地文件读取降级检索"
+  },
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_agent.py",
+    "docs": [
+      "README.md",
+      "verification.md",
+      "word/2026-05-26-jarvis-lite-progress.md",
+      "word/2026-05-22-jarvis-lite-personal-device-agent-plan.md"
+    ]
+  },
+  "current_behavior": {
+    "confirm_output": "确认执行批量打标签后会输出操作记录和恢复提示。",
+    "recent_context_gap": "确认后再查看最近上下文，只能看到最近资料列表和待确认批量打标签为无，不能看到刚刚完成的批量操作摘要。",
+    "scope_choice": "本轮只做当前 Agent 会话内最近一次批量标签操作摘要，不新增运行态持久化结构。"
+  },
+  "similar_patterns": [
+    "最近上下文已展示最近资料、资料列表、最近建议和待确认批量打标签。",
+    "确认输出已生成 updated_count 和 restore_commands，可复用为最近操作摘要。",
+    "待确认建议命令和待确认批量打标签都是会话内状态，适合先沿用同一边界。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": "确认批量标签后，查看最近上下文输出 最近批量打标签：项目标签资料 -> 追加标签：归档，已更新 2 份，并输出恢复提示。",
+    "technical_choice": "在 JarvisAgent 内新增最近批量标签操作字段，确认成功后写入，最近上下文读取展示。",
+    "risks": "不跨 Agent 重启恢复；这是刻意边界，后续如需要持久化再扩展 runtime_context。",
+    "verification": "新增 Agent 目标测试先失败后通过，跑最近上下文和标签组相关回归、全量 unittest、桌面 smoke 和 git diff --check。"
+  }
+}

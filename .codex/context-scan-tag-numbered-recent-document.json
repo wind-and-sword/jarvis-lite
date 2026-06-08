@@ -1,0 +1,35 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "按编号给最近资料打标签",
+  "tool_fallback": {
+    "sequential_thinking": "当前工具列表未提供 sequential-thinking，使用本地代码阅读、rg 检索和 update_plan 记录替代。",
+    "shrimp_task_manager": "当前工具列表未提供 shrimp-task-manager，使用 .codex 计划文件和 update_plan 替代。",
+    "code_index": "当前工具列表未提供 code-index，使用 rg 和定向文件读取替代。"
+  },
+  "current_implementation": {
+    "tag_recent_document": "“给这个资料打标签”会使用当前最近资料。",
+    "tag_numbered_search_result": "“给第二条结果打标签”会使用最近搜索结果列表。",
+    "read_numbered_recent_document": "“读取第二份资料”会读取最近资料列表中的对应资料。",
+    "gap": "最近资料列表尚不能直接用“给第二份资料打标签 项目”操作。"
+  },
+  "decision": {
+    "scope": "新增 tag_numbered_recent_document 意图，支持给/把第 N 份资料、文档或文件打标签。",
+    "execution": "Agent 根据 recent_document_paths 选择对应 data 文件，复用现有 /tag 命令。",
+    "errors": [
+      "无最近资料列表时提示先读取或导入资料。",
+      "编号越界时提示最近资料列表总数。"
+    ],
+    "not_in_scope": [
+      "不改变“给第二条结果打标签”的搜索结果语义。",
+      "不新增批量标签。",
+      "不扫描系统最近文件。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

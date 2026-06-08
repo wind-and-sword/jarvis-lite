@@ -1,0 +1,48 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.14.0 最近路由决策状态",
+  "tooling_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地文件检索、计划文件、update_plan、apply_patch、unittest 和本地打包验证。",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "desktop_bridge": "src/jarvis_lite/desktop/bridge.py",
+    "desktop_widgets": "src/jarvis_lite/desktop/widgets.py",
+    "tests": [
+      "tests/test_agent.py",
+      "tests/test_desktop_bridge.py",
+      "tests/test_desktop_widgets.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "current_behavior": {
+    "llm_activity": "0.13.0 已固定展示外脑运行状态和最近 LLM 调用。",
+    "route_decision": "当前桌面仍无法显示最近一条输入是命令、本地 InnerBrain、知识库问答、LLM fallback 还是最终兜底处理。",
+    "user_value": "当用户质疑某个回复是否固定模板时，需要一眼看到处理路径。"
+  },
+  "similar_patterns": [
+    "RuntimeContext 已持久化 recent_llm_call 和 pending_llm_clarification。",
+    "DesktopResponse 已透传 llm_pending_status_text 和 llm_activity_status_text。",
+    "AssistantPanel 已使用固定 label 展示状态块，启动和发送后刷新。"
+  ],
+  "key_questions": [
+    {
+      "question": "是否需要调用 /history 或 /recent-context 生成路由状态？",
+      "answer": "否。路由状态应由 Agent 在处理路径内直接记录，不污染 transcript。"
+    },
+    {
+      "question": "路由状态是否替代 LLM 活动状态？",
+      "answer": "否。路由状态解释哪一层处理，LLM 活动状态解释最近一次真实外脑调用。"
+    },
+    {
+      "question": "是否新增自然语言规则？",
+      "answer": "否。本轮只做可观察性，不新增正则模板。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

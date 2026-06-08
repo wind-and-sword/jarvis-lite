@@ -1,0 +1,38 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.55.0 InnerBrain 本机评估全量视图文件候选失败优先排序",
+  "location": {
+    "agent_view": "src/jarvis_lite/agent.py::_describe_inner_brain_local_evaluation",
+    "evaluation_report": "src/jarvis_lite/inner_brain.py::InnerBrainEvaluationReport",
+    "local_case_loading": "src/jarvis_lite/inner_brain.py::load_evaluation_cases"
+  },
+  "current_behavior": {
+    "candidate_lines": "/inner-brain-eval-local 有样本时在可聚焦文件段落输出来源文件、总数、通过数、失败数和文件聚焦命令。",
+    "ordering": "当前使用 report.source_file_counts.items()，顺序来自 sorted(evaluation_dir.glob(\"*.jsonl\")) 与文件内样本顺序，不会主动把有失败的文件排前。",
+    "scope_boundary": "文件过滤视图、失败视图、已处理视图、报告导出和 evaluation JSONL payload 不应改变。"
+  },
+  "similar_patterns": [
+    "inner_brain.py 的失败原因、期望意图和意图混淆汇总使用 sorted(..., key=lambda item: (-item[1], item[0])) 进行数量优先排序。",
+    "agent.py 0.54.0 文件候选状态摘要已在 Agent 层复用 report.case_results 现算通过/失败数量。",
+    "failed_source_file_counts 保持失败视图的文件失败统计独立，不影响本次全量候选排序。"
+  ],
+  "questions": [
+    {
+      "priority": "high",
+      "question": "如何证明失败优先排序不是沿用文件名顺序？",
+      "answer": "测试应创建 alphabetically earlier 的纯通过文件和 alphabetically later 的失败文件，断言失败文件候选行先出现。"
+    },
+    {
+      "priority": "medium",
+      "question": "同等失败数如何保持稳定可读？",
+      "answer": "按总样本数降序，再按文件名升序，避免来源加载顺序影响展示。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": "只改变 /inner-brain-eval-local 文本候选行顺序，候选行内容不变。",
+    "technical_choice": "在 Agent 层对 source_file_counts 的 items 排序，复用 0.54.0 现有 passed/failed 字典。",
+    "risk_points": "不能改变 file-filter 视图、不能写 training runtime、不能新增 report 字段。",
+    "verification": "TDD 目标测试、InnerBrain+Agent 相邻回归、全量 unittest、桌面 smoke、安装包构建、打包后 exe smoke、静态和链接检查。"
+  }
+}

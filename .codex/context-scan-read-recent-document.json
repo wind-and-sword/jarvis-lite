@@ -1,0 +1,32 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "自然语言读取最近资料",
+  "tooling_note": "本环境未提供 sequential-thinking、shrimp-task-manager 和 code-index MCP，使用本地 rg、Get-Content、update_plan 与 unittest 替代并留痕。",
+  "current_state": {
+    "recent_document_context": "JarvisAgent 已通过 _recent_document_path 记录最近资料，导入、问答命中、/read 和自然语言读取资料都会更新它。",
+    "existing_reference_actions": "当前已支持“给这个资料打标签 ...”和 /experience-advice 这个资料。",
+    "gap": "“读取这个资料”“查看这个资料”没有意图，不能直接读取最近资料。",
+    "implementation_target": "复用现有 /read 命令路径，不新增工具和运行态字段。"
+  },
+  "key_questions": [
+    {
+      "question": "读取最近资料是否需要新的存储字段？",
+      "answer": "不需要，复用 recent_document_path。"
+    },
+    {
+      "question": "如何避免和读取具体文件冲突？",
+      "answer": "先匹配具体 .md/.txt 文件读取，再匹配这个资料/当前资料等指代。"
+    },
+    {
+      "question": "无最近资料时如何处理？",
+      "answer": "返回明确缺少最近资料的提示，建议先读取、导入或指定文件名。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

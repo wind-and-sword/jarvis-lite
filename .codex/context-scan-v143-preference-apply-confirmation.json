@@ -1,0 +1,48 @@
+{
+  "date": "2026-06-05",
+  "executor": "Codex",
+  "stage": "v143 / 0.138.0",
+  "topic": "偏好应用确认草稿第一阶段",
+  "trigger": "用户要求继续下一阶段；word/PROJECT-PLAN.md 后续目标写明下一批优先评估偏好真正应用前的显式确认策略。",
+  "current_state": {
+    "version": "0.137.0",
+    "latest_commit": "0446e77 feat: 增加偏好稳定 ID 与冲突提示 0.137.0",
+    "preference_storage": "config/preferences.local.json 当前记录 id、preference、enabled、source、created_at、updated_at。",
+    "commands": [
+      "/preference-status",
+      "/preference-enable 编号或ID",
+      "/preference-disable 编号或ID",
+      "/preference-preview [输入文本]"
+    ],
+    "boundary": "偏好启用、预览、稳定 ID 和冲突提示只做本地可审计管理，不自动改变回复风格、LLM prompt、路由或执行决策。"
+  },
+  "known_patterns": [
+    "preferences.py 负责偏好解析、持久化、启停、状态描述、预览描述和冲突提示。",
+    "agent.py 通过显式 slash command 调用 preferences.py helper；偏好管理命令未进入 LLM provider instructions。",
+    "memory_config_manager.py 的可管理入口用静态文案列出相关命令。",
+    "tests/test_preferences.py 覆盖偏好 helper，tests/test_agent.py 覆盖 Agent 命令和帮助/status 文案，tests/test_llm.py 覆盖 LLM 白名单边界。"
+  ],
+  "key_questions": [
+    {
+      "question": "确认草稿是否要真正影响普通回答？",
+      "answer": "不需要。当前阶段只生成可审计草稿和确认边界，不接入普通回复、LLM prompt、SearchRouter、InnerBrain 或命令路由。"
+    },
+    {
+      "question": "是否要复用现有 pending confirmation 执行机制？",
+      "answer": "暂不复用。现有 pending confirmation 面向建议命令和批量标签执行；偏好应用确认第一阶段更适合作为只读草稿，避免让“确认执行”误导为已真正应用。"
+    },
+    {
+      "question": "命令命名如何保持清晰？",
+      "answer": "新增 /preference-apply-draft [输入文本]，语义明确为生成待确认偏好应用草稿；输出会给出后续确认命令占位说明，但当前阶段不实际应用。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  },
+  "tool_fallbacks": [
+    "sequential-thinking MCP、shrimp-task-manager、code-index 和 exa 未在当前工具列表中提供；使用 rg、Get-Content、git、update_plan、apply_patch、superpowers 流程和本地 unittest 替代。"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "task": "编号最近资料缺失提示",
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "tooling": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index"
+    ],
+    "fallback": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "apply_patch",
+      "unittest"
+    ]
+  },
+  "location": {
+    "agent": "src/jarvis_lite/agent.py::_read_numbered_recent_document",
+    "tests": "tests/test_agent.py::AgentTests"
+  },
+  "current_state": {
+    "normal_flow": "读取第二份资料会从 _recent_document_paths 中取路径并调用 /read。",
+    "gap": "如果最近资料列表里的文件被删除，输出来自底层 /read，缺少第 N 份资料的上下文提示。"
+  },
+  "similar_cases": [
+    "读取编号最近文件时会先判断文件是否存在。",
+    "读取批量标签历史影响资料时，缺失资料会标注 `资料缺失`。",
+    "最近资料列表为空或越界时已有明确提示。"
+  ],
+  "chosen_design": "在 _read_numbered_recent_document() 调用 /read 前检查 data/<relative_path> 是否存在；缺失时返回 `第 N 份资料：data/<path>（资料缺失）` 和恢复建议，不改变最近资料列表。",
+  "interface_contract": {
+    "input": "读取第 N 份资料",
+    "output": "正常资料继续返回 `第 N 份资料：data/<path>` 和文件内容；缺失资料返回 `第 N 份资料：data/<path>（资料缺失）`。",
+    "fallback": "最近资料列表为空和编号越界的既有提示不变。"
+  },
+  "verification": [
+    "新增 Agent 测试：读取最近资料列表中已删除的第二份资料时显示资料缺失。",
+    "运行目标测试确认 RED，再实现 GREEN。",
+    "运行编号读取、历史缺失、历史读取和最近资料持久化相关回归。"
+  ],
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

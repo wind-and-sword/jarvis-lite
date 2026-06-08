@@ -1,0 +1,29 @@
+{
+  "date": "2026-06-01",
+  "executor": "Codex",
+  "task": "0.27.0 desktop InnerBrain candidate target prefill",
+  "location": {
+    "desktop_ui": "src/jarvis_lite/desktop/widgets.py",
+    "agent_teachable_commands": "src/jarvis_lite/agent.py",
+    "tests": "tests/test_desktop_widgets.py tests/test_project_metadata.py tests/test_agent.py",
+    "docs": "word/PROJECT-PLAN.md word/plans/README.md word/progress/2026-06-01.md"
+  },
+  "current_behavior": [
+    "0.26.0 已支持 /inner-brain-candidates 后的候选下拉选择和编号同步。",
+    "填教学只写入 /inner-brain-teach-candidate 编号 => 空目标。",
+    "填标注只写入 /inner-brain-label-candidate 编号 => intent slot=value。"
+  ],
+  "target_behavior": [
+    "桌面 UI 增加教学目标下拉框，默认保持手动填写命令。",
+    "教学目标复用 TEACHABLE_INNER_BRAIN_COMMAND_INTENTS 中的已知命令。",
+    "桌面 UI 增加标注目标下拉框，提供常见 intent slot=value 模板。",
+    "预填仍只写入输入框，不提交、不训练、不新增自然语言正则。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  },
+  "fallback_note": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用 rg、Get-Content、update_plan、TDD、unittest 和本地打包验证。"
+}

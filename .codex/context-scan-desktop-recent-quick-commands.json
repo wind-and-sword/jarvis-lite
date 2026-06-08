@@ -1,0 +1,38 @@
+{
+  "date": "2026-05-23",
+  "executor": "Codex",
+  "task": "桌面快捷入口补齐最近上下文和最近文件",
+  "tool_fallback": {
+    "missing": ["sequential-thinking", "shrimp-task-manager", "code-index"],
+    "used": ["rg", "Get-Content", "update_plan", "apply_patch"]
+  },
+  "locations": {
+    "desktop_bridge": "src/jarvis_lite/desktop/bridge.py",
+    "desktop_widgets": "src/jarvis_lite/desktop/widgets.py",
+    "desktop_tray": "src/jarvis_lite/desktop/tray.py",
+    "bridge_tests": "tests/test_desktop_bridge.py",
+    "widget_tests": "tests/test_desktop_widgets.py",
+    "tray_tests": "tests/test_desktop_tray.py"
+  },
+  "current_behavior": [
+    "`quick_commands()` 已包含状态、知识库、常用目录、生成日报、检查更新、下载更新和整理预览。",
+    "`direct_quick_commands()` 只暴露无参数命令，面板和托盘都复用它。",
+    "最近上下文和最近文件已经是无参数能力，但还没有进入桌面快捷命令集合。"
+  ],
+  "target_behavior": [
+    "桌面面板快捷按钮展示“最近上下文”和“最近文件”。",
+    "托盘快捷命令同步展示这两个入口。",
+    "仍然排除需要参数的“整理预览”。"
+  ],
+  "risks": [
+    "不要把需要参数的命令放进直接快捷入口。",
+    "保持面板和托盘继续共用 `direct_quick_commands()`，避免两处列表漂移。",
+    "最近上下文使用自然语言 prompt，必须走现有会话入口。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "date": "2026-05-25",
+  "executor": "Codex",
+  "task": "桌面快捷入口补充知识库摘要",
+  "tooling_note": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP 工具；使用本地上下文扫描、计划和测试留痕降级。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP 工具；使用 update_plan 和本地计划文档替代。",
+    "code_index": "当前会话未暴露 code-index MCP 工具；使用 rg 和 Get-Content 检索源码、测试和文档。"
+  },
+  "observations": [
+    "`/kb-summary` 已是无参数命令，并且已完成摘要、标签分组、最近资料上下文和标签化提问建议。",
+    "`desktop/bridge.py` 的 `quick_commands()` 和 `DIRECT_QUICK_COMMAND_PROMPTS` 决定面板与托盘可直接点击的快捷入口。",
+    "`tests/test_desktop_bridge.py` 和 `tests/test_desktop_widgets.py` 对快捷命令列表有固定顺序断言。",
+    "`/organize-preview` 因需要参数仍应排除在 direct_quick_commands() 外。"
+  ],
+  "decision": "在知识库 `/kb` 后新增“知识库摘要”快捷入口，prompt 使用 `/kb-summary`；该命令加入 direct 列表，面板和托盘自动复用。",
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choices": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

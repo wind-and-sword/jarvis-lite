@@ -1,0 +1,19 @@
+{
+  "date": "2026-05-25",
+  "executor": "Codex",
+  "task": "知识库摘要长预览截断",
+  "tool_fallback": {
+    "sequential-thinking": "当前会话没有该 MCP 工具，使用本地代码阅读和测试替代。",
+    "shrimp-task-manager": "当前会话没有该 MCP 工具，使用 update_plan 和本地计划文件替代。",
+    "code-index": "当前会话没有该 MCP 工具，使用 rg 和文件读取替代。"
+  },
+  "current_state": {
+    "summary_preview": "summarize_knowledge_base() 直接展示第一条可检索文本全文。",
+    "risk": "资料首行过长时，/kb-summary 输出会变长，影响浏览和后续操作提示可见性。"
+  },
+  "planned_scope": [
+    "只截断摘要预览，不改变索引、搜索和资料读取。",
+    "使用确定性字符长度限制，保留来源、行数和标签。",
+    "为长预览和短预览保留测试。"
+  ]
+}

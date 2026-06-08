@@ -1,0 +1,57 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "phase": "0.18.0-inner-brain-candidates",
+  "task": "基于最近路由历史展示 InnerBrain 训练候选，不自动训练。",
+  "tooling_degradation": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，按项目降级规则使用本地检索、计划文件和 TDD。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，使用 update_plan 与项目方案文件替代。",
+    "code_index": "当前会话未暴露 code-index MCP，使用 rg / Get-Content 检索。",
+    "exa": "本阶段不需要网络检索。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/inner_brain.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py"
+    ],
+    "current_behavior": [
+      "0.17.0 已能通过 /route-history 查看最近 5 条完整路由。",
+      "InnerBrain 已有 /inner-brain-adopt、/inner-brain-label 和 /inner-brain-teach，但用户需要自己判断哪些输入值得训练。",
+      "recent_route_decisions 已保存 route/detail/prompt/summary/explanation，可作为训练候选来源。"
+    ],
+    "similar_patterns": [
+      "/route-history 是只读诊断入口，不污染路由历史。",
+      "/inner-brain-teach 保存 text -> command 的教学样本，但不执行目标命令。",
+      "/inner-brain-label 保存人工标注样本，适合 unknown 或误判输入。"
+    ],
+    "tests": [
+      "tests.test_agent.AgentTests 可覆盖命令输出、跨 Agent 恢复和不污染路由历史。",
+      "tests.test_project_metadata 覆盖版本提升。"
+    ]
+  },
+  "key_questions": [
+    {
+      "question": "是否自动把 LLM fallback 写入训练样本？",
+      "priority": "high",
+      "answer": "不自动写。LLM fallback 可能是开放问题，直接训练会污染内脑；本阶段只列候选和人工教学命令。"
+    },
+    {
+      "question": "哪些路由进入候选？",
+      "priority": "high",
+      "answer": "llm-fallback、memory-fallback、inner-brain-clarify。command、inner-brain 命中和 knowledge 命中不作为候选。"
+    },
+    {
+      "question": "候选入口是否应该记录自身路由？",
+      "priority": "medium",
+      "answer": "不记录。它和 /route-history 一样属于只读诊断入口，记录自身会污染候选列表。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risk_identified": true,
+    "verification_known": true
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.70.0 InnerBrain 本机失败报告导出反馈当前文件已处理入口",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，使用本地结构化分析替代并记录到 operations-log。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，使用 update_plan 和本地计划文档替代。",
+    "code_index": "当前会话未暴露 code-index MCP，使用 rg 和 Get-Content 检索。",
+    "exa": "本任务不需要网络搜索。"
+  },
+  "location": {
+    "implementation": "src/jarvis_lite/agent.py::_export_inner_brain_local_evaluation_report",
+    "tests": [
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_report_command_can_filter_local_file",
+      "tests/test_project_metadata.py::ProjectMetadataTests.test_project_version_matches_release_package_version"
+    ],
+    "documents": [
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/README.md",
+      "word/progress/2026-06-03.md",
+      "verification/2026-06/2026-06-03.md"
+    ]
+  },
+  "current_behavior": {
+    "file_report_feedback": [
+      "复查当前文件失败样本：/inner-brain-eval-local-file-failed 文件名",
+      "查看全部本机失败样本：/inner-brain-eval-local-failed"
+    ],
+    "gap": "文件级报告导出后没有提示 /inner-brain-eval-local-resolved 当前文件名，用户需要手动拼接命令才能对照已处理样本。"
+  },
+  "acceptance": {
+    "behavior": "执行 /inner-brain-eval-local-report failed-log 后，反馈在后续处理中包含 /inner-brain-eval-local-resolved failed-log.jsonl。",
+    "non_goals": [
+      "不修改 Markdown 报告正文",
+      "不写 data/inner-brain/training/runtime.jsonl",
+      "不改变失败样本过滤、报告导出路径或本机 evaluation payload",
+      "不新增命令"
+    ],
+    "verification": [
+      "目标 RED/GREEN",
+      "tests.test_agent + tests.test_project_metadata 相邻回归",
+      "全量 unittest",
+      "桌面 smoke",
+      "安装包构建与打包后 smoke",
+      "git diff --check、Markdown 链接检查、敏感差异扫描、本地配置文件检查"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

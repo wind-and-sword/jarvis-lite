@@ -1,0 +1,86 @@
+{
+  "task": "0.101.0 InnerBrain 本机已处理空视图行动提示",
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "used": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "superpowers",
+      "unittest"
+    ],
+    "note": "当前会话未暴露 AGENTS 指定 MCP 工具；按项目降级规则使用本地结构化分析、文本检索和 TDD 验证。"
+  },
+  "quick_scan": {
+    "location": [
+      "src/jarvis_lite/inner_brain.py:753 describe_inner_brain_resolved_evaluation() 格式化已处理样本视图。",
+      "src/jarvis_lite/agent.py:1267 _inner_brain_local_resolved_evaluation() 负责命令入口和后续处理链接。",
+      "tests/test_inner_brain.py:708 覆盖函数层已处理样本为空。",
+      "tests/test_agent.py:2125 覆盖 /inner-brain-eval-local-resolved 指定文件无通过样本。"
+    ],
+    "current_behavior": [
+      "已处理样本为空时输出“已处理样例：”和“- 无”。",
+      "函数末尾说明该视图只展示已通过本机 evaluation 样本，不自动写入 runtime 样本。",
+      "Agent 命令层会继续追加“后续处理”链接，但正文没有解释“空”代表暂无通过样本，也没有提示先看待处理失败或补样本。"
+    ],
+    "similar_cases": [
+      "0.100.0 在 describe_inner_brain_evaluation() 空本机 evaluation 分支提示补样本命令默认写入 runtime.jsonl。",
+      "0.99.0 在指定文件空报告反馈中提示当前筛选文件无样本时默认写入 runtime.jsonl。",
+      "0.51.0 到 0.72.0 的已处理样本视图保持只读，不写训练样本。"
+    ],
+    "tech_stack": [
+      "Python 3.13",
+      "unittest",
+      "PySide6 desktop smoke",
+      "PyInstaller Windows installer build"
+    ],
+    "tests_and_verification": [
+      "目标测试：tests.test_inner_brain.InnerBrainTests.test_inner_brain_resolved_evaluation_reports_empty_passed_list",
+      "目标测试：tests.test_agent.AgentTests.test_inner_brain_eval_local_resolved_command_reports_empty_passed_list",
+      "版本一致性：tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version",
+      "更新清单夹具：tests.test_agent 中两个 0.100.1 fixture 升级到 0.101.1",
+      "回归：tests.test_agent tests.test_inner_brain tests.test_project_metadata 与全量 unittest",
+      "发布验证：源码 smoke、安装包构建、版本化安装包、打包后 smoke、静态检查、Markdown 链接、密钥扫描、README BOM"
+    ],
+    "observation": "下一处可收口的问题是已处理样本视图的空态。当前输出能说明只读边界，但不够行动化；用户看到“- 无”时无法直接区分应该先处理失败样本、还是补充本机 evaluation 样本。"
+  },
+  "key_questions": [
+    {
+      "question": "提示应该放在函数层还是 Agent 命令层？",
+      "priority": "high",
+      "answer": "放在 describe_inner_brain_resolved_evaluation() 的空 passed 分支。这样函数层和命令层复用同一文案，避免每个入口重复追加。"
+    },
+    {
+      "question": "是否要改变 /inner-brain-eval-local-resolved 的后续链接？",
+      "priority": "medium",
+      "answer": "不改变。后续链接已经提供待处理失败、按文件查看和报告入口，本轮只补正文空态解释。"
+    },
+    {
+      "question": "是否要新增写入任意筛选文件的能力？",
+      "priority": "medium",
+      "answer": "不新增。延续 0.99.0 与 0.100.0 的范围控制，只提示默认写入 runtime.jsonl，不改变写入目标。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "interface_contract_notes": "输入仍为 InnerBrainEvaluationReport，输出仍为字符串；仅在 passed_case_results 为空时追加提示行。",
+    "technical_choice": true,
+    "technical_choice_notes": "复用现有格式化函数，不新增抽象或命令层分支。",
+    "risks_identified": true,
+    "risks": [
+      "提示若放错位置可能污染有通过样本的已处理列表。",
+      "文案若过度强调补样本可能削弱只读视图边界。",
+      "版本和公开文档需要同步，否则元数据测试会失败。"
+    ],
+    "verification_known": true,
+    "verification_notes": "按 TDD 先写函数层与 Agent 层断言并确认 RED，再实现一行提示，随后执行目标、相邻、全量、smoke、打包和静态验证。"
+  },
+  "decision": "收集充分，进入任务规划与 TDD 实施。"
+}

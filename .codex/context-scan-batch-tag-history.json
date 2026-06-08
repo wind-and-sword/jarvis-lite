@@ -1,0 +1,44 @@
+{
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "task": "批量标签操作历史命令",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "intent": "src/jarvis_lite/intent.py",
+    "tests": "tests/test_agent.py",
+    "docs": [
+      "README.md",
+      "verification.md",
+      "word/2026-05-22-jarvis-lite-personal-device-agent-plan.md",
+      "word/2026-05-26-jarvis-lite-progress.md"
+    ]
+  },
+  "current_behavior": [
+    "确认标签组批量打标签后，Agent 只保存最近一次操作摘要。",
+    "最近一次摘要已经写入运行态上下文，可跨 JarvisAgent 实例恢复。",
+    "最近上下文状态展示最近一次摘要和恢复提示，但没有独立历史列表命令。"
+  ],
+  "similar_patterns": [
+    "/recent-files 通过无参数命令输出最近文件列表。",
+    "最近上下文状态按字段展示持久化上下文。",
+    "RuntimeContext 使用 dataclass 加防御式 JSON 读写，缺失或无效字段回退为空。"
+  ],
+  "decision": {
+    "chosen": "新增 /tag-history 与自然语言“查看批量标签历史”，保存最近 5 条批量标签操作；最新一条继续兼容 recent_tagged_documents_operation 字段。",
+    "alternatives": [
+      "只把最近上下文展示改成多条历史：会让最近上下文过长，不利于扫读。",
+      "新增完整撤销栈：超出当前需求，且需要额外处理资料变更冲突。"
+    ]
+  },
+  "risks": [
+    "运行态 JSON 需要兼容旧字段 recent_tagged_documents_operation。",
+    "历史列表不能无限增长，避免运行态上下文膨胀。",
+    "重复确认后的历史顺序必须清晰，新记录应排在前面。"
+  ],
+  "verification": [
+    "新增 Agent 测试先证明 /tag-history 缺失。",
+    "实现后验证历史命令、新 Agent 恢复、多条历史顺序和既有最近上下文回归。",
+    "收尾执行全量 unittest、桌面 smoke 和 git diff --check。"
+  ]
+}

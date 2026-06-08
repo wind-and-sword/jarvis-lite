@@ -1,0 +1,22 @@
+{
+  "date": "2026-05-28",
+  "executor": "Codex",
+  "task": "用户安装 0.1.1 后反馈自然语言仍无法识别",
+  "tool_fallbacks": {
+    "sequential_thinking": "当前会话未提供该 MCP，降级为本地结构化分析和回归测试",
+    "shrimp_task_manager": "当前会话未提供该 MCP，降级为 update_plan 与本地计划文件",
+    "code_index": "当前会话未提供该 MCP，降级为 rg 和定向文件读取"
+  },
+  "evidence": {
+    "user_log": "日志.txt 中 /help 已包含 /llm-context-preview，证明 0.1.1 已生效；早上好、你叫什么名字、删除桌面快捷方式均落到长期记忆兜底。",
+    "intent_layer": "src/jarvis_lite/intent.py 缺少 greeting、assistant_identity、delete_desktop_shortcuts 意图。",
+    "agent_layer": "src/jarvis_lite/agent.py 在本地意图和 LLM 都未命中时返回长期记忆摘要。",
+    "installer_layer": "src/jarvis_lite/desktop/windows_installer.py 的 FinishMessage 未包含版本号，用户难以确认覆盖安装是否生效。"
+  },
+  "sufficiency_check": {
+    "interface_contract": "已明确：自然语言输入映射为 NaturalLanguageIntent，再由 JarvisAgent 执行；桌面快捷方式删除只接受明确名称列表。",
+    "technical_choice": "沿用现有本地意图层与 Agent dispatcher，不引入新解析框架。",
+    "risk_points": "删除动作限制为 Desktop 目录下明确点名的 .lnk 文件；缺失项只报告不失败整个请求。",
+    "verification": "新增 RED/GREEN unittest、桌面 bridge smoke、安装脚本检查和打包后 exe smoke。"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.40.0 InnerBrain 本机评估失败类型汇总",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP，已降级为本地结构化分析并写入本文件。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP，已降级为 update_plan 与本地计划文档。",
+    "code_index": "当前会话未暴露 code-index MCP，已降级为 rg 与 Get-Content 检索。",
+    "exa": "本阶段不需要网络事实检索，未调用 exa；若后续需要联网检索再按可用工具降级。"
+  },
+  "structured_scan": {
+    "location": [
+      "src/jarvis_lite/inner_brain.py: InnerBrainEvaluationReport、describe_inner_brain_evaluation()、export_inner_brain_evaluation_report()",
+      "src/jarvis_lite/agent.py: /inner-brain-eval-local-report 命令入口复用报告导出",
+      "tests/test_inner_brain.py: InnerBrain 评估报告展示与导出测试",
+      "tests/test_agent.py: Agent 本机评估命令和报告导出测试"
+    ],
+    "current_state": [
+      "0.39.0 已新增 failed_reason_counts，按完整 reason 文本精确计数。",
+      "failures_only 描述已输出 失败文件、失败原因汇总、失败样例和失败修复建议。",
+      "Markdown 报告复用 describe_inner_brain_evaluation(report, failures_only=True)，因此任何 failures-only 展示增强都会进入报告。"
+    ],
+    "similar_implementations": [
+      "v41 failed_source_file_counts 只遍历 failed_case_results 并在 failures_only 中展示。",
+      "v42 export_inner_brain_evaluation_report() 只写 Markdown，不写训练样本。",
+      "v43 failed_reason_counts 直接由失败结果派生，不改变评估 JSONL 结构。"
+    ],
+    "tech_stack": [
+      "Python 3.13",
+      "标准库 dataclasses、pathlib、json、unittest",
+      "本地 Markdown 文档和 PyInstaller/IExpress 打包脚本"
+    ],
+    "tests": [
+      "tests.test_inner_brain.InnerBrainTests",
+      "tests.test_agent.AgentTests",
+      "tests.test_project_metadata.ProjectMetadataTests",
+      "全量 python -m unittest discover -s tests -v",
+      "源码桌面 smoke、安装包构建、打包后 exe smoke"
+    ],
+    "observation_report": [
+      "v43 后续明确提出若同一根因存在多种原因文本，再考虑轻量原因归一化。",
+      "现有 reason 文本由期望/实际差异组成，稳定包含 意图期望、命令期望、策略期望 片段，可直接作为失败类型信号。",
+      "不需要新增聚类模型、外部依赖、自然语言正则或命令接口。"
+    ]
+  },
+  "key_questions": [
+    {
+      "priority": "high",
+      "question": "失败类型如何定义才不扩大维护面？",
+      "answer": "仅从现有 reason 文本中识别 意图期望、命令期望、策略期望 三类，不解析用户自然语言。"
+    },
+    {
+      "priority": "high",
+      "question": "一条失败同时包含 intent 和 command mismatch 时如何计数？",
+      "answer": "同一失败可计入多个类型，便于观察高频问题维度；精确 reason 汇总仍保留。"
+    },
+    {
+      "priority": "medium",
+      "question": "是否改变报告导出命令或 JSONL payload？",
+      "answer": "不改变。只在 InnerBrainEvaluationReport 上增加派生视图，并在 failures-only 文本中增加展示段落。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": "已明确：新增 failed_reason_category_counts 只读属性，返回 Mapping[str, int]；describe failures-only 新增 失败类型汇总 段落。",
+    "technical_choice": "沿用 v41-v43 的派生属性模式，避免新增持久化字段和依赖。",
+    "main_risks": "reason 文本未来变化会影响归类；本阶段通过测试固定当前 reason 片段契约。",
+    "verification": "按 TDD 先写目标失败测试，再实现，随后运行目标测试、相邻回归、全量 unittest、桌面 smoke、安装包和静态检查。",
+    "all_checked": true
+  },
+  "decision": "进入 0.40.0 实施：在本机失败评估视图和 Markdown 报告中增加轻量失败类型汇总。"
+}

@@ -1,0 +1,47 @@
+{
+  "date": "2026-05-29",
+  "executor": "Codex",
+  "task": "0.3.0 外脑 provider 配置闭环 v1",
+  "goal": "让用户安装后更容易直接配置外脑 LLM 和联网搜索，并让 qwen/gemini 这类常见 provider alias 能通过现有 OpenAI-compatible adapter 工作。",
+  "current_state": {
+    "version": "0.2.0",
+    "llm_providers": ["off", "fake", "openai", "openai-compatible"],
+    "llm_alias_templates": {
+      "qwen": "openai-compatible",
+      "gemini": "openai-compatible"
+    },
+    "search_providers": ["off", "fake", "tavily"],
+    "config_files": [
+      "config/llm.example.json",
+      "config/search.example.json",
+      "runtime config/llm.local.json",
+      "runtime config/search.local.json"
+    ]
+  },
+  "observations": [
+    "LLM 模板已经接受 /llm-config-example qwen 和 gemini，但真实 llm.local.json 如果写 provider=qwen 或 provider=gemini 当前会被判定为未知 provider。",
+    "OpenAI-compatible adapter 已经能处理完整 /v1/responses URL、usage 和错误格式，本轮可复用，不新增执行层。",
+    "SearchRouter 当前 Tavily 路径已有 SDK adapter 和 fake provider，本轮优先补配置诊断和文档，不新增未验证搜索厂商。",
+    "0.3.0 不引入新的训练依赖；InnerBrain 小模型/embedding 评估留到下一阶段，避免在没有数据集时做不可验证架构跳跃。"
+  ],
+  "candidate_scope": [
+    "LLMSettings 支持 provider alias qwen/gemini，并映射到 OpenAI-compatible adapter 执行。",
+    "LLMRouter 状态展示原始 provider 和实际 adapter，帮助用户确认配置生效。",
+    "配置模板和 README 明确 provider alias 可直接写入 llm.local.json，但 base_url/model 仍以具体平台控制台为准。",
+    "补充 Agent 层测试：/llm-enable 重新加载 qwen/gemini local config 后显示可调用，fake/openai/openai-compatible 既有路径不回归。",
+    "发布 0.3.0 安装包。"
+  ],
+  "out_of_scope": [
+    "不提交真实 api_key、llm.local.json 或 search.local.json。",
+    "不引入 Gemini/Qwen 原生 SDK。",
+    "不新增让 LLM 自由浏览网页的路径。",
+    "不把正则恢复为自然语言主识别路径。"
+  ],
+  "verification_plan": [
+    "按 TDD 新增 LLM alias 和 Agent reload 测试，先失败后实现。",
+    "运行 tests.test_llm tests.test_agent 专项回归。",
+    "版本提升到 0.3.0 并打包 JarvisLiteSetup-0.3.0.exe。",
+    "运行全量 unittest、源码桌面 smoke、打包 smoke、安装脚本版本校验、Markdown 链接检查、敏感信息扫描。"
+  ],
+  "tool_degradation": "当前会话未提供 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地文件读取、rg、update_plan、apply_patch、unittest 和打包脚本。"
+}

@@ -1,0 +1,49 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "沉淀 Agent 认知文档并继续实现 Jarvis Lite 下一步",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP 工具，改用本地代码阅读、update_plan 和记录文件替代。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP 工具，改用 .codex 计划文件和 update_plan 替代。",
+    "code_index": "当前会话未提供 code-index MCP 工具，内部检索使用 rg 和文件读取。"
+  },
+  "quick_scan": {
+    "discussion_source": [
+      "日志.txt",
+      "本轮关于 Agent、RAG、LLM、个人设备级 Agent 的对话"
+    ],
+    "project_docs": [
+      "README.md",
+      "word/jarvis-lite-overall-plan.md",
+      "word/2026-05-21-jarvis-lite-natural-language-brain-progress.md",
+      "word/文档索引.md"
+    ],
+    "implementation_surface": [
+      "src/jarvis_lite/agent.py",
+      "src/jarvis_lite/intent.py",
+      "tests/test_agent.py"
+    ],
+    "current_state": "Jarvis Lite 已具备长期记忆、经验记忆、知识库、最近上下文、建议命令、执行前确认、桌面入口和本地验证闭环。"
+  },
+  "key_questions": {
+    "known": [
+      "用户希望把 Agent 技术认知沉淀为个人技能记录。",
+      "用户希望把 Jarvis Lite 后续方案重构为个人设备级 Agent 路线。",
+      "项目下一步已有自然延续：草稿参数接收第一版。"
+    ],
+    "unknown": [
+      "手机和手表接入的具体平台暂未确定，文档仅做路线，不做具体实现。",
+      "草稿参数接收第一版优先支持直接输入完整命令，不做自然语言参数抽取。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": "文档写入 word/；实现层支持用户在收到命令草稿后输入完整 / 命令，并进入现有确认执行流程。",
+    "technical_choice": "复用 JarvisAgent 现有建议命令确认机制，新增当前实例内草稿状态，不持久化草稿。",
+    "risk_points": [
+      "不能把普通斜杠命令全局改成待确认。",
+      "只有上一条建议产生草稿后，才把用户输入的同类完整命令解释为草稿补全。",
+      "不推断路径、不自动执行不完整命令。"
+    ],
+    "verification": "文档创建后执行 TDD，跑专项测试、Agent 测试、全量测试、桌面 smoke 和 diff 检查。"
+  }
+}

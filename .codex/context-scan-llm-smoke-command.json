@@ -1,0 +1,31 @@
+{
+  "date": "2026-05-27",
+  "executor": "Codex",
+  "task": "补全 LLM 调用 smoke 命令",
+  "tooling_note": "当前可用工具中没有 sequential-thinking、shrimp-task-manager、code-index；本轮使用 rg、本地文件读取、apply_patch、unittest 降级执行。",
+  "current_state": {
+    "router": "src/jarvis_lite/llm.py 已有 LLMSettings、LLMRouter、FakeLLMProvider、OpenAIResponsesProvider。",
+    "agent": "src/jarvis_lite/agent.py 会在本地命令、身份、本地意图和知识库问答之后调用 _answer_from_llm。",
+    "commands": "已有 /llm-status、/llm-usage、/llm-config-example。",
+    "docs": "word/PROJECT-PLAN.md 后续目标包含“真实 provider 本地配置 smoke、兼容端点体验和用量观察能力”。"
+  },
+  "gap": [
+    "当前没有显式命令强制调用 LLM，用户只能通过普通兜底输入间接触发。",
+    "普通兜底路径会执行 LLM 返回的 command，不适合作为配置 smoke。",
+    "缺少一个不会打印 key、不会执行 LLM 命令建议、但能记录 usage 的调试入口。"
+  ],
+  "target_contract": [
+    "/llm-smoke [prompt] 强制调用当前 LLM Router。",
+    "未启用 LLM 时返回清晰状态，不触发网络。",
+    "默认 prompt 可用，用户可自定义 prompt。",
+    "返回结构化 intent 摘要，answer/clarification/reason/command 按类型展示。",
+    "如果 LLM 返回 command，只展示建议，不执行命令。",
+    "provider 返回 usage 时沿用现有 _record_llm_usage 写入 logs/jarvis.log。",
+    "真实 key、真实 URL 不写入代码、文档或验证记录。"
+  ],
+  "verification": [
+    "新增 Agent RED/GREEN 测试覆盖未启用、answer、command 不执行、usage 记录、help 列表。",
+    "运行 tests.test_agent 和全量 unittest。",
+    "运行桌面 smoke、git diff --check、Markdown 本地链接检查。"
+  ]
+}

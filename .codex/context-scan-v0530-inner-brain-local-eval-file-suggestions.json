@@ -1,0 +1,43 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.53.0 InnerBrain 本机评估全量视图文件名候选提示",
+  "location": {
+    "agent_response": "src/jarvis_lite/agent.py::_describe_inner_brain_local_evaluation",
+    "evaluation_report": "src/jarvis_lite/inner_brain.py::InnerBrainEvaluationReport.source_file_counts",
+    "agent_tests": "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_command_lists_only_local_cases"
+  },
+  "current_behavior": {
+    "full_local_view": "/inner-brain-eval-local 有样本时追加后续处理，但文件聚焦入口仍是占位：/inner-brain-eval-local-file 文件名",
+    "file_view": "/inner-brain-eval-local-file 文件名 已提示当前文件失败视图、当前文件已处理清单和返回全部本机评估",
+    "empty_view": "本机 evaluation 为空时保留添加样本引导，不追加全量后续处理"
+  },
+  "available_reuse": {
+    "source_file_counts": "InnerBrainEvaluationReport 已提供按 source_file 聚合的 Mapping[str, int]",
+    "file_loading_order": "load_evaluation_cases() 使用 sorted(evaluation_dir.glob(\"*.jsonl\"))，输出文件名顺序稳定",
+    "existing_no_training_assertions": "Agent 本机评估相关测试均断言不创建 data/inner-brain/training/runtime.jsonl"
+  },
+  "questions": [
+    {
+      "priority": "high",
+      "question": "是否需要新增评估数据结构？",
+      "answer": "不需要，直接复用 report.source_file_counts。"
+    },
+    {
+      "priority": "high",
+      "question": "是否影响空样本引导？",
+      "answer": "不影响，report.total_count == 0 时仍直接返回 describe_inner_brain_evaluation()。"
+    },
+    {
+      "priority": "medium",
+      "question": "文件过滤视图是否需要再列其它文件？",
+      "answer": "不需要，文件过滤视图已返回全部本机评估入口，本阶段只改善全量视图里的文件名占位。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": "输入为 InnerBrainEvaluationReport；输出为 Agent 响应文本；仅在全量本机评估有 source_file_counts 时追加具体文件命令。",
+    "technical_choice": "复用 report.source_file_counts，不新增自研状态或文件扫描。",
+    "risks": "提示文本过长；本阶段只列本机 evaluation 文件名及数量，避免展开样本内容。",
+    "verification": "TDD 目标测试、Agent+InnerBrain 回归、全量 unittest、桌面 smoke、安装包构建、静态/链接/敏感检查。"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "经验建议命令联动第一版",
+  "location": {
+    "agent": "src/jarvis_lite/agent.py",
+    "intent": "src/jarvis_lite/intent.py",
+    "tests": "tests/test_agent.py",
+    "docs": [
+      "README.md",
+      "word/2026-05-21-jarvis-lite-natural-language-brain-progress.md",
+      "verification.md"
+    ]
+  },
+  "current_behavior": [
+    "/experience-advice 关键词 会引用 search_experiences() 返回相关经验。",
+    "没有经验匹配时会提示先用 /experience 记录经验。",
+    "自然语言“我该怎么导入资料”会映射到 /experience-advice 导入资料。"
+  ],
+  "gap": [
+    "经验建议还没有直接带出下一步可执行命令。",
+    "用户看到经验后仍需要自己去 /help 中找对应命令。"
+  ],
+  "design": [
+    "在 Agent 内新增固定命令建议映射，不新增外部依赖和存储格式。",
+    "按关键词包含匹配推荐现有命令，例如导入、标签、日报、目录、更新、语音、经验。",
+    "输出仍保留相关经验和 /experience-search 提示。"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risk_points": true,
+    "verification_method": true
+  }
+}

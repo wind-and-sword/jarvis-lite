@@ -1,0 +1,21 @@
+{
+  "date": "2026-05-22",
+  "executor": "Codex",
+  "task": "日报运行态上下文联动",
+  "tooling_fallback": {
+    "sequential_thinking": "当前会话未提供 sequential-thinking MCP，使用本地代码阅读、rg 和 update_plan 替代并记录。",
+    "shrimp_task_manager": "当前会话未提供 shrimp-task-manager MCP，使用本地计划和 .codex 记录替代。",
+    "code_index": "当前会话未提供 code-index MCP，使用 rg 替代。"
+  },
+  "context": {
+    "daily_report_current": "write_daily_report() 当前生成长期记忆、知识库状态、常用目录、经验记忆和最近工具日志。",
+    "runtime_context_current": "runtime_context.py 已持久化最近资料、最近目录、最近搜索结果和最近建议。",
+    "gap": "日报没有展示运行态最近上下文，用户生成日报后不能直接看到最近工作对象。",
+    "design": "在 automation._daily_report_content() 中加载 RuntimeContext，新增“最近上下文”段；没有上下文时写明暂无。"
+  },
+  "verification": [
+    "新增 Automation 测试，先证明日报缺少最近上下文段。",
+    "实现日报运行态上下文格式化。",
+    "运行 tests.test_automation、Agent 专项、全量 unittest、桌面 smoke 和 git diff --check。"
+  ]
+}

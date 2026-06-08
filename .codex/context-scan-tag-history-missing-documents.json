@@ -1,0 +1,50 @@
+{
+  "task": "批量标签历史资料缺失提示",
+  "date": "2026-05-26",
+  "executor": "Codex",
+  "tooling": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index"
+    ],
+    "fallback": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "apply_patch",
+      "unittest"
+    ]
+  },
+  "location": {
+    "agent": "src/jarvis_lite/agent.py::_read_tagged_documents_history_documents",
+    "preview": "src/jarvis_lite/agent.py::_document_preview",
+    "tests": "tests/test_agent.py::AgentTests"
+  },
+  "current_state": {
+    "history_read": "读取第 N 条标签历史资料会恢复 document_paths 为最近资料列表，并输出编号、摘要、恢复提示。",
+    "gap": "如果历史里的资料路径后来被删除或移动，当前输出没有明确缺失提示，摘要读取路径也可能触发文件读取错误。"
+  },
+  "similar_cases": [
+    "读取编号最近文件时会先判断文件是否存在，不存在则返回明确提示。",
+    "旧批量标签历史缺少 document_paths 时，读取历史影响资料返回明确提示。",
+    "知识库读取命令对缺失资料返回清晰错误。"
+  ],
+  "chosen_design": "读取历史影响资料时逐项检查 data/<relative_path> 是否存在；存在则继续显示摘要，不存在则在该编号行标注资料缺失。最近资料列表仍按历史路径恢复，方便用户看到原始历史影响范围。",
+  "interface_contract": {
+    "input": "读取第 N 条标签历史资料",
+    "output": "存在资料显示编号和摘要；缺失资料显示 `data/<path>（资料缺失）`；恢复提示和可继续操作保持不变。",
+    "risk": "后续用户再读取缺失编号时仍会走既有 /read 缺失资料错误，本轮只改善历史列表扫读。"
+  },
+  "verification": [
+    "新增 Agent 测试：删除历史中的第二份资料后，读取历史资料输出资料缺失。",
+    "运行目标测试确认 RED，再实现 GREEN。",
+    "运行批量标签历史相关回归、全量 unittest、桌面 smoke 和 git diff --check。"
+  ],
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

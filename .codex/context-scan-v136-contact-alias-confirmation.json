@@ -1,0 +1,33 @@
+{
+  "date": "2026-06-04",
+  "executor": "Codex",
+  "task": "v136 contact alias confirmation",
+  "location": {
+    "candidate_module": "src/jarvis_lite/memory_config_candidates.py",
+    "agent_commands": "src/jarvis_lite/agent.py",
+    "manager_status": "src/jarvis_lite/memory_config_manager.py",
+    "tests": [
+      "tests/test_memory_config_candidates.py",
+      "tests/test_memory_config_manager.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "tests/test_llm.py"
+    ]
+  },
+  "current_state": {
+    "latest_version": "0.130.0",
+    "latest_commit": "30dcdea feat: 增强任务失败复盘上下文 0.130.0",
+    "high_risk_candidates": "app_alias/contact_alias/authorization_rule/preference currently return confirmation drafts from /config-candidate-apply and remain active.",
+    "long_term_writes": "Only memory, experience, and directory candidates are currently persisted by /config-candidate-apply."
+  },
+  "decision": {
+    "next_stage": "0.131.0 contact alias explicit confirmation and undo first stage",
+    "reason": "PROJECT-PLAN next-stage line calls for real high-risk confirmation persistence with undo; contact_alias is the smallest useful slice and does not change desktop execution behavior.",
+    "boundary": "Do not confirm authorization rules, app aliases, preferences, or automatic message sending in this stage."
+  },
+  "verification_plan": [
+    "RED tests for contact alias persistence, candidate status, undo, manager count, Agent commands, LLM command whitelist exclusion, and version metadata.",
+    "Target GREEN, adjacent regression, full unittest, command-line smoke, source desktop smoke, installer build, packaged smoke, static checks."
+  ],
+  "tooling_note": "sequential-thinking, shrimp-task-manager, code-index, and exa MCP tools are not exposed in this Codex session; used local structured scan, rg/Get-Content, update_plan, and project docs instead."
+}

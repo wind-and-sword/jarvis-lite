@@ -1,0 +1,42 @@
+{
+  "date": "2026-06-03",
+  "actor": "Codex",
+  "task": "0.91.0 InnerBrain 本机报告导出反馈待处理失败计数标签",
+  "tool_fallback": "当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；使用本地结构化分析、rg、Get-Content、update_plan 和 unittest 降级执行。",
+  "scope": {
+    "target_files": [
+      "src/jarvis_lite/agent.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "pyproject.toml",
+      "src/jarvis_lite/__init__.py",
+      "README.md",
+      "word/PROJECT-PLAN.md",
+      "word/plans/README.md",
+      "word/plans/2026-06-03-v95-inner-brain-report-count-pending-label-plan.md",
+      "word/progress/2026-06-03.md",
+      "word/文档索引.md",
+      "verification.md",
+      "verification/2026-06/2026-06-03.md"
+    ],
+    "change": "把 /inner-brain-eval-local-report [文件名] 导出反馈中的计数行从“失败样本：N”统一为“待处理失败样本：N”。",
+    "non_goals": [
+      "不修改 Markdown 报告正文里的失败统计标题",
+      "不修改命令集合或别名",
+      "不修改失败筛选、排序、报告路径、本机 evaluation payload 或训练写入"
+    ]
+  },
+  "evidence": {
+    "feedback_line": "src/jarvis_lite/agent.py::_export_inner_brain_local_evaluation_report() 当前输出 f\"失败样本：{save_result.failed_count}\"",
+    "tests": [
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_report_command_exports_failed_markdown_without_training 当前断言“失败样本：1”",
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_report_command_can_filter_local_file 可补充指定文件导出反馈计数断言"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "risks_identified": true,
+    "verification_known": true
+  }
+}

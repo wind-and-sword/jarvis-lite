@@ -1,0 +1,70 @@
+{
+  "date": "2026-06-02",
+  "executor": "Codex",
+  "task": "0.43.0 InnerBrain 本机评估失败文件意图混淆交叉汇总",
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露 sequential-thinking MCP；已降级为本地结构化分析并写入本文件。",
+    "shrimp_task_manager": "当前会话未暴露 shrimp-task-manager MCP；已降级为 update_plan 与本地计划文档。",
+    "code_index": "当前会话未暴露 code-index MCP；已降级为 rg 与 Get-Content 检索。",
+    "exa": "本阶段不需要网络事实检索；tool_search 未发现 exa MCP，若后续需要联网检索再按可用工具降级。"
+  },
+  "structured_scan": {
+    "git_state": [
+      "main 与 origin/main 同步，HEAD 为 3edc1fe feat: 汇总本机评估意图混淆 0.42.0。",
+      "工作树干净。"
+    ],
+    "location": [
+      "src/jarvis_lite/inner_brain.py: InnerBrainEvaluationReport、describe_inner_brain_evaluation()、export_inner_brain_evaluation_report()",
+      "tests/test_inner_brain.py: 失败文件、失败意图混淆和报告导出测试",
+      "tests/test_agent.py: /inner-brain-eval-local-report 导出测试",
+      "tests/test_project_metadata.py: 发布版本一致性测试"
+    ],
+    "current_state": [
+      "0.42.0 已新增 failed_intent_confusion_counts，failures-only 描述会输出 失败意图混淆汇总。",
+      "failures-only 描述当前顺序为失败文件、失败类型汇总、失败期望意图汇总、失败意图混淆汇总、失败原因汇总、失败样例和失败修复建议。",
+      "Markdown 报告复用 describe_inner_brain_evaluation(report, failures_only=True)。"
+    ],
+    "similar_implementations": [
+      "failed_source_file_counts 只统计失败样本来源文件，并且只在未指定 source_file_filter 时展示。",
+      "failed_intent_confusion_counts 只统计 expected_intent != result.intent 的失败样本。",
+      "failed_expected_intent_counts 和 failed_reason_counts 都使用只读派生属性，不改 evaluation JSONL payload。"
+    ],
+    "observation_report": [
+      "v46 后续明确：若同一混淆方向仍无法定位原因，再考虑按来源文件与混淆方向交叉汇总。",
+      "交叉汇总可直接从 case.source_file、case.expected_intent 和 result.intent 计算，不需要解析 reason 文本。",
+      "交叉汇总只在未指定单个文件时展示，避免单文件报告重复列出文件名。"
+    ]
+  },
+  "key_questions": [
+    {
+      "priority": "high",
+      "question": "交叉汇总的接口契约是什么？",
+      "answer": "新增 InnerBrainEvaluationReport.failed_source_file_intent_confusion_counts，返回 Mapping[tuple[str, str], int]，key 为 (source_file, 'expected -> actual')，只统计失败样本中有 source_file 且 expected_intent != result.intent 的记录。"
+    },
+    {
+      "priority": "high",
+      "question": "输出位置在哪里？",
+      "answer": "在 failures-only 的 失败意图混淆汇总 之后、失败原因汇总 之前输出 失败文件意图混淆汇总，保持从整体混淆方向到来源文件定位再到具体原因的排查顺序。"
+    },
+    {
+      "priority": "medium",
+      "question": "是否在单文件过滤报告中展示？",
+      "answer": "不展示。source_file_filter 非空时已经限定单个文件，普通失败意图混淆汇总足够定位方向。"
+    }
+  ],
+  "targeted_dive": [
+    {
+      "question": "如何构造稳定测试样本？",
+      "evidence": "请看看资料库状态、知识库状态 当前会被识别为 knowledge.status，但测试期望设为 knowledge.summary，可稳定产生 knowledge.summary -> knowledge.status 混淆。",
+      "decision": "用同一混淆方向分别放入 runtime.jsonl 与 failed-log.jsonl，验证按文件交叉计数；再放入桌面删除策略失败样本验证意图一致不计入。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": "已明确：failed_source_file_intent_confusion_counts 返回 Mapping[tuple[str, str], int]；未指定 source_file_filter 的 failures-only 描述新增 失败文件意图混淆汇总 段落。",
+    "technical_choice": "沿用 0.37.0-0.42.0 的只读派生属性和描述函数模式，避免新增依赖、持久化字段或自研复杂分析。",
+    "main_risks": "新增段落会影响报告文本顺序；通过 InnerBrain 描述测试、Markdown 导出测试和 Agent 导出测试固定行为。",
+    "verification": "按 TDD 先写目标失败测试，再实现，随后运行目标测试、相邻回归、全量 unittest、桌面 smoke、安装包和静态检查。",
+    "all_checked": true
+  },
+  "decision": "进入 0.43.0 实施：在本机失败评估视图和 Markdown 报告中增加失败文件意图混淆交叉汇总。"
+}

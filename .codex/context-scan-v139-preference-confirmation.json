@@ -1,0 +1,74 @@
+{
+  "date": "2026-06-05",
+  "executor": "Codex",
+  "task": "v139 preference candidate confirmation and undo",
+  "tooling": {
+    "unavailable_mcp": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "fallback": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "apply_patch",
+      "unittest"
+    ]
+  },
+  "current_state": {
+    "release": "0.133.0",
+    "head": "afc62e5 feat: 增加授权规则确认固化 0.133.0",
+    "working_tree": "clean at scan time",
+    "previous_stage": "authorization_rule confirmation writes config/authorization.local.json and supports undo"
+  },
+  "location": {
+    "candidate_logic": "src/jarvis_lite/memory_config_candidates.py",
+    "manager_status": "src/jarvis_lite/memory_config_manager.py",
+    "agent_commands": "src/jarvis_lite/agent.py",
+    "metadata": [
+      "src/jarvis_lite/__init__.py",
+      "pyproject.toml",
+      "tests/test_project_metadata.py"
+    ],
+    "tests": [
+      "tests/test_memory_config_candidates.py",
+      "tests/test_memory_config_manager.py",
+      "tests/test_agent.py",
+      "tests/test_project_metadata.py",
+      "tests/test_llm.py"
+    ]
+  },
+  "similar_implementations": [
+    {
+      "feature": "contact_alias",
+      "evidence": "src/jarvis_lite/contacts.py centralizes config/contacts.local.json parsing, save, remove and count."
+    },
+    {
+      "feature": "app_alias",
+      "evidence": "src/jarvis_lite/app_registry.py persists app aliases in config/apps.local.json and preserves unrelated app overrides on undo."
+    },
+    {
+      "feature": "authorization_rule",
+      "evidence": "src/jarvis_lite/authorization_rules.py persists rule text in config/authorization.local.json and only displays it without changing execution decisions."
+    }
+  ],
+  "design_direction": {
+    "scope": "Add explicit confirmation and undo for preference candidates as an auditable local config record.",
+    "storage": "config/preferences.local.json with a preferences list; records contain preference text, source, created_at and updated_at.",
+    "observable_effect": "/config-manager-status shows local preference count; candidate history and active list show confirm and undo state.",
+    "non_goals": [
+      "Do not use saved preferences to alter response style automatically in this stage.",
+      "Do not add /config-candidate-confirm or /config-candidate-undo to the LLM command whitelist.",
+      "Do not let ordinary chat or LLM fallback write preferences.",
+      "Do not write API keys or sensitive settings into preferences.local.json."
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract_clear": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  }
+}

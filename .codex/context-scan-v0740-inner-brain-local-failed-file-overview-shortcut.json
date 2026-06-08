@@ -1,0 +1,65 @@
+{
+  "date": "2026-06-03",
+  "executor": "Codex",
+  "task": "0.74.0 InnerBrain 本机失败视图失败文件分组当前文件总览入口",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "used": [
+      "Get-Content",
+      "rg",
+      "update_plan",
+      "apply_patch",
+      "unittest",
+      "local smoke/build checks"
+    ]
+  },
+  "scan": {
+    "location": [
+      "src/jarvis_lite/inner_brain.py::describe_inner_brain_evaluation",
+      "tests/test_agent.py::AgentTests.test_inner_brain_eval_local_failed_command_groups_failures_by_local_file",
+      "tests/test_inner_brain.py::InnerBrainTests.test_inner_brain_failed_evaluation_groups_failures_by_local_file"
+    ],
+    "current_behavior": "全量本机失败视图的失败文件分组只提供同文件失败入口和同文件报告入口，缺少同文件全部样本总览入口。",
+    "similar_patterns": [
+      "0.71.0 指定文件报告导出反馈提示当前文件全部样本。",
+      "0.72.0 指定文件失败视图提示当前文件全部样本。",
+      "0.73.0 指定文件已处理视图提示当前文件全部样本。"
+    ],
+    "tech_stack": [
+      "Python 3.13",
+      "unittest",
+      "PySide6 desktop smoke",
+      "PyInstaller Windows installer"
+    ],
+    "tests": [
+      "目标 RED/GREEN",
+      "tests.test_agent + tests.test_inner_brain + tests.test_project_metadata 相邻回归",
+      "全量 unittest discover",
+      "源码桌面 smoke",
+      "Windows 安装包构建",
+      "打包后 exe smoke",
+      "Markdown 本地链接、敏感差异和本地配置检查"
+    ]
+  },
+  "questions": {
+    "known": [
+      "只改变失败文件分组候选行文案，不新增命令。",
+      "入口复用已有 /inner-brain-eval-local-file 文件名。",
+      "失败文件分组只在全量失败视图显示。"
+    ],
+    "unknown": [],
+    "priority": []
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risks_identified": true,
+    "verification_known": true
+  },
+  "observation": "该入口补齐从失败文件分组直接进入同文件总览的路径，风险集中在现有精确字符串断言。"
+}

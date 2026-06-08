@@ -1,0 +1,28 @@
+{
+  "date": "2026-05-18",
+  "executor": "Codex",
+  "task": "初始化 Jarvis Lite 第一阶段 Python 命令行助手骨架",
+  "user_request": "现在开始第一步，并按照 DOCUMENTATION.md 整理对应文档和文件夹。",
+  "scope": [
+    "创建 Python 项目目录结构",
+    "创建长期记忆文件 memory/profile.md",
+    "实现命令行入口和基础对话调度",
+    "实现本地工具白名单、读取 data 文件、写入笔记、生成总结、记录日志",
+    "编写并运行本地测试",
+    "按 DOCUMENTATION.md 更新 .codex 和 word 文档"
+  ],
+  "out_of_scope": [
+    "接入真实大模型 API",
+    "复杂 UI",
+    "语音入口",
+    "外部系统或设备控制"
+  ],
+  "constraints": [
+    "优先使用 Python 标准库，第一步不引入第三方依赖",
+    "使用 unittest 做本地自动化测试",
+    "正式用户可读文档放 word/",
+    "Codex 过程记录放 .codex/",
+    "运行日志放 logs/",
+    "临时排障日志 日志.txt 不进入 Git"
+  ]
+}
