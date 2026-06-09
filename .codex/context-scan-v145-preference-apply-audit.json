@@ -1,0 +1,49 @@
+{
+  "date": "2026-06-09",
+  "executor": "Codex",
+  "stage": "v145 / 0.140.0",
+  "topic": "偏好应用确认记录与撤销第一阶段",
+  "trigger": "用户要求按 Jarvis Lite 1.0 正式版节奏继续；PROJECT-PLAN 后续目标要求优先评估偏好确认后的普通回复应用策略和可撤销范围。",
+  "current_state": {
+    "version": "0.139.0",
+    "commands": [
+      "/preference-status",
+      "/preference-enable 编号或ID",
+      "/preference-disable 编号或ID",
+      "/preference-preview [输入文本]",
+      "/preference-apply-draft [输入文本]",
+      "/preference-apply-confirm [输入文本]"
+    ],
+    "boundary": "/preference-apply-confirm 只输出本次确认结果，不持久化确认记录，也不能撤销确认记录。"
+  },
+  "known_patterns": [
+    "preferences.py 负责偏好读写、启停、预览、草稿、确认和冲突提示。",
+    "runtime_context.py 保存跨 Agent 可恢复的轻量运行态上下文，适合存放最近确认记录和撤销状态。",
+    "agent.py 通过显式 slash command 暴露偏好管理入口。",
+    "memory_config_manager.py 的可管理入口用静态文案列出相关命令。",
+    "tests/test_preferences.py 覆盖 helper，tests/test_agent.py 覆盖命令和帮助/status 文案，tests/test_llm.py 覆盖 LLM 白名单边界。"
+  ],
+  "key_questions": [
+    {
+      "question": "确认记录是否应该写入长期偏好配置？",
+      "answer": "不写入 config/preferences.local.json。确认记录属于运行态审计上下文，写入项目外 jarvis-lite-runtime/agent-context.json，避免污染长期偏好定义。"
+    },
+    {
+      "question": "撤销确认是否应该停用偏好？",
+      "answer": "不应该。撤销只撤销本次确认记录，不删除或停用偏好，也不回滚已经展示过的命令输出。"
+    },
+    {
+      "question": "是否把偏好自动应用到普通聊天或 LLM prompt？",
+      "answer": "本阶段仍不自动应用。先补确认记录、历史查看和撤销范围，为后续普通回复应用策略提供可审计基础。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice": true,
+    "main_risks_identified": true,
+    "verification_known": true
+  },
+  "tool_fallbacks": [
+    "sequential-thinking MCP、shrimp-task-manager、code-index 和 exa 未在当前工具列表中提供；使用 rg、Get-Content、git、update_plan、apply_patch、superpowers 流程和本地 unittest 替代。"
+  ]
+}

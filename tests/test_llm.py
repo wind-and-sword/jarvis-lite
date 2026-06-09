@@ -272,6 +272,8 @@ class LLMTests(unittest.TestCase):
         self.assertNotIn("/preference-preview", instructions)
         self.assertNotIn("/preference-apply-draft", instructions)
         self.assertNotIn("/preference-apply-confirm", instructions)
+        self.assertNotIn("/preference-apply-history", instructions)
+        self.assertNotIn("/preference-apply-undo", instructions)
         self.assertNotIn("/task-fail-capture", instructions)
         self.assertNotIn("/chrome-open URL", instructions)
         self.assertNotIn("/clash-open", instructions)

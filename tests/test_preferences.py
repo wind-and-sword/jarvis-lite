@@ -3,6 +3,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -10,6 +11,7 @@ from jarvis_lite.config import build_project_paths
 from jarvis_lite.preferences import (
     PREFERENCES_FILENAME,
     describe_confirmed_preference_application,
+    describe_preference_application_history,
     describe_preference_application_draft,
     describe_preference_preview,
     describe_preferences,
@@ -19,7 +21,9 @@ from jarvis_lite.preferences import (
     remove_preference,
     save_preference,
     set_preference_enabled,
+    undo_preference_application,
 )
+from jarvis_lite.runtime_context import load_runtime_context
 
 
 class PreferenceTests(unittest.TestCase):
@@ -221,6 +225,74 @@ class PreferenceTests(unittest.TestCase):
             self.assertIn("应用范围：仅限本次 /preference-apply-confirm 命令输出", confirmation)
             self.assertIn("不写入 LLM prompt", confirmation)
             self.assertIn("不影响普通聊天、路由或执行决策", confirmation)
+
+    def test_confirmed_preference_application_records_auditable_history(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            preference = save_preference(paths, "回答尽量简洁", source="test")
+            set_preference_enabled(paths, preference.preference_id, True)
+
+            confirmation = describe_confirmed_preference_application(paths, "帮我总结知识库")
+            history = describe_preference_application_history(paths)
+
+            self.assertRegex(confirmation, r"确认ID：prefapp-[0-9a-f]{10}")
+            self.assertIn("偏好应用确认历史", history)
+            self.assertIn("1. 已确认 [prefapp-", history)
+            self.assertIn("应用输入：帮我总结知识库", history)
+            self.assertIn(f"- [{preference.preference_id}] 回答尽量简洁", history)
+            self.assertIn("撤销确认：/preference-apply-undo 编号或ID", history)
+
+    def test_confirmed_preference_application_keeps_same_second_duplicate_history(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            preference = save_preference(paths, "回答尽量简洁", source="test")
+            set_preference_enabled(paths, preference.preference_id, True)
+
+            with patch("jarvis_lite.preferences._now_iso", return_value="2026-06-09T15:23:28"):
+                describe_confirmed_preference_application(paths, "帮我总结知识库")
+                describe_confirmed_preference_application(paths, "帮我总结知识库")
+
+            applications = load_runtime_context(paths).recent_preference_applications
+            history = describe_preference_application_history(paths)
+
+            self.assertEqual(len(applications), 2)
+            self.assertNotEqual(applications[0].application_id, applications[1].application_id)
+            self.assertIn("1. 已确认 [prefapp-", history)
+            self.assertIn("2. 已确认 [prefapp-", history)
+
+    def test_failed_preference_application_confirmation_does_not_record_history(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            concise = save_preference(paths, "回答尽量简洁", source="test")
+            detailed = save_preference(paths, "回答尽量详细", source="test")
+
+            no_enabled = describe_confirmed_preference_application(paths, "帮我总结知识库")
+            set_preference_enabled(paths, concise.preference_id, True)
+            set_preference_enabled(paths, detailed.preference_id, True)
+            conflicted = describe_confirmed_preference_application(paths, "帮我总结知识库")
+            history = describe_preference_application_history(paths)
+
+            self.assertIn("无法确认偏好应用：暂无已启用偏好", no_enabled)
+            self.assertIn("无法确认偏好应用：存在偏好冲突", conflicted)
+            self.assertIn("偏好应用确认历史：暂无", history)
+
+    def test_preference_application_undo_marks_history_without_disabling_preferences(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            preference = save_preference(paths, "回答尽量简洁", source="test")
+            set_preference_enabled(paths, preference.preference_id, True)
+            describe_confirmed_preference_application(paths, "帮我总结知识库")
+
+            undo = undo_preference_application(paths, 1)
+            history = describe_preference_application_history(paths)
+            preferences = read_preferences(paths)
+
+            self.assertIn("已撤销偏好应用确认", undo)
+            self.assertIn("只撤销确认记录", undo)
+            self.assertIn("不删除或停用偏好", undo)
+            self.assertIn("不回滚已经展示的输出", undo)
+            self.assertIn("1. 已撤销 [prefapp-", history)
+            self.assertTrue(preferences[0].enabled)
 
     def test_confirmed_preference_application_rejects_enabled_conflicts(self):
         with tempfile.TemporaryDirectory() as temp_dir:

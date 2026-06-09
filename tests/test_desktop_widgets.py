@@ -401,7 +401,7 @@ class DesktopWidgetTests(unittest.TestCase):
         settings = load_desktop_settings(self.paths)
         self.assertEqual(settings.position_x, 240)
         self.assertEqual(settings.position_y, 180)
-        self.assertEqual(desktop_settings_path(self.paths).parent, self.project_root.parent / "jarvis-lite-runtime")
+        self.assertEqual(desktop_settings_path(self.paths).parent, self.project_root.resolve().parent / "jarvis-lite-runtime")
 
     def test_pet_window_restores_desktop_preferences_on_startup(self):
         self.panel.close()

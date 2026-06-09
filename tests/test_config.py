@@ -16,7 +16,7 @@ class ConfigTests(unittest.TestCase):
 
             paths = build_project_paths(root)
 
-            self.assertEqual(paths.root, root)
+            self.assertEqual(paths.root, root.resolve())
             self.assertTrue(paths.memory_dir.is_dir())
             self.assertTrue(paths.data_dir.is_dir())
             self.assertTrue(paths.logs_dir.is_dir())
@@ -30,7 +30,7 @@ class ConfigTests(unittest.TestCase):
             with patch.dict("os.environ", {"LOCALAPPDATA": str(local_app_data)}), patch.object(sys, "frozen", True, create=True):
                 paths = build_project_paths()
 
-            self.assertEqual(paths.root, local_app_data / "Jarvis Lite")
+            self.assertEqual(paths.root, (local_app_data / "Jarvis Lite").resolve())
             self.assertTrue(paths.memory_dir.is_dir())
             self.assertTrue(paths.data_dir.is_dir())
             self.assertTrue(paths.config_dir.is_dir())

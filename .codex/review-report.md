@@ -855,3 +855,43 @@
 - 命令行 smoke：`preference-apply-confirm smoke OK`。
 - 打包：`JarvisLiteSetup-0.139.0.exe` 生成，大小 `60,469,248` 字节；版本资源为 `0.139.0`。
 - 静态检查：`git diff --check` 退出码 0；Markdown 本地链接 654 项通过；严格真实密钥形态扫描 17 个公开变更/新增文件无命中。
+
+# 0.140.0 偏好应用确认记录与撤销第一阶段审查报告
+
+> 日期：2026-06-09
+> 执行者：Codex
+
+## 结论
+
+- 建议：通过。
+- 综合评分：96/100。
+- 技术评分：96/100。
+- 战略评分：95/100。
+
+## 核对清单
+
+- 需求字段完整性：通过。目标、非目标、实施步骤和验收标准已写入 v145 计划。
+- 接口契约：通过。`/preference-apply-confirm [输入文本]` 成功后记录运行态确认历史；`/preference-apply-history` 查看最近确认记录；`/preference-apply-undo 编号或ID` 只撤销确认记录。
+- 执行边界：通过。当前阶段不改变普通聊天、LLM prompt、SearchRouter、InnerBrain、路由或执行决策；历史和撤销命令不进入 LLM 白名单。
+- 持久化边界：通过。确认记录写入运行态 `recent_preference_applications`；撤销只把确认记录标记为 `undone`，不停用偏好、不删除偏好、不回滚已经展示的输出。
+- 缺陷处理：通过。断线恢复后复核 `日志.txt`，修正 command-line smoke 使用的不存在 API；追加同秒重复确认 ID 碰撞回归测试并修复。
+- 测试覆盖：通过。目标 RED/GREEN、相邻回归、全量回归、命令行 smoke、源码桌面 smoke、安装包构建、打包后 smoke 和静态检查均已记录。
+- 文档同步：通过。README、PROJECT-PLAN、v145 计划、计划索引、文档索引、进度和验证记录均已同步到 `0.140.0`。
+
+## 风险与处理
+
+- 撤销语义当前仅覆盖确认记录状态，不影响已经展示过的确认输出；该边界已在命令输出、计划和验证记录中明确。
+- 同秒重复确认在相同输入和相同启用偏好下原本会生成相同 `prefapp-*` ID；已新增回归测试并在 ID 碰撞时追加序号参与哈希，保留每次确认历史。
+- 偏好仍未自动进入普通回复链路；下一阶段如果要真实影响回复，需要单独设计应用链路、审计和冲突优先级。
+
+## 证据
+
+- 目标 RED：目标命令先失败，失败原因符合预期。
+- 目标 GREEN：相邻回归 453 项通过。
+- 追加 RED/GREEN：`test_confirmed_preference_application_keeps_same_second_duplicate_history` 先失败后通过。
+- 目标复验：438 项通过。
+- 全量回归：770 项通过。
+- 断线恢复最终复验：770 项通过。
+- 命令行 smoke：`preference-apply-audit-smoke OK`。
+- 打包：`JarvisLiteSetup-0.140.0.exe` 生成，大小 `59,715,584` 字节；版本资源为 `0.140.0`。
+- 静态检查：`git diff --check` 退出码 0；Markdown 本地链接 666 项通过；严格真实密钥形态扫描 25 个公开变更/新增文件无命中。

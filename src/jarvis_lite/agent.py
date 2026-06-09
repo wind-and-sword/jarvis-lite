@@ -119,10 +119,12 @@ from .memory_config_candidates import (
 )
 from .preferences import (
     describe_confirmed_preference_application,
+    describe_preference_application_history,
     describe_preference_application_draft,
     describe_preference_preview,
     describe_preferences,
     set_preference_enabled,
+    undo_preference_application,
 )
 from .idea_workflow import (
     describe_idea_focus,
@@ -1165,6 +1167,17 @@ class JarvisAgent:
             self.tools.run("record_log", message="确认本次偏好应用")
             return describe_confirmed_preference_application(self.paths, confirmation_input)
 
+        if command == "/preference-apply-history":
+            self.tools.run("record_log", message="查看偏好应用确认历史")
+            return describe_preference_application_history(self.paths)
+
+        if command == "/preference-apply-undo":
+            if not args:
+                return "用法：/preference-apply-undo 编号或ID"
+            preference_application_reference = args[0]
+            self.tools.run("record_log", message=f"撤销偏好应用确认记录：{preference_application_reference}")
+            return undo_preference_application(self.paths, preference_application_reference)
+
         if command == "/config-candidate-apply":
             if not args:
                 return "用法：/config-candidate-apply 编号"
@@ -1243,6 +1256,8 @@ class JarvisAgent:
                 "/preference-preview [输入文本]：预览已启用偏好的应用草案",
                 "/preference-apply-draft [输入文本]：生成待确认偏好应用草稿",
                 "/preference-apply-confirm [输入文本]：确认本次偏好应用",
+                "/preference-apply-history：查看偏好应用确认历史",
+                "/preference-apply-undo 编号或ID：撤销偏好应用确认记录",
                 "/config-candidate-restore 编号：把已忽略或已固化候选恢复为活跃候选",
                 "/config-candidate-dismiss 编号：忽略指定记忆与配置候选",
                 "/status：查看阶段 1 当前状态",
@@ -3967,6 +3982,7 @@ class JarvisAgent:
             current_task=persisted_context.current_task,
             recent_task_failures=persisted_context.recent_task_failures,
             memory_config_candidates=persisted_context.memory_config_candidates,
+            recent_preference_applications=persisted_context.recent_preference_applications,
         )
 
     def _save_runtime_context(self) -> None:
@@ -4556,6 +4572,8 @@ class JarvisAgent:
                 "- 偏好预览：/preference-preview [输入文本] 预览已启用偏好的应用草案",
                 "- 偏好应用草稿：/preference-apply-draft [输入文本] 生成待确认偏好应用草稿",
                 "- 偏好应用确认：/preference-apply-confirm [输入文本] 确认本次偏好应用",
+                "- 偏好应用历史：/preference-apply-history 查看偏好应用确认历史",
+                "- 偏好应用撤销：/preference-apply-undo 编号或ID 撤销偏好应用确认记录",
                 "- 任务状态：/task-status 查看当前任务、步骤、中断恢复和失败复盘",
                 "- 任务失败截图：/task-fail-capture 失败原因 [lang=chi_sim+eng]",
                 "- 工作台自动化：常用目录、最近文件、日报、整理预览和目录打开记录",

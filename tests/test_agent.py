@@ -1202,6 +1202,37 @@ class AgentTests(unittest.TestCase):
         self.assertIn("偏好应用确认：/preference-apply-confirm", status)
         self.assertIn("/preference-apply-confirm", manager_status)
 
+    def test_preference_apply_history_and_undo_commands_manage_confirmation_records(self):
+        self.agent.handle("/config-candidate-add preference 回答尽量简洁")
+        self.agent.handle("/config-candidate-confirm 1")
+
+        empty_history = self.agent.handle("/preference-apply-history")
+        self.agent.handle("/preference-enable 1")
+        confirmation = self.agent.handle("/preference-apply-confirm 帮我总结知识库")
+        history = self.agent.handle("/preference-apply-history")
+        undo = self.agent.handle("/preference-apply-undo 1")
+        history_after_undo = self.agent.handle("/preference-apply-history")
+        preference_status = self.agent.handle("/preference-status")
+        help_text = self.agent.handle("/help")
+        status = self.agent.handle("/status")
+        manager_status = self.agent.handle("/config-manager-status")
+
+        self.assertIn("偏好应用确认历史：暂无", empty_history)
+        self.assertIn("确认ID：prefapp-", confirmation)
+        self.assertIn("偏好应用确认历史", history)
+        self.assertIn("1. 已确认 [prefapp-", history)
+        self.assertIn("应用输入：帮我总结知识库", history)
+        self.assertIn("已撤销偏好应用确认", undo)
+        self.assertIn("只撤销确认记录", undo)
+        self.assertIn("1. 已撤销 [prefapp-", history_after_undo)
+        self.assertIn("已启用：1 条", preference_status)
+        self.assertIn("/preference-apply-history：查看偏好应用确认历史", help_text)
+        self.assertIn("/preference-apply-undo 编号或ID：撤销偏好应用确认记录", help_text)
+        self.assertIn("偏好应用历史：/preference-apply-history", status)
+        self.assertIn("偏好应用撤销：/preference-apply-undo", status)
+        self.assertIn("/preference-apply-history", manager_status)
+        self.assertIn("/preference-apply-undo", manager_status)
+
     def test_authorization_status_command_reports_policy(self):
         response = self.agent.handle("/authorization-status")
 
@@ -4329,7 +4360,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.139.1",
+                    "version": "0.140.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4340,7 +4371,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.139.1", response)
+        self.assertIn("发现新版本：0.140.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4355,7 +4386,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.139.1",
+                        "version": "0.140.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
@@ -4367,7 +4398,8 @@ class AgentTests(unittest.TestCase):
             downloaded = root / "jarvis-lite-runtime" / "updates" / "JarvisLiteSetup.exe"
 
             self.assertIn("已下载更新安装包", response)
-            self.assertIn(str(downloaded), response)
+            self.assertIn("保存位置：", response)
+            self.assertIn("JarvisLiteSetup.exe", response)
             self.assertEqual(downloaded.read_bytes(), b"installer")
 
     def test_natural_language_identity_question_does_not_pollute_memory(self):

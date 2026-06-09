@@ -8716,3 +8716,19 @@ Test-Path .\config\search.local.json
 - 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.139.0.exe`，大小 `60,469,248` 字节；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.139.0`。
 - 打包后 smoke：`E:\oyzj\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 重定向复验退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
 - 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 654 项通过；严格真实密钥形态扫描 17 个公开变更/新增文件无命中；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。
+
+## 0.140.0 偏好应用确认记录与撤销第一阶段
+
+- RED：目标测试先失败，失败点为缺少偏好应用确认历史 helper、Agent `/preference-apply-history` 和 `/preference-apply-undo` 返回未知命令、版本仍为 `0.139.0`。
+- GREEN：目标实现写入运行态 `recent_preference_applications`，新增历史查看和撤销命令；相邻回归 `Ran 453 tests`，`OK`。
+- 断线恢复：`日志.txt` 尾部显示上次在命令行 smoke 使用不存在的 `load_preferences` 导入后断线；本轮改用 `save_preference`、`set_preference_enabled`、`read_preferences` 和 Agent 命令复跑。
+- 追加 RED：`tests.test_preferences.PreferenceTests.test_confirmed_preference_application_keeps_same_second_duplicate_history` 先失败，固定同一时间戳连续两次相同确认后历史只有 1 条。
+- 追加 GREEN：确认 ID 生成在已有历史存在同 ID 时追加序号参与哈希；单测通过，同秒重复确认保留两条不同 `prefapp-...` 记录。
+- 目标复验：`.\.venv\Scripts\python.exe -m unittest tests.test_preferences tests.test_agent tests.test_llm tests.test_project_metadata -v`，`Ran 438 tests`，`OK`。
+- 全量回归：`.\.venv\Scripts\python.exe -m unittest discover -s tests -v`，`Ran 770 tests`，`OK`。
+- 命令行 smoke：临时项目执行保存偏好、启用偏好、确认、历史、编号撤销、同秒重复确认和按确认 ID 撤销；输出 `preference-apply-audit-smoke OK`，两条同秒确认 ID 为 `prefapp-eef3c515fe` 和 `prefapp-8e505eac4e`。
+- 源码桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 退出码 0，输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.140.0.exe`，大小 `59,715,584` 字节；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.140.0`。
+- 打包后 smoke：`E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 重定向复验退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
+- 断线恢复最终复验：`.\.venv\Scripts\python.exe -m unittest discover -s tests -v`，`Ran 770 tests in 11.525s`，`OK`。
+- 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 666 项通过；严格真实密钥形态扫描 25 个公开变更/新增文件无命中；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。

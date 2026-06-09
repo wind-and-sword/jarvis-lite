@@ -28,8 +28,10 @@ class DesktopSettingsTests(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def test_runtime_dir_lives_next_to_project_root(self):
-        self.assertEqual(runtime_dir(self.paths), self.project_root.parent / "jarvis-lite-runtime")
-        self.assertEqual(desktop_settings_path(self.paths), self.project_root.parent / "jarvis-lite-runtime" / "desktop-settings.json")
+        expected_runtime_dir = self.project_root.resolve().parent / "jarvis-lite-runtime"
+
+        self.assertEqual(runtime_dir(self.paths), expected_runtime_dir)
+        self.assertEqual(desktop_settings_path(self.paths), expected_runtime_dir / "desktop-settings.json")
 
     def test_save_and_load_desktop_position(self):
         saved = save_desktop_position(self.paths, 320, 180)

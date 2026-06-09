@@ -75,7 +75,7 @@ class WindowsInstallerTests(unittest.TestCase):
             paths = windows_installer_paths(project_root=project_root)
             sed = render_iexpress_sed(paths)
 
-        self.assertEqual(paths.output_root, project_root.parent / "jarvis-lite-dist")
+        self.assertEqual(paths.output_root, project_root.resolve().parent / "jarvis-lite-dist")
         self.assertEqual(paths.installer_path.name, INSTALLER_EXE_NAME)
         self.assertIn(f"TargetName={paths.installer_path}", sed)
         self.assertIn(f"FinishMessage=Jarvis Lite {__version__} installation finished", sed)

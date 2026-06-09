@@ -39,9 +39,9 @@ class DesktopAutostartTests(unittest.TestCase):
                 frozen=False,
             )
 
-        self.assertEqual(shortcut.shortcut_path, startup_dir / SHORTCUT_NAME)
-        self.assertEqual(shortcut.target_path, executable)
-        self.assertEqual(shortcut.working_directory, root)
+        self.assertEqual(shortcut.shortcut_path, startup_dir.resolve() / SHORTCUT_NAME)
+        self.assertEqual(shortcut.target_path, executable.resolve())
+        self.assertEqual(shortcut.working_directory, root.resolve())
         self.assertEqual(shortcut.arguments, "-m jarvis_lite.desktop.app")
 
     def test_default_frozen_shortcut_points_to_current_exe_without_arguments(self):
@@ -56,9 +56,9 @@ class DesktopAutostartTests(unittest.TestCase):
                 frozen=True,
             )
 
-        self.assertEqual(shortcut.shortcut_path, startup_dir / SHORTCUT_NAME)
-        self.assertEqual(shortcut.target_path, executable)
-        self.assertEqual(shortcut.working_directory, executable.parent)
+        self.assertEqual(shortcut.shortcut_path, startup_dir.resolve() / SHORTCUT_NAME)
+        self.assertEqual(shortcut.target_path, executable.resolve())
+        self.assertEqual(shortcut.working_directory, executable.resolve().parent)
         self.assertEqual(shortcut.arguments, "")
 
     def test_render_shortcut_powershell_sets_target_arguments_workdir_and_icon(self):

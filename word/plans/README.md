@@ -1,12 +1,13 @@
 # Jarvis Lite 方案版本索引
 
-> 日期：2026-06-05
+> 日期：2026-06-09
 > 执行者：Codex
 
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-05-v144-preference-apply-confirm-plan.md](2026-06-05-v144-preference-apply-confirm-plan.md)：当前方案版本，明确 `0.139.0` 偏好应用确认命令第一阶段、本次显式确认范围和冲突拒绝边界。
+- [2026-06-09-v145-preference-apply-audit-plan.md](2026-06-09-v145-preference-apply-audit-plan.md)：当前方案版本，明确 `0.140.0` 偏好应用确认记录与撤销第一阶段、确认历史、运行态审计记录和只撤销记录的边界。
+- [2026-06-05-v144-preference-apply-confirm-plan.md](2026-06-05-v144-preference-apply-confirm-plan.md)：明确 `0.139.0` 偏好应用确认命令第一阶段、本次显式确认范围和冲突拒绝边界。
 - [2026-06-05-v143-preference-apply-confirmation-plan.md](2026-06-05-v143-preference-apply-confirmation-plan.md)：明确 `0.138.0` 偏好应用确认草稿第一阶段、待确认草稿和不真正应用偏好边界。
 - [2026-06-05-v142-preference-id-conflict-plan.md](2026-06-05-v142-preference-id-conflict-plan.md)：明确 `0.137.0` 偏好稳定 ID 与冲突提示第一阶段、编号或 ID 启停和不自动裁决冲突边界。
 - [2026-06-05-v141-preference-preview-plan.md](2026-06-05-v141-preference-preview-plan.md)：明确 `0.136.0` 偏好应用预览第一阶段、显式预览已启用偏好和不改变回复或执行决策边界。
@@ -152,6 +153,7 @@
 - [2026-06-03-v118-app-launch-automation-plan.md](2026-06-03-v118-app-launch-automation-plan.md)：明确应用启动自动化第一阶段、`/app-launch 应用名称或别名` 和显式应用启动的验收范围。
 - [2026-06-03-v119-intent-authorization-layer-plan.md](2026-06-03-v119-intent-authorization-layer-plan.md)：明确意图授权层第一阶段、`/authorization-status`、直接执行、准备确认、追问和 LLM 桌面动作降级的验收范围。
 - [2026-06-03-v120-memory-config-manager-status-plan.md](2026-06-03-v120-memory-config-manager-status-plan.md)：明确自动记忆与配置管家第一阶段、`/config-manager-status` 和 API key 脱敏状态边界。
+- [2026-06-09-v145-preference-apply-audit-plan.md](2026-06-09-v145-preference-apply-audit-plan.md)：明确偏好应用确认记录与撤销第一阶段、运行态确认历史和只撤销记录边界。
 
 ## 维护规则
 

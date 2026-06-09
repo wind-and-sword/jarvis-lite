@@ -2,11 +2,17 @@ from __future__ import annotations
 
 import json
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Any
 
 from .config import ProjectPaths
+from .runtime_context import (
+    PREFERENCE_APPLICATION_HISTORY_LIMIT,
+    RuntimePreferenceApplicationContext,
+    load_runtime_context,
+    save_runtime_context,
+)
 
 
 PREFERENCES_FILENAME = "preferences.local.json"
@@ -240,6 +246,42 @@ def describe_preference_application_draft(paths: ProjectPaths, user_input: str =
     return "\n".join(lines)
 
 
+def describe_preference_application_history(paths: ProjectPaths) -> str:
+    """只读展示最近偏好应用确认记录，便于审计和撤销。"""
+
+    applications = load_runtime_context(paths).recent_preference_applications
+    if not applications:
+        return "\n".join(
+            [
+                "偏好应用确认历史：暂无。",
+                "说明：只有成功执行 /preference-apply-confirm 后才会记录历史。",
+            ]
+        )
+
+    lines = [
+        "偏好应用确认历史",
+        "说明：这里只记录显式确认；不会自动改变普通聊天、LLM prompt、路由或执行决策。",
+    ]
+    for index, application in enumerate(applications, 1):
+        lines.append(f"{index}. {_preference_application_status_label(application.status)} [{application.application_id}]")
+        if application.user_input:
+            lines.append(f"   应用输入：{application.user_input}")
+        if application.created_at:
+            lines.append(f"   确认时间：{application.created_at}")
+        if application.status == "undone" and application.undone_at:
+            lines.append(f"   撤销时间：{application.undone_at}")
+        lines.append("   偏好：")
+        for preference_id, preference in zip(application.preference_ids, application.preferences):
+            lines.append(f"   - [{preference_id}] {preference}")
+    lines.extend(
+        [
+            "撤销确认：/preference-apply-undo 编号或ID",
+            "撤销范围：只撤销确认记录，不删除或停用偏好，不回滚已经展示的输出。",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def describe_confirmed_preference_application(paths: ProjectPaths, user_input: str = "") -> str:
     """确认已启用偏好仅应用到本次显式命令输出。"""
 
@@ -274,8 +316,10 @@ def describe_confirmed_preference_application(paths: ProjectPaths, user_input: s
         )
         return "\n".join(lines)
 
+    application = _record_preference_application(paths, application_input, preferences)
     lines = [
         "已确认本次偏好应用",
+        f"确认ID：{application.application_id}",
         f"已确认偏好：{len(preferences)} 条",
     ]
     if application_input:
@@ -290,6 +334,49 @@ def describe_confirmed_preference_application(paths: ProjectPaths, user_input: s
         ]
     )
     return "\n".join(lines)
+
+
+def undo_preference_application(paths: ProjectPaths, reference: int | str) -> str:
+    """撤销某条偏好应用确认记录，不改变偏好本身。"""
+
+    context = load_runtime_context(paths)
+    applications = list(context.recent_preference_applications)
+    application_index = _resolve_preference_application_index(applications, reference)
+    if application_index is None:
+        return "\n".join(
+            [
+                "偏好应用确认记录不存在。",
+                "请先运行 /preference-apply-history 查看当前编号或ID。",
+            ]
+        )
+
+    application = applications[application_index]
+    if application.status == "undone":
+        return "\n".join(
+            [
+                f"偏好应用确认记录已撤销：{application.application_id}",
+                "撤销范围：只撤销确认记录，不删除或停用偏好，不回滚已经展示的输出。",
+            ]
+        )
+
+    undone = RuntimePreferenceApplicationContext(
+        application_id=application.application_id,
+        user_input=application.user_input,
+        preference_ids=application.preference_ids,
+        preferences=application.preferences,
+        status="undone",
+        created_at=application.created_at,
+        undone_at=_now_iso(),
+    )
+    applications[application_index] = undone
+    save_runtime_context(paths, replace(context, recent_preference_applications=tuple(applications)))
+    return "\n".join(
+        [
+            f"已撤销偏好应用确认：{undone.application_id}",
+            "撤销范围：只撤销确认记录，不删除或停用偏好，不回滚已经展示的输出。",
+            "说明：已保存偏好和启用状态保持不变。",
+        ]
+    )
 
 
 def preference_conflict_hints(preferences: tuple[Preference, ...]) -> tuple[str, ...]:
@@ -316,6 +403,86 @@ def preference_conflict_hints(preferences: tuple[Preference, ...]) -> tuple[str,
                 f"{_format_conflict_preference(right_matches[0])}。只提示冲突，不自动裁决优先级。"
             )
     return tuple(hints)
+
+
+def _record_preference_application(
+    paths: ProjectPaths,
+    user_input: str,
+    preferences: tuple[Preference, ...],
+) -> RuntimePreferenceApplicationContext:
+    now = _now_iso()
+    context = load_runtime_context(paths)
+    application = RuntimePreferenceApplicationContext(
+        application_id=_unique_preference_application_id_for(
+            now,
+            user_input,
+            preferences,
+            context.recent_preference_applications,
+        ),
+        user_input=user_input,
+        preference_ids=tuple(preference.preference_id for preference in preferences),
+        preferences=tuple(preference.preference for preference in preferences),
+        status="confirmed",
+        created_at=now,
+    )
+    applications = (application, *context.recent_preference_applications)[:PREFERENCE_APPLICATION_HISTORY_LIMIT]
+    save_runtime_context(paths, replace(context, recent_preference_applications=applications))
+    return application
+
+
+def _resolve_preference_application_index(
+    applications: list[RuntimePreferenceApplicationContext],
+    reference: int | str,
+) -> int | None:
+    if isinstance(reference, int):
+        return reference - 1 if 1 <= reference <= len(applications) else None
+    normalized = str(reference).strip()
+    if normalized.isdigit():
+        index = int(normalized)
+        return index - 1 if 1 <= index <= len(applications) else None
+    for index, application in enumerate(applications):
+        if application.application_id == normalized:
+            return index
+    return None
+
+
+def _preference_application_id_for(
+    created_at: str,
+    user_input: str,
+    preferences: tuple[Preference, ...],
+    sequence: int = 0,
+) -> str:
+    payload_parts = [
+        created_at,
+        user_input,
+        *[preference.preference_id for preference in preferences],
+        *[preference.preference for preference in preferences],
+    ]
+    if sequence > 0:
+        payload_parts.append(f"sequence={sequence}")
+    payload = "|".join(payload_parts)
+    return f"prefapp-{hashlib.sha1(payload.encode('utf-8')).hexdigest()[:10]}"
+
+
+def _unique_preference_application_id_for(
+    created_at: str,
+    user_input: str,
+    preferences: tuple[Preference, ...],
+    applications: tuple[RuntimePreferenceApplicationContext, ...],
+) -> str:
+    existing_ids = {application.application_id for application in applications}
+    sequence = 0
+    while True:
+        application_id = _preference_application_id_for(created_at, user_input, preferences, sequence)
+        if application_id not in existing_ids:
+            return application_id
+        sequence += 1
+
+
+def _preference_application_status_label(status: str) -> str:
+    if status == "undone":
+        return "已撤销"
+    return "已确认"
 
 
 def _preferences_path(paths: ProjectPaths):

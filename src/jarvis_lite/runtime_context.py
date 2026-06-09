@@ -14,6 +14,7 @@ INNER_BRAIN_CANDIDATE_LIMIT = 20
 TASK_FAILURE_HISTORY_LIMIT = 5
 TASK_EVENT_HISTORY_LIMIT = 5
 MEMORY_CONFIG_CANDIDATE_LIMIT = 20
+PREFERENCE_APPLICATION_HISTORY_LIMIT = 5
 
 
 @dataclass(frozen=True)
@@ -170,6 +171,19 @@ class RuntimeMemoryConfigCandidateContext:
 
 
 @dataclass(frozen=True)
+class RuntimePreferenceApplicationContext:
+    """保存偏好应用确认记录；只做审计，不改变偏好启用状态。"""
+
+    application_id: str
+    user_input: str
+    preference_ids: tuple[str, ...]
+    preferences: tuple[str, ...]
+    status: str = "confirmed"
+    created_at: str = ""
+    undone_at: str = ""
+
+
+@dataclass(frozen=True)
 class RuntimeContext:
     """保存可跨 Agent 实例恢复的轻量运行态上下文。"""
 
@@ -190,6 +204,7 @@ class RuntimeContext:
     current_task: RuntimeTaskContext | None = None
     recent_task_failures: tuple[RuntimeTaskFailureContext, ...] = ()
     memory_config_candidates: tuple[RuntimeMemoryConfigCandidateContext, ...] = ()
+    recent_preference_applications: tuple[RuntimePreferenceApplicationContext, ...] = ()
 
 
 def runtime_context_path(paths: ProjectPaths) -> Path:
@@ -250,6 +265,9 @@ def load_runtime_context(paths: ProjectPaths) -> RuntimeContext:
         current_task=_read_task_context(raw.get("current_task")),
         recent_task_failures=_read_task_failure_contexts(raw.get("recent_task_failures")),
         memory_config_candidates=_read_memory_config_candidate_contexts(raw.get("memory_config_candidates")),
+        recent_preference_applications=_read_preference_application_contexts(
+            raw.get("recent_preference_applications")
+        ),
     )
 
 
@@ -316,6 +334,12 @@ def save_runtime_context(paths: ProjectPaths, context: RuntimeContext) -> Runtim
                 "memory_config_candidates": [
                     _memory_config_candidate_context_to_json(candidate)
                     for candidate in context.memory_config_candidates[:MEMORY_CONFIG_CANDIDATE_LIMIT]
+                ],
+                "recent_preference_applications": [
+                    _preference_application_context_to_json(application)
+                    for application in context.recent_preference_applications[
+                        :PREFERENCE_APPLICATION_HISTORY_LIMIT
+                    ]
                 ],
             },
             ensure_ascii=False,
@@ -643,6 +667,42 @@ def _read_memory_config_candidate_contexts(value: object) -> tuple[RuntimeMemory
     return tuple(candidates)
 
 
+def _read_preference_application_context(value: object) -> RuntimePreferenceApplicationContext | None:
+    if not isinstance(value, dict):
+        return None
+    application_id = _read_optional_str(value.get("application_id"))
+    if application_id is None:
+        return None
+    status = _read_optional_str(value.get("status")) or "confirmed"
+    if status not in {"confirmed", "undone"}:
+        status = "confirmed"
+    return RuntimePreferenceApplicationContext(
+        application_id=application_id,
+        user_input=_read_optional_str(value.get("user_input")) or "",
+        preference_ids=_read_str_tuple(value.get("preference_ids")),
+        preferences=_read_str_tuple(value.get("preferences")),
+        status=status,
+        created_at=_read_optional_str(value.get("created_at")) or "",
+        undone_at=_read_optional_str(value.get("undone_at")) or "",
+    )
+
+
+def _read_preference_application_contexts(value: object) -> tuple[RuntimePreferenceApplicationContext, ...]:
+    if not isinstance(value, list):
+        return ()
+    applications: list[RuntimePreferenceApplicationContext] = []
+    seen_ids: set[str] = set()
+    for item in value:
+        application = _read_preference_application_context(item)
+        if application is None or application.application_id in seen_ids:
+            continue
+        seen_ids.add(application.application_id)
+        applications.append(application)
+        if len(applications) >= PREFERENCE_APPLICATION_HISTORY_LIMIT:
+            break
+    return tuple(applications)
+
+
 def _route_decision_history_with_latest(
     latest: RuntimeRouteDecisionContext | None,
     history: tuple[RuntimeRouteDecisionContext, ...],
@@ -898,6 +958,20 @@ def _memory_config_candidate_context_to_json(
         "count": context.count,
         "first_seen_at": context.first_seen_at,
         "last_seen_at": context.last_seen_at,
+    }
+
+
+def _preference_application_context_to_json(
+    context: RuntimePreferenceApplicationContext,
+) -> dict[str, object]:
+    return {
+        "application_id": context.application_id,
+        "user_input": context.user_input,
+        "preference_ids": list(context.preference_ids),
+        "preferences": list(context.preferences),
+        "status": context.status,
+        "created_at": context.created_at,
+        "undone_at": context.undone_at,
     }
 
 

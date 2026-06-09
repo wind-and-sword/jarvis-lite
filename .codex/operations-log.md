@@ -3083,3 +3083,18 @@
 - 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；构建日志包含既有 `Hidden import "tzdata" not found!` 警告和第三方 `pyautogui` 的 `SyntaxWarning: invalid escape sequence '\e'`；版本化安装包 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.139.0.exe`，大小 `60,469,248` 字节，时间戳 `2026/6/5 18:09:00`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.139.0`。
 - 调试留痕：安装包元数据首次按旧路径 `windows-installer-stage\JarvisLite.version.txt` 检查失败；定位实际生成路径为 `E:\oyzj\ai\jarvis-lite-dist\JarvisLite.version.txt` 后复验通过。打包后 stdout 中文在 PowerShell 表格中显示乱码，按 UTF-8 重新读取后确认包含 `desktopPetWindow`，stderr 长度为 0。
 - 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 654 项通过；严格真实密钥形态扫描 17 个公开变更/新增文件无命中；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。
+
+## 2026-06-09 0.140.0 偏好应用确认记录与撤销第一阶段
+
+- 时间：2026-06-09 继续执行并恢复断线现场。
+- 工具：Get-Content / rg / git status / git diff / update_plan / apply_patch / unittest / 临时项目 Agent smoke / scripts\build_windows_installer.py / Select-String / PowerShell 版本资源检查 / git diff --check / Markdown 本地链接检查 / 严格真实密钥形态扫描。
+- 技能：使用 `superpowers:using-superpowers` 选择流程；使用 `superpowers:systematic-debugging` 处理断线与 smoke 失败；追加 bugfix 前使用 `superpowers:test-driven-development`，先写 RED 再改实现。
+- 工具降级：当前会话仍未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地结构化分析、`rg`/`Get-Content`、`update_plan`、superpowers 流程、TDD 和 `unittest`。
+- 断线定位：`日志.txt` 尾部显示上次已完成 v145 主要实现和全量回归，随后命令行 smoke 因临时脚本导入不存在的 `load_preferences` 失败，读取 `preferences.py` 时会话遇到 503 断开。
+- 上下文：`0.139.0` 已完成偏好应用确认命令第一阶段；v145 计划要求确认成功写运行态审计记录、历史查看、撤销确认记录，且不自动接入普通聊天、LLM prompt、路由或执行决策。
+- 设计选择：确认记录写入项目外运行态 `jarvis-lite-runtime/agent-context.json` 的 `recent_preference_applications`；撤销只把确认记录状态标记为 `undone`，不修改 `config/preferences.local.json` 的偏好定义或启用状态。
+- 调试留痕：隔离 smoke 首次发现同一秒、同一输入、同一启用偏好连续确认会生成相同 `prefapp-*` ID，运行态读取按 ID 去重后历史坍缩为 1 条。新增 RED 用例复现后，改为检测已有确认 ID 并在碰撞时追加序号参与哈希。
+- 验证：目标复验 438 项通过；全量 `unittest` 770 项通过；命令行 smoke 输出 `preference-apply-audit-smoke OK`；源码桌面 smoke 输出 `desktopPetWindow`；打包后 smoke 退出码 0、stdout 包含 `desktopPetWindow`、stderr 为空且无残留 `JarvisLite` 进程。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；构建日志包含既有 `Hidden import "tzdata" not found!` 警告和第三方 `pyautogui` 的 `SyntaxWarning: invalid escape sequence '\e'`；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.140.0.exe`，大小 `59,715,584` 字节，时间戳 `2026/6/9 15:28:13`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.140.0`。
+- 断线恢复最终复验：`.\.venv\Scripts\python.exe -m unittest discover -s tests -v`，`Ran 770 tests in 11.525s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示。
+- 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 666 项通过；严格真实密钥形态扫描 25 个公开变更/新增文件无命中；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。
