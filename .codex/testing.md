@@ -8745,3 +8745,16 @@ Test-Path .\config\search.local.json
 - 安装包元数据：`install.cmd`、`JarvisLiteSetup.sed`、`JarvisLite.version.txt` 和 `desktop-exe\JarvisLite.exe` 均为 `0.141.0`。
 - 打包后 smoke：`E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
 - 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 671 项通过；严格真实密钥形态扫描 14 个公开变更/新增文件无命中；本地敏感配置文件不存在；README BOM 为 `EF-BB-BF`。
+
+## 0.142.0 偏好格式化本地回答第一阶段
+
+- RED：目标测试先失败；失败点为缺少 `describe_preference_local_answer_note()`、本地知识库 `/ask` 回答不展示 `已确认偏好格式化：prefapp-...`、长期记忆兜底不展示该附注、版本仍为 `0.141.0`。
+- GREEN：新增本地回答偏好附注 helper，接入 `_answer_from_data()` 和长期记忆兜底；目标命令 `.\.venv\Scripts\python.exe -m unittest tests.test_preferences.PreferenceTests.test_preference_local_answer_note_requires_enabled_preferences_to_match_confirmation tests.test_agent.AgentTests.test_local_data_answer_includes_confirmed_preference_note_until_undone tests.test_agent.AgentTests.test_memory_fallback_includes_confirmed_preference_note_until_undone tests.test_llm.LLMTests.test_openai_provider_instructions_list_supported_agent_commands tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version -v`，`Ran 5 tests`，`OK`。
+- 相邻回归：`.\.venv\Scripts\python.exe -m unittest tests.test_preferences tests.test_agent tests.test_llm tests.test_project_metadata -v`，`Ran 445 tests in 6.577s`，`OK`。
+- 全量回归：`.\.venv\Scripts\python.exe -m unittest discover -s tests -v`，`Ran 777 tests in 8.625s`，`OK`。
+- 命令行 smoke：临时项目保存并启用偏好，确认前本地知识库和长期记忆兜底无附注，确认后两者展示 `已确认偏好格式化：prefapp-...`，撤销后两者移除附注；输出 `preference-local-answer-format-smoke OK`。首次 smoke 失败根因为脚本误判长期记忆兜底不会先调用 LLM fallback，修正断言后通过。
+- 源码桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 退出码 0，输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.142.0.exe`，大小 `59,715,584` 字节；安装脚本、SED、`JarvisLite.version.txt` 和 `desktop-exe\JarvisLite.exe` 版本资源均为 `0.142.0`。
+- 打包后 smoke：`E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
+- 文档后新鲜复验：`.\.venv\Scripts\python.exe -m unittest tests.test_project_metadata -v`，`Ran 7 tests`，`OK`。
+- 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 674 项通过；严格真实密钥形态扫描 722 个文本文件无命中；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。

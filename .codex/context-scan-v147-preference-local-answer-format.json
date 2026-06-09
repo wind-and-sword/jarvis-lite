@@ -1,0 +1,90 @@
+{
+  "date": "2026-06-09",
+  "executor": "Codex",
+  "task": "v147 preference local answer formatting first stage",
+  "phase": "context-scan",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "used_instead": [
+      "rg",
+      "Get-Content",
+      "git",
+      "update_plan",
+      "superpowers",
+      "unittest"
+    ]
+  },
+  "quick_scan": {
+    "module_location": [
+      "src/jarvis_lite/preferences.py already owns saved preferences, confirmation records, undo and the active-confirmation matching contract.",
+      "src/jarvis_lite/agent.py handles ordinary input through InnerBrain, local data answer, LLM fallback, then long-term memory fallback.",
+      "src/jarvis_lite/knowledge.py formats deterministic data directory answers through answer_from_matches().",
+      "src/jarvis_lite/llm.py builds provider instructions; preference management commands are intentionally excluded."
+    ],
+    "current_behavior": [
+      "0.141.0 exposes the latest valid preference confirmation only to ordinary LLM fallback context and /llm-context-preview.",
+      "_answer_from_data() returns answer_from_matches(matches) directly, so local knowledge answers currently do not show a preference audit note.",
+      "The long-term memory fallback returns a fixed profile summary string directly, so it currently does not show a preference audit note.",
+      "_active_preference_application_for_reply() already invalidates confirmations after undo, conflicts, disabled preferences, deletion or enabled-set changes."
+    ],
+    "similar_patterns": [
+      "describe_preference_reply_context() formats a confirmed application with ID, boundary and preference ID/text lines.",
+      "Agent _llm_context_lines() appends optional helper output only when non-empty.",
+      "Knowledge answers are deterministic and should remain sourced to data/path:line without changing retrieval.",
+      "Version metadata is synchronized through pyproject.toml, src/jarvis_lite/__init__.py and tests/test_project_metadata.py."
+    ],
+    "tests": [
+      "tests/test_agent.py covers /ask, local data answers, memory fallback and injected fake LLM providers.",
+      "tests/test_preferences.py covers confirmation active/invalid conditions.",
+      "tests/test_llm.py covers provider instructions whitelist boundaries.",
+      "tests/test_project_metadata.py enforces release version consistency."
+    ],
+    "observation_report": [
+      "The active confirmation matching rule is already centralized enough to reuse; duplicating it in Agent would increase drift risk.",
+      "The least invasive first-stage behavior is append-only audit formatting, not rewriting local answer content.",
+      "Local data answer and memory fallback are both Agent-owned return paths, so a small Agent formatter can keep the change scoped.",
+      "LLM provider instructions should remain unchanged because local answer formatting does not require LLM command routing."
+    ]
+  },
+  "key_questions": [
+    {
+      "priority": "high",
+      "question": "Which confirmation can format local answers?",
+      "answer": "Reuse the same active confirmation contract as ordinary LLM fallback: newest record only, status=confirmed, current enabled preference IDs/text exactly match the record, and no enabled preference conflicts exist."
+    },
+    {
+      "priority": "high",
+      "question": "How should local knowledge and memory fallback be changed?",
+      "answer": "Append a short auditable preference formatting block when a valid confirmation exists. Do not alter data retrieval, match ordering, source lines, profile summary or route decisions."
+    },
+    {
+      "priority": "medium",
+      "question": "Should this add or expose new commands?",
+      "answer": "No. This phase only changes existing answer formatting. Preference management commands still stay out of LLM provider instructions."
+    },
+    {
+      "priority": "medium",
+      "question": "What invalidates the local answer note?",
+      "answer": "Undoing the confirmation, disabling/deleting a confirmed preference, enabling another preference after confirmation or creating a conflict makes the helper return an empty string."
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  },
+  "acceptance": [
+    "After enabling preferences and confirming them, a matching /ask local data answer includes a confirmed preference formatting audit note.",
+    "After undoing the confirmation, subsequent local data answers no longer include the audit note.",
+    "Long-term memory fallback includes the same audit note only while the confirmation is active.",
+    "Changing the enabled preference set after confirmation invalidates the audit note for local answers.",
+    "Provider instructions still do not list preference management commands or preference confirmation context text.",
+    "Version is bumped to 0.142.0 and docs/verification are updated."
+  ]
+}

@@ -4405,7 +4405,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.141.1",
+                    "version": "0.142.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4416,7 +4416,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.141.1", response)
+        self.assertIn("发现新版本：0.142.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4431,7 +4431,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.141.1",
+                        "version": "0.142.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
@@ -5455,6 +5455,53 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("Python 3.13", response)
         self.assertEqual(provider.calls, [])
+
+    def test_local_data_answer_includes_confirmed_preference_note_until_undone(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 推荐使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+        agent.handle("/config-candidate-add preference 回答尽量简洁")
+        agent.handle("/config-candidate-confirm 1")
+        agent.handle("/preference-enable 1")
+
+        response_before_confirm = agent.handle("/ask Jarvis Lite 推荐使用什么 Python 版本？")
+        agent.handle("/preference-apply-confirm 帮我总结知识库")
+        response_after_confirm = agent.handle("/ask Jarvis Lite 推荐使用什么 Python 版本？")
+        agent.handle("/preference-apply-undo 1")
+        response_after_undo = agent.handle("/ask Jarvis Lite 推荐使用什么 Python 版本？")
+
+        self.assertIn("根据 data/runtime.md:1", response_after_confirm)
+        self.assertIn("已确认偏好格式化：prefapp-", response_after_confirm)
+        self.assertIn("- [pref-", response_after_confirm)
+        self.assertIn("回答尽量简洁", response_after_confirm)
+        self.assertIn("应用边界：仅用于本地知识库和长期记忆回答格式化", response_after_confirm)
+        self.assertNotIn("已确认偏好格式化：prefapp-", response_before_confirm)
+        self.assertNotIn("已确认偏好格式化：prefapp-", response_after_undo)
+        self.assertEqual(provider.calls, [])
+
+    def test_memory_fallback_includes_confirmed_preference_note_until_undone(self):
+        provider = FakeLLMProvider("")
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+        agent.handle("/config-candidate-add preference 回答尽量简洁")
+        agent.handle("/config-candidate-confirm 1")
+        agent.handle("/preference-enable 1")
+
+        response_before_confirm = agent.handle("火星基地预算需要外部判断")
+        agent.handle("/preference-apply-confirm 请回答普通问题")
+        response_after_confirm = agent.handle("木星基地预算需要外部判断")
+        agent.handle("/preference-apply-undo 1")
+        response_after_undo = agent.handle("土星基地预算需要外部判断")
+
+        self.assertIn("Jarvis Lite 已读取长期记忆", response_after_confirm)
+        self.assertIn("已确认偏好格式化：prefapp-", response_after_confirm)
+        self.assertIn("- [pref-", response_after_confirm)
+        self.assertIn("回答尽量简洁", response_after_confirm)
+        self.assertIn("应用边界：仅用于本地知识库和长期记忆回答格式化", response_after_confirm)
+        self.assertNotIn("已确认偏好格式化：prefapp-", response_before_confirm)
+        self.assertNotIn("已确认偏好格式化：prefapp-", response_after_undo)
 
     def test_llm_command_intent_is_executed_by_agent(self):
         provider = FakeLLMProvider('{"type":"command","command":"/kb-summary","reason":"用户想看资料摘要"}')

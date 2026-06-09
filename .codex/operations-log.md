@@ -3112,3 +3112,18 @@
 - 验证：相邻回归 458 项通过；全量 `unittest` 774 项通过；命令行 smoke 输出 `preference-reply-context-smoke OK`；源码桌面 smoke 和打包后 smoke 均输出 `desktopPetWindow`。
 - 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.141.0.exe`，大小 `59,711,488` 字节，时间戳 `2026-06-09 17:31:22`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.141.0`。
 - 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 671 项通过；严格真实密钥形态扫描 14 个公开变更/新增文件无命中；首次密钥扫描被历史方案文件名中的 `sk-...-plan` 误报，收窄真实 key 形态后复跑通过；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。
+
+## 2026-06-09 0.142.0 偏好格式化本地回答第一阶段
+
+- 时间：2026-06-09 继续执行 v147。
+- 工具：Get-Content / rg / git status / git diff / tool_search / update_plan / apply_patch / unittest / 临时项目 Agent smoke / scripts\build_windows_installer.py / PowerShell 版本资源检查。
+- 技能：使用 `superpowers:using-superpowers` 选择流程；使用 `superpowers:brainstorming`、`superpowers:writing-plans` 和 `superpowers:test-driven-development` 承接已有阶段；命令行 smoke 断言失败时使用 `superpowers:systematic-debugging` 定位根因。
+- 工具降级：当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地结构化分析、`rg`/`Get-Content`、`update_plan`、superpowers 流程、TDD 和 `unittest`；记录 `.codex/context-scan-v147-preference-local-answer-format.json`。
+- 上下文：`0.141.0` 已完成本地提交 `863cabb feat: 增加偏好进入普通回复上下文 0.141.0`，当前分支未推送；PROJECT-PLAN 后续目标明确优先评估本地知识库命中回答和长期记忆兜底是否也需要可审计偏好格式化。
+- 设计选择：新增 `describe_preference_local_answer_note()`，复用 v146 有效确认判定；Agent 只在本地知识库命中回答和长期记忆兜底回答末尾追加审计附注，不重写回答主体，不改变检索、路由、LLM 白名单、SearchRouter、InnerBrain、授权层或桌面执行决策。
+- RED：目标测试先失败，失败点为缺少本地回答附注 helper、本地知识库和长期记忆回答不展示 `已确认偏好格式化：prefapp-...`、版本仍为 `0.141.0`。
+- GREEN：目标 5 项通过；相邻回归 445 项通过；全量 `unittest` 777 项通过。
+- 调试留痕：命令行 smoke 首次失败，根因为 smoke 脚本误以为长期记忆兜底不会先经过 LLM fallback；实际产品行为是 LLM 无答案后才进入长期记忆兜底。修正断言为只要求 `/ask` 不调用 provider，并允许三次内存兜底输入触发 provider 后，smoke 通过。
+- 验证：命令行 smoke 输出 `preference-local-answer-format-smoke OK`；源码桌面 smoke 输出 `desktopPetWindow`；打包后 smoke 退出码 0、stdout 包含 `desktopPetWindow`、stderr 为空且无残留 `JarvisLite` 进程。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.142.0.exe`，大小 `59,715,584` 字节，时间戳 `2026-06-09 18:12:44`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.142.0`。
+- 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 674 项通过；严格真实密钥形态扫描 722 个文本文件无命中；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。

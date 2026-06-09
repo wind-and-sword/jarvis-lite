@@ -156,6 +156,7 @@
 - [2026-06-03-v120-memory-config-manager-status-plan.md](2026-06-03-v120-memory-config-manager-status-plan.md)：明确自动记忆与配置管家第一阶段、`/config-manager-status` 和 API key 脱敏状态边界。
 - [2026-06-09-v145-preference-apply-audit-plan.md](2026-06-09-v145-preference-apply-audit-plan.md)：明确偏好应用确认记录与撤销第一阶段、运行态确认历史和只撤销记录边界。
 - [2026-06-09-v146-preference-reply-context-plan.md](2026-06-09-v146-preference-reply-context-plan.md)：明确偏好进入普通回复上下文第一阶段、最近有效确认记录进入普通 LLM fallback 上下文和 `/llm-context-preview` 的边界。
+- [2026-06-09-v147-preference-local-answer-format-plan.md](2026-06-09-v147-preference-local-answer-format-plan.md)：明确偏好格式化本地回答第一阶段、最近有效确认记录以可审计附注进入本地知识库命中回答和长期记忆兜底回答的边界。
 
 ## 维护规则
 

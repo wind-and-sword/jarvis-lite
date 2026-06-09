@@ -13,6 +13,7 @@ from jarvis_lite.preferences import (
     describe_confirmed_preference_application,
     describe_preference_application_history,
     describe_preference_application_draft,
+    describe_preference_local_answer_note,
     describe_preference_reply_context,
     describe_preference_preview,
     describe_preferences,
@@ -326,6 +327,23 @@ class PreferenceTests(unittest.TestCase):
 
             self.assertIn(f"- [{concise.preference_id}] 回答尽量简洁", context_before_change)
             self.assertEqual(context_after_change, "")
+
+    def test_preference_local_answer_note_requires_enabled_preferences_to_match_confirmation(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            concise = save_preference(paths, "回答尽量简洁", source="test")
+            chinese = save_preference(paths, "优先使用中文", source="test")
+            set_preference_enabled(paths, concise.preference_id, True)
+            describe_confirmed_preference_application(paths, "帮我总结知识库")
+
+            note_before_change = describe_preference_local_answer_note(paths)
+            set_preference_enabled(paths, chinese.preference_id, True)
+            note_after_change = describe_preference_local_answer_note(paths)
+
+            self.assertIn("已确认偏好格式化：prefapp-", note_before_change)
+            self.assertIn(f"- [{concise.preference_id}] 回答尽量简洁", note_before_change)
+            self.assertIn("应用边界：仅用于本地知识库和长期记忆回答格式化", note_before_change)
+            self.assertEqual(note_after_change, "")
 
     def test_confirmed_preference_application_rejects_enabled_conflicts(self):
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -121,6 +121,7 @@ from .preferences import (
     describe_confirmed_preference_application,
     describe_preference_application_history,
     describe_preference_application_draft,
+    describe_preference_local_answer_note,
     describe_preference_reply_context,
     describe_preference_preview,
     describe_preferences,
@@ -541,7 +542,8 @@ class JarvisAgent:
             "长期记忆兜底",
             "source=memory/profile.md action=fallback",
         )
-        return f"Jarvis Lite 已读取长期记忆。当前记忆摘要：{self._sentence(summary)}你可以输入 /help 查看我现在能做的事。"
+        memory_answer = f"Jarvis Lite 已读取长期记忆。当前记忆摘要：{self._sentence(summary)}你可以输入 /help 查看我现在能做的事。"
+        return self._apply_preference_local_answer_note(memory_answer)
 
     def llm_clarification_status_text(self) -> str:
         """返回桌面面板可展示的 LLM 外脑待补充状态。"""
@@ -3050,7 +3052,13 @@ class JarvisAgent:
             return ""
         self._remember_recent_search_results(tuple(match.relative_path for match in matches))
         self._remember_recent_document(matches[0].relative_path)
-        return answer_from_matches(matches)
+        return self._apply_preference_local_answer_note(answer_from_matches(matches))
+
+    def _apply_preference_local_answer_note(self, answer: str) -> str:
+        note = describe_preference_local_answer_note(self.paths)
+        if not note:
+            return answer
+        return f"{answer}\n\n{note}"
 
     def _answer_from_llm(self, prompt: str) -> str:
         context = self._llm_context_lines()

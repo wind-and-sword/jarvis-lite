@@ -301,6 +301,25 @@ def describe_preference_reply_context(paths: ProjectPaths) -> str:
     return "\n".join(lines)
 
 
+def describe_preference_local_answer_note(paths: ProjectPaths) -> str:
+    """返回可追加到本地知识库和长期记忆回答的偏好确认附注。"""
+
+    application = _active_preference_application_for_reply(paths)
+    if application is None:
+        return ""
+
+    lines = [
+        f"已确认偏好格式化：{application.application_id}",
+        "应用边界：仅用于本地知识库和长期记忆回答格式化，不改变检索、路由、LLM 白名单、SearchRouter、InnerBrain 或桌面执行决策。",
+    ]
+    if application.user_input:
+        lines.append(f"确认输入：{application.user_input}")
+    lines.append("已确认偏好：")
+    for preference_id, preference in zip(application.preference_ids, application.preferences):
+        lines.append(f"- [{preference_id}] {preference}")
+    return "\n".join(lines)
+
+
 def describe_confirmed_preference_application(paths: ProjectPaths, user_input: str = "") -> str:
     """确认已启用偏好仅应用到本次显式命令输出。"""
 
