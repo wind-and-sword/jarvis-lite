@@ -6,7 +6,8 @@
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-09-v145-preference-apply-audit-plan.md](2026-06-09-v145-preference-apply-audit-plan.md)：当前方案版本，明确 `0.140.0` 偏好应用确认记录与撤销第一阶段、确认历史、运行态审计记录和只撤销记录的边界。
+- [2026-06-09-v146-preference-reply-context-plan.md](2026-06-09-v146-preference-reply-context-plan.md)：当前方案版本，明确 `0.141.0` 偏好进入普通回复上下文第一阶段、有效确认记录进入 LLM fallback 上下文和撤销/启用集合变化后失效边界。
+- [2026-06-09-v145-preference-apply-audit-plan.md](2026-06-09-v145-preference-apply-audit-plan.md)：明确 `0.140.0` 偏好应用确认记录与撤销第一阶段、确认历史、运行态审计记录和只撤销记录的边界。
 - [2026-06-05-v144-preference-apply-confirm-plan.md](2026-06-05-v144-preference-apply-confirm-plan.md)：明确 `0.139.0` 偏好应用确认命令第一阶段、本次显式确认范围和冲突拒绝边界。
 - [2026-06-05-v143-preference-apply-confirmation-plan.md](2026-06-05-v143-preference-apply-confirmation-plan.md)：明确 `0.138.0` 偏好应用确认草稿第一阶段、待确认草稿和不真正应用偏好边界。
 - [2026-06-05-v142-preference-id-conflict-plan.md](2026-06-05-v142-preference-id-conflict-plan.md)：明确 `0.137.0` 偏好稳定 ID 与冲突提示第一阶段、编号或 ID 启停和不自动裁决冲突边界。
@@ -154,6 +155,7 @@
 - [2026-06-03-v119-intent-authorization-layer-plan.md](2026-06-03-v119-intent-authorization-layer-plan.md)：明确意图授权层第一阶段、`/authorization-status`、直接执行、准备确认、追问和 LLM 桌面动作降级的验收范围。
 - [2026-06-03-v120-memory-config-manager-status-plan.md](2026-06-03-v120-memory-config-manager-status-plan.md)：明确自动记忆与配置管家第一阶段、`/config-manager-status` 和 API key 脱敏状态边界。
 - [2026-06-09-v145-preference-apply-audit-plan.md](2026-06-09-v145-preference-apply-audit-plan.md)：明确偏好应用确认记录与撤销第一阶段、运行态确认历史和只撤销记录边界。
+- [2026-06-09-v146-preference-reply-context-plan.md](2026-06-09-v146-preference-reply-context-plan.md)：明确偏好进入普通回复上下文第一阶段、最近有效确认记录进入普通 LLM fallback 上下文和 `/llm-context-preview` 的边界。
 
 ## 维护规则
 

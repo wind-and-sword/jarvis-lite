@@ -1,0 +1,78 @@
+{
+  "date": "2026-06-09",
+  "executor": "Codex",
+  "task": "v146 preference reply context first stage",
+  "phase": "context-scan",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "used_instead": [
+      "rg",
+      "Get-Content",
+      "git",
+      "update_plan",
+      "superpowers",
+      "unittest"
+    ]
+  },
+  "quick_scan": {
+    "module_location": [
+      "src/jarvis_lite/preferences.py manages saved preferences, confirmation records, history and undo helpers.",
+      "src/jarvis_lite/runtime_context.py persists recent_preference_applications in jarvis-lite-runtime/agent-context.json.",
+      "src/jarvis_lite/agent.py routes ordinary input through InnerBrain, knowledge answer, LLM fallback, then memory fallback.",
+      "src/jarvis_lite/llm.py builds provider instructions and receives Agent-provided context lines."
+    ],
+    "current_behavior": [
+      "0.140.0 writes confirmation audit records only after /preference-apply-confirm succeeds.",
+      "/preference-apply-undo marks a confirmation record as undone without changing saved preferences.",
+      "_llm_context_lines currently includes memory, recent document/search/directory/advice context, but not preference confirmations.",
+      "LLM_ALLOWED_COMMAND_SPECS intentionally excludes preference management commands."
+    ],
+    "similar_patterns": [
+      "Recent document/search/directory context is appended to _llm_context_lines without changing provider instructions.",
+      "Runtime context preservation in JarvisAgent._runtime_context keeps persisted recent_preference_applications.",
+      "Provider instruction whitelist tests in tests/test_llm.py guard against exposing management commands to LLM command routing."
+    ],
+    "tests": [
+      "tests/test_preferences.py covers confirmation history, undo and conflict rejection.",
+      "tests/test_agent.py covers Agent slash commands and LLM fallback with injected fake providers.",
+      "tests/test_llm.py covers provider instructions whitelist.",
+      "tests/test_project_metadata.py enforces release version consistency."
+    ]
+  },
+  "key_questions": [
+    {
+      "priority": "high",
+      "question": "What qualifies a confirmation as active for ordinary reply context?",
+      "answer": "Only the newest confirmation record may be active; it must be status=confirmed, and its preference IDs/text must exactly match the currently enabled preference set. Any undo, disable, deletion or enabled-set change requires a new confirmation."
+    },
+    {
+      "priority": "high",
+      "question": "Where should the first ordinary reply integration happen?",
+      "answer": "Use Agent _llm_context_lines, because it is the existing bounded channel for ordinary LLM fallback context and does not alter provider instructions, SearchRouter, InnerBrain or desktop execution policy."
+    },
+    {
+      "priority": "medium",
+      "question": "Should local knowledge or memory fallback rewrite answers directly?",
+      "answer": "No for this first stage. Rewriting local answers would require a separate formatter contract. This stage exposes confirmed preferences to ordinary LLM fallback context and the LLM context preview only."
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  },
+  "acceptance": [
+    "After enabling preferences and confirming them, /llm-context-preview includes a confirmed preference application context.",
+    "An ordinary LLM fallback call receives the same confirmed preference context lines.",
+    "Undoing the latest confirmation removes preference context from subsequent LLM fallback calls.",
+    "Changing enabled preferences after confirmation invalidates the old confirmation context until reconfirmed.",
+    "Provider instructions still do not list preference management commands.",
+    "Version is bumped to 0.141.0 and docs/verification are updated."
+  ]
+}

@@ -282,6 +282,25 @@ def describe_preference_application_history(paths: ProjectPaths) -> str:
     return "\n".join(lines)
 
 
+def describe_preference_reply_context(paths: ProjectPaths) -> str:
+    """返回可放入普通 LLM fallback 的已确认偏好上下文。"""
+
+    application = _active_preference_application_for_reply(paths)
+    if application is None:
+        return ""
+
+    lines = [
+        f"已确认偏好应用：{application.application_id}",
+        "应用边界：仅作为普通 LLM fallback 上下文，不改变命令路由、SearchRouter、InnerBrain 或桌面执行决策。",
+    ]
+    if application.user_input:
+        lines.append(f"确认输入：{application.user_input}")
+    lines.append("已确认偏好：")
+    for preference_id, preference in zip(application.preference_ids, application.preferences):
+        lines.append(f"- [{preference_id}] {preference}")
+    return "\n".join(lines)
+
+
 def describe_confirmed_preference_application(paths: ProjectPaths, user_input: str = "") -> str:
     """确认已启用偏好仅应用到本次显式命令输出。"""
 
@@ -427,6 +446,26 @@ def _record_preference_application(
     )
     applications = (application, *context.recent_preference_applications)[:PREFERENCE_APPLICATION_HISTORY_LIMIT]
     save_runtime_context(paths, replace(context, recent_preference_applications=applications))
+    return application
+
+
+def _active_preference_application_for_reply(paths: ProjectPaths) -> RuntimePreferenceApplicationContext | None:
+    context = load_runtime_context(paths)
+    if not context.recent_preference_applications:
+        return None
+
+    application = context.recent_preference_applications[0]
+    if application.status != "confirmed":
+        return None
+
+    preferences = enabled_preferences(paths)
+    if preference_conflict_hints(preferences):
+        return None
+
+    current_ids = tuple(preference.preference_id for preference in preferences)
+    current_texts = tuple(preference.preference for preference in preferences)
+    if current_ids != application.preference_ids or current_texts != application.preferences:
+        return None
     return application
 
 

@@ -3098,3 +3098,17 @@
 - 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；构建日志包含既有 `Hidden import "tzdata" not found!` 警告和第三方 `pyautogui` 的 `SyntaxWarning: invalid escape sequence '\e'`；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.140.0.exe`，大小 `59,715,584` 字节，时间戳 `2026/6/9 15:28:13`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.140.0`。
 - 断线恢复最终复验：`.\.venv\Scripts\python.exe -m unittest discover -s tests -v`，`Ran 770 tests in 11.525s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示。
 - 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 666 项通过；严格真实密钥形态扫描 25 个公开变更/新增文件无命中；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。
+
+## 2026-06-09 0.141.0 偏好进入普通回复上下文第一阶段
+
+- 时间：2026-06-09 继续执行 v146。
+- 工具：Get-Content / rg / git status / git diff / update_plan / apply_patch / unittest / 临时项目 Agent smoke / scripts\build_windows_installer.py / PowerShell 版本资源检查 / git diff --check / Markdown 本地链接检查 / 严格真实密钥形态扫描。
+- 技能：使用 `superpowers:using-superpowers` 选择流程；使用 `superpowers:executing-plans` 承接已有 v146 计划；提交前使用 `superpowers:verification-before-completion` 做新鲜验证；密钥扫描误报时使用 `superpowers:systematic-debugging` 查明根因。
+- 工具降级：当前会话仍未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地结构化分析、`rg`/`Get-Content`、`update_plan`、superpowers 流程、TDD 和 `unittest`。
+- 上下文：`0.140.0` 已完成本地提交 `a09fd9c feat: 增加偏好应用确认记录与撤销 0.140.0`，当前分支未推送；v146 计划明确只把最近有效确认记录接入普通 LLM fallback 上下文和 `/llm-context-preview`。
+- 设计选择：新增 `describe_preference_reply_context()`，只选择最近一条状态为 `confirmed`、当前已启用偏好 ID/文本与确认记录完全一致、且无明显冲突的确认记录；撤销确认、停用偏好、删除偏好或启用集合变化后旧确认自动失效。
+- 边界：不把 `/preference-*` 管理命令加入 LLM provider command 白名单，不改变 SearchRouter、InnerBrain、路由、授权层或桌面执行决策；本阶段不重写本地知识库命中回答或长期记忆兜底回答。
+- RED/GREEN：目标测试先失败后通过；`tests.test_preferences`、Agent LLM 上下文测试、LLM 白名单边界和版本一致性目标复验 23 项通过。
+- 验证：相邻回归 458 项通过；全量 `unittest` 774 项通过；命令行 smoke 输出 `preference-reply-context-smoke OK`；源码桌面 smoke 和打包后 smoke 均输出 `desktopPetWindow`。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.141.0.exe`，大小 `59,711,488` 字节，时间戳 `2026-06-09 17:31:22`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.141.0`。
+- 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 671 项通过；严格真实密钥形态扫描 14 个公开变更/新增文件无命中；首次密钥扫描被历史方案文件名中的 `sk-...-plan` 误报，收窄真实 key 形态后复跑通过；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。

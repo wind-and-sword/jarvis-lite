@@ -1233,6 +1233,51 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/preference-apply-history", manager_status)
         self.assertIn("/preference-apply-undo", manager_status)
 
+    def test_llm_context_preview_includes_confirmed_preference_application(self):
+        self.agent.handle("/config-candidate-add preference 回答尽量简洁")
+        self.agent.handle("/config-candidate-confirm 1")
+        self.agent.handle("/preference-enable 1")
+
+        preview_before_confirm = self.agent.handle("/llm-context-preview")
+        self.agent.handle("/preference-apply-confirm 帮我总结知识库")
+        preview_after_confirm = self.agent.handle("/llm-context-preview")
+        self.agent.handle("/preference-apply-undo 1")
+        preview_after_undo = self.agent.handle("/llm-context-preview")
+
+        self.assertNotIn("已确认偏好应用：prefapp-", preview_before_confirm)
+        self.assertIn("已确认偏好应用：prefapp-", preview_after_confirm)
+        self.assertIn("- [pref-", preview_after_confirm)
+        self.assertIn("回答尽量简洁", preview_after_confirm)
+        self.assertNotIn("已确认偏好应用：prefapp-", preview_after_undo)
+
+    def test_llm_fallback_receives_confirmed_preference_context_until_undone(self):
+        provider = SequenceLLMProvider(
+            [
+                LLMIntent(type="answer", answer="收到偏好上下文"),
+                LLMIntent(type="answer", answer="撤销后回答"),
+            ]
+        )
+        self.agent = JarvisAgent(
+            self.paths,
+            llm_router=LLMRouter(LLMSettings(provider="fake"), provider),
+        )
+        self.agent.handle("/config-candidate-add preference 回答尽量简洁")
+        self.agent.handle("/config-candidate-confirm 1")
+        self.agent.handle("/preference-enable 1")
+        self.agent.handle("/preference-apply-confirm 请回答普通问题")
+
+        answer_with_context = self.agent.handle("这是一个普通问题")
+        self.agent.handle("/preference-apply-undo 1")
+        answer_after_undo = self.agent.handle("这是另一个普通问题")
+
+        first_context = provider.calls[0][1]
+        second_context = provider.calls[1][1]
+        self.assertIn("LLM 外脑：收到偏好上下文", answer_with_context)
+        self.assertTrue(any("已确认偏好应用：prefapp-" in line for line in first_context))
+        self.assertTrue(any("回答尽量简洁" in line for line in first_context))
+        self.assertIn("LLM 外脑：撤销后回答", answer_after_undo)
+        self.assertFalse(any("已确认偏好应用：prefapp-" in line for line in second_context))
+
     def test_authorization_status_command_reports_policy(self):
         response = self.agent.handle("/authorization-status")
 
@@ -4360,7 +4405,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.140.1",
+                    "version": "0.141.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4371,7 +4416,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.140.1", response)
+        self.assertIn("发现新版本：0.141.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4386,7 +4431,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.140.1",
+                        "version": "0.141.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

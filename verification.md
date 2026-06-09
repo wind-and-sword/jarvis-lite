@@ -6,6 +6,7 @@
 
 ## 最近摘要
 
+- 2026-06-09：发布 `0.141.0` 可安装测试包，完成偏好进入普通回复上下文第一阶段；最近一条未撤销且仍匹配当前已启用偏好集合、且无明显冲突的确认记录会进入普通 LLM fallback 上下文和 `/llm-context-preview`；撤销确认、停用偏好、删除偏好或启用集合变化后旧确认自动失效；当前阶段不把偏好管理命令加入 LLM 白名单，不改变 SearchRouter、InnerBrain、路由或桌面执行决策；全量 `unittest` 774 项通过，安装包生成到 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.141.0.exe`。
 - 2026-06-09：发布 `0.140.0` 可安装测试包，完成偏好应用确认记录与撤销第一阶段；`/preference-apply-confirm [输入文本]` 成功后写入运行态确认记录，`/preference-apply-history` 可查看最近确认记录，`/preference-apply-undo 编号或ID` 只撤销确认记录，不停用偏好、不删除偏好、不回滚已展示输出；同秒重复确认会保留不同 `prefapp-...` ID；当前阶段仍不把偏好自动接入普通聊天、LLM prompt、SearchRouter、InnerBrain、路由或执行决策；全量 `unittest` 770 项通过，安装包生成到 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.140.0.exe`。
 - 2026-06-05：发布 `0.139.0` 可安装测试包，完成偏好应用确认命令第一阶段；`/preference-apply-confirm [输入文本]` 在显式命令中确认已启用偏好仅应用到本次命令输出，无启用偏好时拒绝确认，存在明显冲突时拒绝确认并提示停用冲突偏好；确认不写入 LLM prompt，不影响普通聊天、SearchRouter、InnerBrain、路由或执行决策，不把确认命令加入 LLM 白名单；全量 `unittest` 765 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.139.0.exe`。
 - 2026-06-05：发布 `0.138.0` 可安装测试包，完成偏好应用确认草稿第一阶段；`/preference-apply-draft [输入文本]` 可生成待确认偏好应用草稿，展示输入、已启用偏好稳定 ID、冲突提示和确认边界；当前阶段不真正应用偏好，不改变回复风格、LLM prompt、路由或执行决策，不把偏好管理命令加入 LLM 白名单；全量 `unittest` 761 项通过，安装包生成到 `E:\oyzj\ai\jarvis-lite-dist\JarvisLiteSetup-0.138.0.exe`。

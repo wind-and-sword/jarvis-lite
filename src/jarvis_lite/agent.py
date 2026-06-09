@@ -121,6 +121,7 @@ from .preferences import (
     describe_confirmed_preference_application,
     describe_preference_application_history,
     describe_preference_application_draft,
+    describe_preference_reply_context,
     describe_preference_preview,
     describe_preferences,
     set_preference_enabled,
@@ -3470,6 +3471,9 @@ class JarvisAgent:
 
     def _llm_context_lines(self) -> tuple[str, ...]:
         lines = [f"记忆摘要：{summarize_profile(read_profile(self.paths))}"]
+        preference_reply_context = describe_preference_reply_context(self.paths)
+        if preference_reply_context:
+            lines.extend(preference_reply_context.splitlines())
         if self._recent_document_path is not None:
             lines.append(f"最近资料：data/{self._recent_document_path}")
         if self._recent_search_result_paths:

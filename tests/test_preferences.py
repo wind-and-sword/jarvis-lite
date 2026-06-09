@@ -13,6 +13,7 @@ from jarvis_lite.preferences import (
     describe_confirmed_preference_application,
     describe_preference_application_history,
     describe_preference_application_draft,
+    describe_preference_reply_context,
     describe_preference_preview,
     describe_preferences,
     parse_preference_candidate,
@@ -293,6 +294,38 @@ class PreferenceTests(unittest.TestCase):
             self.assertIn("不回滚已经展示的输出", undo)
             self.assertIn("1. 已撤销 [prefapp-", history)
             self.assertTrue(preferences[0].enabled)
+
+    def test_preference_reply_context_uses_latest_confirmed_application_until_undone(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            preference = save_preference(paths, "回答尽量简洁", source="test")
+            set_preference_enabled(paths, preference.preference_id, True)
+            confirmation = describe_confirmed_preference_application(paths, "帮我总结知识库")
+
+            reply_context = describe_preference_reply_context(paths)
+            undo_preference_application(paths, 1)
+            context_after_undo = describe_preference_reply_context(paths)
+
+            self.assertIn("确认ID：prefapp-", confirmation)
+            self.assertIn("已确认偏好应用：prefapp-", reply_context)
+            self.assertIn(f"- [{preference.preference_id}] 回答尽量简洁", reply_context)
+            self.assertIn("应用边界：仅作为普通 LLM fallback 上下文", reply_context)
+            self.assertEqual(context_after_undo, "")
+
+    def test_preference_reply_context_requires_enabled_preferences_to_match_confirmation(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            concise = save_preference(paths, "回答尽量简洁", source="test")
+            chinese = save_preference(paths, "优先使用中文", source="test")
+            set_preference_enabled(paths, concise.preference_id, True)
+            describe_confirmed_preference_application(paths, "帮我总结知识库")
+
+            context_before_change = describe_preference_reply_context(paths)
+            set_preference_enabled(paths, chinese.preference_id, True)
+            context_after_change = describe_preference_reply_context(paths)
+
+            self.assertIn(f"- [{concise.preference_id}] 回答尽量简洁", context_before_change)
+            self.assertEqual(context_after_change, "")
 
     def test_confirmed_preference_application_rejects_enabled_conflicts(self):
         with tempfile.TemporaryDirectory() as temp_dir:
