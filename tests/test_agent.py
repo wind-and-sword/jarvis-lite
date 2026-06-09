@@ -30,6 +30,13 @@ class SequenceLLMProvider:
         return self.intents.pop(0)
 
 
+def _confirmation_id_from(output: str) -> str:
+    for line in output.splitlines():
+        if line.startswith("确认ID："):
+            return line.removeprefix("确认ID：").strip()
+    raise AssertionError("confirmation id missing")
+
+
 class AgentTests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -1195,6 +1202,8 @@ class AgentTests(unittest.TestCase):
         self.assertIn("无法确认偏好应用：暂无已启用偏好", empty_confirmation)
         self.assertIn("已确认本次偏好应用", confirmation)
         self.assertIn("应用输入：帮我总结知识库", confirmation)
+        confirmation_id = _confirmation_id_from(confirmation)
+        self.assertIn(f"撤销确认：/preference-apply-undo {confirmation_id}", confirmation)
         self.assertIn(f"1. [{preference_id}] 回答尽量简洁", confirmation)
         self.assertIn("应用范围：仅限本次 /preference-apply-confirm 命令输出", confirmation)
         self.assertIn("不影响普通聊天、路由或执行决策", confirmation)
@@ -1219,6 +1228,8 @@ class AgentTests(unittest.TestCase):
 
         self.assertIn("偏好应用确认历史：暂无", empty_history)
         self.assertIn("确认ID：prefapp-", confirmation)
+        confirmation_id = _confirmation_id_from(confirmation)
+        self.assertIn(f"撤销确认：/preference-apply-undo {confirmation_id}", confirmation)
         self.assertIn("偏好应用确认历史", history)
         self.assertIn("1. 已确认 [prefapp-", history)
         self.assertIn("应用输入：帮我总结知识库", history)
@@ -1248,6 +1259,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn("已确认偏好应用：prefapp-", preview_after_confirm)
         self.assertIn("- [pref-", preview_after_confirm)
         self.assertIn("回答尽量简洁", preview_after_confirm)
+        self.assertNotIn("/preference-apply-undo", preview_after_confirm)
         self.assertNotIn("已确认偏好应用：prefapp-", preview_after_undo)
 
     def test_llm_fallback_receives_confirmed_preference_context_until_undone(self):
@@ -1275,6 +1287,8 @@ class AgentTests(unittest.TestCase):
         self.assertIn("LLM 外脑：收到偏好上下文", answer_with_context)
         self.assertTrue(any("已确认偏好应用：prefapp-" in line for line in first_context))
         self.assertTrue(any("回答尽量简洁" in line for line in first_context))
+        self.assertFalse(any("回答类型：" in line for line in first_context))
+        self.assertFalse(any("/preference-apply-undo" in line for line in first_context))
         self.assertIn("LLM 外脑：撤销后回答", answer_after_undo)
         self.assertFalse(any("已确认偏好应用：prefapp-" in line for line in second_context))
 
@@ -4405,7 +4419,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.142.1",
+                    "version": "0.144.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4416,7 +4430,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.142.1", response)
+        self.assertIn("发现新版本：0.144.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4431,7 +4445,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.142.1",
+                        "version": "0.144.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
@@ -5468,13 +5482,16 @@ class AgentTests(unittest.TestCase):
         agent.handle("/preference-enable 1")
 
         response_before_confirm = agent.handle("/ask Jarvis Lite 推荐使用什么 Python 版本？")
-        agent.handle("/preference-apply-confirm 帮我总结知识库")
+        confirmation = agent.handle("/preference-apply-confirm 帮我总结知识库")
         response_after_confirm = agent.handle("/ask Jarvis Lite 推荐使用什么 Python 版本？")
         agent.handle("/preference-apply-undo 1")
         response_after_undo = agent.handle("/ask Jarvis Lite 推荐使用什么 Python 版本？")
 
         self.assertIn("根据 data/runtime.md:1", response_after_confirm)
+        confirmation_id = _confirmation_id_from(confirmation)
         self.assertIn("已确认偏好格式化：prefapp-", response_after_confirm)
+        self.assertIn("回答类型：本地知识库回答", response_after_confirm)
+        self.assertIn(f"撤销确认：/preference-apply-undo {confirmation_id}", response_after_confirm)
         self.assertIn("- [pref-", response_after_confirm)
         self.assertIn("回答尽量简洁", response_after_confirm)
         self.assertIn("应用边界：仅用于本地知识库和长期记忆回答格式化", response_after_confirm)
@@ -5490,13 +5507,16 @@ class AgentTests(unittest.TestCase):
         agent.handle("/preference-enable 1")
 
         response_before_confirm = agent.handle("火星基地预算需要外部判断")
-        agent.handle("/preference-apply-confirm 请回答普通问题")
+        confirmation = agent.handle("/preference-apply-confirm 请回答普通问题")
         response_after_confirm = agent.handle("木星基地预算需要外部判断")
         agent.handle("/preference-apply-undo 1")
         response_after_undo = agent.handle("土星基地预算需要外部判断")
 
         self.assertIn("Jarvis Lite 已读取长期记忆", response_after_confirm)
+        confirmation_id = _confirmation_id_from(confirmation)
         self.assertIn("已确认偏好格式化：prefapp-", response_after_confirm)
+        self.assertIn("回答类型：长期记忆兜底回答", response_after_confirm)
+        self.assertIn(f"撤销确认：/preference-apply-undo {confirmation_id}", response_after_confirm)
         self.assertIn("- [pref-", response_after_confirm)
         self.assertIn("回答尽量简洁", response_after_confirm)
         self.assertIn("应用边界：仅用于本地知识库和长期记忆回答格式化", response_after_confirm)

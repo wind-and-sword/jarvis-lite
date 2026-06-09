@@ -157,6 +157,8 @@
 - [2026-06-09-v145-preference-apply-audit-plan.md](2026-06-09-v145-preference-apply-audit-plan.md)：明确偏好应用确认记录与撤销第一阶段、运行态确认历史和只撤销记录边界。
 - [2026-06-09-v146-preference-reply-context-plan.md](2026-06-09-v146-preference-reply-context-plan.md)：明确偏好进入普通回复上下文第一阶段、最近有效确认记录进入普通 LLM fallback 上下文和 `/llm-context-preview` 的边界。
 - [2026-06-09-v147-preference-local-answer-format-plan.md](2026-06-09-v147-preference-local-answer-format-plan.md)：明确偏好格式化本地回答第一阶段、最近有效确认记录以可审计附注进入本地知识库命中回答和长期记忆兜底回答的边界。
+- [2026-06-09-v148-preference-undo-hints-plan.md](2026-06-09-v148-preference-undo-hints-plan.md)：明确偏好应用撤销提示第一阶段、确认输出和本地回答附注展示 ID 精确撤销命令且不进入 LLM fallback 上下文的边界。
+- [2026-06-09-v149-preference-local-answer-scope-plan.md](2026-06-09-v149-preference-local-answer-scope-plan.md)：明确偏好本地回答附注范围第一阶段、本地知识库回答和长期记忆兜底回答显式展示回答类型且未知回答类型不生成附注的边界。
 
 ## 维护规则
 

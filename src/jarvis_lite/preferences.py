@@ -301,8 +301,12 @@ def describe_preference_reply_context(paths: ProjectPaths) -> str:
     return "\n".join(lines)
 
 
-def describe_preference_local_answer_note(paths: ProjectPaths) -> str:
+def describe_preference_local_answer_note(paths: ProjectPaths, answer_type: str) -> str:
     """返回可追加到本地知识库和长期记忆回答的偏好确认附注。"""
+
+    answer_type_label = _preference_local_answer_type_label(answer_type)
+    if not answer_type_label:
+        return ""
 
     application = _active_preference_application_for_reply(paths)
     if application is None:
@@ -310,7 +314,9 @@ def describe_preference_local_answer_note(paths: ProjectPaths) -> str:
 
     lines = [
         f"已确认偏好格式化：{application.application_id}",
+        f"回答类型：{answer_type_label}",
         "应用边界：仅用于本地知识库和长期记忆回答格式化，不改变检索、路由、LLM 白名单、SearchRouter、InnerBrain 或桌面执行决策。",
+        _preference_application_undo_command(application),
     ]
     if application.user_input:
         lines.append(f"确认输入：{application.user_input}")
@@ -359,6 +365,7 @@ def describe_confirmed_preference_application(paths: ProjectPaths, user_input: s
         "已确认本次偏好应用",
         f"确认ID：{application.application_id}",
         f"已确认偏好：{len(preferences)} 条",
+        _preference_application_undo_command(application),
     ]
     if application_input:
         lines.append(f"应用输入：{application_input}")
@@ -543,6 +550,14 @@ def _preference_application_status_label(status: str) -> str:
     return "已确认"
 
 
+def _preference_application_undo_command(application: RuntimePreferenceApplicationContext) -> str:
+    return f"撤销确认：/preference-apply-undo {application.application_id}"
+
+
+def _preference_local_answer_type_label(answer_type: str) -> str:
+    return _PREFERENCE_LOCAL_ANSWER_TYPE_LABELS.get(answer_type.strip().casefold(), "")
+
+
 def _preferences_path(paths: ProjectPaths):
     return paths.config_dir / PREFERENCES_FILENAME
 
@@ -683,3 +698,9 @@ _CONFLICT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
     ("回答长度", ("简洁", "简短", "精简", "短回答"), ("详细", "详尽", "展开", "完整说明")),
     ("回复语言", ("中文", "汉语"), ("英文", "英语")),
 )
+
+
+_PREFERENCE_LOCAL_ANSWER_TYPE_LABELS: dict[str, str] = {
+    "knowledge": "本地知识库回答",
+    "memory": "长期记忆兜底回答",
+}

@@ -28,6 +28,13 @@ from jarvis_lite.preferences import (
 from jarvis_lite.runtime_context import load_runtime_context
 
 
+def _confirmation_id_from(output: str) -> str:
+    for line in output.splitlines():
+        if line.startswith("确认ID："):
+            return line.removeprefix("确认ID：").strip()
+    raise AssertionError("confirmation id missing")
+
+
 class PreferenceTests(unittest.TestCase):
     def test_preference_store_writes_counts_describes_and_removes_preferences(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -225,6 +232,8 @@ class PreferenceTests(unittest.TestCase):
             self.assertIn(f"1. [{concise.preference_id}] 回答尽量简洁", confirmation)
             self.assertIn(f"2. [{chinese.preference_id}] 优先使用中文", confirmation)
             self.assertIn("应用范围：仅限本次 /preference-apply-confirm 命令输出", confirmation)
+            confirmation_id = _confirmation_id_from(confirmation)
+            self.assertIn(f"撤销确认：/preference-apply-undo {confirmation_id}", confirmation)
             self.assertIn("不写入 LLM prompt", confirmation)
             self.assertIn("不影响普通聊天、路由或执行决策", confirmation)
 
@@ -236,8 +245,10 @@ class PreferenceTests(unittest.TestCase):
 
             confirmation = describe_confirmed_preference_application(paths, "帮我总结知识库")
             history = describe_preference_application_history(paths)
+            confirmation_id = _confirmation_id_from(confirmation)
 
             self.assertRegex(confirmation, r"确认ID：prefapp-[0-9a-f]{10}")
+            self.assertIn(f"撤销确认：/preference-apply-undo {confirmation_id}", confirmation)
             self.assertIn("偏好应用确认历史", history)
             self.assertIn("1. 已确认 [prefapp-", history)
             self.assertIn("应用输入：帮我总结知识库", history)
@@ -336,14 +347,33 @@ class PreferenceTests(unittest.TestCase):
             set_preference_enabled(paths, concise.preference_id, True)
             describe_confirmed_preference_application(paths, "帮我总结知识库")
 
-            note_before_change = describe_preference_local_answer_note(paths)
+            note_before_change = describe_preference_local_answer_note(paths, "knowledge")
             set_preference_enabled(paths, chinese.preference_id, True)
-            note_after_change = describe_preference_local_answer_note(paths)
+            note_after_change = describe_preference_local_answer_note(paths, "knowledge")
+            confirmation_id = load_runtime_context(paths).recent_preference_applications[0].application_id
 
             self.assertIn("已确认偏好格式化：prefapp-", note_before_change)
+            self.assertIn("回答类型：本地知识库回答", note_before_change)
+            self.assertIn(f"撤销确认：/preference-apply-undo {confirmation_id}", note_before_change)
             self.assertIn(f"- [{concise.preference_id}] 回答尽量简洁", note_before_change)
             self.assertIn("应用边界：仅用于本地知识库和长期记忆回答格式化", note_before_change)
             self.assertEqual(note_after_change, "")
+
+    def test_preference_local_answer_note_uses_answer_type_scope(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            preference = save_preference(paths, "回答尽量简洁", source="test")
+            set_preference_enabled(paths, preference.preference_id, True)
+            describe_confirmed_preference_application(paths, "帮我总结知识库")
+
+            knowledge_note = describe_preference_local_answer_note(paths, "knowledge")
+            memory_note = describe_preference_local_answer_note(paths, "memory")
+            unsupported_note = describe_preference_local_answer_note(paths, "llm-fallback")
+
+            self.assertIn("回答类型：本地知识库回答", knowledge_note)
+            self.assertIn("回答类型：长期记忆兜底回答", memory_note)
+            self.assertIn(f"- [{preference.preference_id}] 回答尽量简洁", knowledge_note)
+            self.assertEqual(unsupported_note, "")
 
     def test_confirmed_preference_application_rejects_enabled_conflicts(self):
         with tempfile.TemporaryDirectory() as temp_dir:

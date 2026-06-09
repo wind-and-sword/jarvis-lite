@@ -3127,3 +3127,29 @@
 - 验证：命令行 smoke 输出 `preference-local-answer-format-smoke OK`；源码桌面 smoke 输出 `desktopPetWindow`；打包后 smoke 退出码 0、stdout 包含 `desktopPetWindow`、stderr 为空且无残留 `JarvisLite` 进程。
 - 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.142.0.exe`，大小 `59,715,584` 字节，时间戳 `2026-06-09 18:12:44`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.142.0`。
 - 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 674 项通过；严格真实密钥形态扫描 722 个文本文件无命中；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。
+
+## 2026-06-09 0.143.0 偏好应用撤销提示第一阶段
+
+- 时间：2026-06-09 继续执行并收尾。
+- 工具：Get-Content / rg / git status / tool_search / update_plan / apply_patch / git diff --check。
+- 技能：使用 `superpowers:using-superpowers` 读取并接手中断任务；使用 `superpowers:executing-plans` 继续 v148 计划；使用 `superpowers:verification-before-completion` 做最终复验。
+- 工具降级：`tool_search` 未找到 sequential-thinking、shrimp-task-manager、code-index、exa 对应工具；按项目降级规则使用本地 `rg` / `Get-Content`、既有验证记录和补丁编辑继续收尾。
+- 上下文：已确认 `0.143.0` 代码、测试、打包和 smoke 均完成，当前缺口只剩 `.codex/operations-log.md`、`.codex/testing.md` 和 `.codex/review-report.md` 的留痕补齐。
+- 收尾：补写 v148 计划、进度、验证和审查留痕，保持 README、PROJECT-PLAN、计划索引和文档索引的版本号一致。
+- 复核：后续以 `git diff --check` 和 `rg -n "0.143.0|v148"` 复验留痕完整性。
+
+## 2026-06-09 0.144.0 偏好本地回答附注范围第一阶段
+
+- 时间：2026-06-09 继续执行 v149，并按用户要求在阶段完成后一起收紧文档。
+- 工具：Get-Content / rg / git diff / update_plan / apply_patch / unittest / 临时项目 Agent smoke / scripts\build_windows_installer.py / Start-Process / Select-String / PowerShell 版本资源检查。
+- 技能：使用 `superpowers:using-superpowers` 选择流程；使用 `superpowers:brainstorming` 做最小设计梳理；使用 `superpowers:writing-plans` 写入项目本地 v149 计划；使用 `superpowers:test-driven-development` 执行 RED/GREEN；相邻回归失败时使用 `superpowers:systematic-debugging` 定位根因；收尾前使用 `superpowers:verification-before-completion` 做新鲜验证。
+- 工具降级：当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地结构化分析、`rg`/`Get-Content`、`update_plan`、superpowers 流程、TDD 和 `unittest`；记录 `.codex/context-scan-v149-preference-local-answer-scope.json`。
+- 上下文：`0.143.0` 已完成偏好应用撤销提示第一阶段；PROJECT-PLAN 后续目标明确继续评估偏好格式化附注展示粒度和回答类型开关。
+- 设计选择：`describe_preference_local_answer_note(paths, answer_type)` 增加内部回答类型 allowlist，只允许 `knowledge` 和 `memory` 生成附注；本地知识库回答和长期记忆兜底回答分别展示回答类型，未知回答类型不生成附注。
+- RED：目标测试先失败，失败点为 helper 旧签名不接受 answer type、本地知识库和长期记忆兜底缺少回答类型标签、版本仍为 `0.143.0`。
+- GREEN：目标 6 项通过；相邻回归 446 项通过；全量 `unittest` 778 项通过。
+- 调试留痕：相邻回归首次有 2 项更新测试失败，根因为当前版本提升到 `0.144.0` 后 manifest 夹具 `0.143.1` 已不是可用新版本；提升夹具到 `0.144.1` 后单测和相邻回归通过。
+- 验证：命令行 smoke 输出 `preference-local-answer-scope-smoke OK`；源码桌面 smoke 输出 `desktopPetWindow`；打包后 smoke 退出码 0、stdout 包含 `desktopPetWindow`、stderr 为空且无残留 `JarvisLite` 进程。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.144.0.exe`，大小 `59,715,584` 字节，时间戳 `2026/6/9 22:44:36`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.144.0`。
+- 文档收紧：按 `DOCUMENTATION.md` 将 README 收紧为项目介绍、快速启动、常用命令和文档入口；将根 `verification.md` 收紧为最近摘要和索引，完整验证明细保留在 `verification/2026-06/2026-06-09.md`。
+- 文档收紧后最终复验：全量 `unittest` 重新执行，`Ran 778 tests in 8.882s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 675 项通过；严格真实 key 形态扫描无命中；本地敏感配置文件不存在。

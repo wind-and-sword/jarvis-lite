@@ -1,0 +1,77 @@
+{
+  "date": "2026-06-09",
+  "executor": "Codex",
+  "task": "v149 preference local answer scope first stage",
+  "phase": "context-scan",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "used_instead": [
+      "rg",
+      "Get-Content",
+      "update_plan",
+      "superpowers",
+      "unittest"
+    ]
+  },
+  "quick_scan": {
+    "module_location": [
+      "src/jarvis_lite/preferences.py exposes describe_preference_local_answer_note() and the active preference application validity check.",
+      "src/jarvis_lite/agent.py appends local answer notes from _answer_from_data() and memory fallback through _apply_preference_local_answer_note().",
+      "tests/test_preferences.py covers preference note validity, undo hints, history, conflicts and stable IDs.",
+      "tests/test_agent.py covers actual /ask local knowledge answers, memory fallback answers and LLM fallback context boundaries."
+    ],
+    "current_behavior": [
+      "0.143.0 local answer notes include the active prefapp ID, boundary, exact undo command, confirmation input and confirmed preferences.",
+      "The note helper has no answer-type input, so any future caller could append the same note without declaring which local answer path is using it.",
+      "Agent currently appends the same note to local knowledge answers and long-term memory fallback answers.",
+      "Ordinary LLM fallback context is separate and intentionally does not include the exact undo command."
+    ],
+    "similar_patterns": [
+      "describe_preference_reply_context() keeps LLM fallback context separate from user-visible local answer notes.",
+      "JarvisAgent records route decision types such as knowledge/data-answer and memory-fallback/profile.",
+      "PROJECT-PLAN already names the next work as preference note display granularity and possible finer answer-type switch."
+    ],
+    "observation_report": [
+      "The smallest next phase is an internal answer-type scope switch for local answer notes.",
+      "The helper should return a note only for explicitly supported local answer types, keeping unsupported or future answer paths from inheriting preference formatting by accident.",
+      "The note should show the answer type to make the audit trail clearer to users.",
+      "This phase should not add user-facing settings, natural-language preference writes, provider instructions, SearchRouter behavior, InnerBrain behavior, route changes or desktop execution changes."
+    ]
+  },
+  "key_questions": [
+    {
+      "priority": "high",
+      "question": "Which answer types should show the local preference note?",
+      "answer": "Only local knowledge answers and long-term memory fallback answers in this phase."
+    },
+    {
+      "priority": "high",
+      "question": "What should unsupported answer types do?",
+      "answer": "Return no note, so future paths must opt in explicitly."
+    },
+    {
+      "priority": "medium",
+      "question": "Should this add a user setting?",
+      "answer": "No. This phase adds an internal scope switch and visible audit label only."
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  },
+  "acceptance": [
+    "describe_preference_local_answer_note(paths, \"knowledge\") shows answer type 本地知识库回答 when an active confirmation is valid.",
+    "describe_preference_local_answer_note(paths, \"memory\") shows answer type 长期记忆兜底回答 when an active confirmation is valid.",
+    "describe_preference_local_answer_note(paths, unsupported_type) returns an empty string.",
+    "Agent /ask local knowledge answers and memory fallback answers include the matching answer type label.",
+    "LLM fallback context still does not expose local answer note labels or undo commands.",
+    "Version is bumped to 0.144.0 and docs/verification are updated."
+  ]
+}

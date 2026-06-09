@@ -968,3 +968,105 @@
 - 命令行 smoke：`preference-local-answer-format-smoke OK`。
 - 打包：`JarvisLiteSetup-0.142.0.exe` 生成，大小 `59,715,584` 字节；版本资源为 `0.142.0`。
 - 静态检查：`git diff --check` 退出码 0；Markdown 本地链接 674 项通过；严格真实密钥形态扫描 722 个文本文件无命中。
+
+# 0.143.0 偏好应用撤销提示第一阶段审查报告
+
+> 日期：2026-06-09
+> 执行者：Codex
+
+## 结论
+
+- 建议：通过。
+- 综合评分：96/100。
+- 技术评分：96/100。
+- 战略评分：95/100。
+
+## 核对清单
+
+- 需求字段完整性：通过。目标、非目标、实施步骤和验收标准已写入 v148 计划。
+- 接口契约：通过。`/preference-apply-confirm [输入文本]` 成功后会展示 `撤销确认：/preference-apply-undo prefapp-...`；本地知识库命中回答和长期记忆兜底附注展示同一确认 ID 的撤销命令。
+- 执行边界：通过。普通 LLM fallback context 不展示撤销命令；偏好管理命令继续不进入 LLM provider instructions、SearchRouter、InnerBrain、路由或桌面执行决策。
+- 持久化边界：通过。运行态确认历史只记录撤销状态，不修改偏好定义或启用状态，也不回滚已展示输出。
+- 测试覆盖：通过。目标 RED/GREEN、相邻回归、全量回归、命令行 smoke、源码桌面 smoke、安装包构建、打包后 smoke 和静态检查均已记录。
+- 文档同步：通过。README、PROJECT-PLAN、v148 计划、计划索引、文档索引、进度和验证记录均已同步到 `0.143.0`。
+
+## 风险与处理
+
+- 撤销提示当前只在确认输出和本地回答附注中展示，未进入普通 LLM fallback context；这一边界已在计划、代码和验证中一致固定。
+- 本地回答附注仍是追加式文本，不改变知识库命中主体或长期记忆摘要；后续若要真正改写内容，需要单独设计。
+- 撤销命令仍是显式管理命令，不加入 LLM 白名单，避免普通聊天自动执行。
+
+## 证据
+
+- 目标 GREEN：11 项通过。
+- 相邻回归：445 项通过。
+- 全量回归：777 项通过。
+- 命令行 smoke：`preference-undo-hints-smoke OK`。
+- 打包：`JarvisLiteSetup-0.143.0.exe` 生成，大小 `59,715,584` 字节；版本资源为 `0.143.0`。
+- 静态检查：`git diff --check` 退出码 0；Markdown 本地链接 677 项通过；严格真实密钥形态扫描 722 个文本文件无命中。
+
+## 留痕文件
+
+- `.codex/context-scan-v148-preference-undo-hints.json`
+- `.codex/operations-log.md`
+- `.codex/testing.md`
+- `.codex/review-report.md`
+- `word/plans/2026-06-09-v148-preference-undo-hints-plan.md`
+- `word/progress/2026-06-09.md`
+- `verification/2026-06/2026-06-09.md`
+- `README.md`
+- `word/PROJECT-PLAN.md`
+- `word/plans/README.md`
+- `word/文档索引.md`
+
+# 0.144.0 偏好本地回答附注范围第一阶段审查报告
+
+> 日期：2026-06-09
+> 执行者：Codex
+
+## 结论
+
+- 建议：通过。
+- 综合评分：96/100。
+- 技术评分：96/100。
+- 战略评分：95/100。
+
+## 核对清单
+
+- 需求字段完整性：通过。目标、非目标、实施步骤和验收标准已写入 v149 计划。
+- 接口契约：通过。`describe_preference_local_answer_note(paths, answer_type)` 只对 `knowledge` 和 `memory` 生成本地回答附注，未知回答类型返回空字符串。
+- 用户可审计性：通过。本地知识库回答展示 `回答类型：本地知识库回答`，长期记忆兜底回答展示 `回答类型：长期记忆兜底回答`，并保留确认 ID 和精确撤销命令。
+- 执行边界：通过。普通 LLM fallback context 不展示本地回答类型标签或撤销命令；偏好管理命令继续不进入 LLM provider instructions、SearchRouter、InnerBrain、路由或桌面执行决策。
+- 测试覆盖：通过。目标 RED/GREEN、相邻回归、全量回归、命令行 smoke、源码桌面 smoke、安装包构建和打包后 smoke 均已记录。
+- 文档同步：通过。README 已收紧为项目介绍和快速启动，根 `verification.md` 已收紧为短入口，PROJECT-PLAN、v149 计划、计划索引、文档索引、进度和验证记录均已同步到 `0.144.0`。
+
+## 风险与处理
+
+- 当前仍是追加式附注，不改写本地知识库答案主体或长期记忆摘要；后续若要真正按偏好改写内容，需要单独设计。
+- 回答类型开关当前为内部 allowlist，不提供用户设置；后续如需用户可配置，应单独设计审计和撤销语义。
+- 版本提升后更新测试夹具需要保持高于当前版本，本轮已把相关夹具提升到 `0.144.1` 并复验。
+
+## 证据
+
+- 目标 GREEN：6 项通过。
+- 相邻回归：446 项通过。
+- 全量回归：778 项通过。
+- 命令行 smoke：`preference-local-answer-scope-smoke OK`。
+- 打包：`JarvisLiteSetup-0.144.0.exe` 生成，大小 `59,715,584` 字节；版本资源为 `0.144.0`。
+- 打包后 smoke：退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
+- 文档收紧后最终复验：778 项通过；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 675 项通过；严格真实 key 形态扫描无命中。
+
+## 留痕文件
+
+- `.codex/context-scan-v149-preference-local-answer-scope.json`
+- `.codex/operations-log.md`
+- `.codex/testing.md`
+- `.codex/review-report.md`
+- `word/plans/2026-06-09-v149-preference-local-answer-scope-plan.md`
+- `word/progress/2026-06-09.md`
+- `verification/2026-06/2026-06-09.md`
+- `README.md`
+- `verification.md`
+- `word/PROJECT-PLAN.md`
+- `word/plans/README.md`
+- `word/文档索引.md`

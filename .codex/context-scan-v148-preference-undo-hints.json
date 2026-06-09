@@ -1,0 +1,78 @@
+{
+  "date": "2026-06-09",
+  "executor": "Codex",
+  "task": "v148 preference undo hints first stage",
+  "phase": "context-scan",
+  "tool_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "used_instead": [
+      "rg",
+      "Get-Content",
+      "git",
+      "update_plan",
+      "superpowers",
+      "unittest"
+    ]
+  },
+  "quick_scan": {
+    "module_location": [
+      "src/jarvis_lite/preferences.py formats confirmation output, confirmation history, ordinary LLM context and local answer notes.",
+      "src/jarvis_lite/agent.py exposes /preference-apply-confirm, /preference-apply-history, /preference-apply-undo and appends local answer notes.",
+      "tests/test_preferences.py covers confirmation output, history, undo and active local answer note invalidation.",
+      "tests/test_agent.py covers Agent command output and local knowledge/memory answer formatting."
+    ],
+    "current_behavior": [
+      "0.142.0 local answer notes include prefapp ID, boundary, confirmation input and confirmed preferences.",
+      "Confirmation output includes prefapp ID and one-shot scope, but does not show an exact undo command for that confirmation.",
+      "Local answer notes show the active prefapp ID but do not show the exact /preference-apply-undo prefapp-... command.",
+      "History has a generic undo hint: /preference-apply-undo 编号或ID."
+    ],
+    "similar_patterns": [
+      "describe_preference_application_history() already explains the generic undo command and undo boundary.",
+      "undo_preference_application() supports both 1-based index and exact prefapp ID.",
+      "Local answer note already avoids LLM provider instructions and is only user-visible on deterministic local answers.",
+      "Version updates use pyproject.toml, src/jarvis_lite/__init__.py and tests/test_project_metadata.py."
+    ],
+    "observation_report": [
+      "The smallest useful next step is to make the active confirmation directly reversible from visible outputs.",
+      "Adding undo hints to LLM fallback context would leak management command text into provider context, so this phase should avoid describe_preference_reply_context().",
+      "Using the confirmation ID rather than list index keeps the hint stable even if history ordering changes later.",
+      "A helper for formatting the undo command avoids duplicating command text."
+    ]
+  },
+  "key_questions": [
+    {
+      "priority": "high",
+      "question": "Where should the exact undo hint appear?",
+      "answer": "In describe_confirmed_preference_application() after confirmation succeeds, and in describe_preference_local_answer_note() while a confirmation is active."
+    },
+    {
+      "priority": "high",
+      "question": "Where should it not appear?",
+      "answer": "Do not add the slash command hint to describe_preference_reply_context(), because that context is sent to the LLM provider during fallback."
+    },
+    {
+      "priority": "medium",
+      "question": "Should this add a new command or setting?",
+      "answer": "No. /preference-apply-undo already accepts the prefapp ID; this phase only surfaces that existing command in visible audit text."
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  },
+  "acceptance": [
+    "Successful /preference-apply-confirm output includes /preference-apply-undo prefapp-... using the same confirmation ID.",
+    "Local knowledge answer notes include /preference-apply-undo prefapp-... while the confirmation is active.",
+    "Long-term memory fallback notes include the same undo hint while the confirmation is active.",
+    "The LLM fallback context and provider instructions still do not expose /preference-apply-undo as an available command.",
+    "Version is bumped to 0.143.0 and docs/verification are updated."
+  ]
+}

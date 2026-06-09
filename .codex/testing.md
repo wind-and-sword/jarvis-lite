@@ -8758,3 +8758,27 @@ Test-Path .\config\search.local.json
 - 打包后 smoke：`E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
 - 文档后新鲜复验：`.\.venv\Scripts\python.exe -m unittest tests.test_project_metadata -v`，`Ran 7 tests`，`OK`。
 - 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 674 项通过；严格真实密钥形态扫描 722 个文本文件无命中；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。
+
+## 0.143.0 偏好应用撤销提示第一阶段
+
+- RED：目标测试先失败；失败点为确认输出、本地知识库附注和长期记忆兜底附注未展示按确认 ID 撤销的精确命令，普通 LLM fallback context 有泄漏风险，版本仍为 `0.142.0`。
+- GREEN：新增内部格式化 helper，并接入确认输出、本地知识库命中回答附注和长期记忆兜底附注；目标命令 `.\.venv\Scripts\python.exe -m unittest tests.test_preferences tests.test_agent tests.test_llm tests.test_project_metadata -v`，`Ran 11 tests`，`OK`。
+- 相邻回归：`.\.venv\Scripts\python.exe -m unittest tests.test_preferences tests.test_agent tests.test_llm tests.test_project_metadata -v` 之后再跑相关回归，`Ran 445 tests`，`OK`。
+- 全量回归：`.\.venv\Scripts\python.exe -m unittest discover -s tests -v`，`Ran 777 tests`，`OK`。
+- 命令行 smoke：`preference-undo-hints-smoke OK`，确认输出、本地 `/ask` 附注和长期记忆兜底附注均展示 `撤销确认：/preference-apply-undo prefapp-...`，普通 LLM fallback context 不包含该命令。
+- 源码桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 退出码 0，输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；生成基础 `E:\ai\jarvis-lite-dist\JarvisLiteSetup.exe`，并复制版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.143.0.exe`，大小 `59,715,584` 字节；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.143.0`。
+- 打包后 smoke：`Start-Process -Wait -PassThru -RedirectStandardOutput -RedirectStandardError E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
+- 静态检查：`git diff --check` 退出码 0；Markdown 本地链接 677 项通过，覆盖 423 个 Markdown 文件；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在；README BOM 为 `EF-BB-BF`。
+
+## 0.144.0 偏好本地回答附注范围第一阶段
+
+- RED：目标测试先失败；失败点为 `describe_preference_local_answer_note(paths, "knowledge")` 旧签名不接受 answer type、本地知识库 `/ask` 输出缺少 `回答类型：本地知识库回答`、长期记忆兜底输出缺少 `回答类型：长期记忆兜底回答`、版本仍为 `0.143.0`。
+- GREEN：目标命令 `.\.venv\Scripts\python.exe -m unittest tests.test_preferences.PreferenceTests.test_preference_local_answer_note_requires_enabled_preferences_to_match_confirmation tests.test_preferences.PreferenceTests.test_preference_local_answer_note_uses_answer_type_scope tests.test_agent.AgentTests.test_llm_fallback_receives_confirmed_preference_context_until_undone tests.test_agent.AgentTests.test_local_data_answer_includes_confirmed_preference_note_until_undone tests.test_agent.AgentTests.test_memory_fallback_includes_confirmed_preference_note_until_undone tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version -v`，`Ran 6 tests`，`OK`。
+- 相邻回归：`.\.venv\Scripts\python.exe -m unittest tests.test_preferences tests.test_agent tests.test_llm tests.test_project_metadata -v`，`Ran 446 tests in 6.578s`，`OK`；首次因更新 manifest 夹具仍为 `0.143.1` 失败，提升到 `0.144.1` 后复跑通过。
+- 全量回归：`.\.venv\Scripts\python.exe -m unittest discover -s tests -v`，`Ran 778 tests in 9.049s`，`OK`。
+- 命令行 smoke：`preference-local-answer-scope-smoke OK`，覆盖本地知识库回答类型标签、长期记忆兜底回答类型标签、撤销后失效，以及 LLM context 不泄漏本地回答标签或撤销命令。
+- 源码桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 退出码 0，输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；生成基础 `E:\ai\jarvis-lite-dist\JarvisLiteSetup.exe`，并复制版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.144.0.exe`，大小 `59,715,584` 字节；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.144.0`。
+- 打包后 smoke：`Start-Process -Wait -PassThru -RedirectStandardOutput -RedirectStandardError E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
+- 文档收紧后最终复验：全量 `unittest` 重新执行，`Ran 778 tests in 8.882s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 675 项通过，覆盖 424 个 Markdown 文件；严格真实 key 形态扫描无命中；本地敏感配置文件不存在；README 108 行，根 `verification.md` 19 行。
