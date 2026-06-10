@@ -13,6 +13,7 @@ from jarvis_lite.preferences import (
     describe_confirmed_preference_application,
     describe_preference_application_history,
     describe_preference_application_draft,
+    describe_preference_local_answer_type_settings,
     describe_preference_local_answer_note,
     describe_preference_reply_context,
     describe_preference_preview,
@@ -22,6 +23,7 @@ from jarvis_lite.preferences import (
     read_preferences,
     remove_preference,
     save_preference,
+    set_preference_local_answer_type_enabled,
     set_preference_enabled,
     undo_preference_application,
 )
@@ -374,6 +376,54 @@ class PreferenceTests(unittest.TestCase):
             self.assertIn("回答类型：长期记忆兜底回答", memory_note)
             self.assertIn(f"- [{preference.preference_id}] 回答尽量简洁", knowledge_note)
             self.assertEqual(unsupported_note, "")
+
+    def test_preference_local_answer_type_settings_default_to_knowledge_and_memory(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+
+            settings = describe_preference_local_answer_type_settings(paths)
+
+            self.assertIn("偏好本地回答附注类型", settings)
+            self.assertIn("1. 已启用 [knowledge] 本地知识库回答", settings)
+            self.assertIn("2. 已启用 [memory] 长期记忆兜底回答", settings)
+            self.assertIn("配置文件：config/preferences.local.json", settings)
+            self.assertIn("/preference-answer-type-disable 类型", settings)
+            self.assertIn("不改变普通 LLM fallback、路由或执行决策", settings)
+
+    def test_preference_local_answer_note_respects_answer_type_settings(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            preference = save_preference(paths, "回答尽量简洁", source="test")
+            set_preference_enabled(paths, preference.preference_id, True)
+            describe_confirmed_preference_application(paths, "帮我总结知识库")
+
+            disabled = set_preference_local_answer_type_enabled(paths, "knowledge", False)
+            knowledge_note_after_disable = describe_preference_local_answer_note(paths, "knowledge")
+            memory_note_after_disable = describe_preference_local_answer_note(paths, "memory")
+            settings_after_disable = describe_preference_local_answer_type_settings(paths)
+            reenabled = set_preference_local_answer_type_enabled(paths, "本地知识库", True)
+            knowledge_note_after_enable = describe_preference_local_answer_note(paths, "knowledge")
+
+            self.assertEqual(disabled.answer_type, "knowledge")
+            self.assertFalse(disabled.enabled)
+            self.assertEqual(knowledge_note_after_disable, "")
+            self.assertIn("回答类型：长期记忆兜底回答", memory_note_after_disable)
+            self.assertIn("1. 已停用 [knowledge] 本地知识库回答", settings_after_disable)
+            self.assertEqual(reenabled.answer_type, "knowledge")
+            self.assertTrue(reenabled.enabled)
+            self.assertIn("回答类型：本地知识库回答", knowledge_note_after_enable)
+            self.assertIn(f"- [{preference.preference_id}] 回答尽量简洁", knowledge_note_after_enable)
+
+    def test_preference_local_answer_type_setting_rejects_unknown_without_writing(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            preferences_path = paths.config_dir / PREFERENCES_FILENAME
+
+            with self.assertRaises(ValueError) as context:
+                set_preference_local_answer_type_enabled(paths, "llm-fallback", False)
+
+            self.assertIn("回答类型必须是 knowledge 或 memory", str(context.exception))
+            self.assertFalse(preferences_path.exists())
 
     def test_confirmed_preference_application_rejects_enabled_conflicts(self):
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -121,10 +121,12 @@ from .preferences import (
     describe_confirmed_preference_application,
     describe_preference_application_history,
     describe_preference_application_draft,
+    describe_preference_local_answer_type_settings,
     describe_preference_local_answer_note,
     describe_preference_reply_context,
     describe_preference_preview,
     describe_preferences,
+    set_preference_local_answer_type_enabled,
     set_preference_enabled,
     undo_preference_application,
 )
@@ -1155,6 +1157,42 @@ class JarvisAgent:
                 ]
             )
 
+        if command == "/preference-answer-types":
+            self.tools.run("record_log", message="查看偏好本地回答附注类型开关")
+            return describe_preference_local_answer_type_settings(self.paths)
+
+        if command == "/preference-answer-type-enable":
+            if not args:
+                return "用法：/preference-answer-type-enable 类型"
+            answer_type_reference = args[0]
+            try:
+                setting = set_preference_local_answer_type_enabled(self.paths, answer_type_reference, True)
+            except ValueError as exc:
+                return str(exc)
+            self.tools.run("record_log", message=f"启用偏好本地回答附注类型：{setting.answer_type}")
+            return "\n".join(
+                [
+                    f"已启用偏好本地回答附注类型 [{setting.answer_type}] {setting.label}",
+                    "说明：只控制本地回答附注展示，不撤销确认记录，不删除或停用偏好，不改变普通 LLM fallback、路由或执行决策。",
+                ]
+            )
+
+        if command == "/preference-answer-type-disable":
+            if not args:
+                return "用法：/preference-answer-type-disable 类型"
+            answer_type_reference = args[0]
+            try:
+                setting = set_preference_local_answer_type_enabled(self.paths, answer_type_reference, False)
+            except ValueError as exc:
+                return str(exc)
+            self.tools.run("record_log", message=f"停用偏好本地回答附注类型：{setting.answer_type}")
+            return "\n".join(
+                [
+                    f"已停用偏好本地回答附注类型 [{setting.answer_type}] {setting.label}",
+                    "说明：只控制本地回答附注展示，不撤销确认记录，不删除或停用偏好，不改变普通 LLM fallback、路由或执行决策。",
+                ]
+            )
+
         if command == "/preference-preview":
             preview_input = prompt[len(command):].strip()
             self.tools.run("record_log", message="预览已启用偏好应用草案")
@@ -1256,6 +1294,9 @@ class JarvisAgent:
                 "/preference-status：查看本地偏好启用状态",
                 "/preference-enable 编号或ID：启用已保存偏好",
                 "/preference-disable 编号或ID：停用已保存偏好",
+                "/preference-answer-types：查看本地回答附注类型开关",
+                "/preference-answer-type-enable 类型：启用本地回答附注类型",
+                "/preference-answer-type-disable 类型：停用本地回答附注类型",
                 "/preference-preview [输入文本]：预览已启用偏好的应用草案",
                 "/preference-apply-draft [输入文本]：生成待确认偏好应用草稿",
                 "/preference-apply-confirm [输入文本]：确认本次偏好应用",
@@ -4581,6 +4622,7 @@ class JarvisAgent:
                 "- 确认候选：/config-candidate-confirm 编号 确认固化联系人别名、应用别名、授权规则或偏好候选",
                 "- 撤销固化：/config-candidate-undo 编号 删除联系人别名、应用别名、授权规则或偏好并恢复候选",
                 "- 偏好状态：/preference-status 查看本地偏好启用状态",
+                "- 偏好回答类型：/preference-answer-types 查看本地回答附注类型开关",
                 "- 偏好预览：/preference-preview [输入文本] 预览已启用偏好的应用草案",
                 "- 偏好应用草稿：/preference-apply-draft [输入文本] 生成待确认偏好应用草稿",
                 "- 偏好应用确认：/preference-apply-confirm [输入文本] 确认本次偏好应用",

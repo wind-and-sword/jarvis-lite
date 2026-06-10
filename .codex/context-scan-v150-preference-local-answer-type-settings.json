@@ -1,0 +1,81 @@
+{
+  "date": "2026-06-10",
+  "executor": "Codex",
+  "task": "v150 preference local answer type settings first stage",
+  "tooling_fallback": {
+    "unavailable_mcp_tools": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "fallback": "使用本地 rg/Get-Content、update_plan、superpowers 流程、TDD 和 unittest；本记录写入项目本地 .codex。"
+  },
+  "current_state": {
+    "git": "main 与 origin/main 同步，HEAD 为 836f592 feat: 收紧偏好本地回答附注范围 0.144.0。",
+    "latest_completed_stage": "0.144.0 / v149 偏好本地回答附注范围第一阶段。",
+    "next_step_from_docs": "word/progress/2026-06-09.md 和 word/PROJECT-PLAN.md 均指向评估用户可配置的偏好回答类型开关。"
+  },
+  "locations": {
+    "preference_store": "src/jarvis_lite/preferences.py",
+    "agent_commands": "src/jarvis_lite/agent.py",
+    "manager_status": "src/jarvis_lite/memory_config_manager.py",
+    "llm_whitelist": "src/jarvis_lite/llm.py",
+    "tests": [
+      "tests/test_preferences.py",
+      "tests/test_agent.py",
+      "tests/test_llm.py",
+      "tests/test_project_metadata.py"
+    ],
+    "docs": [
+      "word/PROJECT-PLAN.md",
+      "word/plans/README.md",
+      "word/文档索引.md",
+      "word/progress/2026-06-10.md",
+      "verification.md",
+      "verification/2026-06/2026-06-10.md"
+    ]
+  },
+  "similar_patterns": [
+    {
+      "pattern": "显式偏好启停",
+      "evidence": "/preference-enable 和 /preference-disable 只修改 config/preferences.local.json 中的显式状态，不自动改变回复或执行决策。"
+    },
+    {
+      "pattern": "本地回答附注范围",
+      "evidence": "describe_preference_local_answer_note(paths, answer_type) 已有 knowledge/memory 内部 allowlist，未知类型返回空字符串。"
+    },
+    {
+      "pattern": "配置管家只读入口",
+      "evidence": "memory_config_manager.py 汇总本地配置文件状态并列出可管理入口，不回显敏感字段、不触发执行。"
+    }
+  ],
+  "key_questions": [
+    {
+      "question": "开关应该存在哪里？",
+      "priority": "high",
+      "answer": "继续使用 config/preferences.local.json，增加 local_answer_note_types 列表；这是偏好配置文件的同一职责，不新增配置面。缺失字段默认 knowledge + memory，保持 0.144.0 行为。"
+    },
+    {
+      "question": "需要支持哪些类型？",
+      "priority": "high",
+      "answer": "第一阶段只支持 knowledge 和 memory，并提供中文/英文别名解析；未知类型拒绝写入，避免未来回答路径误启用。"
+    },
+    {
+      "question": "命令是否进入 LLM 白名单或自然语言自动修改？",
+      "priority": "high",
+      "answer": "不进入。新增命令仅限显式 slash command，不加入 LLM_ALLOWED_COMMAND_SPECS，不接入 InnerBrain 或普通聊天自动写入。"
+    },
+    {
+      "question": "禁用某类附注后是否撤销确认记录？",
+      "priority": "medium",
+      "answer": "不撤销。回答类型开关只控制本地回答附注显示，不删除确认历史、不停用偏好、不改变普通 LLM fallback 上下文。"
+    }
+  ],
+  "sufficiency_check": {
+    "interface_contract": "通过。新增 describe_preference_local_answer_type_settings(paths)、set_preference_local_answer_type_enabled(paths, reference, enabled) 和显式命令 /preference-answer-types、/preference-answer-type-enable 类型、/preference-answer-type-disable 类型。",
+    "technical_choice": "通过。复用 preferences.local.json，缺失字段默认双开；所有调用方仍通过 describe_preference_local_answer_note(paths, answer_type) 获取附注。",
+    "risk_points": "主要风险是破坏旧配置读取、误把新命令暴露给 LLM provider、禁用类型后影响普通 LLM context。通过单测覆盖。",
+    "verification": "使用 unittest 目标 RED/GREEN、相邻回归、全量回归、smoke、打包和静态检查。"
+  }
+}

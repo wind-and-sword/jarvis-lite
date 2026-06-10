@@ -1,11 +1,12 @@
 # Jarvis Lite 方案版本索引
 
-> 日期：2026-06-09
+> 日期：2026-06-10
 > 执行者：Codex
 
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
+- [2026-06-10-v150-preference-local-answer-type-settings-plan.md](2026-06-10-v150-preference-local-answer-type-settings-plan.md)：当前方案版本，明确 `0.145.0` 偏好本地回答类型开关第一阶段、显式查看/启停知识库与长期记忆两类本地回答附注且不进入 LLM 白名单的边界。
 - [2026-06-09-v146-preference-reply-context-plan.md](2026-06-09-v146-preference-reply-context-plan.md)：当前方案版本，明确 `0.141.0` 偏好进入普通回复上下文第一阶段、有效确认记录进入 LLM fallback 上下文和撤销/启用集合变化后失效边界。
 - [2026-06-09-v145-preference-apply-audit-plan.md](2026-06-09-v145-preference-apply-audit-plan.md)：明确 `0.140.0` 偏好应用确认记录与撤销第一阶段、确认历史、运行态审计记录和只撤销记录的边界。
 - [2026-06-05-v144-preference-apply-confirm-plan.md](2026-06-05-v144-preference-apply-confirm-plan.md)：明确 `0.139.0` 偏好应用确认命令第一阶段、本次显式确认范围和冲突拒绝边界。
@@ -159,6 +160,7 @@
 - [2026-06-09-v147-preference-local-answer-format-plan.md](2026-06-09-v147-preference-local-answer-format-plan.md)：明确偏好格式化本地回答第一阶段、最近有效确认记录以可审计附注进入本地知识库命中回答和长期记忆兜底回答的边界。
 - [2026-06-09-v148-preference-undo-hints-plan.md](2026-06-09-v148-preference-undo-hints-plan.md)：明确偏好应用撤销提示第一阶段、确认输出和本地回答附注展示 ID 精确撤销命令且不进入 LLM fallback 上下文的边界。
 - [2026-06-09-v149-preference-local-answer-scope-plan.md](2026-06-09-v149-preference-local-answer-scope-plan.md)：明确偏好本地回答附注范围第一阶段、本地知识库回答和长期记忆兜底回答显式展示回答类型且未知回答类型不生成附注的边界。
+- [2026-06-10-v150-preference-local-answer-type-settings-plan.md](2026-06-10-v150-preference-local-answer-type-settings-plan.md)：明确偏好本地回答类型开关第一阶段、默认双开、显式启停和不进入 LLM 白名单的边界。
 
 ## 维护规则
 

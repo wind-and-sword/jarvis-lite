@@ -1244,6 +1244,31 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/preference-apply-history", manager_status)
         self.assertIn("/preference-apply-undo", manager_status)
 
+    def test_preference_answer_type_commands_manage_local_answer_note_scope(self):
+        default_status = self.agent.handle("/preference-answer-types")
+        disable = self.agent.handle("/preference-answer-type-disable knowledge")
+        disabled_status = self.agent.handle("/preference-answer-types")
+        enable = self.agent.handle("/preference-answer-type-enable 本地知识库")
+        enabled_status = self.agent.handle("/preference-answer-types")
+        unknown = self.agent.handle("/preference-answer-type-disable llm-fallback")
+        help_text = self.agent.handle("/help")
+        status = self.agent.handle("/status")
+        manager_status = self.agent.handle("/config-manager-status")
+
+        self.assertIn("偏好本地回答附注类型", default_status)
+        self.assertIn("1. 已启用 [knowledge] 本地知识库回答", default_status)
+        self.assertIn("2. 已启用 [memory] 长期记忆兜底回答", default_status)
+        self.assertIn("已停用偏好本地回答附注类型 [knowledge] 本地知识库回答", disable)
+        self.assertIn("1. 已停用 [knowledge] 本地知识库回答", disabled_status)
+        self.assertIn("已启用偏好本地回答附注类型 [knowledge] 本地知识库回答", enable)
+        self.assertIn("1. 已启用 [knowledge] 本地知识库回答", enabled_status)
+        self.assertIn("回答类型必须是 knowledge 或 memory", unknown)
+        self.assertIn("/preference-answer-types：查看本地回答附注类型开关", help_text)
+        self.assertIn("/preference-answer-type-enable 类型：启用本地回答附注类型", help_text)
+        self.assertIn("/preference-answer-type-disable 类型：停用本地回答附注类型", help_text)
+        self.assertIn("偏好回答类型：/preference-answer-types", status)
+        self.assertIn("/preference-answer-types", manager_status)
+
     def test_llm_context_preview_includes_confirmed_preference_application(self):
         self.agent.handle("/config-candidate-add preference 回答尽量简洁")
         self.agent.handle("/config-candidate-confirm 1")
@@ -4419,7 +4444,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.144.1",
+                    "version": "0.145.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4430,7 +4455,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.144.1", response)
+        self.assertIn("发现新版本：0.145.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4445,7 +4470,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.144.1",
+                        "version": "0.145.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
@@ -5498,6 +5523,28 @@ class AgentTests(unittest.TestCase):
         self.assertNotIn("已确认偏好格式化：prefapp-", response_before_confirm)
         self.assertNotIn("已确认偏好格式化：prefapp-", response_after_undo)
         self.assertEqual(provider.calls, [])
+
+    def test_local_answer_type_disable_hides_only_that_answer_type_note(self):
+        provider = FakeLLMProvider("")
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 推荐使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+        agent.handle("/config-candidate-add preference 回答尽量简洁")
+        agent.handle("/config-candidate-confirm 1")
+        agent.handle("/preference-enable 1")
+        agent.handle("/preference-apply-confirm 帮我总结知识库")
+
+        response_before_disable = agent.handle("/ask Jarvis Lite 推荐使用什么 Python 版本？")
+        agent.handle("/preference-answer-type-disable knowledge")
+        knowledge_after_disable = agent.handle("/ask Jarvis Lite 推荐使用什么 Python 版本？")
+        memory_after_disable = agent.handle("火星基地预算需要外部判断")
+
+        self.assertIn("回答类型：本地知识库回答", response_before_disable)
+        self.assertNotIn("已确认偏好格式化：prefapp-", knowledge_after_disable)
+        self.assertIn("Jarvis Lite 已读取长期记忆", memory_after_disable)
+        self.assertIn("回答类型：长期记忆兜底回答", memory_after_disable)
 
     def test_memory_fallback_includes_confirmed_preference_note_until_undone(self):
         provider = FakeLLMProvider("")

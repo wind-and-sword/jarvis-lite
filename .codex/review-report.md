@@ -1070,3 +1070,37 @@
 - `word/PROJECT-PLAN.md`
 - `word/plans/README.md`
 - `word/文档索引.md`
+
+# 0.145.0 偏好本地回答类型开关第一阶段审查报告
+
+> 日期：2026-06-10
+> 审查者：Codex
+
+## 评分
+
+- 技术维度：94/100
+- 战略维度：93/100
+- 综合评分：94/100
+- 建议：通过
+
+## 核对结果
+
+- 接口契约：通过。`/preference-answer-types` 只读展示回答类型开关，`/preference-answer-type-enable 类型` 和 `/preference-answer-type-disable 类型` 显式启停 `knowledge` / `memory` 两类本地回答附注。
+- 默认兼容：通过。缺失 `local_answer_note_types` 时默认启用本地知识库回答和长期记忆兜底回答两类附注，保持 `0.144.0` 行为。
+- 写入边界：通过。未知类型拒绝写入；停用类型只控制附注展示，不撤销确认记录，不删除或停用偏好。
+- 执行边界：通过。新增命令不进入 LLM provider command 白名单，不改变普通 LLM fallback、SearchRouter、InnerBrain、路由或桌面执行决策。
+- 文档同步：通过。README、PROJECT-PLAN、v150 计划、计划索引、文档索引、进度和验证记录均已同步到 `0.145.0`。
+
+## 风险与后续
+
+- 当前只支持 `knowledge` 和 `memory` 两类回答类型；未来新增本地回答路径时必须先定义标签、默认策略和测试，再开放开关。
+- 该开关只影响可审计附注展示，不影响普通 LLM fallback 上下文。后续若把偏好真正用于回复改写，需要单独设计应用范围和撤销语义。
+
+## 验证摘录
+
+- 目标 GREEN：7 项通过。
+- 相邻回归：451 项通过。
+- 全量回归：`Ran 783 tests in 9.632s`，`OK`。
+- 命令行 smoke：`preference-local-answer-type-settings-smoke OK`。
+- 打包：`JarvisLiteSetup-0.145.0.exe` 生成，大小 `59,719,680` 字节；版本资源为 `0.145.0`。
+- 文档后最终复验：`Ran 783 tests`，`OK`；`git diff --check` 退出码 0；Markdown 本地链接 683 项通过；严格真实 key 形态扫描无命中。

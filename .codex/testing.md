@@ -8782,3 +8782,15 @@ Test-Path .\config\search.local.json
 - 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；生成基础 `E:\ai\jarvis-lite-dist\JarvisLiteSetup.exe`，并复制版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.144.0.exe`，大小 `59,715,584` 字节；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.144.0`。
 - 打包后 smoke：`Start-Process -Wait -PassThru -RedirectStandardOutput -RedirectStandardError E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
 - 文档收紧后最终复验：全量 `unittest` 重新执行，`Ran 778 tests in 8.882s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 675 项通过，覆盖 424 个 Markdown 文件；严格真实 key 形态扫描无命中；本地敏感配置文件不存在；README 108 行，根 `verification.md` 19 行。
+
+## 0.145.0 偏好本地回答类型开关第一阶段
+
+- RED：目标命令先失败；失败点为 `tests/test_preferences.py` 无法导入 `describe_preference_local_answer_type_settings`，Agent `/preference-answer-types` 返回未知命令，停用 knowledge 后 `/ask` 仍展示 `已确认偏好格式化：prefapp-...`，项目版本仍为 `0.144.0`。
+- GREEN：目标命令 `.\.venv\Scripts\python.exe -m unittest tests.test_preferences.PreferenceTests.test_preference_local_answer_type_settings_default_to_knowledge_and_memory tests.test_preferences.PreferenceTests.test_preference_local_answer_note_respects_answer_type_settings tests.test_preferences.PreferenceTests.test_preference_local_answer_type_setting_rejects_unknown_without_writing tests.test_agent.AgentTests.test_preference_answer_type_commands_manage_local_answer_note_scope tests.test_agent.AgentTests.test_local_answer_type_disable_hides_only_that_answer_type_note tests.test_llm.LLMTests.test_openai_provider_instructions_list_supported_agent_commands tests.test_project_metadata.ProjectMetadataTests.test_project_version_matches_release_package_version -v`，`Ran 7 tests`，`OK`。
+- 相邻回归：`.\.venv\Scripts\python.exe -m unittest tests.test_preferences tests.test_agent tests.test_llm tests.test_project_metadata -v`，`Ran 451 tests in 7.182s`，`OK`。
+- 全量回归：`.\.venv\Scripts\python.exe -m unittest discover -s tests -v`，`Ran 783 tests in 9.632s`，`OK`。
+- 命令行 smoke：`preference-local-answer-type-settings-smoke OK`，覆盖默认双开、停用 knowledge、停用 memory、重新启用两类类型和 LLM context 不泄漏本地回答标签或撤销命令。
+- 源码桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 输出 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；生成基础 `E:\ai\jarvis-lite-dist\JarvisLiteSetup.exe`，并复制版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.145.0.exe`，大小 `59,719,680` 字节；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.145.0`。
+- 打包后 smoke：`E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
+- 文档后最终复验：全量 `unittest` 重新执行，`Ran 783 tests`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 683 项通过；严格真实 key 形态扫描无命中；本地敏感配置文件不存在；README 108 行，根 `verification.md` 21 行。

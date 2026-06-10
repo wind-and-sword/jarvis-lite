@@ -3153,3 +3153,17 @@
 - 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.144.0.exe`，大小 `59,715,584` 字节，时间戳 `2026/6/9 22:44:36`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.144.0`。
 - 文档收紧：按 `DOCUMENTATION.md` 将 README 收紧为项目介绍、快速启动、常用命令和文档入口；将根 `verification.md` 收紧为最近摘要和索引，完整验证明细保留在 `verification/2026-06/2026-06-09.md`。
 - 文档收紧后最终复验：全量 `unittest` 重新执行，`Ran 778 tests in 8.882s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 675 项通过；严格真实 key 形态扫描无命中；本地敏感配置文件不存在。
+
+## 2026-06-10 0.145.0 偏好本地回答类型开关第一阶段
+
+- 时间：2026-06-10 继续执行 v150。
+- 工具：Get-Content / rg / git status / update_plan / apply_patch / unittest / 临时项目 Agent smoke / scripts\build_windows_installer.py / Start-Process / Select-String / PowerShell 版本资源检查。
+- 技能：使用 `superpowers:using-superpowers` 选择流程；使用 `superpowers:brainstorming` 做最小设计梳理；使用 `superpowers:writing-plans` 写入项目本地 v150 计划；使用 `superpowers:test-driven-development` 执行 RED/GREEN；收尾前使用 `superpowers:verification-before-completion` 做新鲜验证。
+- 工具降级：当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地结构化分析、`rg`/`Get-Content`、`update_plan`、superpowers 流程、TDD 和 `unittest`；记录 `.codex/context-scan-v150-preference-local-answer-type-settings.json`。
+- 上下文：`0.144.0` 已完成并推送到 `origin/main`；PROJECT-PLAN 后续目标明确评估用户可配置的回答类型开关。
+- 设计选择：复用 `config/preferences.local.json` 增加 `local_answer_note_types`；缺失字段默认 `knowledge` 和 `memory` 双开；新增 `/preference-answer-types`、`/preference-answer-type-enable 类型` 和 `/preference-answer-type-disable 类型`，只控制本地回答附注展示。
+- 边界：未知类型拒绝写入；停用类型不撤销确认记录、不删除或停用偏好、不改变普通 LLM fallback、SearchRouter、InnerBrain、路由或桌面执行决策；新增命令不进入 LLM provider command 白名单。
+- RED：目标测试先失败，失败点为缺少新 helper、Agent 新命令未知、停用 knowledge 后知识库附注仍展示、版本仍为 `0.144.0`。
+- GREEN：目标 7 项通过；相邻回归 451 项通过；全量 `unittest` 783 项通过。
+- 验证：命令行 smoke 输出 `preference-local-answer-type-settings-smoke OK`；源码桌面 smoke 输出 `desktopPetWindow`；打包后 smoke 退出码 0、stdout 包含 `desktopPetWindow`、stderr 为空且无残留 `JarvisLite` 进程。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.145.0.exe`，大小 `59,719,680` 字节；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.145.0`。

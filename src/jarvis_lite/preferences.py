@@ -30,6 +30,15 @@ class Preference:
     updated_at: str = ""
 
 
+@dataclass(frozen=True)
+class PreferenceLocalAnswerTypeSetting:
+    """本地回答附注类型开关；只控制附注展示，不改变偏好确认记录。"""
+
+    answer_type: str
+    label: str
+    enabled: bool
+
+
 def parse_preference_candidate(content: str) -> str:
     """解析偏好候选，当前要求候选内容本身就是明确偏好文本。"""
 
@@ -184,6 +193,54 @@ def describe_preferences(paths: ProjectPaths) -> str:
     return "\n".join(lines)
 
 
+def describe_preference_local_answer_type_settings(paths: ProjectPaths) -> str:
+    """展示本地回答偏好附注的回答类型开关。"""
+
+    enabled_types = set(_enabled_preference_local_answer_types(paths))
+    lines = [
+        "偏好本地回答附注类型",
+        "配置文件：config/preferences.local.json",
+    ]
+    for index, (answer_type, label) in enumerate(_PREFERENCE_LOCAL_ANSWER_TYPE_LABELS.items(), 1):
+        state = "已启用" if answer_type in enabled_types else "已停用"
+        lines.append(f"{index}. {state} [{answer_type}] {label}")
+    lines.extend(
+        [
+            "可用类型：knowledge（本地知识库回答）、memory（长期记忆兜底回答）。",
+            "可用 /preference-answer-type-enable 类型 启用，/preference-answer-type-disable 类型 停用。",
+            "说明：只控制本地回答附注展示，不撤销确认记录，不删除或停用偏好，不改变普通 LLM fallback、路由或执行决策。",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def set_preference_local_answer_type_enabled(
+    paths: ProjectPaths,
+    reference: str,
+    enabled: bool,
+) -> PreferenceLocalAnswerTypeSetting:
+    """显式启停本地回答附注类型。"""
+
+    answer_type = _resolve_preference_local_answer_type(reference)
+    if answer_type is None:
+        raise ValueError("回答类型必须是 knowledge 或 memory。可用 /preference-answer-types 查看。")
+
+    enabled_types = list(_enabled_preference_local_answer_types(paths))
+    if enabled and answer_type not in enabled_types:
+        enabled_types.append(answer_type)
+    if not enabled:
+        enabled_types = [existing for existing in enabled_types if existing != answer_type]
+
+    payload = _read_preferences_payload(paths)
+    payload["local_answer_note_types"] = enabled_types
+    _write_preferences_payload(paths, payload)
+    return PreferenceLocalAnswerTypeSetting(
+        answer_type=answer_type,
+        label=_PREFERENCE_LOCAL_ANSWER_TYPE_LABELS[answer_type],
+        enabled=enabled,
+    )
+
+
 def describe_preference_preview(paths: ProjectPaths, user_input: str = "") -> str:
     """预览已启用偏好的应用草案；不自动改变任何回复或执行路径。"""
 
@@ -304,7 +361,12 @@ def describe_preference_reply_context(paths: ProjectPaths) -> str:
 def describe_preference_local_answer_note(paths: ProjectPaths, answer_type: str) -> str:
     """返回可追加到本地知识库和长期记忆回答的偏好确认附注。"""
 
-    answer_type_label = _preference_local_answer_type_label(answer_type)
+    normalized_answer_type = _resolve_preference_local_answer_type(answer_type)
+    if normalized_answer_type is None:
+        return ""
+    if normalized_answer_type not in _enabled_preference_local_answer_types(paths):
+        return ""
+    answer_type_label = _PREFERENCE_LOCAL_ANSWER_TYPE_LABELS[normalized_answer_type]
     if not answer_type_label:
         return ""
 
@@ -555,7 +617,32 @@ def _preference_application_undo_command(application: RuntimePreferenceApplicati
 
 
 def _preference_local_answer_type_label(answer_type: str) -> str:
-    return _PREFERENCE_LOCAL_ANSWER_TYPE_LABELS.get(answer_type.strip().casefold(), "")
+    normalized_answer_type = _resolve_preference_local_answer_type(answer_type)
+    if normalized_answer_type is None:
+        return ""
+    return _PREFERENCE_LOCAL_ANSWER_TYPE_LABELS[normalized_answer_type]
+
+
+def _resolve_preference_local_answer_type(reference: str) -> str | None:
+    normalized_reference = str(reference or "").strip().casefold()
+    return _PREFERENCE_LOCAL_ANSWER_TYPE_ALIASES.get(normalized_reference)
+
+
+def _enabled_preference_local_answer_types(paths: ProjectPaths) -> tuple[str, ...]:
+    payload = _read_preferences_payload(paths)
+    if "local_answer_note_types" not in payload:
+        return _PREFERENCE_LOCAL_ANSWER_DEFAULT_TYPES
+
+    raw_types = payload.get("local_answer_note_types")
+    if not isinstance(raw_types, list):
+        return _PREFERENCE_LOCAL_ANSWER_DEFAULT_TYPES
+
+    enabled_types: list[str] = []
+    for raw_type in raw_types:
+        answer_type = _resolve_preference_local_answer_type(str(raw_type or ""))
+        if answer_type is not None and answer_type not in enabled_types:
+            enabled_types.append(answer_type)
+    return tuple(enabled_types)
 
 
 def _preferences_path(paths: ProjectPaths):
@@ -703,4 +790,21 @@ _CONFLICT_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
 _PREFERENCE_LOCAL_ANSWER_TYPE_LABELS: dict[str, str] = {
     "knowledge": "本地知识库回答",
     "memory": "长期记忆兜底回答",
+}
+
+
+_PREFERENCE_LOCAL_ANSWER_DEFAULT_TYPES: tuple[str, ...] = tuple(_PREFERENCE_LOCAL_ANSWER_TYPE_LABELS)
+
+
+_PREFERENCE_LOCAL_ANSWER_TYPE_ALIASES: dict[str, str] = {
+    "knowledge": "knowledge",
+    "kb": "knowledge",
+    "本地知识库": "knowledge",
+    "知识库": "knowledge",
+    "本地知识库回答": "knowledge",
+    "memory": "memory",
+    "长期记忆": "memory",
+    "记忆": "memory",
+    "长期记忆兜底": "memory",
+    "长期记忆兜底回答": "memory",
 }
