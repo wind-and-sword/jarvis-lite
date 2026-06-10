@@ -1,0 +1,57 @@
+{
+  "date": "2026-06-10",
+  "executor": "Codex",
+  "task": "v153 preference application status surface filter",
+  "context": {
+    "current_version": "0.147.0",
+    "previous_stage": "v152 偏好应用状态解释第一阶段",
+    "next_step_source": [
+      "word/progress/2026-06-10.md: 下一步要求继续评估偏好确认按输出面撤销、按单条偏好解释或更细粒度状态过滤。",
+      "word/PROJECT-PLAN.md: 后续目标要求继续完善已确认偏好的更细粒度撤销语义和状态解释。"
+    ]
+  },
+  "locations": {
+    "preference_logic": "src/jarvis_lite/preferences.py",
+    "agent_commands": "src/jarvis_lite/agent.py",
+    "config_manager_status": "src/jarvis_lite/memory_config_manager.py",
+    "tests": [
+      "tests/test_preferences.py",
+      "tests/test_agent.py",
+      "tests/test_llm.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "current_behavior": [
+    "/preference-apply-status [编号或ID] 默认或指定确认记录后，总是同时展示普通回复上下文、本地知识库回答附注和长期记忆兜底回答附注三类输出面。",
+    "状态解释已经能说明撤销、非最近记录、普通回复上下文开关停用、本地回答类型停用、当前已启用偏好集合变化和冲突等失效原因。",
+    "当前没有只看某一个输出面的过滤入口；用户需要在完整状态文本中手动查找目标输出面。"
+  ],
+  "similar_patterns": [
+    "/preference-answer-types 以 knowledge / memory 作为回答类型标识，并支持中文别名。",
+    "describe_preference_application_status() 已把三类输出面的状态计算拆成 reply / knowledge / memory helper，适合增加只读过滤。",
+    "Agent slash command 现有模式使用 args 解析编号或 ID，帮助文本和状态文本同步列出命令入口。"
+  ],
+  "decision": {
+    "scope": "新增 /preference-apply-status [编号或ID] [输出面] 的只读输出面过滤；输出面支持 reply、knowledge、memory 及常见中文别名。",
+    "reason": "这是 v152 状态解释的低风险延伸，满足更细粒度状态过滤，同时不改变确认、撤销、偏好启停或任何执行路径。",
+    "non_goals": [
+      "不新增按输出面撤销。",
+      "不新增按单条偏好撤销。",
+      "不改变 /preference-apply-confirm 或 /preference-apply-undo 的语义。",
+      "不把 /preference-apply-status 加入 LLM provider command 白名单。",
+      "不改变 SearchRouter、InnerBrain、路由、授权层或桌面执行决策。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risk_points_identified": true,
+    "verification_known": true
+  },
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露该 MCP 工具，按项目降级规则使用本地结构化分析。",
+    "shrimp_task_manager": "当前会话未暴露该 MCP 工具，使用 update_plan 和项目计划文档替代。",
+    "code_index": "当前会话未暴露该 MCP 工具，使用 rg/Get-Content 检索。",
+    "exa": "本阶段无需网络检索。"
+  }
+}

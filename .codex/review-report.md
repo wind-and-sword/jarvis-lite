@@ -1176,3 +1176,39 @@
 - 打包后 smoke：退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留进程。
 - 静态检查：`git diff --check` 退出码 0；Markdown 本地链接 696 项通过；严格真实 key 形态扫描无命中；本地敏感配置文件不存在。
 - 文档同步后最终复验：`Ran 790 tests in 9.193s`，`OK`；`git diff --check` 退出码 0；Markdown 本地链接 696 项通过；严格真实 key 形态扫描无命中。
+
+# 0.148.0 偏好应用状态输出面过滤第一阶段审查报告
+
+> 日期：2026-06-10
+> 审查者：Codex
+> 任务 ID：v153-preference-application-status-surface-filter
+
+## 评分
+
+- 技术维度：94/100
+- 战略维度：94/100
+- 综合评分：94/100
+- 建议：通过
+
+## 核对结果
+
+- 接口契约：通过。`/preference-apply-status [编号或ID] [输出面]` 支持无参数完整解释、只传输出面解释最近确认记录、传编号或 `prefapp-...` 后按输出面解释指定确认记录。
+- 输出面解析：通过。支持 `reply`、`knowledge`、`memory` 以及普通回复、知识库、长期记忆等中文别名；未知输出面返回可读提示。
+- 过滤行为：通过。指定输出面后只展示该输出面的“生效/未生效”和原因，同时保留确认记录、输入、已确认偏好、撤销命令和只读边界说明。
+- 写入边界：通过。状态过滤不修改确认记录、不撤销确认、不启停偏好、不修改普通回复上下文开关或本地回答类型开关。
+- 执行边界：通过。新增过滤不进入 LLM provider command 白名单，不改变 SearchRouter、InnerBrain、路由、授权层或桌面执行决策。
+- 文档同步：通过。README、PROJECT-PLAN、v153 计划、计划索引、文档索引、每日进度、验证记录和 `.codex` 留痕均已同步到 `0.148.0`。
+
+## 风险与后续
+
+- 当前只做只读过滤，不提供按输出面撤销；后续若要撤销指定输出面，需要先定义运行态记录模型和已展示输出不可回滚边界。
+- 当前过滤维度是输出面，不是单条偏好；后续如要按单条偏好解释或撤销，需要补充偏好 ID 级别的状态矩阵和用户提示。
+
+## 验证摘录
+
+- 目标 GREEN：`Ran 460 tests in 7.180s`，`OK`。
+- 全量回归：`Ran 792 tests in 9.161s`，`OK`。
+- 命令行 smoke：`preference-application-status-surface-filter-smoke OK`。
+- 打包：`JarvisLiteSetup-0.148.0.exe` 生成，大小 `59,723,776` 字节；版本资源为 `0.148.0`。
+- 打包后 smoke：退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留进程。
+- 文档同步后最终复验：`Ran 792 tests in 9.421s`，`OK`；`git diff --check` 退出码 0；Markdown 本地链接 489 项通过；严格真实 key 形态扫描 21 个变更/新增文件无命中；本地敏感配置文件不存在。

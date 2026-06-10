@@ -365,15 +365,30 @@ def describe_preference_application_history(paths: ProjectPaths) -> str:
     lines.extend(
         [
             "撤销确认：/preference-apply-undo 编号或ID",
-            "状态解释：/preference-apply-status 编号或ID",
+            "状态解释：/preference-apply-status [编号或ID] [输出面]",
             "撤销范围：只撤销确认记录，不删除或停用偏好，不回滚已经展示的输出。",
         ]
     )
     return "\n".join(lines)
 
 
-def describe_preference_application_status(paths: ProjectPaths, reference: int | str | None = None) -> str:
+def describe_preference_application_status(
+    paths: ProjectPaths,
+    reference: int | str | None = None,
+    *,
+    surface: str | None = None,
+) -> str:
     """解释某条偏好应用确认记录当前在哪些输出面生效。"""
+
+    normalized_surface = _resolve_preference_application_surface(surface)
+    if surface is not None and normalized_surface is None:
+        return "\n".join(
+            [
+                "状态输出面必须是 reply、knowledge 或 memory。",
+                "可用输出面：reply（普通回复上下文）、knowledge（本地知识库回答附注）、memory（长期记忆兜底回答附注）。",
+                "说明：状态解释只读展示，不改变确认记录、偏好启停、普通回复上下文开关或本地回答类型开关。",
+            ]
+        )
 
     applications = list(load_runtime_context(paths).recent_preference_applications)
     if not applications:
@@ -401,6 +416,8 @@ def describe_preference_application_status(paths: ProjectPaths, reference: int |
         "偏好应用状态解释",
         f"确认记录：{_preference_application_status_label(application.status)} [{application.application_id}]",
     ]
+    if normalized_surface is not None:
+        lines.append(f"输出面过滤：{_PREFERENCE_APPLICATION_SURFACE_LABELS[normalized_surface]}")
     if application.user_input:
         lines.append(f"应用输入：{application.user_input}")
     if application.created_at:
@@ -421,17 +438,17 @@ def describe_preference_application_status(paths: ProjectPaths, reference: int |
         application_index,
         "memory",
     )
-    lines.extend(
-        [
-            f"普通回复上下文：{_preference_application_effect_label(reply_enabled)}",
-            f"原因：{reply_reason}",
-            f"本地知识库回答附注：{_preference_application_effect_label(knowledge_enabled)}",
-            f"原因：{knowledge_reason}",
-            f"长期记忆兜底回答附注：{_preference_application_effect_label(memory_enabled)}",
-            f"原因：{memory_reason}",
-            "已确认偏好：",
-        ]
-    )
+    surface_statuses = {
+        "reply": (reply_enabled, reply_reason),
+        "knowledge": (knowledge_enabled, knowledge_reason),
+        "memory": (memory_enabled, memory_reason),
+    }
+    surface_order = (normalized_surface,) if normalized_surface is not None else ("reply", "knowledge", "memory")
+    for surface_name in surface_order:
+        surface_enabled, surface_reason = surface_statuses[surface_name]
+        lines.append(f"{_PREFERENCE_APPLICATION_SURFACE_LABELS[surface_name]}：{_preference_application_effect_label(surface_enabled)}")
+        lines.append(f"原因：{surface_reason}")
+    lines.append("已确认偏好：")
     for preference_id, preference in zip(application.preference_ids, application.preferences):
         lines.append(f"- [{preference_id}] {preference}")
     lines.extend(
@@ -775,6 +792,15 @@ def _preference_application_effect_label(enabled: bool) -> str:
     return "生效" if enabled else "未生效"
 
 
+def _resolve_preference_application_surface(surface: str | None) -> str | None:
+    if surface is None:
+        return None
+    normalized_surface = str(surface or "").strip().casefold()
+    if not normalized_surface:
+        return None
+    return _PREFERENCE_APPLICATION_SURFACE_ALIASES.get(normalized_surface)
+
+
 def _preference_application_undo_command(application: RuntimePreferenceApplicationContext) -> str:
     return f"撤销确认：/preference-apply-undo {application.application_id}"
 
@@ -986,4 +1012,33 @@ _PREFERENCE_LOCAL_ANSWER_TYPE_ALIASES: dict[str, str] = {
     "记忆": "memory",
     "长期记忆兜底": "memory",
     "长期记忆兜底回答": "memory",
+}
+
+
+_PREFERENCE_APPLICATION_SURFACE_LABELS: dict[str, str] = {
+    "reply": "普通回复上下文",
+    "knowledge": "本地知识库回答附注",
+    "memory": "长期记忆兜底回答附注",
+}
+
+
+_PREFERENCE_APPLICATION_SURFACE_ALIASES: dict[str, str] = {
+    "reply": "reply",
+    "context": "reply",
+    "llm": "reply",
+    "普通回复": "reply",
+    "普通回复上下文": "reply",
+    "回复上下文": "reply",
+    "knowledge": "knowledge",
+    "kb": "knowledge",
+    "本地知识库": "knowledge",
+    "知识库": "knowledge",
+    "本地知识库回答": "knowledge",
+    "本地知识库回答附注": "knowledge",
+    "memory": "memory",
+    "长期记忆": "memory",
+    "记忆": "memory",
+    "长期记忆兜底": "memory",
+    "长期记忆兜底回答": "memory",
+    "长期记忆兜底回答附注": "memory",
 }

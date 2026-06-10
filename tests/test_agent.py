@@ -1270,9 +1270,38 @@ class AgentTests(unittest.TestCase):
         self.assertIn("普通回复上下文：未生效", status_after_reply_disable)
         self.assertIn("普通回复偏好上下文开关已停用", status_after_reply_disable)
         self.assertIn("偏好应用确认记录不存在", missing_status)
-        self.assertIn("/preference-apply-status [编号或ID]：解释偏好应用确认当前生效状态", help_text)
+        self.assertIn("/preference-apply-status [编号或ID] [输出面]：解释偏好应用确认当前生效状态", help_text)
         self.assertIn("偏好应用状态：/preference-apply-status", status)
         self.assertIn("/preference-apply-status", manager_status)
+
+    def test_preference_apply_status_command_filters_surface(self):
+        self.agent.handle("/config-candidate-add preference 回答尽量简洁")
+        self.agent.handle("/config-candidate-confirm 1")
+        self.agent.handle("/preference-enable 1")
+        confirmation = self.agent.handle("/preference-apply-confirm 帮我总结知识库")
+        confirmation_id = _confirmation_id_from(confirmation)
+
+        latest_knowledge = self.agent.handle("/preference-apply-status knowledge")
+        latest_reply = self.agent.handle("/preference-apply-status 普通回复")
+        explicit_memory = self.agent.handle(f"/preference-apply-status {confirmation_id} memory")
+        missing_surface = self.agent.handle("/preference-apply-status 1 llm-fallback")
+        help_text = self.agent.handle("/help")
+        status = self.agent.handle("/status")
+        manager_status = self.agent.handle("/config-manager-status")
+
+        self.assertIn("输出面过滤：本地知识库回答附注", latest_knowledge)
+        self.assertIn("本地知识库回答附注：生效", latest_knowledge)
+        self.assertNotIn("普通回复上下文：", latest_knowledge)
+        self.assertNotIn("长期记忆兜底回答附注：", latest_knowledge)
+        self.assertIn("输出面过滤：普通回复上下文", latest_reply)
+        self.assertIn("普通回复上下文：生效", latest_reply)
+        self.assertIn(f"确认记录：已确认 [{confirmation_id}]", explicit_memory)
+        self.assertIn("输出面过滤：长期记忆兜底回答附注", explicit_memory)
+        self.assertIn("长期记忆兜底回答附注：生效", explicit_memory)
+        self.assertIn("状态输出面必须是 reply、knowledge 或 memory", missing_surface)
+        self.assertIn("/preference-apply-status [编号或ID] [输出面]", help_text)
+        self.assertIn("偏好应用状态：/preference-apply-status [编号或ID] [输出面]", status)
+        self.assertIn("/preference-apply-status [编号或ID] [输出面]", manager_status)
 
     def test_preference_answer_type_commands_manage_local_answer_note_scope(self):
         default_status = self.agent.handle("/preference-answer-types")
@@ -4521,7 +4550,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.147.1",
+                    "version": "0.148.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4532,7 +4561,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.147.1", response)
+        self.assertIn("发现新版本：0.148.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4547,7 +4576,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.147.1",
+                        "version": "0.148.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

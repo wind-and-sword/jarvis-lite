@@ -3200,3 +3200,19 @@
 - 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.147.0.exe`，大小 `59,719,680` 字节，时间戳 `2026/6/10 11:52:58`；安装脚本、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.147.0`。
 - 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 696 项通过，覆盖 429 个 tracked/untracked Markdown 文件；严格真实 key 形态扫描无命中；`config/llm.local.json`、`config/search.local.json`、`word/inner-brain-evaluation-report.md` 不存在。
 - 文档同步后最终复验：全量 `unittest` 重新执行，`Ran 790 tests in 9.193s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 696 项通过，覆盖 429 个 tracked/untracked Markdown 文件；严格真实 key 形态扫描无命中；本地敏感配置文件不存在；README 108 行，根 `verification.md` 23 行。
+
+## 2026-06-10 0.148.0 偏好应用状态输出面过滤第一阶段
+
+- 时间：2026-06-10 继续执行 v153，并按用户要求恢复中断任务后进入下一阶段。
+- 工具：Get-Content / rg / git status / git diff / update_plan / apply_patch / unittest / 临时项目 Agent smoke / scripts\build_windows_installer.py / PowerShell 版本资源检查 / git diff --check / Markdown 本地链接检查 / 严格真实 key 形态扫描。
+- 技能：使用 `superpowers:using-superpowers` 选择流程；使用 `superpowers:executing-plans` 承接已有 v153 计划；提交和完成声明前使用 `superpowers:verification-before-completion` 做新鲜验证。
+- 工具降级：当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地结构化分析、`rg`/`Get-Content`、`update_plan`、项目计划文档和 `unittest`；记录 `.codex/context-scan-v153-preference-application-status-surface-filter.json`。
+- 上下文：`0.147.0` 已提交并推送到 `origin/main`；当日进度和 `word/PROJECT-PLAN.md` 指向继续完善已确认偏好的更细粒度状态解释。
+- 设计选择：扩展 `/preference-apply-status [编号或ID] [输出面]`，不传输出面保持 v152 完整解释；只传输出面解释最近确认记录；传编号或 `prefapp-...` 后可继续传输出面解释指定确认记录。
+- 输出面：支持 `reply` / `context` / `普通回复` / `普通回复上下文`、`knowledge` / `kb` / `知识库` / `本地知识库回答`、`memory` / `长期记忆` / `长期记忆兜底回答`。
+- 边界：过滤只读展示，不修改确认记录、撤销状态、偏好启停、普通回复上下文开关或本地回答类型开关；不进入 LLM provider command 白名单，不改变 SearchRouter、InnerBrain、路由、授权层或桌面执行决策。
+- RED：目标测试先失败；失败点为状态 helper 缺少 `surface` 参数，Agent 将 `knowledge` 当作确认记录引用，版本仍为 `0.147.0`。
+- GREEN：目标命令 `.\.venv\Scripts\python.exe -m unittest tests.test_preferences tests.test_agent tests.test_llm tests.test_project_metadata -v` 通过，`Ran 460 tests in 7.180s`，`OK`。
+- 验证：全量 `unittest` 792 项通过；命令行 smoke 输出 `preference-application-status-surface-filter-smoke OK`；源码桌面 smoke 输出 `desktopPetWindow`；打包后 smoke 退出码 0、stdout 包含 `desktopPetWindow`、stderr 为空且无残留 `JarvisLite` 进程。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.148.0.exe`，大小 `59,723,776` 字节，时间戳 `2026/6/10 14:42:13`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.148.0`。
+- 文档同步后最终复验：全量 `unittest` 重新执行，`Ran 792 tests in 9.421s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 489 项通过，覆盖 429 个 tracked/untracked Markdown 文件；严格真实 key 形态扫描 21 个变更/新增文件无命中；本地敏感配置文件不存在；README 108 行，根 `verification.md` 24 行。

@@ -65,7 +65,7 @@ def describe_memory_config_manager(paths: ProjectPaths) -> str:
             "- /preference-apply-draft [输入文本]：生成待确认偏好应用草稿",
             "- /preference-apply-confirm [输入文本]：确认本次偏好应用",
             "- /preference-apply-history：查看偏好应用确认历史",
-            "- /preference-apply-status [编号或ID]：解释偏好应用确认当前生效状态",
+            "- /preference-apply-status [编号或ID] [输出面]：解释偏好应用确认当前生效状态",
             "- /preference-apply-undo 编号或ID：撤销偏好应用确认记录",
             "- /config-candidates：查看记忆与配置候选池",
             "- /llm-config-check：只读检查外脑本地配置",

@@ -332,7 +332,35 @@ class PreferenceTests(unittest.TestCase):
             self.assertIn("最近一条确认记录仍匹配当前已启用偏好集合", status)
             self.assertIn(f"- [{preference.preference_id}] 回答尽量简洁", status)
             self.assertIn(f"撤销确认：/preference-apply-undo {confirmation_id}", status)
-            self.assertIn("状态解释：/preference-apply-status 编号或ID", history)
+            self.assertIn("状态解释：/preference-apply-status [编号或ID] [输出面]", history)
+
+    def test_preference_application_status_can_filter_single_surface(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            preference = save_preference(paths, "回答尽量简洁", source="test")
+            set_preference_enabled(paths, preference.preference_id, True)
+            confirmation = describe_confirmed_preference_application(paths, "帮我总结知识库")
+            confirmation_id = _confirmation_id_from(confirmation)
+
+            knowledge_status = describe_preference_application_status(paths, surface="knowledge")
+            memory_status = describe_preference_application_status(paths, confirmation_id, surface="长期记忆")
+            reply_status = describe_preference_application_status(paths, surface="普通回复")
+            missing_surface = describe_preference_application_status(paths, surface="llm-fallback")
+
+            self.assertIn("偏好应用状态解释", knowledge_status)
+            self.assertIn("输出面过滤：本地知识库回答附注", knowledge_status)
+            self.assertIn("确认记录：已确认", knowledge_status)
+            self.assertIn("本地知识库回答附注：生效", knowledge_status)
+            self.assertNotIn("普通回复上下文：", knowledge_status)
+            self.assertNotIn("长期记忆兜底回答附注：", knowledge_status)
+            self.assertIn("输出面过滤：长期记忆兜底回答附注", memory_status)
+            self.assertIn("长期记忆兜底回答附注：生效", memory_status)
+            self.assertNotIn("本地知识库回答附注：", memory_status)
+            self.assertIn("输出面过滤：普通回复上下文", reply_status)
+            self.assertIn("普通回复上下文：生效", reply_status)
+            self.assertIn(f"- [{preference.preference_id}] 回答尽量简洁", reply_status)
+            self.assertIn("状态输出面必须是 reply、knowledge 或 memory", missing_surface)
+            self.assertIn("不改变确认记录", missing_surface)
 
     def test_preference_application_status_explains_inactive_reasons(self):
         with tempfile.TemporaryDirectory() as temp_dir:
