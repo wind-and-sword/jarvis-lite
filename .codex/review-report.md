@@ -1104,3 +1104,38 @@
 - 命令行 smoke：`preference-local-answer-type-settings-smoke OK`。
 - 打包：`JarvisLiteSetup-0.145.0.exe` 生成，大小 `59,719,680` 字节；版本资源为 `0.145.0`。
 - 文档后最终复验：`Ran 783 tests`，`OK`；`git diff --check` 退出码 0；Markdown 本地链接 683 项通过；严格真实 key 形态扫描无命中。
+
+# 0.146.0 偏好普通回复上下文开关第一阶段审查报告
+
+> 日期：2026-06-10
+> 审查者：Codex
+> 任务 ID：v151-preference-reply-context-settings
+
+## 评分
+
+- 技术维度：94/100
+- 战略维度：94/100
+- 综合评分：94/100
+- 建议：通过
+
+## 核对结果
+
+- 接口契约：通过。`/preference-reply-context` 只读展示普通回复偏好上下文开关，`/preference-reply-context-enable` 和 `/preference-reply-context-disable` 显式启停确认偏好进入普通 LLM fallback 上下文。
+- 默认兼容：通过。缺失 `reply_context_enabled` 时默认启用，保持 `0.145.0` 的 `/llm-context-preview` 和普通 LLM fallback 行为。
+- 写入边界：通过。停用普通回复上下文不撤销确认记录，不删除或停用偏好，不影响本地回答附注。
+- 执行边界：通过。新增命令不进入 LLM provider command 白名单，不改变 SearchRouter、InnerBrain、路由、授权层或桌面执行决策。
+- 文档同步：通过。README、PROJECT-PLAN、v151 计划、计划索引、文档索引、进度和验证记录均已同步到 `0.146.0`。
+
+## 风险与后续
+
+- 当前普通回复上下文开关是全局布尔开关，尚未细分到单条确认记录或单个偏好 ID；后续“更细粒度撤销语义”可继续在此基础上扩展。
+- 当前阶段不改变普通聊天自动确认策略，仍需要用户显式 `/preference-apply-confirm`。
+
+## 验证摘录
+
+- 目标 GREEN：455 项通过。
+- 全量回归：`Ran 787 tests in 9.338s`，`OK`。
+- 命令行 smoke：`preference-reply-context-settings-smoke OK`。
+- 打包：`JarvisLiteSetup-0.146.0.exe` 生成，大小 `59,719,680` 字节；版本资源为 `0.146.0`。
+- 打包后 smoke：退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留进程。
+- 文档索引补齐后最终复验：`Ran 787 tests in 8.766s`，`OK`；`git diff --check` 退出码 0；Markdown 本地链接 689 项通过；严格真实 key 形态扫描无命中。

@@ -3167,3 +3167,19 @@
 - GREEN：目标 7 项通过；相邻回归 451 项通过；全量 `unittest` 783 项通过。
 - 验证：命令行 smoke 输出 `preference-local-answer-type-settings-smoke OK`；源码桌面 smoke 输出 `desktopPetWindow`；打包后 smoke 退出码 0、stdout 包含 `desktopPetWindow`、stderr 为空且无残留 `JarvisLite` 进程。
 - 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.145.0.exe`，大小 `59,719,680` 字节；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.145.0`。
+
+## 2026-06-10 0.146.0 偏好普通回复上下文开关第一阶段
+
+- 时间：2026-06-10 继续执行 v151。
+- 工具：Get-Content / rg / git status / git log / update_plan / apply_patch / unittest / 临时项目 Agent smoke / scripts\build_windows_installer.py / Start-Process / Select-String / PowerShell 版本资源检查 / git diff --check / Markdown 本地链接检查 / 严格真实 key 形态扫描。
+- 技能：使用 `superpowers:using-superpowers` 选择流程；使用 `superpowers:brainstorming` 做最小设计梳理，因用户明确要求继续执行且项目 AGENTS 要求默认自主推进，按项目既有做法折叠为本地设计审查；使用 `superpowers:writing-plans` 写入项目本地 v151 计划；使用 `superpowers:test-driven-development` 执行 RED/GREEN；收尾前使用 `superpowers:verification-before-completion` 做新鲜验证。
+- 工具降级：当前会话未暴露 sequential-thinking、shrimp-task-manager、code-index、exa MCP；按项目降级规则使用本地结构化分析、`rg`/`Get-Content`、`update_plan`、superpowers 流程、TDD 和 `unittest`；记录 `.codex/context-scan-v151-preference-reply-context-settings.json`。
+- 上下文：`0.145.0` 已完成本地提交 `0744732 feat: 增加偏好本地回答类型开关 0.145.0`，当前分支 ahead `origin/main` 1 个提交；PROJECT-PLAN 和当日进度指向继续完善已确认偏好的普通回复应用策略、适用范围和更细粒度撤销语义。
+- 设计选择：复用 `config/preferences.local.json` 增加 `reply_context_enabled`；缺失字段默认启用；新增 `/preference-reply-context`、`/preference-reply-context-enable` 和 `/preference-reply-context-disable`，只控制已确认偏好是否进入普通 LLM fallback 和 `/llm-context-preview`。
+- 边界：停用普通回复上下文不撤销确认记录，不删除或停用偏好，不影响本地知识库回答和长期记忆兜底回答附注，不改变 SearchRouter、InnerBrain、路由、授权层或桌面执行决策；新增命令不进入 LLM provider command 白名单。
+- RED：目标测试先失败；失败点为缺少 `describe_preference_reply_context_settings` / `set_preference_reply_context_enabled`，Agent 新命令未知，停用普通回复上下文后 `/llm-context-preview` 仍展示确认偏好上下文，版本仍为 `0.145.0`。
+- GREEN：目标 455 项通过；全量 `unittest` 787 项通过。
+- 验证：命令行 smoke 输出 `preference-reply-context-settings-smoke OK`；源码桌面 smoke 输出 `desktopPetWindow`；打包后 smoke 退出码 0、stdout 包含 `desktopPetWindow`、stderr 为空且无残留 `JarvisLite` 进程。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.146.0.exe`，大小 `59,719,680` 字节，时间戳 `2026/6/10 10:12:08`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.146.0`。
+- 收尾补齐：`word/progress/README.md` 增加 `2026-06-10` 每日进度入口，索引元数据日期更新到 2026-06-10。
+- 文档索引补齐后最终复验：全量 `unittest` 重新执行，`Ran 787 tests in 8.766s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 689 项通过，覆盖 428 个 tracked/untracked Markdown 文件；严格真实 key 形态扫描无命中；本地敏感配置文件不存在。

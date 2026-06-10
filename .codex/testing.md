@@ -8794,3 +8794,14 @@ Test-Path .\config\search.local.json
 - 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；生成基础 `E:\ai\jarvis-lite-dist\JarvisLiteSetup.exe`，并复制版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.145.0.exe`，大小 `59,719,680` 字节；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.145.0`。
 - 打包后 smoke：`E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
 - 文档后最终复验：全量 `unittest` 重新执行，`Ran 783 tests`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 683 项通过；严格真实 key 形态扫描无命中；本地敏感配置文件不存在；README 108 行，根 `verification.md` 21 行。
+
+## 0.146.0 偏好普通回复上下文开关第一阶段
+
+- RED：`.\.venv\Scripts\python.exe -m unittest tests.test_preferences tests.test_agent tests.test_llm tests.test_project_metadata -v` 先失败；失败点为缺少 `describe_preference_reply_context_settings` / `set_preference_reply_context_enabled`，Agent 返回未知命令，停用普通回复上下文后 `/llm-context-preview` 仍展示 `已确认偏好应用：prefapp-...`，版本仍为 `0.145.0`。
+- GREEN：同一目标命令复跑通过，`Ran 455 tests in 7.065s`，`OK`。
+- 全量回归：`.\.venv\Scripts\python.exe -m unittest discover -s tests -v`，`Ran 787 tests in 9.338s`，`OK`。
+- 命令行 smoke：临时项目内执行 `/preference-reply-context`、偏好候选确认、偏好启用、偏好应用确认、`/llm-context-preview`、本地知识库回答、`/preference-reply-context-disable`、再次预览和本地知识库回答、`/preference-reply-context-enable`；输出 `preference-reply-context-settings-smoke OK`。
+- 源码桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 退出码 0，stdout 包含 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+- 打包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；生成基础 `E:\ai\jarvis-lite-dist\JarvisLiteSetup.exe`，并复制版本化安装包 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.146.0.exe`，大小 `59,719,680` 字节；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.146.0`。
+- 打包后 smoke：`E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 退出码 0，stdout 包含 `desktopPetWindow`，stderr 长度 0，无残留 `JarvisLite` 进程。
+- 文档索引补齐后最终复验：全量 `unittest` 重新执行，`Ran 787 tests in 8.766s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 689 项通过，覆盖 428 个 tracked/untracked Markdown 文件；严格真实 key 形态扫描无命中；`config/llm.local.json`、`config/search.local.json` 和 `word/inner-brain-evaluation-report.md` 不存在。

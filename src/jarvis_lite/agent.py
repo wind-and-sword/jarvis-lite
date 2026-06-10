@@ -124,9 +124,11 @@ from .preferences import (
     describe_preference_local_answer_type_settings,
     describe_preference_local_answer_note,
     describe_preference_reply_context,
+    describe_preference_reply_context_settings,
     describe_preference_preview,
     describe_preferences,
     set_preference_local_answer_type_enabled,
+    set_preference_reply_context_enabled,
     set_preference_enabled,
     undo_preference_application,
 )
@@ -1193,6 +1195,34 @@ class JarvisAgent:
                 ]
             )
 
+        if command == "/preference-reply-context":
+            self.tools.run("record_log", message="查看偏好普通回复上下文开关")
+            return describe_preference_reply_context_settings(self.paths)
+
+        if command == "/preference-reply-context-enable":
+            setting = set_preference_reply_context_enabled(self.paths, True)
+            self.tools.run("record_log", message="启用偏好普通回复上下文")
+            state = "已启用" if setting.enabled else "已停用"
+            return "\n".join(
+                [
+                    "已启用偏好普通回复上下文",
+                    f"状态：{state}",
+                    "说明：只控制普通 LLM fallback 和 /llm-context-preview 是否携带已确认偏好上下文，不影响本地回答附注。",
+                ]
+            )
+
+        if command == "/preference-reply-context-disable":
+            setting = set_preference_reply_context_enabled(self.paths, False)
+            self.tools.run("record_log", message="停用偏好普通回复上下文")
+            state = "已启用" if setting.enabled else "已停用"
+            return "\n".join(
+                [
+                    "已停用偏好普通回复上下文",
+                    f"状态：{state}",
+                    "说明：只控制普通 LLM fallback 和 /llm-context-preview 是否携带已确认偏好上下文，不影响本地回答附注。",
+                ]
+            )
+
         if command == "/preference-preview":
             preview_input = prompt[len(command):].strip()
             self.tools.run("record_log", message="预览已启用偏好应用草案")
@@ -1297,6 +1327,9 @@ class JarvisAgent:
                 "/preference-answer-types：查看本地回答附注类型开关",
                 "/preference-answer-type-enable 类型：启用本地回答附注类型",
                 "/preference-answer-type-disable 类型：停用本地回答附注类型",
+                "/preference-reply-context：查看普通回复偏好上下文开关",
+                "/preference-reply-context-enable：启用普通回复偏好上下文",
+                "/preference-reply-context-disable：停用普通回复偏好上下文",
                 "/preference-preview [输入文本]：预览已启用偏好的应用草案",
                 "/preference-apply-draft [输入文本]：生成待确认偏好应用草稿",
                 "/preference-apply-confirm [输入文本]：确认本次偏好应用",
@@ -4623,6 +4656,7 @@ class JarvisAgent:
                 "- 撤销固化：/config-candidate-undo 编号 删除联系人别名、应用别名、授权规则或偏好并恢复候选",
                 "- 偏好状态：/preference-status 查看本地偏好启用状态",
                 "- 偏好回答类型：/preference-answer-types 查看本地回答附注类型开关",
+                "- 偏好普通回复上下文：/preference-reply-context 查看普通回复偏好上下文开关",
                 "- 偏好预览：/preference-preview [输入文本] 预览已启用偏好的应用草案",
                 "- 偏好应用草稿：/preference-apply-draft [输入文本] 生成待确认偏好应用草稿",
                 "- 偏好应用确认：/preference-apply-confirm [输入文本] 确认本次偏好应用",

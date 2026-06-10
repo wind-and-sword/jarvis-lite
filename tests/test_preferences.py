@@ -16,6 +16,7 @@ from jarvis_lite.preferences import (
     describe_preference_local_answer_type_settings,
     describe_preference_local_answer_note,
     describe_preference_reply_context,
+    describe_preference_reply_context_settings,
     describe_preference_preview,
     describe_preferences,
     parse_preference_candidate,
@@ -24,6 +25,7 @@ from jarvis_lite.preferences import (
     remove_preference,
     save_preference,
     set_preference_local_answer_type_enabled,
+    set_preference_reply_context_enabled,
     set_preference_enabled,
     undo_preference_application,
 )
@@ -424,6 +426,41 @@ class PreferenceTests(unittest.TestCase):
 
             self.assertIn("回答类型必须是 knowledge 或 memory", str(context.exception))
             self.assertFalse(preferences_path.exists())
+
+    def test_preference_reply_context_settings_default_to_enabled(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+
+            settings = describe_preference_reply_context_settings(paths)
+
+            self.assertIn("偏好普通回复上下文", settings)
+            self.assertIn("状态：已启用", settings)
+            self.assertIn("配置文件：config/preferences.local.json", settings)
+            self.assertIn("/preference-reply-context-disable", settings)
+            self.assertIn("不影响本地回答附注", settings)
+
+    def test_preference_reply_context_setting_hides_llm_context_only(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            preference = save_preference(paths, "回答尽量简洁", source="test")
+            set_preference_enabled(paths, preference.preference_id, True)
+            describe_confirmed_preference_application(paths, "帮我总结知识库")
+
+            disabled = set_preference_reply_context_enabled(paths, False)
+            reply_context_after_disable = describe_preference_reply_context(paths)
+            local_note_after_disable = describe_preference_local_answer_note(paths, "knowledge")
+            settings_after_disable = describe_preference_reply_context_settings(paths)
+            reenabled = set_preference_reply_context_enabled(paths, True)
+            reply_context_after_enable = describe_preference_reply_context(paths)
+
+            self.assertFalse(disabled.enabled)
+            self.assertEqual(reply_context_after_disable, "")
+            self.assertIn("已确认偏好格式化：prefapp-", local_note_after_disable)
+            self.assertIn(f"- [{preference.preference_id}] 回答尽量简洁", local_note_after_disable)
+            self.assertIn("状态：已停用", settings_after_disable)
+            self.assertTrue(reenabled.enabled)
+            self.assertIn("已确认偏好应用：prefapp-", reply_context_after_enable)
+            self.assertIn(f"- [{preference.preference_id}] 回答尽量简洁", reply_context_after_enable)
 
     def test_confirmed_preference_application_rejects_enabled_conflicts(self):
         with tempfile.TemporaryDirectory() as temp_dir:

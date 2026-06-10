@@ -1,0 +1,89 @@
+{
+  "date": "2026-06-10",
+  "executor": "Codex",
+  "task": "v151 偏好普通回复上下文开关第一阶段",
+  "source_request": "继续开始下一个阶段的任务吧",
+  "tooling_fallback": {
+    "unavailable": [
+      "sequential-thinking",
+      "shrimp-task-manager",
+      "code-index",
+      "exa"
+    ],
+    "fallback_used": [
+      "rg",
+      "Get-Content",
+      "git status",
+      "git log",
+      "update_plan",
+      "superpowers 流程",
+      "unittest"
+    ]
+  },
+  "context": {
+    "current_head": "0744732 feat: 增加偏好本地回答类型开关 0.145.0",
+    "remote_state": "main ahead origin/main 1 commit before v151",
+    "latest_completed_stage": "0.145.0 / v150 偏好本地回答类型开关第一阶段",
+    "documentation_next_step": [
+      "word/progress/2026-06-10.md 下一步：继续完善已确认偏好的普通回复应用策略、适用范围和更细粒度撤销语义。",
+      "word/PROJECT-PLAN.md 下一阶段：默认仍不从普通聊天或 LLM 白名单自动写入、启停或确认偏好。"
+    ]
+  },
+  "current_implementation": {
+    "preferences.py": [
+      "describe_preference_reply_context(paths) 返回可进入普通 LLM fallback 的最近有效确认偏好上下文。",
+      "_active_preference_application_for_reply(paths) 当前同时服务普通 LLM fallback 和本地回答附注。",
+      "describe_preference_local_answer_note(paths, answer_type) 已受 knowledge/memory 类型开关控制。"
+    ],
+    "agent.py": [
+      "/llm-context-preview 通过 _llm_context_markdown() 展示普通 fallback 上下文。",
+      "_llm_context_markdown() 已追加 describe_preference_reply_context(paths)。",
+      "本地知识库回答和长期记忆兜底回答通过 describe_preference_local_answer_note(paths, answer_type) 追加附注。"
+    ],
+    "memory_config_manager.py": [
+      "配置管家已展示偏好状态、回答类型开关、预览、确认、历史和撤销入口。"
+    ],
+    "llm.py": [
+      "LLM provider instructions 已排除偏好管理、确认、撤销和回答类型开关命令。"
+    ]
+  },
+  "decision": {
+    "selected_scope": "新增普通回复偏好上下文显式开关，默认启用；停用后普通 LLM fallback 和 /llm-context-preview 不再带确认偏好上下文。",
+    "why": [
+      "承接 v150 后的普通回复应用策略与适用范围收紧。",
+      "不扩大自动写入、自动确认或桌面执行风险。",
+      "比撤销确认记录更细粒度：用户可只停用普通回复上下文，不删除偏好、不撤销历史、不影响本地回答附注。"
+    ],
+    "commands": [
+      "/preference-reply-context",
+      "/preference-reply-context-enable",
+      "/preference-reply-context-disable"
+    ],
+    "config_key": "reply_context_enabled"
+  },
+  "non_goals": [
+    "不改变 /preference-apply-confirm 历史记录写入语义。",
+    "不删除、停用或重写已保存偏好。",
+    "不影响本地知识库回答和长期记忆兜底回答附注类型开关。",
+    "不把新增命令加入 LLM provider command 白名单。",
+    "不改变 SearchRouter、InnerBrain、路由、授权层或桌面执行决策。"
+  ],
+  "similar_cases": [
+    "v146: 偏好进入普通回复上下文第一阶段",
+    "v149: 偏好本地回答附注范围第一阶段",
+    "v150: 偏好本地回答类型开关第一阶段"
+  ],
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "major_risks_identified": true,
+    "verification_known": true
+  },
+  "planned_verification": [
+    "tests.test_preferences 目标 RED/GREEN",
+    "tests.test_agent 目标 RED/GREEN",
+    "tests.test_llm 白名单边界",
+    "tests.test_project_metadata 版本一致性",
+    "相邻回归、全量 unittest、命令行 smoke、源码桌面 smoke、安装包构建、打包后 smoke、git diff --check、Markdown 本地链接检查、严格真实 key 形态扫描"
+  ]
+}

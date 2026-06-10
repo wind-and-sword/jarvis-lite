@@ -39,6 +39,13 @@ class PreferenceLocalAnswerTypeSetting:
     enabled: bool
 
 
+@dataclass(frozen=True)
+class PreferenceReplyContextSetting:
+    """普通回复偏好上下文开关；只控制 LLM fallback 上下文展示。"""
+
+    enabled: bool
+
+
 def parse_preference_candidate(content: str) -> str:
     """解析偏好候选，当前要求候选内容本身就是明确偏好文本。"""
 
@@ -241,6 +248,31 @@ def set_preference_local_answer_type_enabled(
     )
 
 
+def describe_preference_reply_context_settings(paths: ProjectPaths) -> str:
+    """展示已确认偏好进入普通回复上下文的显式开关。"""
+
+    enabled = _preference_reply_context_enabled(paths)
+    state = "已启用" if enabled else "已停用"
+    lines = [
+        "偏好普通回复上下文",
+        f"状态：{state}",
+        "配置文件：config/preferences.local.json",
+        "可用 /preference-reply-context-enable 启用，/preference-reply-context-disable 停用。",
+        "说明：只控制普通 LLM fallback 和 /llm-context-preview 是否携带已确认偏好上下文。",
+        "边界：不影响本地回答附注，不撤销确认记录，不删除或停用偏好，不改变路由或执行决策。",
+    ]
+    return "\n".join(lines)
+
+
+def set_preference_reply_context_enabled(paths: ProjectPaths, enabled: bool) -> PreferenceReplyContextSetting:
+    """显式启停已确认偏好进入普通回复上下文。"""
+
+    payload = _read_preferences_payload(paths)
+    payload["reply_context_enabled"] = bool(enabled)
+    _write_preferences_payload(paths, payload)
+    return PreferenceReplyContextSetting(enabled=bool(enabled))
+
+
 def describe_preference_preview(paths: ProjectPaths, user_input: str = "") -> str:
     """预览已启用偏好的应用草案；不自动改变任何回复或执行路径。"""
 
@@ -341,6 +373,9 @@ def describe_preference_application_history(paths: ProjectPaths) -> str:
 
 def describe_preference_reply_context(paths: ProjectPaths) -> str:
     """返回可放入普通 LLM fallback 的已确认偏好上下文。"""
+
+    if not _preference_reply_context_enabled(paths):
+        return ""
 
     application = _active_preference_application_for_reply(paths)
     if application is None:
@@ -643,6 +678,22 @@ def _enabled_preference_local_answer_types(paths: ProjectPaths) -> tuple[str, ..
         if answer_type is not None and answer_type not in enabled_types:
             enabled_types.append(answer_type)
     return tuple(enabled_types)
+
+
+def _preference_reply_context_enabled(paths: ProjectPaths) -> bool:
+    payload = _read_preferences_payload(paths)
+    if "reply_context_enabled" not in payload:
+        return True
+    value = payload.get("reply_context_enabled")
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().casefold()
+        if normalized in {"1", "true", "yes", "enabled", "已启用"}:
+            return True
+        if normalized in {"0", "false", "no", "disabled", "已停用"}:
+            return False
+    return True
 
 
 def _preferences_path(paths: ProjectPaths):

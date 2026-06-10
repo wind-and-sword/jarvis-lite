@@ -1269,6 +1269,28 @@ class AgentTests(unittest.TestCase):
         self.assertIn("偏好回答类型：/preference-answer-types", status)
         self.assertIn("/preference-answer-types", manager_status)
 
+    def test_preference_reply_context_commands_manage_llm_fallback_scope(self):
+        default_status = self.agent.handle("/preference-reply-context")
+        disable = self.agent.handle("/preference-reply-context-disable")
+        disabled_status = self.agent.handle("/preference-reply-context")
+        enable = self.agent.handle("/preference-reply-context-enable")
+        enabled_status = self.agent.handle("/preference-reply-context")
+        help_text = self.agent.handle("/help")
+        status = self.agent.handle("/status")
+        manager_status = self.agent.handle("/config-manager-status")
+
+        self.assertIn("偏好普通回复上下文", default_status)
+        self.assertIn("状态：已启用", default_status)
+        self.assertIn("已停用偏好普通回复上下文", disable)
+        self.assertIn("状态：已停用", disabled_status)
+        self.assertIn("已启用偏好普通回复上下文", enable)
+        self.assertIn("状态：已启用", enabled_status)
+        self.assertIn("/preference-reply-context：查看普通回复偏好上下文开关", help_text)
+        self.assertIn("/preference-reply-context-enable：启用普通回复偏好上下文", help_text)
+        self.assertIn("/preference-reply-context-disable：停用普通回复偏好上下文", help_text)
+        self.assertIn("偏好普通回复上下文：/preference-reply-context", status)
+        self.assertIn("/preference-reply-context", manager_status)
+
     def test_llm_context_preview_includes_confirmed_preference_application(self):
         self.agent.handle("/config-candidate-add preference 回答尽量简洁")
         self.agent.handle("/config-candidate-confirm 1")
@@ -1316,6 +1338,31 @@ class AgentTests(unittest.TestCase):
         self.assertFalse(any("/preference-apply-undo" in line for line in first_context))
         self.assertIn("LLM 外脑：撤销后回答", answer_after_undo)
         self.assertFalse(any("已确认偏好应用：prefapp-" in line for line in second_context))
+
+    def test_preference_reply_context_disable_hides_llm_context_without_hiding_local_note(self):
+        provider = FakeLLMProvider('{"type":"answer","answer":"不应使用外脑"}')
+        agent = JarvisAgent(self.paths, llm_router=LLMRouter(LLMSettings(provider="fake"), provider))
+        (self.paths.data_dir / "runtime.md").write_text(
+            "Jarvis Lite 推荐使用 Python 3.13 系列运行。\n",
+            encoding="utf-8",
+        )
+        agent.handle("/config-candidate-add preference 回答尽量简洁")
+        agent.handle("/config-candidate-confirm 1")
+        agent.handle("/preference-enable 1")
+        agent.handle("/preference-apply-confirm 帮我总结知识库")
+
+        preview_before_disable = agent.handle("/llm-context-preview")
+        local_answer_before_disable = agent.handle("/ask Jarvis Lite 推荐使用什么 Python 版本？")
+        agent.handle("/preference-reply-context-disable")
+        preview_after_disable = agent.handle("/llm-context-preview")
+        local_answer_after_disable = agent.handle("/ask Jarvis Lite 推荐使用什么 Python 版本？")
+
+        self.assertIn("已确认偏好应用：prefapp-", preview_before_disable)
+        self.assertIn("已确认偏好格式化：prefapp-", local_answer_before_disable)
+        self.assertNotIn("已确认偏好应用：prefapp-", preview_after_disable)
+        self.assertIn("已确认偏好格式化：prefapp-", local_answer_after_disable)
+        self.assertIn("回答类型：本地知识库回答", local_answer_after_disable)
+        self.assertEqual(provider.calls, [])
 
     def test_authorization_status_command_reports_policy(self):
         response = self.agent.handle("/authorization-status")
@@ -4444,7 +4491,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.145.1",
+                    "version": "0.146.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4455,7 +4502,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.145.1", response)
+        self.assertIn("发现新版本：0.146.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4470,7 +4517,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.145.1",
+                        "version": "0.146.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,
