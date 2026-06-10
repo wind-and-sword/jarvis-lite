@@ -365,7 +365,79 @@ def describe_preference_application_history(paths: ProjectPaths) -> str:
     lines.extend(
         [
             "撤销确认：/preference-apply-undo 编号或ID",
+            "状态解释：/preference-apply-status 编号或ID",
             "撤销范围：只撤销确认记录，不删除或停用偏好，不回滚已经展示的输出。",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def describe_preference_application_status(paths: ProjectPaths, reference: int | str | None = None) -> str:
+    """解释某条偏好应用确认记录当前在哪些输出面生效。"""
+
+    applications = list(load_runtime_context(paths).recent_preference_applications)
+    if not applications:
+        return "\n".join(
+            [
+                "偏好应用状态解释：暂无确认记录。",
+                "说明：只有成功执行 /preference-apply-confirm 后才可解释状态。",
+            ]
+        )
+
+    application_index = 0 if reference is None or str(reference).strip() == "" else _resolve_preference_application_index(
+        applications,
+        reference,
+    )
+    if application_index is None:
+        return "\n".join(
+            [
+                "偏好应用确认记录不存在。",
+                "请先运行 /preference-apply-history 查看当前编号或ID。",
+            ]
+        )
+
+    application = applications[application_index]
+    lines = [
+        "偏好应用状态解释",
+        f"确认记录：{_preference_application_status_label(application.status)} [{application.application_id}]",
+    ]
+    if application.user_input:
+        lines.append(f"应用输入：{application.user_input}")
+    if application.created_at:
+        lines.append(f"确认时间：{application.created_at}")
+    if application.status == "undone" and application.undone_at:
+        lines.append(f"撤销时间：{application.undone_at}")
+
+    reply_enabled, reply_reason = _preference_application_reply_surface_status(paths, applications, application_index)
+    knowledge_enabled, knowledge_reason = _preference_application_local_surface_status(
+        paths,
+        applications,
+        application_index,
+        "knowledge",
+    )
+    memory_enabled, memory_reason = _preference_application_local_surface_status(
+        paths,
+        applications,
+        application_index,
+        "memory",
+    )
+    lines.extend(
+        [
+            f"普通回复上下文：{_preference_application_effect_label(reply_enabled)}",
+            f"原因：{reply_reason}",
+            f"本地知识库回答附注：{_preference_application_effect_label(knowledge_enabled)}",
+            f"原因：{knowledge_reason}",
+            f"长期记忆兜底回答附注：{_preference_application_effect_label(memory_enabled)}",
+            f"原因：{memory_reason}",
+            "已确认偏好：",
+        ]
+    )
+    for preference_id, preference in zip(application.preference_ids, application.preferences):
+        lines.append(f"- [{preference_id}] {preference}")
+    lines.extend(
+        [
+            _preference_application_undo_command(application),
+            "说明：状态解释只读展示，不改变确认记录、偏好启停、普通回复上下文开关或本地回答类型开关。",
         ]
     )
     return "\n".join(lines)
@@ -592,6 +664,58 @@ def _active_preference_application_for_reply(paths: ProjectPaths) -> RuntimePref
     return application
 
 
+def _preference_application_reply_surface_status(
+    paths: ProjectPaths,
+    applications: list[RuntimePreferenceApplicationContext],
+    application_index: int,
+) -> tuple[bool, str]:
+    base_enabled, base_reason = _preference_application_base_status(paths, applications, application_index)
+    if not base_enabled:
+        return False, base_reason
+    if not _preference_reply_context_enabled(paths):
+        return False, "普通回复偏好上下文开关已停用。"
+    return True, "最近一条确认记录仍匹配当前已启用偏好集合，且普通回复偏好上下文开关已启用。"
+
+
+def _preference_application_local_surface_status(
+    paths: ProjectPaths,
+    applications: list[RuntimePreferenceApplicationContext],
+    application_index: int,
+    answer_type: str,
+) -> tuple[bool, str]:
+    base_enabled, base_reason = _preference_application_base_status(paths, applications, application_index)
+    if not base_enabled:
+        return False, base_reason
+    if answer_type not in _enabled_preference_local_answer_types(paths):
+        return False, f"本地回答附注类型 {answer_type} 已停用。"
+    label = _PREFERENCE_LOCAL_ANSWER_TYPE_LABELS[answer_type]
+    return True, f"最近一条确认记录仍匹配当前已启用偏好集合，且{label}附注类型已启用。"
+
+
+def _preference_application_base_status(
+    paths: ProjectPaths,
+    applications: list[RuntimePreferenceApplicationContext],
+    application_index: int,
+) -> tuple[bool, str]:
+    application = applications[application_index]
+    if application.status == "undone":
+        return False, "确认记录已撤销。"
+    if application.status != "confirmed":
+        return False, "确认记录状态不是已确认。"
+    if application_index != 0:
+        return False, "只有最近一条匹配确认记录会应用到当前上下文。"
+
+    preferences = enabled_preferences(paths)
+    if preference_conflict_hints(preferences):
+        return False, "当前已启用偏好存在冲突。"
+
+    current_ids = tuple(preference.preference_id for preference in preferences)
+    current_texts = tuple(preference.preference for preference in preferences)
+    if current_ids != application.preference_ids or current_texts != application.preferences:
+        return False, "当前已启用偏好集合与该确认记录不一致。"
+    return True, "最近一条确认记录仍匹配当前已启用偏好集合。"
+
+
 def _resolve_preference_application_index(
     applications: list[RuntimePreferenceApplicationContext],
     reference: int | str,
@@ -645,6 +769,10 @@ def _preference_application_status_label(status: str) -> str:
     if status == "undone":
         return "已撤销"
     return "已确认"
+
+
+def _preference_application_effect_label(enabled: bool) -> str:
+    return "生效" if enabled else "未生效"
 
 
 def _preference_application_undo_command(application: RuntimePreferenceApplicationContext) -> str:

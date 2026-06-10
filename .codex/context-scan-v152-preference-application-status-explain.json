@@ -1,0 +1,58 @@
+{
+  "date": "2026-06-10",
+  "executor": "Codex",
+  "task": "v152 preference application status explain",
+  "context": {
+    "current_version": "0.146.0",
+    "previous_stage": "v151 偏好普通回复上下文开关第一阶段",
+    "next_step_source": [
+      "word/progress/2026-06-10.md: 下一步要求继续完善已确认偏好的更细粒度撤销语义和状态解释。",
+      "word/PROJECT-PLAN.md: 偏好确认记录可进入普通 LLM fallback、本地知识库回答附注和长期记忆兜底回答附注，但存在多个显式开关和自动失效条件。"
+    ]
+  },
+  "locations": {
+    "preference_logic": "src/jarvis_lite/preferences.py",
+    "agent_commands": "src/jarvis_lite/agent.py",
+    "config_manager_status": "src/jarvis_lite/memory_config_manager.py",
+    "runtime_context": "src/jarvis_lite/runtime_context.py",
+    "tests": [
+      "tests/test_preferences.py",
+      "tests/test_agent.py",
+      "tests/test_llm.py",
+      "tests/test_project_metadata.py"
+    ]
+  },
+  "current_behavior": [
+    "偏好确认记录写入 RuntimePreferenceApplicationContext，只保存 application_id、user_input、preference_ids、preferences、status、created_at 和 undone_at。",
+    "describe_preference_reply_context() 只在普通回复上下文开关启用、最近确认记录为 confirmed、当前已启用偏好 ID/文本完全匹配且无冲突时返回上下文。",
+    "describe_preference_local_answer_note(paths, answer_type) 还要求 answer_type 是 knowledge 或 memory 且对应类型开关启用。",
+    "/preference-apply-history 只展示确认/撤销历史和撤销命令，没有解释某条记录当前在哪些输出面生效或为何失效。"
+  ],
+  "similar_patterns": [
+    "/route-history 展示最近路由决策详情，适合作为只读解释命令的交互参考。",
+    "/config-candidate-history + /config-candidate-undo 使用编号或显式 ID 管理历史项。",
+    "/preference-answer-types 和 /preference-reply-context 已采用显式只读状态命令加显式启停命令。"
+  ],
+  "decision": {
+    "scope": "新增只读 /preference-apply-status [编号或ID]，解释指定或默认最近确认记录对普通回复上下文、本地知识库回答附注、长期记忆兜底回答附注的当前生效状态。",
+    "non_goals": [
+      "不改变 /preference-apply-confirm 的确认语义。",
+      "不改变 /preference-apply-undo 的撤销语义。",
+      "不新增自动应用偏好策略。",
+      "不进入 LLM provider command whitelist。",
+      "不改变 SearchRouter、InnerBrain、路由、授权层或桌面执行决策。"
+    ]
+  },
+  "sufficiency_check": {
+    "interface_contract": true,
+    "technical_choice_understood": true,
+    "risk_points_identified": true,
+    "verification_known": true
+  },
+  "tool_fallback": {
+    "sequential_thinking": "当前会话未暴露该 MCP 工具，按项目降级规则使用本地结构化分析。",
+    "shrimp_task_manager": "当前会话未暴露该 MCP 工具，使用 update_plan 和项目计划文档替代。",
+    "code_index": "当前会话未暴露该 MCP 工具，使用 rg/Get-Content 检索。",
+    "exa": "本阶段无需网络检索。"
+  }
+}

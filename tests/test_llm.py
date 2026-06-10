@@ -274,6 +274,7 @@ class LLMTests(unittest.TestCase):
         self.assertNotIn("/preference-apply-confirm", instructions)
         self.assertNotIn("/preference-apply-history", instructions)
         self.assertNotIn("/preference-apply-undo", instructions)
+        self.assertNotIn("/preference-apply-status", instructions)
         self.assertNotIn("/preference-answer-types", instructions)
         self.assertNotIn("/preference-answer-type-enable", instructions)
         self.assertNotIn("/preference-answer-type-disable", instructions)

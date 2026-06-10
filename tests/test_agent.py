@@ -1244,6 +1244,36 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/preference-apply-history", manager_status)
         self.assertIn("/preference-apply-undo", manager_status)
 
+    def test_preference_apply_status_command_explains_confirmation_surfaces(self):
+        self.agent.handle("/config-candidate-add preference 回答尽量简洁")
+        self.agent.handle("/config-candidate-confirm 1")
+        empty_status = self.agent.handle("/preference-apply-status")
+        self.agent.handle("/preference-enable 1")
+        confirmation = self.agent.handle("/preference-apply-confirm 帮我总结知识库")
+        confirmation_id = _confirmation_id_from(confirmation)
+        latest_status = self.agent.handle("/preference-apply-status")
+        status_by_id = self.agent.handle(f"/preference-apply-status {confirmation_id}")
+        self.agent.handle("/preference-reply-context-disable")
+        status_after_reply_disable = self.agent.handle("/preference-apply-status 1")
+        missing_status = self.agent.handle("/preference-apply-status prefapp-missing")
+        help_text = self.agent.handle("/help")
+        status = self.agent.handle("/status")
+        manager_status = self.agent.handle("/config-manager-status")
+
+        self.assertIn("偏好应用状态解释：暂无确认记录", empty_status)
+        self.assertIn("偏好应用状态解释", latest_status)
+        self.assertIn(f"确认记录：已确认 [{confirmation_id}]", latest_status)
+        self.assertIn("普通回复上下文：生效", latest_status)
+        self.assertIn("本地知识库回答附注：生效", latest_status)
+        self.assertIn("长期记忆兜底回答附注：生效", latest_status)
+        self.assertIn(f"确认记录：已确认 [{confirmation_id}]", status_by_id)
+        self.assertIn("普通回复上下文：未生效", status_after_reply_disable)
+        self.assertIn("普通回复偏好上下文开关已停用", status_after_reply_disable)
+        self.assertIn("偏好应用确认记录不存在", missing_status)
+        self.assertIn("/preference-apply-status [编号或ID]：解释偏好应用确认当前生效状态", help_text)
+        self.assertIn("偏好应用状态：/preference-apply-status", status)
+        self.assertIn("/preference-apply-status", manager_status)
+
     def test_preference_answer_type_commands_manage_local_answer_note_scope(self):
         default_status = self.agent.handle("/preference-answer-types")
         disable = self.agent.handle("/preference-answer-type-disable knowledge")
@@ -4491,7 +4521,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.146.1",
+                    "version": "0.147.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4502,7 +4532,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.146.1", response)
+        self.assertIn("发现新版本：0.147.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4517,7 +4547,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.146.1",
+                        "version": "0.147.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

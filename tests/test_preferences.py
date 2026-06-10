@@ -13,6 +13,7 @@ from jarvis_lite.preferences import (
     describe_confirmed_preference_application,
     describe_preference_application_history,
     describe_preference_application_draft,
+    describe_preference_application_status,
     describe_preference_local_answer_type_settings,
     describe_preference_local_answer_note,
     describe_preference_reply_context,
@@ -310,6 +311,65 @@ class PreferenceTests(unittest.TestCase):
             self.assertIn("不回滚已经展示的输出", undo)
             self.assertIn("1. 已撤销 [prefapp-", history)
             self.assertTrue(preferences[0].enabled)
+
+    def test_preference_application_status_explains_active_surfaces(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            preference = save_preference(paths, "回答尽量简洁", source="test")
+            set_preference_enabled(paths, preference.preference_id, True)
+            confirmation = describe_confirmed_preference_application(paths, "帮我总结知识库")
+            confirmation_id = _confirmation_id_from(confirmation)
+
+            status = describe_preference_application_status(paths)
+            history = describe_preference_application_history(paths)
+
+            self.assertIn("偏好应用状态解释", status)
+            self.assertIn(f"确认记录：已确认 [{confirmation_id}]", status)
+            self.assertIn("应用输入：帮我总结知识库", status)
+            self.assertIn("普通回复上下文：生效", status)
+            self.assertIn("本地知识库回答附注：生效", status)
+            self.assertIn("长期记忆兜底回答附注：生效", status)
+            self.assertIn("最近一条确认记录仍匹配当前已启用偏好集合", status)
+            self.assertIn(f"- [{preference.preference_id}] 回答尽量简洁", status)
+            self.assertIn(f"撤销确认：/preference-apply-undo {confirmation_id}", status)
+            self.assertIn("状态解释：/preference-apply-status 编号或ID", history)
+
+    def test_preference_application_status_explains_inactive_reasons(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            concise = save_preference(paths, "回答尽量简洁", source="test")
+            chinese = save_preference(paths, "优先使用中文", source="test")
+            set_preference_enabled(paths, concise.preference_id, True)
+            first = describe_confirmed_preference_application(paths, "第一次确认")
+            first_id = _confirmation_id_from(first)
+            second = describe_confirmed_preference_application(paths, "第二次确认")
+            second_id = _confirmation_id_from(second)
+
+            older_status = describe_preference_application_status(paths, first_id)
+            set_preference_reply_context_enabled(paths, False)
+            reply_disabled_status = describe_preference_application_status(paths, second_id)
+            set_preference_local_answer_type_enabled(paths, "knowledge", False)
+            knowledge_disabled_status = describe_preference_application_status(paths, second_id)
+            set_preference_reply_context_enabled(paths, True)
+            set_preference_local_answer_type_enabled(paths, "knowledge", True)
+            set_preference_enabled(paths, chinese.preference_id, True)
+            changed_preferences_status = describe_preference_application_status(paths, second_id)
+            undo_preference_application(paths, second_id)
+            undone_status = describe_preference_application_status(paths, second_id)
+            missing_status = describe_preference_application_status(paths, "prefapp-missing")
+
+            self.assertIn(f"确认记录：已确认 [{first_id}]", older_status)
+            self.assertIn("普通回复上下文：未生效", older_status)
+            self.assertIn("只有最近一条匹配确认记录会应用到当前上下文", older_status)
+            self.assertIn("普通回复上下文：未生效", reply_disabled_status)
+            self.assertIn("普通回复偏好上下文开关已停用", reply_disabled_status)
+            self.assertIn("本地知识库回答附注：生效", reply_disabled_status)
+            self.assertIn("本地知识库回答附注：未生效", knowledge_disabled_status)
+            self.assertIn("本地回答附注类型 knowledge 已停用", knowledge_disabled_status)
+            self.assertIn("长期记忆兜底回答附注：生效", knowledge_disabled_status)
+            self.assertIn("当前已启用偏好集合与该确认记录不一致", changed_preferences_status)
+            self.assertIn("确认记录已撤销", undone_status)
+            self.assertIn("偏好应用确认记录不存在", missing_status)
 
     def test_preference_reply_context_uses_latest_confirmed_application_until_undone(self):
         with tempfile.TemporaryDirectory() as temp_dir:
