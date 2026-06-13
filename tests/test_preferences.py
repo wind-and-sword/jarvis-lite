@@ -362,6 +362,48 @@ class PreferenceTests(unittest.TestCase):
             self.assertIn("状态输出面必须是 reply、knowledge 或 memory", missing_surface)
             self.assertIn("不改变确认记录", missing_surface)
 
+    def test_preference_application_status_can_filter_single_preference(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            paths = build_project_paths(Path(temp_dir) / "jarvis-lite")
+            concise = save_preference(paths, "回答尽量简洁", source="test")
+            chinese = save_preference(paths, "优先使用中文", source="test")
+            set_preference_enabled(paths, concise.preference_id, True)
+            set_preference_enabled(paths, chinese.preference_id, True)
+            confirmation = describe_confirmed_preference_application(paths, "帮我总结知识库")
+            confirmation_id = _confirmation_id_from(confirmation)
+
+            latest_chinese = describe_preference_application_status(paths, preference_reference=chinese.preference_id)
+            explicit_knowledge = describe_preference_application_status(
+                paths,
+                confirmation_id,
+                surface="knowledge",
+                preference_reference=1,
+            )
+            missing_preference = describe_preference_application_status(
+                paths,
+                preference_reference="pref-0000000000",
+            )
+            set_preference_enabled(paths, chinese.preference_id, False)
+            disabled_chinese = describe_preference_application_status(
+                paths,
+                confirmation_id,
+                preference_reference=chinese.preference_id,
+            )
+
+            self.assertIn(f"偏好过滤：2. [{chinese.preference_id}] 优先使用中文", latest_chinese)
+            self.assertIn("目标偏好当前状态：仍在当前已启用偏好集合中。", latest_chinese)
+            self.assertIn(f"- [{chinese.preference_id}] 优先使用中文", latest_chinese)
+            self.assertNotIn(f"- [{concise.preference_id}] 回答尽量简洁", latest_chinese)
+            self.assertIn("单条偏好解释只读展示，不改变确认记录、偏好启停或撤销语义。", latest_chinese)
+            self.assertIn("输出面过滤：本地知识库回答附注", explicit_knowledge)
+            self.assertIn(f"偏好过滤：1. [{concise.preference_id}] 回答尽量简洁", explicit_knowledge)
+            self.assertIn("本地知识库回答附注：生效", explicit_knowledge)
+            self.assertNotIn("普通回复上下文：", explicit_knowledge)
+            self.assertNotIn(f"- [{chinese.preference_id}] 优先使用中文", explicit_knowledge)
+            self.assertIn("偏好应用确认中的偏好不存在", missing_preference)
+            self.assertIn("目标偏好当前状态：未在当前已启用偏好集合中。", disabled_chinese)
+            self.assertIn("当前已启用偏好集合与该确认记录不一致", disabled_chinese)
+
     def test_preference_application_status_explains_inactive_reasons(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             paths = build_project_paths(Path(temp_dir) / "jarvis-lite")

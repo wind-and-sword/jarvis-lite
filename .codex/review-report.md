@@ -1212,3 +1212,10 @@
 - 打包：`JarvisLiteSetup-0.148.0.exe` 生成，大小 `59,723,776` 字节；版本资源为 `0.148.0`。
 - 打包后 smoke：退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留进程。
 - 文档同步后最终复验：`Ran 792 tests in 9.421s`，`OK`；`git diff --check` 退出码 0；Markdown 本地链接 489 项通过；严格真实 key 形态扫描 21 个变更/新增文件无命中；本地敏感配置文件不存在。
+- 2026-06-14 v154 自审：偏好应用状态单条偏好过滤第一阶段。
+  - 技术评分：94/100。实现沿用 `describe_preference_application_status()` 作为唯一状态解释入口，新增 `preference_reference` 只过滤展示范围和目标偏好当前启用状态；Agent 参数解析保持 `/preference-apply-status 1` 的确认记录语义，并用 `pref-...`、`preference/pref/偏好` 承载单条偏好过滤，未改确认记录模型或撤销函数。
+  - 战略评分：93/100。该阶段完成后续项中风险最小的“按单条偏好解释”，继续保持不新增按输出面撤销或单条偏好撤销，不进入 LLM provider command 白名单，不改变 SearchRouter、InnerBrain、路由、授权层或桌面执行决策。
+  - 综合评分：94/100，建议通过。
+  - 关键证据：目标 RED 覆盖 helper 缺参和 Agent 错误解析；目标 GREEN 2 项通过；相邻回归 462 项通过；全量回归 794 项通过；命令行 smoke、源码桌面 smoke、Windows 安装包构建、打包后 smoke、`git diff --check`、Markdown 本地链接、严格真实 key 形态扫描和本地敏感配置检查均通过。
+  - 接手后提交前复验：全量 `unittest` 重新执行，`Ran 794 tests in 14.338s`，`OK`；`git diff --check` 退出码 0；Markdown 本地链接 496 项通过；严格真实 key 形态扫描 22 个变更/新增文件无命中；本地敏感配置文件不存在。
+  - 残留风险：当前仍不提供按输出面撤销或按单条偏好撤销；后续如要修改撤销语义，应单独设计运行态记录模型和已展示输出不可回滚边界。

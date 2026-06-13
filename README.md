@@ -1,12 +1,12 @@
 # Jarvis Lite
 
-> 日期：2026-06-10
+> 日期：2026-06-14
 > 执行者：Codex
 > 说明：本项目是本地优先的个人 PC Agent 实验项目。
 
 Jarvis Lite 的目标是让 AI 逐步理解并使用个人电脑上的记忆、知识库、文件、目录、最近上下文和桌面工作流。它不是纯聊天机器人，也不是多端平台；当前主线是先把 PC Agent 做稳，再打磨 InnerBrain 本地内脑、LLM 外脑、联网搜索和桌面工作流。
 
-当前版本：`0.148.0`。当前方案入口见 [word/PROJECT-PLAN.md](word/PROJECT-PLAN.md)，正式文档索引见 [word/文档索引.md](word/文档索引.md)。
+当前版本：`0.149.0`。当前方案入口见 [word/PROJECT-PLAN.md](word/PROJECT-PLAN.md)，正式文档索引见 [word/文档索引.md](word/文档索引.md)。
 
 ## 当前路线
 
@@ -30,7 +30,7 @@ PC Agent 稳定
 - LLM 外脑 Router：支持 `off`、`fake`、`openai`、`openai-compatible`、`qwen` 和 `gemini`，通过 provider 与 Agent 双层白名单返回结构化 `command`、`answer`、`clarify` 或 `no_action`。
 - SearchRouter 联网搜索：支持 `off`、`fake` 和 `tavily`；搜索由 Agent 显式调用，结果可进入最近上下文和 LLM context。
 - 自动记忆与配置管家：显式记录、查看、固化、确认、撤销、恢复和忽略记忆与配置候选；联系人别名、应用别名、授权规则和偏好都需要显式确认后写入本地配置。
-- 偏好应用链路：已保存偏好可显式启停、预览、生成草稿、确认、查看历史、解释状态和撤销确认；最近有效确认记录可进入普通 LLM fallback 上下文和本地回答附注，但不进入 LLM 命令白名单、SearchRouter、InnerBrain、路由或桌面执行决策；本地回答附注只对本地知识库回答和长期记忆兜底回答生效，并显示回答类型；可用 `/preference-answer-types` 显式查看和启停这两类本地回答附注，可用 `/preference-reply-context` 显式查看和启停普通回复偏好上下文，`0.148.0` 起可用 `/preference-apply-status [编号或ID] [输出面]` 按普通回复上下文、本地知识库回答附注或长期记忆兜底回答附注过滤解释确认记录当前生效状态。
+- 偏好应用链路：已保存偏好可显式启停、预览、生成草稿、确认、查看历史、解释状态和撤销确认；最近有效确认记录可进入普通 LLM fallback 上下文和本地回答附注，但不进入 LLM 命令白名单、SearchRouter、InnerBrain、路由或桌面执行决策；本地回答附注只对本地知识库回答和长期记忆兜底回答生效，并显示回答类型；可用 `/preference-answer-types` 显式查看和启停这两类本地回答附注，可用 `/preference-reply-context` 显式查看和启停普通回复偏好上下文，`0.149.0` 起可用 `/preference-apply-status [编号或ID] [输出面] [偏好编号或ID]` 按普通回复上下文、本地知识库回答附注、长期记忆兜底回答附注和单条偏好过滤解释确认记录当前生效状态。
 - 桌面与自动化基础：应用注册表、应用启动、只读窗口感知、窗口切换、截图、OCR、截图 OCR 串联、快捷键、鼠标点击、文本输入、Chrome/Clash/QQ/微信/IDEA 第一阶段工作流和任务失败复盘。
 - 本地 `unittest` 验证体系和 Windows 安装包构建脚本。
 
@@ -83,7 +83,7 @@ python -m pip install -e ".[desktop-build]"
 python scripts/build_windows_installer.py
 ```
 
-`0.148.0` 测试包路径：`E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.148.0.exe`。
+`0.149.0` 测试包路径：`E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.149.0.exe`。
 
 ## 常用命令
 
@@ -94,7 +94,7 @@ python scripts/build_windows_installer.py
 - `/llm-status`、`/llm-config-check`、`/llm-context-preview`、`/llm-smoke`：LLM 外脑配置与上下文检查。
 - `/search 关键词`、`/search-summary 关键词`、`/search-config-check`、`/search-smoke`：联网搜索。
 - `/config-manager-status`、`/config-candidates`、`/config-candidate-confirm 编号`、`/config-candidate-undo 编号`：记忆与配置候选管理。
-- `/preference-status`、`/preference-answer-types`、`/preference-reply-context`、`/preference-preview [输入文本]`、`/preference-apply-confirm [输入文本]`、`/preference-apply-history`、`/preference-apply-status [编号或ID] [输出面]`、`/preference-apply-undo 编号或ID`：偏好管理、回答类型开关、普通回复上下文开关、确认审计和状态解释。
+- `/preference-status`、`/preference-answer-types`、`/preference-reply-context`、`/preference-preview [输入文本]`、`/preference-apply-confirm [输入文本]`、`/preference-apply-history`、`/preference-apply-status [编号或ID] [输出面] [偏好编号或ID]`、`/preference-apply-undo 编号或ID`：偏好管理、回答类型开关、普通回复上下文开关、确认审计和状态解释。
 - `/apps`、`/windows`、`/screenshot`、`/screen-ocr`、`/hotkey`、`/mouse-click`、`/type-text`：桌面观察和基础自动化。
 - `/task-start 任务名称`、`/task-step 步骤说明`、`/task-fail 失败原因`、`/task-fail-capture 失败原因`、`/task-status`：任务状态和失败复盘。
 
@@ -103,6 +103,6 @@ python scripts/build_windows_installer.py
 - [DOCUMENTATION.md](DOCUMENTATION.md)：文档整理约定。
 - [word/PROJECT-PLAN.md](word/PROJECT-PLAN.md)：当前项目方案唯一入口。
 - [word/文档索引.md](word/文档索引.md)：正式文档完整索引。
-- [word/progress/2026-06-10.md](word/progress/2026-06-10.md)：当日进度摘要。
+- [word/progress/2026-06-14.md](word/progress/2026-06-14.md)：当日进度摘要。
 - [verification.md](verification.md)：验证记录短入口。
-- [verification/2026-06/2026-06-10.md](verification/2026-06/2026-06-10.md)：当日完整验证记录。
+- [verification/2026-06/2026-06-14.md](verification/2026-06/2026-06-14.md)：当日完整验证记录。

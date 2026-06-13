@@ -1244,15 +1244,22 @@ class JarvisAgent:
             return describe_preference_application_history(self.paths)
 
         if command == "/preference-apply-status":
-            preference_application_reference, preference_application_surface = self._parse_preference_apply_status_args(args)
+            (
+                preference_application_reference,
+                preference_application_surface,
+                preference_application_preference,
+            ) = self._parse_preference_apply_status_args(args)
             log_target = preference_application_reference or "最近确认记录"
             if preference_application_surface:
                 log_target = f"{log_target} / {preference_application_surface}"
+            if preference_application_preference:
+                log_target = f"{log_target} / 偏好 {preference_application_preference}"
             self.tools.run("record_log", message=f"解释偏好应用确认状态：{log_target}")
             return describe_preference_application_status(
                 self.paths,
                 preference_application_reference,
                 surface=preference_application_surface,
+                preference_reference=preference_application_preference,
             )
 
         if command == "/preference-apply-undo":
@@ -1347,7 +1354,7 @@ class JarvisAgent:
                 "/preference-apply-draft [输入文本]：生成待确认偏好应用草稿",
                 "/preference-apply-confirm [输入文本]：确认本次偏好应用",
                 "/preference-apply-history：查看偏好应用确认历史",
-                "/preference-apply-status [编号或ID] [输出面]：解释偏好应用确认当前生效状态",
+                "/preference-apply-status [编号或ID] [输出面] [偏好编号或ID]：解释偏好应用确认当前生效状态",
                 "/preference-apply-undo 编号或ID：撤销偏好应用确认记录",
                 "/config-candidate-restore 编号：把已忽略或已固化候选恢复为活跃候选",
                 "/config-candidate-dismiss 编号：忽略指定记忆与配置候选",
@@ -3027,16 +3034,57 @@ class JarvisAgent:
             return 0
         return int(normalized)
 
-    def _parse_preference_apply_status_args(self, args: list[str]) -> tuple[str | None, str | None]:
+    def _parse_preference_apply_status_args(self, args: list[str]) -> tuple[str | None, str | None, str | None]:
         if not args:
-            return None, None
-        if len(args) == 1:
-            value = args[0]
+            return None, None, None
+
+        application_reference: str | None = None
+        surface: str | None = None
+        preference_reference: str | None = None
+        index = 0
+        while index < len(args):
+            value = args[index]
             normalized = value.strip()
-            if normalized.isdigit() or normalized.startswith("prefapp-"):
-                return value, None
-            return None, value
-        return args[0], args[1]
+            folded = normalized.casefold()
+            if folded in {"preference", "pref", "偏好", "单条偏好"}:
+                if index + 1 < len(args):
+                    preference_reference = args[index + 1]
+                    index += 2
+                    continue
+                index += 1
+                continue
+            if self._is_preference_application_reference(normalized):
+                if application_reference is None:
+                    application_reference = value
+                elif preference_reference is None and normalized.isdigit():
+                    preference_reference = value
+                index += 1
+                continue
+            if self._is_preference_reference(normalized):
+                if preference_reference is None:
+                    preference_reference = value
+                index += 1
+                continue
+            if normalized.isdigit() and preference_reference is None and (
+                application_reference is not None or surface is not None
+            ):
+                preference_reference = value
+                index += 1
+                continue
+            if surface is None:
+                surface = value
+            elif preference_reference is None:
+                preference_reference = value
+            index += 1
+        return application_reference, surface, preference_reference
+
+    def _is_preference_application_reference(self, value: str) -> bool:
+        normalized = value.strip().casefold()
+        return normalized.isdigit() or normalized.startswith("prefapp-")
+
+    def _is_preference_reference(self, value: str) -> bool:
+        normalized = value.strip().casefold()
+        return normalized.startswith("pref-") and not normalized.startswith("prefapp-")
 
     def _experience_advice(self, query: str) -> str:
         normalized_query = self._strip_quotes(query)
@@ -4686,7 +4734,7 @@ class JarvisAgent:
                 "- 偏好应用草稿：/preference-apply-draft [输入文本] 生成待确认偏好应用草稿",
                 "- 偏好应用确认：/preference-apply-confirm [输入文本] 确认本次偏好应用",
                 "- 偏好应用历史：/preference-apply-history 查看偏好应用确认历史",
-                "- 偏好应用状态：/preference-apply-status [编号或ID] [输出面] 解释偏好应用确认当前生效状态",
+                "- 偏好应用状态：/preference-apply-status [编号或ID] [输出面] [偏好编号或ID] 解释偏好应用确认当前生效状态",
                 "- 偏好应用撤销：/preference-apply-undo 编号或ID 撤销偏好应用确认记录",
                 "- 任务状态：/task-status 查看当前任务、步骤、中断恢复和失败复盘",
                 "- 任务失败截图：/task-fail-capture 失败原因 [lang=chi_sim+eng]",

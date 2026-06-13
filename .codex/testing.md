@@ -8832,3 +8832,14 @@ Test-Path .\config\search.local.json
 - 安装包元数据：`install.cmd` 包含 `DisplayVersion /d "0.148.0"` 和 `Jarvis Lite 0.148.0 installed`；`JarvisLiteSetup.sed` 包含 `Jarvis Lite 0.148.0 installation finished`；`JarvisLite.version.txt` 的 `filevers/prodvers` 为 `(0, 148, 0, 0)`；`desktop-exe\JarvisLite.exe` 的 `FileVersion/ProductVersion` 均为 `0.148.0`。
 - 打包后 smoke：`E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
 - 文档同步后最终复验：全量 `unittest` 重新执行，`Ran 792 tests in 9.421s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 489 项通过，覆盖 429 个 tracked/untracked Markdown 文件；严格真实 key 形态扫描 21 个变更/新增文件无命中；本地敏感配置文件不存在；README 108 行，根 `verification.md` 24 行。
+- 2026-06-14 v154 偏好应用状态单条偏好过滤第一阶段：
+  - RED：目标测试先失败；`describe_preference_application_status()` 不接受 `preference_reference`，Agent 将 `pref-...` 当作未知输出面；版本 RED 中 `pyproject.toml` 仍为 `0.148.0`。
+  - GREEN：目标用例 `tests.test_preferences.PreferenceTests.test_preference_application_status_can_filter_single_preference` 和 `tests.test_agent.AgentTests.test_preference_apply_status_command_filters_single_preference` 复跑通过，`Ran 2 tests in 0.162s`，`OK`。
+  - 相邻回归：`.\.venv\Scripts\python.exe -m unittest tests.test_preferences tests.test_agent tests.test_llm tests.test_project_metadata -v` 通过，`Ran 462 tests in 10.228s`，`OK`。
+  - 命令行 smoke：临时项目执行 `pref-...`、确认 ID + `knowledge` + `pref-...`、`preference 2` 和未知偏好查询，输出 `preference-application-status-preference-filter-smoke OK`。
+  - 全量回归：`.\.venv\Scripts\python.exe -m unittest discover -s tests -v` 通过，先后记录 `Ran 794 tests in 13.751s` 和文档同步后 `Ran 794 tests in 10.366s`，均 `OK`。
+  - 源码桌面 smoke：`.\.venv\Scripts\python.exe -m jarvis_lite.desktop.app --smoke` 退出码 0，stdout 包含 `Jarvis Lite 桌面助手` 和 `desktopPetWindow`。
+  - Windows 安装包：`.\.venv\Scripts\python.exe scripts\build_windows_installer.py` 成功；生成并复制 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.149.0.exe`，大小 `59,723,776` 字节，时间戳 `2026/6/14 2:15:57`；安装脚本、SED、`JarvisLite.version.txt` 和 `JarvisLite.exe` 版本资源均为 `0.149.0`。
+  - 打包后 smoke：`E:\ai\jarvis-lite-dist\desktop-exe\JarvisLite.exe --smoke` 退出码 0，stdout 包含 `desktopPetWindow`，stderr 为空，无残留 `JarvisLite` 进程。
+  - 静态检查：`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接 712 项通过，覆盖 433 个 Markdown 文件；严格真实 key 形态扫描 23 个变更/新增文件无命中；本地敏感配置文件不存在。
+  - 接手后提交前复验：`.\.venv\Scripts\python.exe -m unittest discover -s tests -v` 通过，`Ran 794 tests in 14.338s`，`OK`；`git diff --check` 退出码 0，仅 LF/CRLF 提示；Markdown 本地链接检查 496 项通过，覆盖 433 个 Markdown 文件；严格真实 key 形态扫描 22 个变更/新增文件无命中；本地敏感配置文件不存在。

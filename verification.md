@@ -1,11 +1,12 @@
 # 验证记录
 
-> 日期：2026-06-10
+> 日期：2026-06-14
 > 执行者：Codex
 > 说明：根目录只作为验证记录入口，不长期追加完整命令和输出。完整明细进入 `verification/YYYY-MM/YYYY-MM-DD.md`。
 
 ## 最近摘要
 
+- 2026-06-14：发布 `0.149.0` 可安装测试包，完成偏好应用状态单条偏好过滤第一阶段；`/preference-apply-status [编号或ID] [输出面] [偏好编号或ID]` 可按确认记录内偏好过滤状态解释，并可与 `reply`、`knowledge` 或 `memory` 输出面过滤组合；全量 `unittest` 794 项通过，安装包生成到 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.149.0.exe`。
 - 2026-06-10：发布 `0.148.0` 可安装测试包，完成偏好应用状态输出面过滤第一阶段；`/preference-apply-status [编号或ID] [输出面]` 可按 `reply`、`knowledge` 或 `memory` 过滤解释确认记录在指定输出面的生效状态，不传输出面保持完整解释；全量 `unittest` 792 项通过，安装包生成到 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.148.0.exe`。
 - 2026-06-10：发布 `0.147.0` 可安装测试包，完成偏好应用状态解释第一阶段；新增 `/preference-apply-status [编号或ID]`，默认解释最近确认记录，也可按编号或 `prefapp-...` 解释指定记录在普通回复上下文、本地知识库回答附注和长期记忆兜底回答附注中是否生效及失效原因；全量 `unittest` 790 项通过，安装包生成到 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.147.0.exe`。
 - 2026-06-10：发布 `0.146.0` 可安装测试包，完成偏好普通回复上下文开关第一阶段；默认保持最近有效确认记录进入普通 LLM fallback 上下文，可用 `/preference-reply-context`、`/preference-reply-context-enable` 和 `/preference-reply-context-disable` 显式查看或启停，停用后不影响本地回答附注；补齐每日进度索引后全量 `unittest` 787 项通过，安装包生成到 `E:\ai\jarvis-lite-dist\JarvisLiteSetup-0.146.0.exe`。
@@ -19,6 +20,7 @@
 ## 索引
 
 - [2026-06 验证索引](verification/2026-06/README.md)
+- [2026-06-14 完整验证记录](verification/2026-06/2026-06-14.md)
 - [2026-06-10 完整验证记录](verification/2026-06/2026-06-10.md)
 - [2026-06-09 完整验证记录](verification/2026-06/2026-06-09.md)
 - [2026-06-08 自然周索引](verification/2026-06/week-2026-06-08.md)

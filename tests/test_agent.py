@@ -1270,7 +1270,10 @@ class AgentTests(unittest.TestCase):
         self.assertIn("普通回复上下文：未生效", status_after_reply_disable)
         self.assertIn("普通回复偏好上下文开关已停用", status_after_reply_disable)
         self.assertIn("偏好应用确认记录不存在", missing_status)
-        self.assertIn("/preference-apply-status [编号或ID] [输出面]：解释偏好应用确认当前生效状态", help_text)
+        self.assertIn(
+            "/preference-apply-status [编号或ID] [输出面] [偏好编号或ID]：解释偏好应用确认当前生效状态",
+            help_text,
+        )
         self.assertIn("偏好应用状态：/preference-apply-status", status)
         self.assertIn("/preference-apply-status", manager_status)
 
@@ -1302,6 +1305,43 @@ class AgentTests(unittest.TestCase):
         self.assertIn("/preference-apply-status [编号或ID] [输出面]", help_text)
         self.assertIn("偏好应用状态：/preference-apply-status [编号或ID] [输出面]", status)
         self.assertIn("/preference-apply-status [编号或ID] [输出面]", manager_status)
+
+    def test_preference_apply_status_command_filters_single_preference(self):
+        self.agent.handle("/config-candidate-add preference 回答尽量简洁")
+        self.agent.handle("/config-candidate-confirm 1")
+        self.agent.handle("/config-candidate-add preference 优先使用中文")
+        self.agent.handle("/config-candidate-confirm 1")
+        self.agent.handle("/preference-enable 1")
+        self.agent.handle("/preference-enable 2")
+        confirmation = self.agent.handle("/preference-apply-confirm 帮我总结知识库")
+        confirmation_id = _confirmation_id_from(confirmation)
+        preferences = json.loads((self.paths.config_dir / "preferences.local.json").read_text(encoding="utf-8"))[
+            "preferences"
+        ]
+        concise_id = preferences[0]["id"]
+        chinese_id = preferences[1]["id"]
+
+        latest_chinese = self.agent.handle(f"/preference-apply-status {chinese_id}")
+        explicit_knowledge = self.agent.handle(f"/preference-apply-status {confirmation_id} knowledge {concise_id}")
+        numbered_preference = self.agent.handle("/preference-apply-status preference 2")
+        missing_preference = self.agent.handle("/preference-apply-status pref-0000000000")
+        help_text = self.agent.handle("/help")
+        status = self.agent.handle("/status")
+        manager_status = self.agent.handle("/config-manager-status")
+
+        self.assertIn(f"偏好过滤：2. [{chinese_id}] 优先使用中文", latest_chinese)
+        self.assertNotIn(f"- [{concise_id}] 回答尽量简洁", latest_chinese)
+        self.assertIn("输出面过滤：本地知识库回答附注", explicit_knowledge)
+        self.assertIn(f"偏好过滤：1. [{concise_id}] 回答尽量简洁", explicit_knowledge)
+        self.assertNotIn(f"- [{chinese_id}] 优先使用中文", explicit_knowledge)
+        self.assertIn(f"偏好过滤：2. [{chinese_id}] 优先使用中文", numbered_preference)
+        self.assertIn("偏好应用确认中的偏好不存在", missing_preference)
+        self.assertIn("/preference-apply-status [编号或ID] [输出面] [偏好编号或ID]", help_text)
+        self.assertIn(
+            "偏好应用状态：/preference-apply-status [编号或ID] [输出面] [偏好编号或ID]",
+            status,
+        )
+        self.assertIn("/preference-apply-status [编号或ID] [输出面] [偏好编号或ID]", manager_status)
 
     def test_preference_answer_type_commands_manage_local_answer_note_scope(self):
         default_status = self.agent.handle("/preference-answer-types")
@@ -4550,7 +4590,7 @@ class AgentTests(unittest.TestCase):
         manifest.write_text(
             json.dumps(
                 {
-                    "version": "0.148.1",
+                    "version": "0.149.1",
                     "download_url": "https://example.com/JarvisLiteSetup.exe",
                     "release_notes": "新增更新检查。",
                 },
@@ -4561,7 +4601,7 @@ class AgentTests(unittest.TestCase):
 
         response = self.agent.handle(f"/update-status {manifest}")
 
-        self.assertIn("发现新版本：0.148.1", response)
+        self.assertIn("发现新版本：0.149.1", response)
         self.assertIn(f"当前版本：{__version__}", response)
         self.assertIn("https://example.com/JarvisLiteSetup.exe", response)
 
@@ -4576,7 +4616,7 @@ class AgentTests(unittest.TestCase):
             manifest.write_text(
                 json.dumps(
                     {
-                        "version": "0.148.1",
+                        "version": "0.149.1",
                         "download_url": str(package),
                     },
                     ensure_ascii=False,

@@ -1,16 +1,17 @@
 # Jarvis Lite 方案版本索引
 
-> 日期：2026-06-10
+> 日期：2026-06-14
 > 执行者：Codex
 
 ## 当前方案
 
 - [../PROJECT-PLAN.md](../PROJECT-PLAN.md)：当前项目方案入口。
-- [2026-06-10-v153-preference-application-status-surface-filter-plan.md](2026-06-10-v153-preference-application-status-surface-filter-plan.md)：当前方案版本，明确 `0.148.0` 偏好应用状态输出面过滤第一阶段、按 `reply`、`knowledge` 或 `memory` 只读过滤状态解释且保持确认和撤销边界。
+- [2026-06-14-v154-preference-application-status-preference-filter-plan.md](2026-06-14-v154-preference-application-status-preference-filter-plan.md)：当前方案版本，明确 `0.149.0` 偏好应用状态单条偏好过滤第一阶段、按确认记录内偏好只读过滤状态解释且保持确认和撤销边界。
+- [2026-06-10-v153-preference-application-status-surface-filter-plan.md](2026-06-10-v153-preference-application-status-surface-filter-plan.md)：明确 `0.148.0` 偏好应用状态输出面过滤第一阶段、按 `reply`、`knowledge` 或 `memory` 只读过滤状态解释且保持确认和撤销边界。
 - [2026-06-10-v152-preference-application-status-explain-plan.md](2026-06-10-v152-preference-application-status-explain-plan.md)：明确 `0.147.0` 偏好应用状态解释第一阶段、逐面解释普通回复上下文、知识库附注和长期记忆附注生效状态且保持只读边界。
 - [2026-06-10-v151-preference-reply-context-settings-plan.md](2026-06-10-v151-preference-reply-context-settings-plan.md)：明确 `0.146.0` 偏好普通回复上下文开关第一阶段、显式查看/启停确认偏好进入普通 LLM fallback 上下文且不影响本地回答附注的边界。
 - [2026-06-10-v150-preference-local-answer-type-settings-plan.md](2026-06-10-v150-preference-local-answer-type-settings-plan.md)：明确 `0.145.0` 偏好本地回答类型开关第一阶段、显式查看/启停知识库与长期记忆两类本地回答附注且不进入 LLM 白名单的边界。
-- [2026-06-09-v146-preference-reply-context-plan.md](2026-06-09-v146-preference-reply-context-plan.md)：当前方案版本，明确 `0.141.0` 偏好进入普通回复上下文第一阶段、有效确认记录进入 LLM fallback 上下文和撤销/启用集合变化后失效边界。
+- [2026-06-09-v146-preference-reply-context-plan.md](2026-06-09-v146-preference-reply-context-plan.md)：明确 `0.141.0` 偏好进入普通回复上下文第一阶段、有效确认记录进入 LLM fallback 上下文和撤销/启用集合变化后失效边界。
 - [2026-06-09-v145-preference-apply-audit-plan.md](2026-06-09-v145-preference-apply-audit-plan.md)：明确 `0.140.0` 偏好应用确认记录与撤销第一阶段、确认历史、运行态审计记录和只撤销记录的边界。
 - [2026-06-05-v144-preference-apply-confirm-plan.md](2026-06-05-v144-preference-apply-confirm-plan.md)：明确 `0.139.0` 偏好应用确认命令第一阶段、本次显式确认范围和冲突拒绝边界。
 - [2026-06-05-v143-preference-apply-confirmation-plan.md](2026-06-05-v143-preference-apply-confirmation-plan.md)：明确 `0.138.0` 偏好应用确认草稿第一阶段、待确认草稿和不真正应用偏好边界。
@@ -167,6 +168,7 @@
 - [2026-06-10-v151-preference-reply-context-settings-plan.md](2026-06-10-v151-preference-reply-context-settings-plan.md)：明确偏好普通回复上下文开关第一阶段、默认启用、显式启停和不影响本地回答附注的边界。
 - [2026-06-10-v152-preference-application-status-explain-plan.md](2026-06-10-v152-preference-application-status-explain-plan.md)：明确偏好应用状态解释第一阶段、逐面解释确认记录当前生效状态和失效原因的只读边界。
 - [2026-06-10-v153-preference-application-status-surface-filter-plan.md](2026-06-10-v153-preference-application-status-surface-filter-plan.md)：明确偏好应用状态输出面过滤第一阶段、按输出面过滤状态解释且不改变确认或撤销语义的只读边界。
+- [2026-06-14-v154-preference-application-status-preference-filter-plan.md](2026-06-14-v154-preference-application-status-preference-filter-plan.md)：明确偏好应用状态单条偏好过滤第一阶段、按确认记录内偏好过滤状态解释且不改变确认或撤销语义的只读边界。
 
 ## 维护规则
 

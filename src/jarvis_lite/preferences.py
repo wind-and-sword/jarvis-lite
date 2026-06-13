@@ -365,7 +365,7 @@ def describe_preference_application_history(paths: ProjectPaths) -> str:
     lines.extend(
         [
             "撤销确认：/preference-apply-undo 编号或ID",
-            "状态解释：/preference-apply-status [编号或ID] [输出面]",
+            "状态解释：/preference-apply-status [编号或ID] [输出面] [偏好编号或ID]",
             "撤销范围：只撤销确认记录，不删除或停用偏好，不回滚已经展示的输出。",
         ]
     )
@@ -377,6 +377,7 @@ def describe_preference_application_status(
     reference: int | str | None = None,
     *,
     surface: str | None = None,
+    preference_reference: int | str | None = None,
 ) -> str:
     """解释某条偏好应用确认记录当前在哪些输出面生效。"""
 
@@ -412,12 +413,27 @@ def describe_preference_application_status(
         )
 
     application = applications[application_index]
+    preference_index = None
+    if preference_reference is not None and str(preference_reference).strip() != "":
+        preference_index = _resolve_preference_application_preference_index(application, preference_reference)
+        if preference_index is None:
+            return "\n".join(
+                [
+                    "偏好应用确认中的偏好不存在。",
+                    "请先运行 /preference-apply-status [编号或ID] 查看该确认记录的已确认偏好。",
+                    "说明：单条偏好解释只读展示，不改变确认记录、偏好启停或撤销语义。",
+                ]
+            )
+
     lines = [
         "偏好应用状态解释",
         f"确认记录：{_preference_application_status_label(application.status)} [{application.application_id}]",
     ]
     if normalized_surface is not None:
         lines.append(f"输出面过滤：{_PREFERENCE_APPLICATION_SURFACE_LABELS[normalized_surface]}")
+    if preference_index is not None:
+        lines.append(_format_preference_application_preference_filter(application, preference_index))
+        lines.append(_preference_application_target_preference_status(paths, application, preference_index))
     if application.user_input:
         lines.append(f"应用输入：{application.user_input}")
     if application.created_at:
@@ -449,14 +465,18 @@ def describe_preference_application_status(
         lines.append(f"{_PREFERENCE_APPLICATION_SURFACE_LABELS[surface_name]}：{_preference_application_effect_label(surface_enabled)}")
         lines.append(f"原因：{surface_reason}")
     lines.append("已确认偏好：")
-    for preference_id, preference in zip(application.preference_ids, application.preferences):
+    if preference_index is None:
+        preference_items = tuple(zip(application.preference_ids, application.preferences))
+    else:
+        preference_items = (
+            (application.preference_ids[preference_index], application.preferences[preference_index]),
+        )
+    for preference_id, preference in preference_items:
         lines.append(f"- [{preference_id}] {preference}")
-    lines.extend(
-        [
-            _preference_application_undo_command(application),
-            "说明：状态解释只读展示，不改变确认记录、偏好启停、普通回复上下文开关或本地回答类型开关。",
-        ]
-    )
+    lines.append(_preference_application_undo_command(application))
+    if preference_index is not None:
+        lines.append("单条偏好解释只读展示，不改变确认记录、偏好启停或撤销语义。")
+    lines.append("说明：状态解释只读展示，不改变确认记录、偏好启停、普通回复上下文开关或本地回答类型开关。")
     return "\n".join(lines)
 
 
@@ -747,6 +767,55 @@ def _resolve_preference_application_index(
         if application.application_id == normalized:
             return index
     return None
+
+
+def _resolve_preference_application_preference_index(
+    application: RuntimePreferenceApplicationContext,
+    reference: int | str,
+) -> int | None:
+    if isinstance(reference, int):
+        return reference - 1 if 1 <= reference <= len(application.preference_ids) else None
+
+    normalized = str(reference or "").strip().casefold()
+    if not normalized:
+        return None
+    if normalized.isdigit():
+        index = int(normalized)
+        return index - 1 if 1 <= index <= len(application.preference_ids) else None
+    if not _is_valid_preference_id(normalized):
+        return None
+
+    for index, preference_id in enumerate(application.preference_ids):
+        if preference_id == normalized:
+            return index
+    return None
+
+
+def _format_preference_application_preference_filter(
+    application: RuntimePreferenceApplicationContext,
+    preference_index: int,
+) -> str:
+    preference_number = preference_index + 1
+    preference_id = application.preference_ids[preference_index]
+    preference = application.preferences[preference_index]
+    return f"偏好过滤：{preference_number}. [{preference_id}] {preference}"
+
+
+def _preference_application_target_preference_status(
+    paths: ProjectPaths,
+    application: RuntimePreferenceApplicationContext,
+    preference_index: int,
+) -> str:
+    preference_id = application.preference_ids[preference_index]
+    preference = application.preferences[preference_index]
+    enabled = enabled_preferences(paths)
+    for current in enabled:
+        if current.preference_id == preference_id and current.preference == preference:
+            return "目标偏好当前状态：仍在当前已启用偏好集合中。"
+    for current in enabled:
+        if current.preference_id == preference_id:
+            return "目标偏好当前状态：当前存在同 ID 偏好但内容已变化。"
+    return "目标偏好当前状态：未在当前已启用偏好集合中。"
 
 
 def _preference_application_id_for(
